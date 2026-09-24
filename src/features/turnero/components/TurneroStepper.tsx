@@ -21,7 +21,7 @@ interface TurneroStepperProps {
 
 export function TurneroStepper({ currentStep, onGoToStep }: TurneroStepperProps) {
   return (
-    <nav aria-label="Progreso del Turnero" className="border-b border-slate-200 bg-slate-50/80">
+    <nav aria-label="Progreso del Turnero" className="bg-transparent py-2">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Mobile View */}
         <div className="flex h-10 items-center justify-between sm:hidden">

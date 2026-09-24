@@ -1,4 +1,4 @@
-import { Clock, Sun, Moon, ChevronLeft, ChevronRight, User } from 'lucide-react'
+import { Clock, Sun, Moon, ChevronLeft, ChevronRight, User, CheckCircle2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import type { MedicalDoctor, MedicalSpecialty, AppointmentSlot } from '../types'
@@ -39,7 +39,7 @@ export function Step4DateTimeSelection({
   return (
     <section className="space-y-4">
       {/* Compact Context Header */}
-      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-xs sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2.5">
           <User className="size-4 text-sky-700" />
           <div className="flex flex-wrap items-center gap-x-2">
@@ -79,7 +79,7 @@ export function Step4DateTimeSelection({
               onClick={() => onSelectDate(d.value)}
               className={`cursor-pointer rounded-lg border p-2.5 text-center transition-all ${
                 isSelected
-                  ? 'border-sky-700 bg-sky-700 text-white shadow-xs'
+                  ? 'border-sky-700 bg-sky-700 text-white shadow-xs font-bold'
                   : 'border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50'
               }`}
             >
@@ -157,28 +157,46 @@ export function Step4DateTimeSelection({
         </CardContent>
       </Card>
 
-      {/* CTA Footer */}
-      <div className="flex items-center justify-between border-t border-slate-200 pt-3">
-        <span className="text-xs text-slate-600">
-          {selectedSlot ? (
-            <span className="font-semibold text-slate-900">
-              Horario elegido: {selectedSlot.time} hs ({selectedDate})
-            </span>
-          ) : (
-            'Haga clic en un horario para habilitar la confirmación.'
-          )}
-        </span>
-        <Button
-          type="button"
-          onClick={onProceed}
-          disabled={!selectedSlot}
-          size="sm"
-          className="cursor-pointer gap-1.5 font-semibold text-xs"
-        >
-          <span>Continuar a Confirmación</span>
-          <ChevronRight className="size-3.5" />
-        </Button>
-      </div>
+      {/* Prominent Action Card with Solid CTA Button */}
+      <Card className="border border-slate-300 bg-white shadow-xs">
+        <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4">
+          <div className="flex items-center gap-3">
+            <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${
+              selectedSlot ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-400'
+            }`}>
+              {selectedSlot ? <CheckCircle2 className="size-5" /> : <Clock className="size-5" />}
+            </div>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Horario para Consulta
+              </p>
+              {selectedSlot ? (
+                <p className="text-sm font-bold text-slate-900">
+                  {selectedDate} a las <span className="text-emerald-700 font-extrabold">{selectedSlot.time} hs</span> con {selectedDoctor.name}
+                </p>
+              ) : (
+                <p className="text-xs text-slate-500">
+                  Seleccione una pastilla de horario disponible arriba para habilitar el botón
+                </p>
+              )}
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            onClick={onProceed}
+            disabled={!selectedSlot}
+            className={`h-10 px-5 text-xs font-bold transition-all ${
+              selectedSlot
+                ? 'cursor-pointer bg-sky-700 text-white hover:bg-sky-800 shadow-sm'
+                : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
+            }`}
+          >
+            <span>Continuar a Confirmación</span>
+            <ChevronRight className="size-4 ml-1" />
+          </Button>
+        </CardContent>
+      </Card>
     </section>
   )
 }
