@@ -1,12 +1,7 @@
-import './App.css'
+import { TurneroContainer } from '@/features/turnero/TurneroContainer'
 
 function App() {
-
-  return (
-    <>
-
-    </>
-  )
+  return <TurneroContainer />
 }
 
 export default App
