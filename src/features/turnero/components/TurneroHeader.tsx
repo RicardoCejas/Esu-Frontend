@@ -1,5 +1,4 @@
-import { Building2, Stethoscope, User, Calendar } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Building2, Stethoscope, User, Calendar, RotateCcw } from 'lucide-react'
 import type { HealthCenter, MedicalSpecialty, MedicalDoctor } from '../types'
 
 interface TurneroHeaderProps {
@@ -22,59 +21,55 @@ export function TurneroHeader({
   const hasActiveSelection = Boolean(selectedCenter || selectedSpecialty || selectedDoctor)
 
   return (
-    <header className="border-b border-slate-200 bg-white py-6">
-      <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="border-b border-slate-200 bg-white py-3">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <div>
-          <div className="flex items-center gap-2">
-            <Badge variant="default" className="text-[11px] tracking-wide uppercase">
-              Cruz del Eje · Red Asistencial
-            </Badge>
-            <span className="text-xs font-medium text-slate-500">Sistema Público y Privado</span>
-          </div>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          <h1 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
             Reserva de Turnos Médicos
           </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Gestión secuencial de citas de salud en Cruz del Eje, Córdoba.
+          <p className="text-xs text-slate-500">
+            Padrón unificado de instituciones y especialistas de Cruz del Eje
           </p>
         </div>
 
         {hasActiveSelection && (
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {selectedCenter && (
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 font-medium text-slate-800">
-                <Building2 className="size-3.5 text-sky-700" />
-                {selectedCenter.name}
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 font-medium text-slate-700">
+                <Building2 className="size-3 text-sky-700" />
+                <span className="truncate max-w-[180px]">{selectedCenter.name}</span>
               </span>
             )}
             {selectedSpecialty && (
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 font-medium text-slate-800">
-                <Stethoscope className="size-3.5 text-sky-700" />
-                {selectedSpecialty.name}
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 font-medium text-slate-700">
+                <Stethoscope className="size-3 text-sky-700" />
+                <span className="truncate max-w-[160px]">{selectedSpecialty.name}</span>
               </span>
             )}
             {selectedDoctor && (
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 font-medium text-slate-800">
-                <User className="size-3.5 text-sky-700" />
-                {selectedDoctor.name}
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 font-medium text-slate-700">
+                <User className="size-3 text-sky-700" />
+                <span>{selectedDoctor.name}</span>
               </span>
             )}
             {selectedDate && selectedSlotTime && (
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800 ring-1 ring-emerald-600/30">
-                <Calendar className="size-3.5 text-emerald-700" />
-                {selectedSlotTime} hs
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-800">
+                <Calendar className="size-3 text-emerald-700" />
+                <span>{selectedSlotTime} hs</span>
               </span>
             )}
             <button
               type="button"
               onClick={onReset}
-              className="ml-1 cursor-pointer text-xs font-semibold text-rose-700 underline hover:text-rose-800"
+              className="flex items-center gap-1 cursor-pointer rounded-md px-2 py-0.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 transition-colors"
+              title="Reiniciar y comenzar desde el paso 1"
             >
-              Reiniciar
+              <RotateCcw className="size-3" />
+              <span>Reiniciar</span>
             </button>
           </div>
         )}
       </div>
-    </header>
+    </div>
   )
 }

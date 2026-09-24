@@ -7,7 +7,6 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import type { ConfirmedAppointment } from '../types'
 
 interface AppointmentReceiptModalProps {
@@ -51,7 +50,10 @@ export function AppointmentReceiptModal({
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Código de Turno</span>
               <p className="text-lg font-mono font-bold text-sky-800">{appointment.bookingCode}</p>
             </div>
-            <Badge variant="success" className="text-xs">Confirmado</Badge>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-800">
+              <CheckCircle2 className="size-3.5 text-emerald-700" />
+              <span>Confirmado</span>
+            </span>
           </div>
 
           {/* QR representation */}
