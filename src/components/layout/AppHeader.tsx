@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { MapPin, PlusCircle, Search, LogIn, ChevronDown, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -21,7 +22,7 @@ interface AppHeaderProps {
   onCityChange: (city: CityOption) => void
   onNewBooking: () => void
   onLookupBooking: () => void
-  onLoginClick: () => void
+  onLoginClick?: () => void
 }
 
 export function AppHeader({
@@ -29,46 +30,45 @@ export function AppHeader({
   onCityChange,
   onNewBooking,
   onLookupBooking,
-  onLoginClick,
 }: AppHeaderProps) {
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900 text-white">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-teal-900 bg-slate-900 text-white">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left: Brand + Geographic Location Selector */}
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-sky-600 text-white font-bold shadow-xs">
-              <Activity className="size-5" />
+          <Link to="/" className="flex items-center gap-2.5 hover:opacity-90 transition">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-teal-500 text-white font-bold shadow-xs">
+              <Activity className="h-5 w-5" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-extrabold tracking-tight text-white leading-none">
-                ESU
+              <span className="text-base font-extrabold tracking-tight text-white leading-none font-heading">
+                ESU <span className="text-teal-400 text-xs">Cruz del Eje</span>
               </span>
               <span className="text-[10px] font-medium text-slate-400 hidden sm:inline leading-tight">
                 Salud Unificada
               </span>
             </div>
-          </div>
+          </Link>
 
           <div className="h-5 w-px bg-slate-700 hidden sm:block" />
 
-          {/* Location Selector (Multi-city ready) */}
+          {/* Location Selector */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setIsCityDropdownOpen((prev) => !prev)}
-              className="flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-200 hover:border-slate-600 hover:bg-slate-700 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 rounded-full border border-teal-800/60 bg-slate-800/80 px-3 py-1.5 text-xs font-bold text-slate-200 hover:border-teal-500 hover:bg-slate-700 transition-colors cursor-pointer"
               title="Cambiar localidad de atención"
             >
-              <MapPin className="size-3.5 text-sky-400" />
+              <MapPin className="size-3.5 text-teal-400" />
               <span>{selectedCity.name}, {selectedCity.province}</span>
               <ChevronDown className="size-3 text-slate-400" />
             </button>
 
             {isCityDropdownOpen && (
-              <div className="absolute left-0 mt-1.5 w-64 rounded-lg border border-slate-700 bg-slate-800 p-1.5 shadow-xl z-50">
+              <div className="absolute left-0 mt-1.5 w-64 rounded-2xl border border-teal-800 bg-slate-800 p-1.5 shadow-2xl z-50">
                 <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Seleccionar Localidad
                 </div>
@@ -84,9 +84,9 @@ export function AppHeader({
                           setIsCityDropdownOpen(false)
                         }
                       }}
-                      className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-xs text-left transition-colors ${
+                      className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-left transition-colors ${
                         city.id === selectedCity.id
-                          ? 'bg-sky-900/60 font-bold text-sky-300'
+                          ? 'bg-teal-900/60 font-bold text-teal-300'
                           : city.isAvailable
                             ? 'text-slate-200 hover:bg-slate-700 cursor-pointer font-medium'
                             : 'text-slate-500 cursor-not-allowed bg-slate-800/40'
@@ -111,9 +111,9 @@ export function AppHeader({
             variant="ghost"
             size="sm"
             onClick={onNewBooking}
-            className="hidden sm:inline-flex cursor-pointer gap-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800"
+            className="hidden sm:inline-flex cursor-pointer gap-1.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-full"
           >
-            <PlusCircle className="size-3.5 text-sky-400" />
+            <PlusCircle className="size-3.5 text-teal-400" />
             <span>Nuevo Turno</span>
           </Button>
 
@@ -122,21 +122,19 @@ export function AppHeader({
             variant="outline"
             size="sm"
             onClick={onLookupBooking}
-            className="cursor-pointer gap-1.5 text-xs font-semibold text-slate-200 border-slate-700 bg-slate-800 hover:bg-slate-700 hover:text-white"
+            className="cursor-pointer gap-1.5 text-xs font-bold text-slate-200 border-slate-700 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-full"
           >
             <Search className="size-3.5 text-slate-400" />
             <span className="hidden md:inline">Consultar Cita</span>
           </Button>
 
-          <Button
-            type="button"
-            size="sm"
-            onClick={onLoginClick}
-            className="cursor-pointer gap-1.5 bg-sky-600 text-xs font-semibold text-white hover:bg-sky-500 shadow-xs"
+          <Link
+            to="/login"
+            className="inline-flex items-center cursor-pointer gap-1.5 bg-teal-600 text-xs font-bold text-white hover:bg-teal-500 px-4 py-2 rounded-full shadow-md shadow-teal-600/20 transition"
           >
             <LogIn className="size-3.5" />
             <span>Ingresar</span>
-          </Button>
+          </Link>
         </div>
       </div>
     </header>

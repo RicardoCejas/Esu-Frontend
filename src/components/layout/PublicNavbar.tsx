@@ -1,0 +1,148 @@
+import React from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { Activity, LogIn, UserCheck, LogOut } from 'lucide-react';
+import type { UserRole } from '@/types';
+
+export const PublicNavbar: React.FC = () => {
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const navLinks = [
+    { name: 'Inicio', path: '/' },
+    { name: 'Quiénes Somos', path: '/#quienes-somos' },
+    { name: 'Especialidades', path: '/#especialidades' },
+    { name: 'Nuestros Médicos', path: '/profesionales' },
+    { name: 'Turnero Online', path: '/turnero' },
+    { name: 'Guardia 24hs', path: '/#guardia' },
+  ];
+
+  const getDashboardPath = (rol?: UserRole) => {
+    switch (rol) {
+      case 'MEDICO':
+        return '/dashboard/medico';
+      case 'RECEPCIONISTA':
+        return '/dashboard/recepcion';
+      case 'ADMIN':
+        return '/dashboard/admin';
+      case 'PACIENTE':
+      default:
+        return '/dashboard/paciente';
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const handleNavClick = (e: React.MouseEvent, path: string) => {
+    if (path.includes('#')) {
+      e.preventDefault();
+      const hash = path.split('#')[1];
+      if (location.pathname === '/') {
+        const elem = document.getElementById(hash);
+        if (elem) {
+          elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } else {
+        navigate('/');
+        setTimeout(() => {
+          const elem = document.getElementById(hash);
+          if (elem) {
+            elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 150);
+      }
+    }
+  };
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-sky-200/70 bg-[#edf5fa]/95 backdrop-blur supports-[backdrop-filter]:bg-[#edf5fa]/80 shadow-xs">
+      <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+        {/* Brand / Logo */}
+        <Link to="/" className="flex items-center gap-2.5 transition hover:opacity-90">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-600 to-teal-600 text-white shadow-md shadow-sky-600/20">
+            <Activity className="h-6 w-6" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-lg font-extrabold tracking-tight text-foreground font-heading">
+              ESU <span className="text-xs font-bold text-sky-600">Cruz del Eje</span>
+            </span>
+            <span className="text-[10px] text-muted-foreground font-medium leading-none">
+              Ecosistema de Salud Unificado
+            </span>
+          </div>
+        </Link>
+
+        {/* Links de Navegación Pública */}
+        <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-muted-foreground">
+          {navLinks.map((link) => {
+            const isActive = location.pathname === link.path && !link.path.includes('#');
+            return (
+              <a
+                key={link.path}
+                href={link.path}
+                onClick={(e) => handleNavClick(e, link.path)}
+                className={`transition-colors hover:text-sky-600 cursor-pointer ${
+                  isActive ? 'text-sky-700 font-bold border-b-2 border-sky-600 pb-0.5' : ''
+                }`}
+              >
+                {link.name}
+              </a>
+            );
+          })}
+        </nav>
+
+        {/* Estado de Sesión — visible e informativo */}
+        <div className="flex items-center gap-2">
+          {user ? (
+            <div className="flex items-center gap-2">
+              {/* Avatar con inicial */}
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-teal-600 text-white font-extrabold text-sm shadow-md shadow-sky-500/30 shrink-0 select-none">
+                {user.nombre?.charAt(0).toUpperCase()}
+              </div>
+
+              {/* Nombre + rol (visible solo en desktop) */}
+              <div className="hidden sm:flex flex-col leading-tight">
+                <span className="text-xs font-extrabold text-slate-800 leading-tight">
+                  {user.nombre} {user.apellido}
+                </span>
+                <span className="text-[10px] font-semibold text-sky-600 uppercase tracking-wide">
+                  {user.rol === 'MEDICO' ? '🩺 Médico' : user.rol === 'ADMIN' ? '🛡 Admin' : user.rol === 'RECEPCIONISTA' ? '📋 Recepcionista' : '🙋 Paciente'}
+                </span>
+              </div>
+
+              {/* Botón Mi Portal */}
+              <Link
+                to={getDashboardPath(user.rol)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-sky-600 to-teal-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-sky-600/20 hover:from-sky-700 hover:to-teal-700 hover:scale-[1.02] transition"
+              >
+                <UserCheck className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Mi Portal</span>
+              </Link>
+
+              {/* Botón Cerrar Sesión */}
+              <button
+                onClick={handleLogout}
+                title="Cerrar Sesión"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 bg-white/90 text-rose-400 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300 transition cursor-pointer"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-sky-600/20 hover:from-sky-700 hover:to-teal-700 hover:scale-[1.02] transition cursor-pointer"
+            >
+              <LogIn className="h-4 w-4" />
+              <span>Ingresar</span>
+            </Link>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+};

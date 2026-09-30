@@ -1,4 +1,4 @@
-import { User, Calendar, Award, ChevronLeft, ChevronRight, Stethoscope } from 'lucide-react'
+import { User, Calendar, ChevronLeft, ChevronRight, Stethoscope } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import type { HealthCenter, MedicalSpecialty, MedicalDoctor } from '../types'
@@ -22,13 +22,18 @@ export function Step3DoctorSelection({
 }: Step3DoctorSelectionProps) {
   return (
     <section className="space-y-4">
-      {/* Compact Context Header */}
-      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-xs sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2.5">
-          <Stethoscope className="size-4 text-sky-700" />
-          <div className="flex flex-wrap items-center gap-x-2">
-            <span className="text-xs font-bold text-slate-900">{selectedSpecialty.name}</span>
-            <span className="text-xs text-slate-500">· {selectedCenter.name}</span>
+      {/* Context Header */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-teal-100 bg-white/90 p-4 shadow-sm backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-700">
+            <Stethoscope className="size-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-700">Especialidad Elegida</span>
+            </div>
+            <h3 className="text-sm font-extrabold text-slate-900 font-heading">{selectedSpecialty.name}</h3>
+            <span className="text-xs text-muted-foreground">{selectedCenter.name}</span>
           </div>
         </div>
         <Button
@@ -36,78 +41,93 @@ export function Step3DoctorSelection({
           variant="outline"
           size="sm"
           onClick={onBackToSpecialty}
-          className="h-7 cursor-pointer gap-1 px-2.5 text-xs font-semibold self-start sm:self-auto"
+          className="h-8 cursor-pointer gap-1.5 px-3.5 text-xs font-bold rounded-full border-teal-300 text-teal-700 hover:bg-teal-50 self-start sm:self-auto"
         >
-          <ChevronLeft className="size-3" />
+          <ChevronLeft className="size-3.5" />
           <span>Cambiar Especialidad</span>
         </Button>
       </div>
 
-      <div>
-        <h2 className="text-base font-bold text-slate-900 sm:text-lg">
+      <div className="pt-1">
+        <h2 className="text-base font-extrabold text-slate-900 sm:text-lg font-heading">
           3. Seleccione el Profesional Médico
         </h2>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted-foreground">
           {doctors.length} profesionales matriculados con turnos disponibles
         </p>
       </div>
 
       {/* Doctors Grid: 3 columns on large desktop */}
-      <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {doctors.map((doctor) => {
           const isSelected = selectedDoctor?.id === doctor.id
 
           return (
             <Card
               key={doctor.id}
-              className={`transition-all hover:border-sky-500 hover:shadow-xs ${
-                isSelected ? 'border-2 border-sky-700 ring-2 ring-sky-100' : 'border-slate-200'
+              className={`rounded-2xl border-t-4 border-t-teal-600 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer bg-white/95 backdrop-blur-sm ${
+                isSelected
+                  ? 'border-2 border-teal-600 ring-2 ring-teal-200 shadow-md'
+                  : 'border-slate-200 hover:border-teal-400'
               }`}
+              onClick={() => onSelectDoctor(doctor)}
             >
-              <CardContent className="flex h-full flex-col justify-between p-4">
+              <CardContent className="flex h-full flex-col justify-between p-5 space-y-4">
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex size-9 items-center justify-center rounded-full bg-slate-100 text-slate-700">
-                        <User className="size-4" />
+                    <div className="flex items-center gap-3">
+                      {/* Gradient Avatar Icon */}
+                      <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-600 to-cyan-500 text-white font-bold shadow-md shadow-teal-600/20 shrink-0">
+                        {doctor.name.split(' ').slice(1, 3).map(n => n[0]).join('') || <User className="size-5" />}
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-900 text-sm">{doctor.name}</h3>
-                        <div className="flex items-center gap-1 text-[11px] text-slate-500">
-                          <Award className="size-3 text-slate-400" />
-                          <span>{doctor.licenseNumber}</span>
+                        <h3 className="font-extrabold text-slate-900 text-sm font-heading leading-tight">
+                          {doctor.name}
+                        </h3>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="font-mono text-[11px] font-bold text-teal-800 bg-teal-50 px-2 py-0.2 rounded border border-teal-200">
+                            {doctor.licenseNumber}
+                          </span>
                         </div>
                       </div>
                     </div>
-                    {/* Clean typography indicator instead of vibecoded badge */}
-                    <span className="text-[10px] font-semibold text-slate-500">
+
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                       {doctor.consultationType === 'PRESENCIAL' ? 'Presencial' : 'Telemedicina'}
                     </span>
                   </div>
 
-                  <div className="space-y-1 text-xs text-slate-600 border-t border-slate-100 pt-2.5">
-                    <p className="text-[11px]">
-                      Días: <span className="font-medium text-slate-800">{doctor.availableDays.join(', ')}</span>
+                  <div className="space-y-1.5 text-xs text-slate-600 border-t border-slate-100 pt-3">
+                    <p className="text-xs">
+                      <span className="font-bold text-slate-700">Días de atención: </span>
+                      <span className="font-medium text-teal-900">{doctor.availableDays.join(', ')}</span>
                     </p>
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <Calendar className="size-3 text-emerald-700" />
-                      <span className="font-semibold text-emerald-800">
+                    <div className="flex items-center gap-1.5 text-xs pt-0.5">
+                      <Calendar className="size-3.5 text-emerald-600 shrink-0" />
+                      <span className="font-bold text-emerald-700">
                         Próximo cupo: {doctor.nextAvailableDate}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 flex items-center justify-end border-t border-slate-100 pt-3">
+                <div className="flex items-center justify-end border-t border-slate-100 pt-3">
                   <Button
                     type="button"
-                    onClick={() => onSelectDoctor(doctor)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onSelectDoctor(doctor)
+                    }}
                     variant={isSelected ? 'default' : 'outline'}
                     size="sm"
-                    className="h-7 cursor-pointer gap-1 px-2.5 text-xs font-semibold"
+                    className={`h-8 cursor-pointer gap-1 px-3.5 text-xs font-bold rounded-full transition-all ${
+                      isSelected
+                        ? 'bg-teal-600 text-white shadow-md'
+                        : 'border-teal-300 text-teal-700 hover:bg-teal-600 hover:text-white'
+                    }`}
                   >
                     <span>{isSelected ? 'Seleccionado' : 'Ver Horarios'}</span>
-                    <ChevronRight className="size-3" />
+                    <ChevronRight className="size-3.5" />
                   </Button>
                 </div>
               </CardContent>
