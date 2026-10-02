@@ -324,7 +324,7 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
             </div>
             <div>
               <h4 className="font-extrabold text-lg text-white font-heading">
-                ¿Sos profesional médico en Cruz del Eje y querés sumar tu agenda a ESU?
+                ¿Sos profesional médico en Cruz del Eje y querés sumar tu agenda a Luvia?
               </h4>
               <p className="text-xs sm:text-sm text-teal-100/80 mt-1">
                 Integramos tu consultorio particular o clínica privada sin costo al padrón unificado de salud.

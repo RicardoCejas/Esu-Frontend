@@ -63,15 +63,13 @@ export const PublicNavbar: React.FC = () => {
       <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Brand / Logo */}
         <Link to="/" className="flex items-center gap-2.5 transition hover:opacity-90">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-600 to-teal-600 text-white shadow-md shadow-sky-600/20">
-            <Activity className="h-6 w-6" />
-          </div>
+          <img src="/logo-icon.png" alt="Luvia Logo" className="h-10 w-10 object-contain drop-shadow-xs" />
           <div className="flex flex-col">
-            <span className="text-lg font-extrabold tracking-tight text-foreground font-heading">
-              ESU <span className="text-xs font-bold text-sky-600">Cruz del Eje</span>
+            <span className="text-xl font-extrabold tracking-tight text-slate-900 font-heading leading-tight">
+              Luvia <span className="text-xs font-bold text-sky-600">Cruz del Eje</span>
             </span>
-            <span className="text-[10px] text-muted-foreground font-medium leading-none">
-              Ecosistema de Salud Unificado
+            <span className="text-[10px] text-muted-foreground font-semibold leading-none">
+              Tu Salud, Unificada
             </span>
           </div>
         </Link>

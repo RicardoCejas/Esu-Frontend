@@ -28,11 +28,11 @@ export const QuienesSomosSection: React.FC = () => {
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight font-heading text-slate-900 leading-tight">
-            ¿Quiénes Somos en <span className="text-sky-700">ESU</span>?
+            ¿Quiénes Somos en <span className="text-sky-700">Luvia</span>?
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            El <strong>Ecosistema de Salud Unificado (ESU)</strong> es una plataforma de articulación sanitaria creada para conectar a toda la comunidad de <strong>Cruz del Eje</strong> con su red de salud pública y privada en tiempo real.
+            <strong>Luvia (Tu Salud, Unificada)</strong> es una plataforma de articulación sanitaria creada para conectar a toda la comunidad de <strong>Cruz del Eje</strong> con su red de salud pública y privada en tiempo real.
           </p>
         </div>
 
@@ -48,7 +48,7 @@ export const QuienesSomosSection: React.FC = () => {
           </h3>
 
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto">
-            Históricamente, los vecinos de Cruz del Eje debían acudir presencialmente de madrugada a cada hospital, dispensario o clínica para consultar disponibilidad. Con <strong>ESU</strong>, unificamos la agenda para que puedas conocer qué médico atiende hoy y asegurar tu turno desde tu celular en 5 pasos.
+            Históricamente, los vecinos de Cruz del Eje debían acudir presencialmente de madrugada a cada hospital, dispensario o clínica para consultar disponibilidad. Con <strong>Luvia</strong>, unificamos la agenda para que puedas conocer qué médico atiende hoy y asegurar tu turno desde tu celular en 5 pasos.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 text-left">
@@ -98,56 +98,56 @@ export const QuienesSomosSection: React.FC = () => {
           </div>
         </div>
 
-        {/* 4 Pillars Grid with Vivid Celestito Claro Modern Cards */}
+        {/* 4 Pillars Grid with Soft Pastel Modern Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Pilar 1 */}
-          <div className="group rounded-2xl border border-sky-200/80 bg-white/90 p-6 shadow-sm hover:border-sky-400 hover:bg-sky-50/70 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 mb-4 group-hover:bg-sky-600 group-hover:text-white transition-all">
-              <Building2 className="h-6 w-6" />
+          <div className="group rounded-2xl border border-slate-100 bg-white p-6 shadow-xs hover:border-sky-200 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-100 text-sky-600 mb-4 group-hover:scale-105 transition-transform">
+              <Building2 className="h-6 w-6 stroke-[2.2]" />
             </div>
-            <h4 className="text-base font-extrabold text-slate-900 font-heading mb-2">
+            <h4 className="text-base font-bold text-gray-900 font-heading mb-1.5">
               Red Integrada
             </h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-gray-500 leading-relaxed">
               Integramos en una misma red al hospital provincial, sanatorios privados y dispensarios barriales para que no pierdas tiempo.
             </p>
           </div>
 
           {/* Pilar 2 */}
-          <div className="group rounded-2xl border border-sky-200/80 bg-white/90 p-6 shadow-sm hover:border-sky-400 hover:bg-sky-50/70 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 mb-4 group-hover:bg-sky-600 group-hover:text-white transition-all">
-              <ShieldCheck className="h-6 w-6" />
+          <div className="group rounded-2xl border border-slate-100 bg-white p-6 shadow-xs hover:border-teal-200 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-100 text-teal-600 mb-4 group-hover:scale-105 transition-transform">
+              <ShieldCheck className="h-6 w-6 stroke-[2.2]" />
             </div>
-            <h4 className="text-base font-extrabold text-slate-900 font-heading mb-2">
+            <h4 className="text-base font-bold text-gray-900 font-heading mb-1.5">
               Historia Clínica Única
             </h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-gray-500 leading-relaxed">
               Tus estudios, diagnósticos y recetas se archivan digitalmente para que cualquier médico autorizado pueda asistirte de inmediato.
             </p>
           </div>
 
           {/* Pilar 3 */}
-          <div className="group rounded-2xl border border-rose-200/80 bg-white/90 p-6 shadow-sm hover:border-rose-400 hover:bg-rose-50/70 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 mb-4 group-hover:bg-rose-600 group-hover:text-white transition-all">
-              <HeartPulse className="h-6 w-6" />
+          <div className="group rounded-2xl border border-slate-100 bg-white p-6 shadow-xs hover:border-rose-200 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-100 text-rose-600 mb-4 group-hover:scale-105 transition-transform">
+              <HeartPulse className="h-6 w-6 stroke-[2.2]" />
             </div>
-            <h4 className="text-base font-extrabold text-slate-900 font-heading mb-2">
+            <h4 className="text-base font-bold text-gray-900 font-heading mb-1.5">
               Guardia 24/7 y 107
             </h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-gray-500 leading-relaxed">
               Información al instante de teléfonos de emergencia y guardia activa hospitalaria con triage médico permanente.
             </p>
           </div>
 
           {/* Pilar 4 */}
-          <div className="group rounded-2xl border border-emerald-200/80 bg-white/90 p-6 shadow-sm hover:border-emerald-400 hover:bg-emerald-50/70 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-              <Users className="h-6 w-6" />
+          <div className="group rounded-2xl border border-slate-100 bg-white p-6 shadow-xs hover:border-emerald-200 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 mb-4 group-hover:scale-105 transition-transform">
+              <Users className="h-6 w-6 stroke-[2.2]" />
             </div>
-            <h4 className="text-base font-extrabold text-slate-900 font-heading mb-2">
+            <h4 className="text-base font-bold text-gray-900 font-heading mb-1.5">
               Médicos de Confianza
             </h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-gray-500 leading-relaxed">
               Profesionales matriculados radicados en Cruz del Eje que conocen a nuestra comunidad y brindan un trato cercano y profesional.
             </p>
           </div>

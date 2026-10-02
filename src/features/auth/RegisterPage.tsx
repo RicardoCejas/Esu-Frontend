@@ -65,12 +65,12 @@ export const RegisterPage: React.FC = () => {
 
         <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-md space-y-6">
           <div className="text-center space-y-2">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-xs">
-              <Activity className="h-7 w-7" />
+            <div className="flex justify-center">
+              <img src="/logo-icon.png" alt="Luvia Logo" className="h-14 w-14 object-contain" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight">Registro de Paciente</h1>
             <p className="text-xs text-muted-foreground">
-              Crea tu cuenta para gestionar turnos y acceder a tu Historia Clínica Digital
+              Crea tu cuenta en Luvia para gestionar turnos y acceder a tu Historia Clínica Digital
             </p>
           </div>
 

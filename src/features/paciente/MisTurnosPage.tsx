@@ -191,7 +191,7 @@ export const MisTurnosPage: React.FC = () => {
                 Comprobante Digital Oficial
               </span>
               <h3 className="text-xl font-bold">Turno de Atención</h3>
-              <p className="text-xs text-muted-foreground">ESU - Cruz del Eje</p>
+              <p className="text-xs text-muted-foreground">Luvia - Cruz del Eje</p>
             </div>
 
             {/* Código QR Ilustrativo */}

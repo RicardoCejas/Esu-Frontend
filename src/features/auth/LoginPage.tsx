@@ -76,16 +76,18 @@ export const LoginPage: React.FC = () => {
 
         {/* Card de Login */}
         <div className="rounded-3xl border border-teal-100 bg-card p-6 sm:p-8 shadow-xl space-y-6">
-          <div className="text-center space-y-2">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-lg shadow-teal-600/20">
-              <Activity className="h-8 w-8" />
+          <div className="text-center space-y-3">
+            <div className="flex justify-center">
+              <img src="/logo-icon.png" alt="Luvia Logo" className="h-16 w-16 object-contain drop-shadow-md" />
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight font-heading text-foreground">
-              Ingreso al Sistema ESU
-            </h1>
-            <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-              Ecosistema de Salud Unificado • Cruz del Eje
-            </p>
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight font-heading text-foreground">
+                Ingreso al Sistema Luvia
+              </h1>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1">
+                Tu Salud, Unificada • Cruz del Eje
+              </p>
+            </div>
           </div>
 
           {error && (

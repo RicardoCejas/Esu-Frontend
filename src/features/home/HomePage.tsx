@@ -4,6 +4,7 @@ import { PublicNavbar } from '@/components/layout/PublicNavbar';
 import { Footer } from '@/components/layout/Footer';
 import { CentrosHeroBannerSlider } from './CentrosHeroBannerSlider';
 import { QuienesSomosSection } from './QuienesSomosSection';
+import { EspecialidadesSection, getSpecialtyDesign } from './EspecialidadesSection';
 import { centrosService } from '@/api/centrosService';
 import { profesionalesService } from '@/api/profesionalesService';
 import type { CentroSalud, Especialidad, Profesional } from '@/types';
@@ -28,89 +29,6 @@ import {
   Sun,
   Activity,
 } from 'lucide-react';
-
-// Helper para asignar a cada especialidad médica un icono único, distintivo y color representativo
-const getSpecialtyConfig = (id: string, nombre: string) => {
-  const lower = nombre.toLowerCase();
-  if (id === 'e1' || lower.includes('clínica') || lower.includes('general')) {
-    return {
-      Icon: Stethoscope,
-      iconBg: 'bg-teal-500/15 text-teal-600 group-hover:bg-teal-600 group-hover:text-white',
-      borderHover: 'hover:border-teal-500 hover:bg-teal-50/40',
-      textHover: 'group-hover:text-teal-700',
-      badgeClass: 'bg-teal-50 text-teal-700 border-teal-200',
-      tag: 'Atención Primaria',
-    };
-  }
-  if (id === 'e2' || lower.includes('pediatr')) {
-    return {
-      Icon: Baby,
-      iconBg: 'bg-amber-500/15 text-amber-700 group-hover:bg-amber-600 group-hover:text-white',
-      borderHover: 'hover:border-amber-500 hover:bg-amber-50/40',
-      textHover: 'group-hover:text-amber-800',
-      badgeClass: 'bg-amber-50 text-amber-800 border-amber-200',
-      tag: 'Salud Infantil',
-    };
-  }
-  if (id === 'e3' || lower.includes('cardio')) {
-    return {
-      Icon: HeartPulse,
-      iconBg: 'bg-rose-500/15 text-rose-600 group-hover:bg-rose-600 group-hover:text-white',
-      borderHover: 'hover:border-rose-500 hover:bg-rose-50/40',
-      textHover: 'group-hover:text-rose-700',
-      badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
-      tag: 'Cardiología & ECG',
-    };
-  }
-  if (id === 'e4' || lower.includes('trauma') || lower.includes('ortop')) {
-    return {
-      Icon: Bone,
-      iconBg: 'bg-blue-500/15 text-blue-600 group-hover:bg-blue-600 group-hover:text-white',
-      borderHover: 'hover:border-blue-500 hover:bg-blue-50/40',
-      textHover: 'group-hover:text-blue-700',
-      badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
-      tag: 'Huesos & Articulaciones',
-    };
-  }
-  if (id === 'e5' || lower.includes('gineco') || lower.includes('obstetr')) {
-    return {
-      Icon: Sparkles,
-      iconBg: 'bg-pink-500/15 text-pink-600 group-hover:bg-pink-600 group-hover:text-white',
-      borderHover: 'hover:border-pink-500 hover:bg-pink-50/40',
-      textHover: 'group-hover:text-pink-700',
-      badgeClass: 'bg-pink-50 text-pink-700 border-pink-200',
-      tag: 'Salud Femenina',
-    };
-  }
-  if (id === 'e6' || lower.includes('oftalmo')) {
-    return {
-      Icon: Eye,
-      iconBg: 'bg-emerald-500/15 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white',
-      borderHover: 'hover:border-emerald-500 hover:bg-emerald-50/40',
-      textHover: 'group-hover:text-emerald-700',
-      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      tag: 'Salud Visual',
-    };
-  }
-  if (id === 'e7' || lower.includes('derma')) {
-    return {
-      Icon: Sun,
-      iconBg: 'bg-orange-500/15 text-orange-600 group-hover:bg-orange-600 group-hover:text-white',
-      borderHover: 'hover:border-orange-500 hover:bg-orange-50/40',
-      textHover: 'group-hover:text-orange-700',
-      badgeClass: 'bg-orange-50 text-orange-700 border-orange-200',
-      tag: 'Dermatología & Piel',
-    };
-  }
-  return {
-    Icon: Activity,
-    iconBg: 'bg-teal-500/10 text-teal-600 group-hover:bg-teal-600 group-hover:text-white',
-    borderHover: 'hover:border-teal-500 hover:bg-teal-50/40',
-    textHover: 'group-hover:text-teal-700',
-    badgeClass: 'bg-teal-50 text-teal-700 border-teal-200',
-    tag: 'Especialidad Médica',
-  };
-};
 
 export const HomePage: React.FC = () => {
   const [centros, setCentros] = useState<CentroSalud[]>([]);
@@ -230,7 +148,7 @@ export const HomePage: React.FC = () => {
               </h1>
 
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-                El <strong>Ecosistema de Salud Unificado (ESU)</strong> conecta hospitales, dispensarios municipales, clínicas y consultorios independientes para facilitarte el acceso a turnos, historias clínicas y recetas electrónicas.
+                El <strong>Ecosistema de Salud Unificado (Luvia)</strong> conecta hospitales, dispensarios municipales, clínicas y consultorios independientes para facilitarte el acceso a turnos, historias clínicas y recetas electrónicas.
               </p>
 
               <div className="flex flex-wrap items-center gap-4 pt-1">
@@ -335,71 +253,12 @@ export const HomePage: React.FC = () => {
       {/* QUIÉNES SOMOS / INSTITUCIONAL ESU */}
       <QuienesSomosSection />
 
-      {/* Especialidades Médicas con ICONOS DIFERENCIADOS por Especialidad */}
-      <section id="especialidades" className="py-16 bg-gradient-to-b from-[#e2eef7]/70 via-[#edf5fa] to-[#e8f4fc]/80 border-t border-sky-200/60">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
-            <div>
-              <span className="text-xs font-extrabold uppercase tracking-wider text-sky-700">Cartilla Médica y Sedes</span>
-              <h2 className="text-3xl font-extrabold tracking-tight font-heading text-slate-900">Especialidades Médicas</h2>
-              <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
-                Haz clic sobre cualquier especialidad para ver los profesionales y en qué hospital, clínica o dispensario atienden.
-              </p>
-            </div>
-            <Link
-              to="/turnero"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 hover:text-sky-900 hover:underline"
-            >
-              <span>Ver agenda completa</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {especialidadesFiltradas.map((esp) => {
-              const config = getSpecialtyConfig(esp.id, esp.nombre);
-              const SpecialtyIcon = config.Icon;
-              const medicosCount = profesionales.filter((p) => p.especialidadId === esp.id).length;
-
-              return (
-                <button
-                  key={esp.id}
-                  onClick={() => setEspecialidadSeleccionada(esp)}
-                  className={`flex items-start gap-3.5 rounded-2xl border border-sky-200/80 bg-white/90 backdrop-blur-xs p-5 transition-all text-left cursor-pointer group shadow-xs hover:shadow-md hover:bg-sky-50/70 hover:border-sky-400 ${config.borderHover}`}
-                >
-                  {/* ICONO ÚNICO Y COLOR DIFERENCIADO POR ESPECIALIDAD */}
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-all shadow-xs ${config.iconBg}`}>
-                    <SpecialtyIcon className="h-6 w-6 transition-transform group-hover:scale-110" />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1">
-                      <h4 className={`font-bold text-sm font-heading transition ${config.textHover}`}>
-                        {esp.nombre}
-                      </h4>
-                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
-                    </div>
-
-                    <span className={`inline-block mt-0.5 text-[10px] font-bold px-2 py-0.2 rounded-md border ${config.badgeClass}`}>
-                      {config.tag}
-                    </span>
-
-                    <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
-                      {esp.descripcion}
-                    </p>
-
-                    <div className="mt-3 flex items-center justify-between text-[11px] pt-2 border-t border-border/60">
-                      <span className="font-bold text-teal-600 group-hover:underline">
-                        Ver médicos ({medicosCount}) y sedes →
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      {/* Especialidades Médicas Rediseñadas (Cartilla Médica Moderna) */}
+      <EspecialidadesSection
+        especialidades={especialidadesFiltradas}
+        profesionales={profesionales}
+        onSelectSpecialty={(esp) => setEspecialidadSeleccionada(esp)}
+      />
 
       {/* MODAL PRINCIPAL: NÓMINA DE MÉDICOS CON GUÍA DETALLADA DE SEDES / HOSPITALES Y OPCIÓN DE AGREGAR ROL ADMIN */}
       {especialidadSeleccionada && (
@@ -407,20 +266,20 @@ export const HomePage: React.FC = () => {
           <div className="w-full max-w-3xl rounded-3xl border border-border bg-card overflow-hidden shadow-2xl space-y-0 animate-in fade-in zoom-in duration-200">
             {/* Header del Modal */}
             {(() => {
-              const modalConfig = getSpecialtyConfig(especialidadSeleccionada.id, especialidadSeleccionada.nombre);
+              const modalConfig = getSpecialtyDesign(especialidadSeleccionada.id, especialidadSeleccionada.nombre);
               const ModalIcon = modalConfig.Icon;
               return (
-                <div className="bg-gradient-to-r from-teal-700 via-teal-800 to-teal-950 p-6 text-white flex items-center justify-between">
+                <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 p-6 text-white flex items-center justify-between">
                   <div className="flex items-center gap-3.5">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white shadow-inner">
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-inner ${modalConfig.iconContainer}`}>
                       <ModalIcon className="h-7 w-7" />
                     </div>
                     <div>
-                      <span className="text-[11px] uppercase tracking-wider font-bold text-teal-200">
-                        {modalConfig.tag}
+                      <span className={`inline-block text-[11px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full border ${modalConfig.badgeClass}`}>
+                        {modalConfig.badgeLabel}
                       </span>
-                      <h3 className="text-xl font-bold font-heading">{especialidadSeleccionada.nombre}</h3>
-                      <p className="text-xs text-teal-100">{especialidadSeleccionada.descripcion}</p>
+                      <h3 className="text-xl font-bold font-heading mt-1">{especialidadSeleccionada.nombre}</h3>
+                      <p className="text-xs text-slate-300">{especialidadSeleccionada.descripcion}</p>
                     </div>
                   </div>
 

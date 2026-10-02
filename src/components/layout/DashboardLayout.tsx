@@ -20,15 +20,13 @@ export const DashboardLayout: React.FC = () => {
       <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-border bg-background/95 px-4 sm:px-6 backdrop-blur">
         <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2.5 transition hover:opacity-90">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
-              <Activity className="h-5 w-5" />
-            </div>
+            <img src="/logo-icon.png" alt="Luvia Logo" className="h-9 w-9 object-contain" />
             <div className="flex flex-col">
               <span className="font-bold text-sm leading-tight text-foreground">
-                ESU <span className="text-primary text-xs">Cruz del Eje</span>
+                Luvia <span className="text-primary text-xs">Cruz del Eje</span>
               </span>
               <span className="text-[10px] text-muted-foreground leading-none">
-                Panel Asistencial
+                Tu Salud, Unificada
               </span>
             </div>
           </Link>

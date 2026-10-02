@@ -13,14 +13,12 @@ export const Footer: React.FC = () => {
           {/* Info Principal (Columna Grande) */}
           <div className="space-y-4 md:col-span-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-500 text-white shadow-lg shadow-teal-500/30">
-                <Activity className="h-6 w-6" />
-              </div>
+              <img src="/logo-icon.png" alt="Luvia Logo" className="h-12 w-12 object-contain" />
               <div>
                 <span className="font-extrabold text-xl tracking-tight text-white font-heading">
-                  ESU <span className="text-teal-400">Cruz del Eje</span>
+                  Luvia <span className="text-teal-400">Cruz del Eje</span>
                 </span>
-                <p className="text-[11px] text-teal-200/80 font-medium">Ecosistema de Salud Unificado</p>
+                <p className="text-[11px] text-teal-200/80 font-medium">Tu Salud, Unificada</p>
               </div>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed max-w-sm">
@@ -119,7 +117,7 @@ export const Footer: React.FC = () => {
 
         {/* Barra Inferior */}
         <div className="mt-12 border-t border-teal-800/50 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} ESU - Ecosistema de Salud Unificado..</p>
+          <p>© {new Date().getFullYear()} Luvia - Tu Salud, Unificada.</p>
           <div className="flex items-center gap-1 font-medium text-slate-300">
             <span>Desarrollado con</span>
             <Heart className="h-3.5 w-3.5 text-rose-500 fill-rose-500 inline" />

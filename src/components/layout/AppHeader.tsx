@@ -39,15 +39,13 @@ export function AppHeader({
         {/* Left: Brand + Geographic Location Selector */}
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2.5 hover:opacity-90 transition">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-teal-500 text-white font-bold shadow-xs">
-              <Activity className="h-5 w-5" />
-            </div>
+            <img src="/logo-icon.png" alt="Luvia Logo" className="h-9 w-9 object-contain" />
             <div className="flex flex-col">
               <span className="text-base font-extrabold tracking-tight text-white leading-none font-heading">
-                ESU <span className="text-teal-400 text-xs">Cruz del Eje</span>
+                Luvia <span className="text-teal-400 text-xs">Cruz del Eje</span>
               </span>
               <span className="text-[10px] font-medium text-slate-400 hidden sm:inline leading-tight">
-                Salud Unificada
+                Tu Salud, Unificada
               </span>
             </div>
           </Link>

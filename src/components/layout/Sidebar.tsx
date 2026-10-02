@@ -107,10 +107,10 @@ export const Sidebar: React.FC = () => {
       {/* Info Institucional */}
       <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5 font-semibold text-foreground mb-1">
-          <Activity className="h-3.5 w-3.5 text-primary" />
-          <span>ESU v1.0.0</span>
+          <img src="/logo-icon.png" alt="Luvia Logo" className="h-3.5 w-3.5 object-contain" />
+          <span>Luvia v1.0.0</span>
         </div>
-        <p className="text-[11px]">Cruz del Eje - Salud Unificada</p>
+        <p className="text-[11px]">Cruz del Eje - Tu Salud, Unificada</p>
       </div>
     </aside>
   );

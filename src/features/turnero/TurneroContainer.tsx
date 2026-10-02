@@ -56,11 +56,7 @@ export function TurneroContainer() {
   } = useTurnero()
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-teal-900/10 via-slate-50 to-cyan-900/10 text-slate-900 selection:bg-teal-500 selection:text-white overflow-hidden">
-      {/* Ambient Color Glows de Fondo */}
-      <div className="pointer-events-none absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-teal-400/20 to-emerald-400/15 blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 -right-40 h-[500px] w-[500px] rounded-full bg-gradient-to-bl from-cyan-400/20 to-blue-400/15 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 left-1/3 h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-teal-500/15 to-emerald-500/10 blur-3xl" />
+    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white">
 
       {/* Global Application Header with Brand, City Selector and Navigation */}
       <AppHeader
@@ -181,7 +177,7 @@ export function TurneroContainer() {
               </label>
               <Input
                 id="lookup-code"
-                placeholder="Ej: ESU-CDE-8491 o 38123456"
+                placeholder="Ej: LUVIA-CDE-8491 o 38123456"
                 value={lookupCode}
                 onChange={(e) => setLookupCode(e.target.value)}
                 className="h-8 text-xs"
@@ -226,7 +222,7 @@ export function TurneroContainer() {
         <DialogContent className="max-w-sm p-5 text-center">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-slate-900">
-              Portal Asistencial ESU
+              Portal Asistencial Luvia
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
               Acceso seguro para profesionales de la salud, secretaría asistencial y pacientes.

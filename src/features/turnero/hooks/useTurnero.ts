@@ -131,7 +131,7 @@ export function useTurnero() {
     if (!selectedCenter || !selectedSpecialty || !selectedDoctor || !selectedSlot) return
 
     const randomSuffix = Math.floor(1000 + Math.random() * 9000)
-    const code = `ESU-CDE-${randomSuffix}`
+    const code = `LUVIA-CDE-${randomSuffix}`
 
     const newAppointment: ConfirmedAppointment = {
       bookingCode: code,

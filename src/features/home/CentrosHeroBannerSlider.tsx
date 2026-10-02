@@ -238,7 +238,7 @@ export const CentrosHeroBannerSlider: React.FC = () => {
             </div>
             <div className="flex flex-col">
               <span className="text-xl sm:text-2xl font-bold tracking-wider text-teal-700 font-heading leading-none">
-                PORTAL ASISTENCIAL ESU
+                PORTAL ASISTENCIAL LUVIA
               </span>
               <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-teal-950 font-heading leading-tight">
                 TURNOS EN LÍNEA

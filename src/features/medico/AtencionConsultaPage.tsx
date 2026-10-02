@@ -84,7 +84,7 @@ export const AtencionConsultaPage: React.FC = () => {
       receta: incluirReceta
         ? {
             id: `rec-${Date.now()}`,
-            codigoQR: `ESU-REC-QR-${Math.floor(100000 + Math.random() * 900000)}`,
+            codigoQR: `LUVIA-REC-QR-${Math.floor(100000 + Math.random() * 900000)}`,
             fechaEmision: new Date().toISOString().split('T')[0],
             fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
               .toISOString()
