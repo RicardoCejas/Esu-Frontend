@@ -17,7 +17,6 @@ import {
   UserCheck,
   Stethoscope,
   HeartPulse,
-  Sparkles,
   X,
   User,
   Building2,
@@ -35,79 +34,79 @@ const getSpecialtyConfig = (id: string, nombre: string) => {
   if (id === 'e1' || lower.includes('clínica') || lower.includes('general')) {
     return {
       Icon: Stethoscope,
-      iconBg: 'bg-teal-500/15 text-teal-600 group-hover:bg-teal-600 group-hover:text-white',
-      borderHover: 'hover:border-teal-500 hover:bg-teal-50/40',
-      textHover: 'group-hover:text-teal-700',
-      badgeClass: 'bg-teal-50 text-teal-700 border-teal-200',
+      iconColor: 'text-sky-700',
+      borderHover: 'hover:border-sky-500',
+      textHover: 'group-hover:text-sky-800',
+      badgeClass: 'bg-sky-700 text-white',
       tag: 'Atención Primaria',
     };
   }
   if (id === 'e2' || lower.includes('pediatr')) {
     return {
       Icon: Baby,
-      iconBg: 'bg-amber-500/15 text-amber-700 group-hover:bg-amber-600 group-hover:text-white',
-      borderHover: 'hover:border-amber-500 hover:bg-amber-50/40',
+      iconColor: 'text-amber-700',
+      borderHover: 'hover:border-amber-500',
       textHover: 'group-hover:text-amber-800',
-      badgeClass: 'bg-amber-50 text-amber-800 border-amber-200',
+      badgeClass: 'bg-amber-600 text-white',
       tag: 'Salud Infantil',
     };
   }
   if (id === 'e3' || lower.includes('cardio')) {
     return {
       Icon: HeartPulse,
-      iconBg: 'bg-rose-500/15 text-rose-600 group-hover:bg-rose-600 group-hover:text-white',
-      borderHover: 'hover:border-rose-500 hover:bg-rose-50/40',
-      textHover: 'group-hover:text-rose-700',
-      badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
+      iconColor: 'text-rose-700',
+      borderHover: 'hover:border-rose-500',
+      textHover: 'group-hover:text-rose-800',
+      badgeClass: 'bg-rose-700 text-white',
       tag: 'Cardiología & ECG',
     };
   }
   if (id === 'e4' || lower.includes('trauma') || lower.includes('ortop')) {
     return {
       Icon: Bone,
-      iconBg: 'bg-blue-500/15 text-blue-600 group-hover:bg-blue-600 group-hover:text-white',
-      borderHover: 'hover:border-blue-500 hover:bg-blue-50/40',
-      textHover: 'group-hover:text-blue-700',
-      badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
+      iconColor: 'text-slate-800',
+      borderHover: 'hover:border-slate-500',
+      textHover: 'group-hover:text-slate-900',
+      badgeClass: 'bg-slate-800 text-white',
       tag: 'Huesos & Articulaciones',
     };
   }
   if (id === 'e5' || lower.includes('gineco') || lower.includes('obstetr')) {
     return {
-      Icon: Sparkles,
-      iconBg: 'bg-pink-500/15 text-pink-600 group-hover:bg-pink-600 group-hover:text-white',
-      borderHover: 'hover:border-pink-500 hover:bg-pink-50/40',
-      textHover: 'group-hover:text-pink-700',
-      badgeClass: 'bg-pink-50 text-pink-700 border-pink-200',
+      Icon: Activity,
+      iconColor: 'text-pink-700',
+      borderHover: 'hover:border-pink-500',
+      textHover: 'group-hover:text-pink-800',
+      badgeClass: 'bg-pink-700 text-white',
       tag: 'Salud Femenina',
     };
   }
   if (id === 'e6' || lower.includes('oftalmo')) {
     return {
       Icon: Eye,
-      iconBg: 'bg-emerald-500/15 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white',
-      borderHover: 'hover:border-emerald-500 hover:bg-emerald-50/40',
-      textHover: 'group-hover:text-emerald-700',
-      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      iconColor: 'text-emerald-700',
+      borderHover: 'hover:border-emerald-500',
+      textHover: 'group-hover:text-emerald-800',
+      badgeClass: 'bg-emerald-700 text-white',
       tag: 'Salud Visual',
     };
   }
   if (id === 'e7' || lower.includes('derma')) {
     return {
       Icon: Sun,
-      iconBg: 'bg-orange-500/15 text-orange-600 group-hover:bg-orange-600 group-hover:text-white',
-      borderHover: 'hover:border-orange-500 hover:bg-orange-50/40',
-      textHover: 'group-hover:text-orange-700',
-      badgeClass: 'bg-orange-50 text-orange-700 border-orange-200',
+      iconColor: 'text-orange-700',
+      borderHover: 'hover:border-orange-500',
+      textHover: 'group-hover:text-orange-800',
+      badgeClass: 'bg-orange-700 text-white',
       tag: 'Dermatología & Piel',
     };
   }
   return {
     Icon: Activity,
-    iconBg: 'bg-teal-500/10 text-teal-600 group-hover:bg-teal-600 group-hover:text-white',
-    borderHover: 'hover:border-teal-500 hover:bg-teal-50/40',
-    textHover: 'group-hover:text-teal-700',
-    badgeClass: 'bg-teal-50 text-teal-700 border-teal-200',
+    iconColor: 'text-sky-700',
+    borderHover: 'hover:border-sky-500',
+    textHover: 'group-hover:text-sky-800',
+    badgeClass: 'bg-sky-700 text-white',
     tag: 'Especialidad Médica',
   };
 };
@@ -203,7 +202,7 @@ export const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#edf5fa] via-[#e2eef7] to-[#edf5fa] text-slate-900 selection:bg-sky-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-sky-600 selection:text-white">
       <PublicNavbar />
 
       {/* BANNER INTERACTIVO DE FOTOS E INSTITUCIONES (POR ENCIMA DEL HERO) */}
@@ -212,16 +211,12 @@ export const HomePage: React.FC = () => {
       </div>
 
       {/* Hero Section: Acceso Rápido, Búsqueda y Guardia 24hs */}
-      <section className="relative overflow-hidden border-b border-sky-200/70 bg-gradient-to-b from-sky-100/70 via-[#edf5fa] to-[#e2eef7] py-14 sm:py-20">
-        {/* Glow de Fondo */}
-        <div className="absolute top-0 right-10 -z-10 h-96 w-96 rounded-full bg-sky-300/30 blur-3xl" />
-        <div className="absolute bottom-0 left-10 -z-10 h-80 w-80 rounded-full bg-cyan-300/25 blur-3xl" />
-
+      <section className="relative border-b border-slate-200 bg-slate-50 py-14 sm:py-20">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             <div className="lg:col-span-7 space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-sky-300 bg-sky-100/90 px-4 py-1.5 text-xs font-bold text-sky-800 shadow-xs">
-                <Sparkles className="h-4 w-4 text-sky-600" />
+              <div className="inline-flex items-center gap-2 rounded-full border border-sky-300 bg-sky-100 px-4 py-1.5 text-xs font-bold text-sky-900">
+                <Activity className="h-4 w-4 text-sky-700" />
                 <span>Salud Pública y Privada Centralizada • Cruz del Eje</span>
               </div>
 
@@ -236,7 +231,7 @@ export const HomePage: React.FC = () => {
               <div className="flex flex-wrap items-center gap-4 pt-1">
                 <Link
                   to="/turnero"
-                  className="inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-sky-600 to-teal-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg hover:from-sky-700 hover:to-teal-700 hover:shadow-sky-500/25 hover:scale-[1.02] transition-all"
+                  className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-sky-700 hover:bg-sky-800 px-7 py-3.5 text-sm font-bold text-white shadow-sm transition-all"
                 >
                   <Calendar className="h-5 w-5" />
                   <span>Sacar Turno Online (5 Pasos)</span>
@@ -245,85 +240,77 @@ export const HomePage: React.FC = () => {
 
                 <Link
                   to="/dashboard/paciente"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-sky-200 bg-white/90 px-6 py-3.5 text-sm font-bold text-slate-800 shadow-xs hover:bg-sky-50 hover:border-sky-300 transition-all"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-800 shadow-xs hover:bg-slate-50 transition-all"
                 >
-                  <UserCheck className="h-4 w-4 text-sky-600" />
+                  <UserCheck className="h-4 w-4 text-sky-700" />
                   <span>Consultar Mis Turnos</span>
                 </Link>
               </div>
 
               {/* Badges de Cobertura */}
-              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-sky-200/80 text-xs">
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-200 text-xs">
                 <div>
-                  <span className="block font-bold text-2xl text-sky-700 font-heading">100%</span>
+                  <span className="block font-bold text-2xl text-sky-800 font-heading">100%</span>
                   <span className="text-slate-600 font-medium">Digital y Accesible</span>
                 </div>
                 <div>
-                  <span className="block font-bold text-2xl text-sky-700 font-heading">24/7</span>
+                  <span className="block font-bold text-2xl text-sky-800 font-heading">24/7</span>
                   <span className="text-slate-600 font-medium">Guardia Hospitalaria</span>
                 </div>
                 <div>
-                  <span className="block font-bold text-2xl text-sky-700 font-heading">QR</span>
+                  <span className="block font-bold text-2xl text-sky-800 font-heading">QR</span>
                   <span className="text-slate-600 font-medium">Comprobantes y Recetas</span>
                 </div>
               </div>
             </div>
 
-            {/* Card de Atención Inmediata con Color y Diseño Diferenciado */}
+            {/* Card de Atención Inmediata con Estilo Clínico Sobrio */}
             <div id="guardia" className="lg:col-span-5 space-y-4 scroll-mt-24">
-              <div className="relative overflow-hidden rounded-3xl border border-teal-500/30 bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 p-6 sm:p-7 shadow-2xl text-white ring-1 ring-teal-500/20">
-                <div className="absolute top-0 right-0 h-40 w-40 bg-teal-500/20 rounded-full blur-2xl pointer-events-none" />
-                <div className="absolute bottom-0 left-0 h-32 w-32 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
-
-                <div className="relative z-10 space-y-5">
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-500 text-white shadow-lg shadow-teal-500/30">
-                      <HeartPulse className="h-7 w-7" />
-                    </div>
-                    <div>
-                      <span className="inline-block rounded-full bg-teal-400/20 px-2.5 py-0.5 text-[10px] font-extrabold text-teal-300 uppercase tracking-wider mb-0.5">
-                        Centro de Urgencias
-                      </span>
-                      <h3 className="font-bold text-lg font-heading text-white">Atención Inmediata</h3>
-                      <p className="text-xs text-teal-200/80">Guardia Médica 24hs Cruz del Eje</p>
-                    </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-xs space-y-5">
+                <div className="flex items-center gap-3.5">
+                  <div className="text-rose-700">
+                    <HeartPulse className="h-8 w-8" />
                   </div>
-
-                  {/* Banner de Guardia Roja Pulsante */}
-                  <div className="rounded-2xl border border-rose-500/40 bg-rose-950/50 p-4 backdrop-blur-xs shadow-inner">
-                    <div className="flex items-center justify-between font-bold text-sm text-rose-300">
-                      <span className="flex items-center gap-2">
-                        <span className="relative flex h-2.5 w-2.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
-                        </span>
-                        Guardia Activa:
-                      </span>
-                      <span className="font-mono text-base text-white tracking-wide font-extrabold">
-                        107 / (03549) 422111
-                      </span>
-                    </div>
-                    <p className="text-xs text-rose-200/80 mt-1.5 flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 text-rose-400 shrink-0" />
-                      <span>Hospital Provincial Aurelio Crespo (Av. Perón 450)</span>
-                    </p>
+                  <div>
+                    <span className="inline-block rounded bg-rose-700 px-2 py-0.5 text-[10px] font-extrabold text-white uppercase tracking-wider mb-1">
+                      Centro de Urgencias
+                    </span>
+                    <h3 className="font-bold text-lg font-heading text-slate-900">Atención Inmediata</h3>
+                    <p className="text-xs text-slate-500">Guardia Médica 24hs Cruz del Eje</p>
                   </div>
+                </div>
 
-                  {/* Input de Búsqueda Integrado con Glassmorphism */}
-                  <div className="space-y-2 pt-1">
-                    <label className="text-xs font-bold text-teal-200 flex items-center gap-1.5">
-                      <Search className="h-3.5 w-3.5 text-teal-400" />
-                      Buscar centros o especialidades en Cruz del Eje
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Ej: Hospital, Pediatría, San Pantaleón..."
-                        value={busqueda}
-                        onChange={(e) => setBusqueda(e.target.value)}
-                        className="w-full rounded-xl border border-teal-500/40 bg-slate-800/80 pl-4 pr-4 py-3 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 shadow-inner"
-                      />
-                    </div>
+                {/* Banner de Guardia Roja */}
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+                  <div className="flex items-center justify-between font-bold text-sm text-rose-900">
+                    <span className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-rose-600 inline-block"></span>
+                      Guardia Activa:
+                    </span>
+                    <span className="font-mono text-base text-rose-900 tracking-wide font-extrabold">
+                      107 / (03549) 422111
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-700 mt-1.5 flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-rose-700 shrink-0" />
+                    <span>Hospital Provincial Aurelio Crespo (Av. Perón 450)</span>
+                  </p>
+                </div>
+
+                {/* Input de Búsqueda Integrado */}
+                <div className="space-y-2 pt-1">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <Search className="h-3.5 w-3.5 text-sky-700" />
+                    Buscar centros o especialidades en Cruz del Eje
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Ej: Hospital, Pediatría, San Pantaleón..."
+                      value={busqueda}
+                      onChange={(e) => setBusqueda(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white pl-4 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-sky-600"
+                    />
                   </div>
                 </div>
               </div>
@@ -336,7 +323,7 @@ export const HomePage: React.FC = () => {
       <QuienesSomosSection />
 
       {/* Especialidades Médicas con ICONOS DIFERENCIADOS por Especialidad */}
-      <section id="especialidades" className="py-16 bg-gradient-to-b from-[#e2eef7]/70 via-[#edf5fa] to-[#e8f4fc]/80 border-t border-sky-200/60">
+      <section id="especialidades" className="py-16 bg-slate-50 border-t border-slate-200">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
             <div>
@@ -365,31 +352,31 @@ export const HomePage: React.FC = () => {
                 <button
                   key={esp.id}
                   onClick={() => setEspecialidadSeleccionada(esp)}
-                  className={`flex items-start gap-3.5 rounded-2xl border border-sky-200/80 bg-white/90 backdrop-blur-xs p-5 transition-all text-left cursor-pointer group shadow-xs hover:shadow-md hover:bg-sky-50/70 hover:border-sky-400 ${config.borderHover}`}
+                  className={`flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 transition-all text-left cursor-pointer group shadow-xs hover:shadow-md hover:border-sky-400 ${config.borderHover}`}
                 >
-                  {/* ICONO ÚNICO Y COLOR DIFERENCIADO POR ESPECIALIDAD */}
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-all shadow-xs ${config.iconBg}`}>
-                    <SpecialtyIcon className="h-6 w-6 transition-transform group-hover:scale-110" />
+                  {/* Ícono sin contenedor pastel artificial */}
+                  <div className={`shrink-0 pt-0.5 ${config.iconColor}`}>
+                    <SpecialtyIcon className="h-7 w-7 transition-transform group-hover:scale-105" />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
-                      <h4 className={`font-bold text-sm font-heading transition ${config.textHover}`}>
+                      <h4 className={`font-bold text-sm font-heading text-slate-900 transition ${config.textHover}`}>
                         {esp.nombre}
                       </h4>
-                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                      <ArrowRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-sky-700 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
                     </div>
 
-                    <span className={`inline-block mt-0.5 text-[10px] font-bold px-2 py-0.2 rounded-md border ${config.badgeClass}`}>
+                    <span className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded shadow-xs ${config.badgeClass}`}>
                       {config.tag}
                     </span>
 
-                    <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
+                    <p className="text-xs text-slate-600 mt-2 leading-relaxed line-clamp-2">
                       {esp.descripcion}
                     </p>
 
-                    <div className="mt-3 flex items-center justify-between text-[11px] pt-2 border-t border-border/60">
-                      <span className="font-bold text-teal-600 group-hover:underline">
+                    <div className="mt-3 flex items-center justify-between text-[11px] pt-2 border-t border-slate-100">
+                      <span className="font-bold text-sky-700 group-hover:underline">
                         Ver médicos ({medicosCount}) y sedes →
                       </span>
                     </div>
