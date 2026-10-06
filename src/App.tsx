@@ -1,7 +1,18 @@
-import { TurneroContainer } from '@/features/turnero/TurneroContainer'
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from '@/context/AuthContext';
+import { ToastProvider } from '@/context/ToastContext';
+import { AppRoutes } from '@/routes/AppRoutes';
 
-function App() {
-  return <TurneroContainer />
+export function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <ToastProvider>
+          <AppRoutes />
+        </ToastProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;

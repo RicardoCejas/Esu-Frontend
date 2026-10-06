@@ -56,7 +56,8 @@ export function TurneroContainer() {
   } = useTurnero()
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white">
+
       {/* Global Application Header with Brand, City Selector and Navigation */}
       <AppHeader
         selectedCity={selectedCity}
@@ -176,7 +177,7 @@ export function TurneroContainer() {
               </label>
               <Input
                 id="lookup-code"
-                placeholder="Ej: ESU-CDE-8491 o 38123456"
+                placeholder="Ej: LUVIA-CDE-8491 o 38123456"
                 value={lookupCode}
                 onChange={(e) => setLookupCode(e.target.value)}
                 className="h-8 text-xs"
@@ -221,7 +222,7 @@ export function TurneroContainer() {
         <DialogContent className="max-w-sm p-5 text-center">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-slate-900">
-              Portal Asistencial ESU
+              Portal Asistencial Luvia
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
               Acceso seguro para profesionales de la salud, secretaría asistencial y pacientes.

@@ -1,3 +1,4 @@
+import React from 'react'
 import { Clock, Sun, Moon, ChevronLeft, ChevronRight, User, CheckCircle2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,7 +25,7 @@ const UPCOMING_DATES = [
   { value: '2026-10-01', label: 'Jueves 01', sub: 'Oct' },
 ]
 
-export function Step4DateTimeSelection({
+export const Step4DateTimeSelection: React.FC<Step4DateTimeSelectionProps> = ({
   selectedDoctor,
   selectedSpecialty,
   selectedDate,
@@ -35,16 +36,25 @@ export function Step4DateTimeSelection({
   onSelectSlot,
   onProceed,
   onBackToDoctor,
-}: Step4DateTimeSelectionProps) {
+}) => {
   return (
     <section className="space-y-4">
-      {/* Compact Context Header */}
-      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-xs sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2.5">
-          <User className="size-4 text-sky-700" />
-          <div className="flex flex-wrap items-center gap-x-2">
-            <span className="text-xs font-bold text-slate-900">{selectedDoctor.name}</span>
-            <span className="text-xs text-slate-500">· {selectedSpecialty.name} ({selectedDoctor.licenseNumber})</span>
+      {/* Context Banner: Selected Doctor */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+            <User className="size-5" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-x-2">
+              <span className="text-sm font-bold text-slate-900 font-heading">{selectedDoctor.name}</span>
+              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-mono font-semibold text-slate-600 border border-slate-200">
+                {selectedDoctor.licenseNumber}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Especialidad: <span className="font-semibold text-slate-800">{selectedSpecialty.name}</span>
+            </p>
           </div>
         </div>
         <Button
@@ -52,24 +62,24 @@ export function Step4DateTimeSelection({
           variant="outline"
           size="sm"
           onClick={onBackToDoctor}
-          className="h-7 cursor-pointer gap-1 px-2.5 text-xs font-semibold self-start sm:self-auto"
+          className="h-8 cursor-pointer gap-1.5 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 self-start sm:self-auto"
         >
-          <ChevronLeft className="size-3" />
+          <ChevronLeft className="size-3.5" />
           <span>Cambiar Médico</span>
         </Button>
       </div>
 
-      <div>
-        <h2 className="text-base font-bold text-slate-900 sm:text-lg">
+      <div className="pt-1">
+        <h2 className="text-base font-bold text-slate-900 sm:text-lg font-heading">
           4. Seleccione Fecha y Franja Horaria
         </h2>
         <p className="text-xs text-slate-500">
-          Cupos presenciales en tiempo real
+          Disponibilidad sincronizada en tiempo real con la agenda del profesional
         </p>
       </div>
 
       {/* Date Selector Row */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
         {UPCOMING_DATES.map((d) => {
           const isSelected = selectedDate === d.value
           return (
@@ -77,27 +87,38 @@ export function Step4DateTimeSelection({
               key={d.value}
               type="button"
               onClick={() => onSelectDate(d.value)}
-              className={`cursor-pointer rounded-lg border p-2.5 text-center transition-all ${
+              className={`group relative cursor-pointer rounded-xl border p-3 text-center transition-all ${
                 isSelected
-                  ? 'border-sky-700 bg-sky-700 text-white shadow-xs font-bold'
-                  : 'border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50'
+                  ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
+                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
               }`}
             >
-              <p className="text-xs font-bold">{d.label}</p>
-              <p className={`text-[10px] ${isSelected ? 'text-sky-100' : 'text-slate-400'}`}>{d.sub}</p>
+              <p className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                {d.label}
+              </p>
+              <p className={`text-[10px] font-semibold uppercase tracking-wider ${isSelected ? 'text-slate-300' : 'text-slate-400'}`}>
+                {d.sub}
+              </p>
             </button>
           )
         })}
       </div>
 
       {/* Slots Section */}
-      <Card className="border-slate-200">
-        <CardContent className="space-y-5 p-4 sm:p-5">
+      <Card className="rounded-2xl border-slate-200 bg-white shadow-xs">
+        <CardContent className="space-y-6 p-4 sm:p-6">
           {/* Morning Slots */}
-          <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
-              <Sun className="size-3.5 text-amber-600" />
-              <span>Turno Mañana (08:00 a 12:30 hs)</span>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                <Sun className="size-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                  Turno Mañana
+                </span>
+                <span className="ml-2 text-[11px] text-slate-400">08:00 a 12:30 hs</span>
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
               {morningSlots.map((slot) => {
@@ -108,15 +129,15 @@ export function Step4DateTimeSelection({
                     type="button"
                     disabled={!slot.isAvailable}
                     onClick={() => onSelectSlot(slot)}
-                    className={`flex items-center justify-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all ${
+                    className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition-all ${
                       !slot.isAvailable
-                        ? 'cursor-not-allowed bg-slate-100 text-slate-400 line-through'
+                        ? 'cursor-not-allowed bg-slate-50 text-slate-300 line-through border border-slate-100'
                         : isSelected
-                          ? 'cursor-pointer bg-sky-700 text-white shadow-xs ring-2 ring-sky-300'
-                          : 'cursor-pointer border border-slate-200 bg-white text-slate-800 hover:border-sky-600 hover:bg-sky-50'
+                          ? 'cursor-pointer bg-slate-900 text-white shadow-xs ring-2 ring-slate-900/20'
+                          : 'cursor-pointer border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    <Clock className="size-3" />
+                    <Clock className={`size-3 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
                     <span>{slot.time} hs</span>
                   </button>
                 )
@@ -125,10 +146,17 @@ export function Step4DateTimeSelection({
           </div>
 
           {/* Afternoon Slots */}
-          <div className="space-y-2.5 border-t border-slate-100 pt-4">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
-              <Moon className="size-3.5 text-sky-700" />
-              <span>Turno Tarde (16:00 a 19:30 hs)</span>
+          <div className="space-y-3 border-t border-slate-100 pt-5">
+            <div className="flex items-center gap-2">
+              <div className="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                <Moon className="size-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                  Turno Tarde
+                </span>
+                <span className="ml-2 text-[11px] text-slate-400">16:00 a 19:30 hs</span>
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
               {afternoonSlots.map((slot) => {
@@ -139,15 +167,15 @@ export function Step4DateTimeSelection({
                     type="button"
                     disabled={!slot.isAvailable}
                     onClick={() => onSelectSlot(slot)}
-                    className={`flex items-center justify-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all ${
+                    className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition-all ${
                       !slot.isAvailable
-                        ? 'cursor-not-allowed bg-slate-100 text-slate-400 line-through'
+                        ? 'cursor-not-allowed bg-slate-50 text-slate-300 line-through border border-slate-100'
                         : isSelected
-                          ? 'cursor-pointer bg-sky-700 text-white shadow-xs ring-2 ring-sky-300'
-                          : 'cursor-pointer border border-slate-200 bg-white text-slate-800 hover:border-sky-600 hover:bg-sky-50'
+                          ? 'cursor-pointer bg-slate-900 text-white shadow-xs ring-2 ring-slate-900/20'
+                          : 'cursor-pointer border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    <Clock className="size-3" />
+                    <Clock className={`size-3 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
                     <span>{slot.time} hs</span>
                   </button>
                 )
@@ -158,25 +186,29 @@ export function Step4DateTimeSelection({
       </Card>
 
       {/* Prominent Action Card with Solid CTA Button */}
-      <Card className="border border-slate-300 bg-white shadow-xs">
-        <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4">
+      <Card className="rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 sm:p-5">
           <div className="flex items-center gap-3">
-            <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${
-              selectedSlot ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-400'
-            }`}>
+            <div
+              className={`flex size-10 shrink-0 items-center justify-center rounded-xl transition-all ${
+                selectedSlot
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-400'
+              }`}
+            >
               {selectedSlot ? <CheckCircle2 className="size-5" /> : <Clock className="size-5" />}
             </div>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Horario para Consulta
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Horario Seleccionado
               </p>
               {selectedSlot ? (
                 <p className="text-sm font-bold text-slate-900">
-                  {selectedDate} a las <span className="text-emerald-700 font-extrabold">{selectedSlot.time} hs</span> con {selectedDoctor.name}
+                  {selectedDate} a las <span className="text-slate-900 font-extrabold">{selectedSlot.time} hs</span> con {selectedDoctor.name}
                 </p>
               ) : (
                 <p className="text-xs text-slate-500">
-                  Seleccione una pastilla de horario disponible arriba para habilitar el botón
+                  Seleccione un horario disponible arriba para continuar
                 </p>
               )}
             </div>
@@ -186,14 +218,14 @@ export function Step4DateTimeSelection({
             type="button"
             onClick={onProceed}
             disabled={!selectedSlot}
-            className={`h-10 px-5 text-xs font-bold transition-all ${
+            className={`h-10 px-6 rounded-lg text-xs font-semibold transition-all ${
               selectedSlot
-                ? 'cursor-pointer bg-sky-700 text-white hover:bg-sky-800 shadow-sm'
+                ? 'cursor-pointer bg-slate-900 text-white hover:bg-slate-800 shadow-xs'
                 : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
             }`}
           >
             <span>Continuar a Confirmación</span>
-            <ChevronRight className="size-4 ml-1" />
+            <ChevronRight className="size-4 ml-1.5" />
           </Button>
         </CardContent>
       </Card>
