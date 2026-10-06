@@ -1,4 +1,4 @@
-import { Activity, MapPin, Heart, ShieldCheck } from 'lucide-react';
+import { MapPin, Heart, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Footer: React.FC = () => {

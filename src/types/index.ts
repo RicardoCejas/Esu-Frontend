@@ -11,6 +11,7 @@ export interface User {
   matricula?: string; // Para médicos
   especialidad?: string; // Para médicos
   centroSaludId?: string; // Para recepcionistas o médicos asociados a un centro
+  activo?: boolean;
 }
 
 export interface CentroSalud {

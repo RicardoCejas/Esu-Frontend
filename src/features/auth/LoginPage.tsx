@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Activity, LogIn, Lock, Mail, ShieldAlert, ArrowLeft, User, Stethoscope, UserCheck, Shield } from 'lucide-react';
+import { LogIn, Lock, Mail, ShieldAlert, ArrowLeft, User, Stethoscope, UserCheck, Shield } from 'lucide-react';
 import type { UserRole } from '@/types';
 
 export const LoginPage: React.FC = () => {
@@ -45,8 +45,8 @@ export const LoginPage: React.FC = () => {
 
       // Redirección inteligente según el rol registrado en la BD / Mocks
       redirectByRole(user.rol);
-    } catch {
-      setError('Error al iniciar sesión. Verifique sus credenciales.');
+    } catch (err: any) {
+      setError(err?.message || 'Error al iniciar sesión. Verifique sus credenciales.');
     } finally {
       setIsSubmitting(false);
     }

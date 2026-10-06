@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Activity, UserPlus, ArrowLeft } from 'lucide-react';
+import { UserPlus, ArrowLeft } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
@@ -42,11 +42,12 @@ export const RegisterPage: React.FC = () => {
         dni: formData.dni,
         email: formData.email,
         telefono: formData.telefono,
+        password: formData.password,
         rol: 'PACIENTE',
       });
       navigate('/dashboard/paciente');
-    } catch {
-      setError('Error al crear la cuenta. Intente nuevamente.');
+    } catch (err: any) {
+      setError(err?.message || 'Error al crear la cuenta. Intente nuevamente.');
     } finally {
       setIsSubmitting(false);
     }

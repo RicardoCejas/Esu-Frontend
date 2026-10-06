@@ -8,7 +8,6 @@ import {
   Users,
   Building2,
   Stethoscope,
-  Activity,
   ShieldCheck,
   PlusCircle,
   Layers,

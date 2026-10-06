@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, PlusCircle, Search, LogIn, ChevronDown, Activity } from 'lucide-react'
+import { MapPin, PlusCircle, Search, LogIn, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export interface CityOption {

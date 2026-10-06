@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Activity, LogIn, UserCheck, LogOut } from 'lucide-react';
+import { LogIn, UserCheck, LogOut } from 'lucide-react';
 import type { UserRole } from '@/types';
 
 export const PublicNavbar: React.FC = () => {

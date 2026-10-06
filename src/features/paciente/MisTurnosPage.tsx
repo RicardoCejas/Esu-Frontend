@@ -14,6 +14,7 @@ import {
   Download,
   Activity
 } from 'lucide-react';
+import { CardSkeleton } from '@/components/ui/skeleton';
 
 export const MisTurnosPage: React.FC = () => {
   const { user } = useAuth();
@@ -97,10 +98,12 @@ export const MisTurnosPage: React.FC = () => {
         </Link>
       </div>
 
-      {/* Lista de Turnos */}
+      {/* HU-38: Skeletons de Carga Progresiva */}
       {loading ? (
-        <div className="flex h-48 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
         </div>
       ) : turnos.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center space-y-4">

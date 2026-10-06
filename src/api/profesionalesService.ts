@@ -41,8 +41,21 @@ const saveState = () => {
 export const profesionalesService = {
   async getAll(): Promise<Profesional[]> {
     try {
-      const res = await apiClient.get<Profesional[]>('/profesionales');
-      return res.data;
+      const res = await apiClient.get<any[]>('/profesionales');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        return res.data.map((d: any) => ({
+          id: String(d.id),
+          nombre: d.nombre,
+          apellido: d.apellido,
+          matricula: d.matricula,
+          especialidadId: String(d.especialidad?.id || d.especialidadId || '1'),
+          especialidadNombre: d.especialidad?.nombre || d.especialidadNombre || 'Medicina General',
+          centrosSaludIds: d.centrosSaludIds || ['c1'],
+          diasAtencion: d.diasAtencion || ['Lunes', 'Miércoles', 'Viernes'],
+          duracionTurnoMin: d.duracionTurnoMin || 20,
+        }));
+      }
+      return [...profesionalesState];
     } catch {
       return [...profesionalesState];
     }
@@ -50,8 +63,15 @@ export const profesionalesService = {
 
   async getEspecialidades(): Promise<Especialidad[]> {
     try {
-      const res = await apiClient.get<Especialidad[]>('/especialidades');
-      return res.data;
+      const res = await apiClient.get<any[]>('/especialidades');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        return res.data.map((e: any) => ({
+          id: String(e.id),
+          nombre: e.nombre,
+          descripcion: e.descripcion || 'Atención médica especializada en Cruz del Eje.',
+        }));
+      }
+      return [...especialidadesState];
     } catch {
       return [...especialidadesState];
     }

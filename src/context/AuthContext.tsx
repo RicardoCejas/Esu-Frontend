@@ -8,7 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<User>;
-  register: (userData: Omit<User, 'id'>) => Promise<void>;
+  register: (userData: Omit<User, 'id'> & { password?: string }) => Promise<void>;
   logout: () => void;
   switchRole: (newRole: UserRole) => void;
 }
@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (userData: Omit<User, 'id'>) => {
+  const register = async (userData: Omit<User, 'id'> & { password?: string }) => {
     setIsLoading(true);
     try {
       const data = await authService.register(userData);

@@ -23,11 +23,6 @@ import {
   User,
   Building2,
   PlusCircle,
-  Baby,
-  Bone,
-  Eye,
-  Sun,
-  Activity,
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {

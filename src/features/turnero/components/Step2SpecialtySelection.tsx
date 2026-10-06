@@ -8,8 +8,6 @@ import {
   X,
   LayoutGrid,
   List,
-  SlidersHorizontal,
-  Activity,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -39,7 +37,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [alphaFilter, setAlphaFilter] = useState<string>('ALL')
-  const [sortBy, setSortBy] = useState<'name' | 'doctors'>('name')
+  const [sortBy] = useState<'name' | 'doctors'>('name')
   const [currentPage, setCurrentPage] = useState<number>(1)
 
   // Filter and sort for high density
