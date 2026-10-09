@@ -60,20 +60,20 @@ export const DashboardLayout: React.FC = () => {
       <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-border bg-background/95 px-4 sm:px-6 backdrop-blur">
         <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2.5 transition hover:opacity-90">
-            <img src="/logo-icon.png" alt="Luvia Logo" className="h-9 w-9 object-contain" />
+            <img src="/logo-icon.png" alt="ESU Logo" className="h-9 w-9 object-contain" />
             <div className="flex flex-col">
               <span className="font-bold text-sm leading-tight text-foreground font-heading">
-                Luvia <span className="text-primary text-xs">Cruz del Eje</span>
+                ESU <span className="text-primary text-xs">Cruz del Eje</span>
               </span>
               <span className="text-[10px] text-muted-foreground leading-none">
-                Tu Salud, Unificada
+                Ecosistema de Salud Unificado
               </span>
             </div>
           </Link>
 
           <Link
             to="/"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-input bg-background/50 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Volver al Portal Público</span>
@@ -83,10 +83,10 @@ export const DashboardLayout: React.FC = () => {
           {proximoTurno && (
             <Link
               to="/dashboard/paciente"
-              className="hidden lg:inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary font-medium hover:bg-primary/20 transition animate-in fade-in"
+              className="hidden lg:inline-flex items-center gap-2 rounded-md bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-100 px-3 py-1 text-xs font-semibold hover:bg-slate-800 transition"
               title="Ver detalle del próximo turno en Cruz del Eje"
             >
-              <Calendar className="h-3.5 w-3.5" />
+              <Calendar className="h-3.5 w-3.5 text-sky-400" />
               <span>
                 <strong>Próximo Turno:</strong> {proximoTurno.fecha} ({proximoTurno.hora} hs) — {proximoTurno.profesionalNombre}
               </span>

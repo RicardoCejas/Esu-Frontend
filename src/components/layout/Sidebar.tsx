@@ -50,12 +50,12 @@ export const Sidebar: React.FC = () => {
   const visibleItems = navItems.filter((item) => item.roles.includes(userRole));
 
   return (
-    <aside className="w-64 border-r border-border bg-card/40 backdrop-blur-sm flex flex-col justify-between p-4 shrink-0">
+    <aside className="w-64 border-r border-border bg-card flex flex-col justify-between p-4 shrink-0">
       <div className="space-y-6">
         {/* Perfil Mini */}
-        <div className="rounded-xl border border-border/80 bg-background/60 p-3.5 shadow-xs">
+        <div className="rounded-xl border border-border bg-background p-3.5 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-700 text-white font-bold">
               {user?.nombre.charAt(0)}
               {user?.apellido.charAt(0)}
             </div>
@@ -63,7 +63,7 @@ export const Sidebar: React.FC = () => {
               <span className="text-sm font-semibold text-foreground truncate">
                 {user?.nombre} {user?.apellido}
               </span>
-              <span className="text-[11px] font-medium text-primary uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wider">
                 Rol: {user?.rol}
               </span>
             </div>
@@ -101,15 +101,6 @@ export const Sidebar: React.FC = () => {
             );
           })}
         </div>
-      </div>
-
-      {/* Info Institucional */}
-      <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5 font-semibold text-foreground mb-1">
-          <img src="/logo-icon.png" alt="Luvia Logo" className="h-3.5 w-3.5 object-contain" />
-          <span>Luvia v1.0.0</span>
-        </div>
-        <p className="text-[11px]">Cruz del Eje - Tu Salud, Unificada</p>
       </div>
     </aside>
   );
