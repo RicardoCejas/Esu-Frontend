@@ -222,7 +222,7 @@ export function TurneroContainer() {
         <DialogContent className="max-w-sm p-5 text-center">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-slate-900">
-              Portal Asistencial Luvia
+              Portal Asistencial ESU
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
               Acceso seguro para profesionales de la salud, secretaría asistencial y pacientes.
