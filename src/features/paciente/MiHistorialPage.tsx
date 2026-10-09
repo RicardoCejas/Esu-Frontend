@@ -29,6 +29,7 @@ export const MiHistorialPage: React.FC = () => {
   const [consultaAEditar, setConsultaAEditar] = useState<ConsultaMedica | null>(null);
   const [notaRectificacion, setNotaRectificacion] = useState('');
   const [motivoCorreccion, setMotivoCorreccion] = useState('Rectificación de diagnóstico');
+  const [consultaAAnular, setConsultaAAnular] = useState<ConsultaMedica | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -38,6 +39,18 @@ export const MiHistorialPage: React.FC = () => {
       });
     }
   }, [user]);
+
+  // Bloqueo de scroll cuando un modal está abierto
+  useEffect(() => {
+    if (consultaAEditar || consultaAAnular) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [consultaAEditar, consultaAAnular]);
 
   // HU-33: Filtrado por fechas
   const consultasFiltradas = consultas.filter((c) => {
@@ -65,12 +78,12 @@ export const MiHistorialPage: React.FC = () => {
     setNotaRectificacion('');
   };
 
-  // HU-35: Anulación de registro erróneo con confirmación
-  const handleAnularConsulta = (id: string) => {
-    if (window.confirm('¿Desea anular administrativamente este registro clínico por error de carga?')) {
-      setConsultas((prev) => prev.filter((c) => c.id !== id));
-      setConsultaAEditar(null);
-    }
+  // HU-35: Anulación de registro erróneo con confirmación accesible
+  const handleConfirmarAnulacion = () => {
+    if (!consultaAAnular) return;
+    setConsultas((prev) => prev.filter((c) => c.id !== consultaAAnular.id));
+    setConsultaAAnular(null);
+    setConsultaAEditar(null);
   };
 
   // HU-36: Exportación de Historia Clínica a Formato PDF
@@ -93,8 +106,8 @@ export const MiHistorialPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
-          <div className="hidden sm:flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs text-primary font-medium">
-            <ShieldCheck className="h-4 w-4" />
+          <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs text-foreground font-semibold">
+            <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             <span>Datos protegidos Ley 25.326</span>
           </div>
 
@@ -193,7 +206,7 @@ export const MiHistorialPage: React.FC = () => {
               {/* Header de la Consulta */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-sky-700 dark:text-sky-300 font-bold border border-slate-200 dark:border-slate-700">
                     <Activity className="h-5 w-5" />
                   </div>
                   <div>
@@ -206,7 +219,7 @@ export const MiHistorialPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                  <span className="inline-flex items-center rounded-md bg-sky-700 px-2.5 py-1 text-xs font-bold text-white shadow-xs">
                     Consulta Ambulatoria
                   </span>
 
@@ -275,7 +288,7 @@ export const MiHistorialPage: React.FC = () => {
 
               {/* Receta Digital Asociada */}
               {consulta.receta && (
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3 print:border-slate-300">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3 print:border-slate-300">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Pill className="h-4 w-4 text-primary" />
@@ -316,7 +329,7 @@ export const MiHistorialPage: React.FC = () => {
 
       {/* HU-35: Modal de Corrección / Rectificación de Consulta Clínica */}
       {consultaAEditar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150 print:hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 animate-in fade-in duration-150 print:hidden">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
@@ -334,8 +347,8 @@ export const MiHistorialPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-700 flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-400 dark:border-amber-700 p-3 text-xs text-amber-900 dark:text-amber-200 font-medium flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-700 dark:text-amber-400" />
               <span>Por razones médico-legales, toda rectificación queda asentada con fecha y firma en el historial clínico.</span>
             </div>
 
@@ -368,7 +381,7 @@ export const MiHistorialPage: React.FC = () => {
               <div className="flex items-center justify-between gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => handleAnularConsulta(consultaAEditar.id)}
+                  onClick={() => setConsultaAAnular(consultaAEditar)}
                   className="inline-flex items-center gap-1 text-destructive hover:underline text-xs cursor-pointer"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -392,6 +405,50 @@ export const MiHistorialPage: React.FC = () => {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Accesible de Confirmación para Anulación de Consulta */}
+      {consultaAAnular && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 animate-in fade-in duration-150 print:hidden">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/70">
+                <Trash2 className="h-6 w-6 text-rose-700 dark:text-rose-300" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-foreground">Anular Registro Clínico</h3>
+                <p className="text-xs text-muted-foreground">Esta acción eliminará el asiento por error de carga.</p>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-muted/50 p-3 text-xs space-y-1.5 border border-border/60">
+              <div><strong className="text-foreground">Profesional:</strong> {consultaAAnular.profesionalNombre}</div>
+              <div><strong className="text-foreground">Fecha de Atención:</strong> {consultaAAnular.fecha}</div>
+              <div><strong className="text-foreground">Diagnóstico Original:</strong> {consultaAAnular.diagnostico}</div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              ¿Confirmas la anulación administrativa de este registro clínico en el sistema de Cruz del Eje?
+            </p>
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setConsultaAAnular(null)}
+                className="flex-1 rounded-lg border border-input bg-background py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarAnulacion}
+                className="flex-1 rounded-lg bg-rose-700 py-2 text-xs font-bold text-white hover:bg-rose-800 transition cursor-pointer shadow-sm"
+              >
+                Confirmar Anulación
+              </button>
+            </div>
           </div>
         </div>
       )}
