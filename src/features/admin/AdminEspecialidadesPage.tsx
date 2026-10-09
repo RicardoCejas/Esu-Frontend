@@ -1,34 +1,13 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MOCK_CENTROS, MOCK_ESPECIALIDADES } from '@/api/mockData';
 import type { Especialidad } from '@/types';
-import { Building2, Stethoscope, MapPin, Phone, Clock, PlusCircle, Search, X } from 'lucide-react';
+import { Building2, Stethoscope, MapPin, Phone, Clock, PlusCircle, Search } from 'lucide-react';
 
 export const AdminEspecialidadesPage: React.FC = () => {
   const [centros] = useState(MOCK_CENTROS);
-  const [especialidades, setEspecialidades] = useState<Especialidad[]>(MOCK_ESPECIALIDADES);
+  const [especialidades] = useState<Especialidad[]>(MOCK_ESPECIALIDADES);
   const [busquedaEspecialidad, setBusquedaEspecialidad] = useState('');
-
-  // HU-11: Estado para Modal de Creación de Especialidad
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [nuevaEspecialidad, setNuevaEspecialidad] = useState({
-    nombre: '',
-    descripcion: '',
-  });
-
-  const handleCrearEspecialidad = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nuevaEspecialidad.nombre.trim()) return;
-
-    const creada: Especialidad = {
-      id: `e-custom-${Date.now()}`,
-      nombre: nuevaEspecialidad.nombre.trim(),
-      descripcion: nuevaEspecialidad.descripcion.trim() || 'Atención médica especializada en Cruz del Eje.',
-    };
-
-    setEspecialidades((prev) => [creada, ...prev]);
-    setIsModalOpen(false);
-    setNuevaEspecialidad({ nombre: '', descripcion: '' });
-  };
 
   // HU-13: Búsqueda en tiempo real de especialidades
   const especialidadesFiltradas = especialidades.filter((esp) =>
@@ -48,15 +27,14 @@ export const AdminEspecialidadesPage: React.FC = () => {
           </p>
         </div>
 
-        {/* HU-11: Botón para Crear Especialidad */}
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
+        {/* HU-11: Botón para Crear Especialidad (Navega a página independiente) */}
+        <Link
+          to="/dashboard/admin/especialidades/nueva"
           className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition cursor-pointer"
         >
           <PlusCircle className="h-4 w-4" />
           <span>Nueva Especialidad Médica</span>
-        </button>
+        </Link>
       </div>
 
       {/* Centros de Salud */}
@@ -137,69 +115,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* HU-11: Modal de Creación de Especialidad Médica */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div className="flex items-center gap-2">
-                <Stethoscope className="h-5 w-5 text-primary" />
-                <h3 className="font-bold text-base text-foreground">Crear Especialidad Médica</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCrearEspecialidad} className="space-y-4 text-xs">
-              <div className="space-y-1">
-                <label className="font-semibold text-foreground">Nombre de la Especialidad</label>
-                <input
-                  type="text"
-                  required
-                  value={nuevaEspecialidad.nombre}
-                  onChange={(e) => setNuevaEspecialidad({ ...nuevaEspecialidad, nombre: e.target.value })}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
-                  placeholder="Ej: Neurología Infantil, Neumonología..."
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-foreground">Descripción del Alcance Clínico</label>
-                <textarea
-                  rows={3}
-                  required
-                  value={nuevaEspecialidad.descripcion}
-                  onChange={(e) => setNuevaEspecialidad({ ...nuevaEspecialidad, descripcion: e.target.value })}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
-                  placeholder="Detalle de prestaciones, estudios y patologías atendidas..."
-                />
-              </div>
-
-              <div className="flex gap-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 rounded-xl border border-input py-2.5 font-semibold hover:bg-accent transition cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 rounded-xl bg-primary py-2.5 font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-sm cursor-pointer"
-                >
-                  Habilitar Especialidad
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
+

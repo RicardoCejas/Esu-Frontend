@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MOCK_USERS } from '@/api/mockData';
-import { authService } from '@/api/authService';
 import type { User, UserRole } from '@/types';
-import { Search, UserPlus, X, UserX, CheckCircle, Shield } from 'lucide-react';
+import { Search, UserPlus, UserX, CheckCircle, Shield, AlertTriangle } from 'lucide-react';
 
 export const AdminUsuariosPage: React.FC = () => {
   // Inicializamos usuarios garantizando el campo activo (por defecto true si no viene)
@@ -13,18 +13,12 @@ export const AdminUsuariosPage: React.FC = () => {
   const [filtroEstado, setFiltroEstado] = useState<'TODOS' | 'ACTIVO' | 'INACTIVO'>('TODOS');
   const [filtroRol, setFiltroRol] = useState<string>('TODOS');
 
-  // Estado para Modal de Alta Administrativa (HU-06)
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [nuevoUsuario, setNuevoUsuario] = useState({
-    nombre: '',
-    apellido: '',
-    dni: '',
-    email: '',
-    telefono: '',
-    rol: 'PACIENTE' as UserRole,
-    matricula: '',
-    especialidad: '',
-  });
+  // Estado para confirmación accesible de baja/reactivación
+  const [usuarioAToggle, setUsuarioAToggle] = useState<{
+    id: string;
+    nombreCompleto: string;
+    activo: boolean;
+  } | null>(null);
 
   const handleCambiarRol = (id: string, nuevoRol: UserRole) => {
     setUsuarios((prev) =>
@@ -33,58 +27,12 @@ export const AdminUsuariosPage: React.FC = () => {
   };
 
   // HU-10: Baja Lógica / Inactivación y Reactivación de Usuarios
-  const handleToggleEstado = (id: string, nombreCompleto: string, estadoActual: boolean) => {
-    const accion = estadoActual ? 'dar de baja (inactivar)' : 'reactivar';
-    if (window.confirm(`¿Está seguro de que desea ${accion} al usuario ${nombreCompleto}?`)) {
-      setUsuarios((prev) =>
-        prev.map((u) => (u.id === id ? { ...u, activo: !estadoActual } : u))
-      );
-    }
-  };
-
-  // HU-06: Guardar nuevo usuario (persiste en MySQL en backend /api/auth/registro)
-  const handleCrearUsuario = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const idGenerado = `u-admin-${Date.now()}`;
-    const usuarioCreado: User = {
-      id: idGenerado,
-      nombre: nuevoUsuario.nombre.trim(),
-      apellido: nuevoUsuario.apellido.trim(),
-      dni: nuevoUsuario.dni.trim(),
-      email: nuevoUsuario.email.trim(),
-      telefono: nuevoUsuario.telefono.trim() || undefined,
-      rol: nuevoUsuario.rol,
-      matricula: nuevoUsuario.rol === 'MEDICO' ? nuevoUsuario.matricula.trim() : undefined,
-      especialidad: nuevoUsuario.rol === 'MEDICO' ? nuevoUsuario.especialidad.trim() : undefined,
-      activo: true,
-    };
-
-    try {
-      await authService.register({
-        nombre: usuarioCreado.nombre,
-        apellido: usuarioCreado.apellido,
-        email: usuarioCreado.email,
-        dni: usuarioCreado.dni,
-        telefono: usuarioCreado.telefono,
-        rol: usuarioCreado.rol,
-        password: 'password123',
-      });
-    } catch {
-      // Si el backend no responde, continúa con el estado local
-    }
-
-    setUsuarios((prev) => [usuarioCreado, ...prev]);
-    setIsModalOpen(false);
-    setNuevoUsuario({
-      nombre: '',
-      apellido: '',
-      dni: '',
-      email: '',
-      telefono: '',
-      rol: 'PACIENTE',
-      matricula: '',
-      especialidad: '',
-    });
+  const handleConfirmarToggle = () => {
+    if (!usuarioAToggle) return;
+    setUsuarios((prev) =>
+      prev.map((u) => (u.id === usuarioAToggle.id ? { ...u, activo: !usuarioAToggle.activo } : u))
+    );
+    setUsuarioAToggle(null);
   };
 
   // HU-08 & HU-09: Filtrado combinado por texto, rol y estado activo/inactivo
@@ -121,15 +69,14 @@ export const AdminUsuariosPage: React.FC = () => {
           </p>
         </div>
 
-        {/* HU-06: Botón de Alta de Usuarios */}
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
+        {/* HU-06: Botón de Alta de Usuarios (Navega a página independiente) */}
+        <Link
+          to="/dashboard/admin/usuarios/nuevo"
           className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition cursor-pointer"
         >
           <UserPlus className="h-4 w-4" />
           <span>Registrar Nuevo Usuario</span>
-        </button>
+        </Link>
       </div>
 
       {/* Barra de Filtros y Búsqueda */}
@@ -244,14 +191,14 @@ export const AdminUsuariosPage: React.FC = () => {
                       <td className="p-4 text-muted-foreground">{u.email}</td>
                       <td className="p-4">
                         <span
-                          className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                          className={`rounded-md px-2.5 py-1 text-[11px] font-bold text-white shadow-xs ${
                             u.rol === 'ADMIN'
-                              ? 'bg-purple-500/10 text-purple-600'
+                              ? 'bg-purple-800'
                               : u.rol === 'MEDICO'
-                              ? 'bg-blue-500/10 text-blue-600'
+                              ? 'bg-sky-700'
                               : u.rol === 'RECEPCIONISTA'
-                              ? 'bg-amber-500/10 text-amber-600'
-                              : 'bg-emerald-500/10 text-emerald-600'
+                              ? 'bg-amber-600'
+                              : 'bg-emerald-700'
                           }`}
                         >
                           {u.rol}
@@ -261,10 +208,8 @@ export const AdminUsuariosPage: React.FC = () => {
                       {/* HU-09: Badge de Estado */}
                       <td className="p-4">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold border ${
-                            estaActivo
-                              ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                              : 'bg-muted text-muted-foreground border-border'
+                          className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold text-white shadow-xs ${
+                            estaActivo ? 'bg-emerald-700' : 'bg-slate-700'
                           }`}
                         >
                           {estaActivo ? 'Activo' : 'Inactivo'}
@@ -289,11 +234,11 @@ export const AdminUsuariosPage: React.FC = () => {
                       <td className="p-4 text-right">
                         <button
                           type="button"
-                          onClick={() => handleToggleEstado(u.id, `${u.nombre} ${u.apellido}`, estaActivo)}
-                          className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                          onClick={() => setUsuarioAToggle({ id: u.id, nombreCompleto: `${u.nombre} ${u.apellido}`, activo: estaActivo })}
+                          className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${
                             estaActivo
-                              ? 'text-destructive border border-destructive/20 hover:bg-destructive hover:text-white'
-                              : 'text-emerald-600 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white'
+                              ? 'text-rose-700 border border-rose-300 bg-rose-50 hover:bg-rose-700 hover:text-white dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-200'
+                              : 'text-emerald-700 border border-emerald-300 bg-emerald-50 hover:bg-emerald-700 hover:text-white dark:bg-emerald-950/50 dark:border-emerald-900 dark:text-emerald-200'
                           }`}
                           title={estaActivo ? 'Dar de baja al usuario' : 'Reactivar usuario'}
                         >
@@ -319,143 +264,50 @@ export const AdminUsuariosPage: React.FC = () => {
         </div>
       </div>
 
-      {/* HU-06: Modal de Alta Administrativa de Usuarios */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5 text-primary" />
-                <h3 className="font-bold text-base text-foreground">Alta de Usuario en Plataforma</h3>
+      {/* Modal Accesible de Confirmación de Baja / Reactivación */}
+      {usuarioAToggle && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${usuarioAToggle.activo ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}`}>
+                <AlertTriangle className="h-5 w-5" />
               </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div>
+                <h3 className="text-base font-bold text-foreground">
+                  {usuarioAToggle.activo ? 'Inactivar Usuario (Baja Lógica)' : 'Reactivar Usuario'}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {usuarioAToggle.nombreCompleto}
+                </p>
+              </div>
             </div>
 
-            <form onSubmit={handleCrearUsuario} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-foreground">Nombre</label>
-                  <input
-                    type="text"
-                    required
-                    value={nuevoUsuario.nombre}
-                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, nombre: e.target.value })}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
-                    placeholder="Ej. Lucas"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-semibold text-foreground">Apellido</label>
-                  <input
-                    type="text"
-                    required
-                    value={nuevoUsuario.apellido}
-                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, apellido: e.target.value })}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
-                    placeholder="Ej. Gómez"
-                  />
-                </div>
-              </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {usuarioAToggle.activo
+                ? 'El usuario perderá acceso inmediato para iniciar sesión en la plataforma y sus funciones quedarán suspendidas.'
+                : 'El usuario recuperará sus permisos y podrá ingresar normalmente al sistema.'}
+            </p>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-foreground">DNI</label>
-                  <input
-                    type="text"
-                    required
-                    value={nuevoUsuario.dni}
-                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, dni: e.target.value })}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono"
-                    placeholder="Sin puntos"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-semibold text-foreground">Teléfono</label>
-                  <input
-                    type="tel"
-                    value={nuevoUsuario.telefono}
-                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, telefono: e.target.value })}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
-                    placeholder="03549-..."
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-foreground">Correo Electrónico</label>
-                <input
-                  type="email"
-                  required
-                  value={nuevoUsuario.email}
-                  onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, email: e.target.value })}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
-                  placeholder="usuario@salud.gob.ar"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-foreground">Rol Asignado en el Sistema</label>
-                <select
-                  value={nuevoUsuario.rol}
-                  onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, rol: e.target.value as UserRole })}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs font-semibold"
-                >
-                  <option value="PACIENTE">PACIENTE (Portal de turnos y recetas)</option>
-                  <option value="MEDICO">MÉDICO (Agenda y atención clínica)</option>
-                  <option value="RECEPCIONISTA">RECEPCIONISTA (Admisión y sala de espera)</option>
-                  <option value="ADMIN">ADMIN (Control global del sistema)</option>
-                </select>
-              </div>
-
-              {nuevoUsuario.rol === 'MEDICO' && (
-                <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                  <div className="space-y-1">
-                    <label className="font-semibold text-blue-700">Matrícula Médica (MP)</label>
-                    <input
-                      type="text"
-                      required
-                      value={nuevoUsuario.matricula}
-                      onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, matricula: e.target.value })}
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono"
-                      placeholder="Ej: MP-45123"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-semibold text-blue-700">Especialidad Principal</label>
-                    <input
-                      type="text"
-                      required
-                      value={nuevoUsuario.especialidad}
-                      onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, especialidad: e.target.value })}
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
-                      placeholder="Ej: Pediatría"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 rounded-xl border border-input py-2.5 font-semibold hover:bg-accent transition cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 rounded-xl bg-primary py-2.5 font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-sm cursor-pointer"
-                >
-                  Dar de Alta Usuario
-                </button>
-              </div>
-            </form>
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setUsuarioAToggle(null)}
+                className="flex-1 rounded-lg border border-input bg-background py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarToggle}
+                className={`flex-1 rounded-lg py-2 text-xs font-bold text-white transition cursor-pointer shadow-sm ${
+                  usuarioAToggle.activo
+                    ? 'bg-rose-700 hover:bg-rose-800'
+                    : 'bg-emerald-700 hover:bg-emerald-800'
+                }`}
+              >
+                {usuarioAToggle.activo ? 'Confirmar Baja' : 'Confirmar Reactivación'}
+              </button>
+            </div>
           </div>
         </div>
       )}

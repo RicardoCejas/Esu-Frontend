@@ -14,18 +14,6 @@ export const ProfesionalesPage: React.FC = () => {
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [centroDetalle, setCentroDetalle] = useState<CentroSalud | null>(null);
 
-  // HU-14: Modal para Alta de Profesional Médico
-  const [modalNuevoProfesional, setModalNuevoProfesional] = useState(false);
-  const [nuevoDoctor, setNuevoDoctor] = useState({
-    nombre: '',
-    apellido: '',
-    matricula: '',
-    especialidadId: '',
-    centroSaludId: '',
-    diasAtencion: ['Lunes', 'Miércoles', 'Viernes'],
-    duracionTurnoMin: 20,
-  });
-
   useEffect(() => {
     const fetchData = async () => {
       const [c, e, p] = await Promise.all([
@@ -36,40 +24,9 @@ export const ProfesionalesPage: React.FC = () => {
       setCentros(c);
       setEspecialidades(e);
       setProfesionales(p);
-      if (e.length > 0) setNuevoDoctor((prev) => ({ ...prev, especialidadId: e[0].id }));
-      if (c.length > 0) setNuevoDoctor((prev) => ({ ...prev, centroSaludId: c[0].id }));
     };
     fetchData();
   }, []);
-
-  const handleCrearProfesional = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const espSeleccionada = especialidades.find((esp) => esp.id === nuevoDoctor.especialidadId);
-    const espNombre = espSeleccionada ? espSeleccionada.nombre : 'Medicina General';
-
-    const doctorCreado = await profesionalesService.createProfesional({
-      nombre: nuevoDoctor.nombre.trim(),
-      apellido: nuevoDoctor.apellido.trim(),
-      matricula: nuevoDoctor.matricula.trim(),
-      especialidadId: nuevoDoctor.especialidadId,
-      especialidadNombre: espNombre,
-      centrosSaludIds: [nuevoDoctor.centroSaludId || 'c1'],
-      diasAtencion: nuevoDoctor.diasAtencion,
-      duracionTurnoMin: Number(nuevoDoctor.duracionTurnoMin) || 20,
-    });
-
-    setProfesionales([doctorCreado, ...profesionales]);
-    setModalNuevoProfesional(false);
-    setNuevoDoctor({
-      nombre: '',
-      apellido: '',
-      matricula: '',
-      especialidadId: especialidades[0]?.id || '',
-      centroSaludId: centros[0]?.id || '',
-      diasAtencion: ['Lunes', 'Miércoles', 'Viernes'],
-      duracionTurnoMin: 20,
-    });
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-teal-500 selection:text-white">
@@ -82,15 +39,14 @@ export const ProfesionalesPage: React.FC = () => {
             Cuerpo Médico Oficial • Cruz del Eje, Córdoba
           </span>
 
-          {/* HU-14: Disparador del Alta de Profesional */}
-          <button
-            type="button"
-            onClick={() => setModalNuevoProfesional(true)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-teal-700 transition cursor-pointer"
+          {/* HU-14: Disparador del Alta de Profesional (Navega a página independiente) */}
+          <Link
+            to="/profesionales/nuevo"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-sky-800 transition cursor-pointer"
           >
             <UserPlus className="h-3.5 w-3.5" />
             <span>Registrar Profesional Médico</span>
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -102,127 +58,6 @@ export const ProfesionalesPage: React.FC = () => {
           onSelectCentro={(centro) => setCentroDetalle(centro)}
         />
       </main>
-
-      {/* Modal HU-14: Formulario de Alta de Profesional */}
-      {modalNuevoProfesional && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5 text-teal-600" />
-                <h3 className="font-bold text-base text-foreground font-heading">
-                  Alta de Profesional Médico
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setModalNuevoProfesional(false)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCrearProfesional} className="space-y-3.5 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-foreground">Nombre</label>
-                  <input
-                    type="text"
-                    required
-                    value={nuevoDoctor.nombre}
-                    onChange={(e) => setNuevoDoctor({ ...nuevoDoctor, nombre: e.target.value })}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
-                    placeholder="Ej: Marcos"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-semibold text-foreground">Apellido</label>
-                  <input
-                    type="text"
-                    required
-                    value={nuevoDoctor.apellido}
-                    onChange={(e) => setNuevoDoctor({ ...nuevoDoctor, apellido: e.target.value })}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
-                    placeholder="Ej: Toledo"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-foreground">Matrícula Provincial (MP)</label>
-                <input
-                  type="text"
-                  required
-                  value={nuevoDoctor.matricula}
-                  onChange={(e) => setNuevoDoctor({ ...nuevoDoctor, matricula: e.target.value })}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono"
-                  placeholder="Ej: MP-39420"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-foreground">Especialidad Médica</label>
-                <select
-                  value={nuevoDoctor.especialidadId}
-                  onChange={(e) => setNuevoDoctor({ ...nuevoDoctor, especialidadId: e.target.value })}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs font-semibold"
-                >
-                  {especialidades.map((esp) => (
-                    <option key={esp.id} value={esp.id}>
-                      {esp.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-foreground">Centro de Atención Principal</label>
-                <select
-                  value={nuevoDoctor.centroSaludId}
-                  onChange={(e) => setNuevoDoctor({ ...nuevoDoctor, centroSaludId: e.target.value })}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
-                >
-                  {centros.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre} ({c.tipo})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-foreground">Duración del Turno (minutos)</label>
-                <input
-                  type="number"
-                  min="10"
-                  max="60"
-                  step="5"
-                  value={nuevoDoctor.duracionTurnoMin}
-                  onChange={(e) => setNuevoDoctor({ ...nuevoDoctor, duracionTurnoMin: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setModalNuevoProfesional(false)}
-                  className="flex-1 rounded-xl border border-input py-2.5 font-semibold hover:bg-accent transition cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 rounded-xl bg-teal-600 py-2.5 font-semibold text-white hover:bg-teal-700 transition shadow-sm cursor-pointer"
-                >
-                  Dar de Alta Médico
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Modal Detalles Centro */}
       {centroDetalle && (

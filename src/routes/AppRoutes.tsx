@@ -20,12 +20,16 @@ import { AtencionConsultaPage } from '@/features/medico/AtencionConsultaPage';
 // Vistas Recepción
 import { RecepcionPage } from '@/features/recepcion/RecepcionPage';
 import { PadronPacientesPage } from '@/features/recepcion/PadronPacientesPage';
+import { NuevoPacientePage } from '@/features/recepcion/NuevoPacientePage';
 import { GestionTurnosAdminPage } from '@/features/recepcion/GestionTurnosAdminPage';
 
 // Vistas Admin
 import { AdminDashboardPage } from '@/features/admin/AdminDashboardPage';
 import { AdminUsuariosPage } from '@/features/admin/AdminUsuariosPage';
+import { NuevoUsuarioPage } from '@/features/admin/NuevoUsuarioPage';
 import { AdminEspecialidadesPage } from '@/features/admin/AdminEspecialidadesPage';
+import { NuevaEspecialidadPage } from '@/features/admin/NuevaEspecialidadPage';
+import { NuevoProfesionalPage } from '@/features/profesionales/NuevoProfesionalPage';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -34,6 +38,7 @@ export const AppRoutes: React.FC = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/turnero" element={<TurneroContainer />} />
       <Route path="/profesionales" element={<ProfesionalesPage />} />
+      <Route path="/profesionales/nuevo" element={<NuevoProfesionalPage />} />
       <Route path="/medicos" element={<Navigate to="/profesionales" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
@@ -57,6 +62,7 @@ export const AppRoutes: React.FC = () => {
           <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA', 'MEDICO', 'ADMIN']} />}>
             <Route path="recepcion" element={<RecepcionPage />} />
             <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
+            <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
             <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
           </Route>
 
@@ -64,7 +70,10 @@ export const AppRoutes: React.FC = () => {
           <Route element={<RoleGuard allowedRoles={['ADMIN']} />}>
             <Route path="admin" element={<AdminDashboardPage />} />
             <Route path="admin/usuarios" element={<AdminUsuariosPage />} />
+            <Route path="admin/usuarios/nuevo" element={<NuevoUsuarioPage />} />
             <Route path="admin/especialidades" element={<AdminEspecialidadesPage />} />
+            <Route path="admin/especialidades/nueva" element={<NuevaEspecialidadPage />} />
+            <Route path="admin/profesionales/nuevo" element={<NuevoProfesionalPage />} />
           </Route>
         </Route>
       </Route>

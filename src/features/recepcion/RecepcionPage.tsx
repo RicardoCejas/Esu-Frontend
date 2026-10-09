@@ -58,11 +58,11 @@ export const RecepcionPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-semibold text-amber-600 flex items-center gap-2">
+          <div className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs flex items-center gap-2">
             <Clock className="h-4 w-4" />
             <span>{enEspera.length} en espera</span>
           </div>
-          <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-xs font-semibold text-blue-600 flex items-center gap-2">
+          <div className="rounded-lg bg-sky-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs flex items-center gap-2">
             <Activity className="h-4 w-4" />
             <span>{enConsulta.length} en consultorio</span>
           </div>
@@ -109,40 +109,40 @@ export const RecepcionPage: React.FC = () => {
                       {turno.hora} hs
                     </td>
                     <td className="p-4">
-                      <div className="font-mono font-semibold text-primary">{turno.codigoVerificacion}</div>
-                      <div className="text-muted-foreground">DNI: {turno.pacienteDni}</div>
+                      <div className="font-mono font-bold text-slate-800 dark:text-slate-200">{turno.codigoVerificacion}</div>
+                      <div className="text-muted-foreground font-mono">DNI: {turno.pacienteDni}</div>
                     </td>
                     <td className="p-4">
                       <div className="font-bold text-foreground">{turno.pacienteNombre}</div>
                       <div className="text-muted-foreground">OS: {turno.obraSocial || 'Particular'}</div>
                     </td>
                     <td className="p-4">
-                      <div className="font-medium text-foreground">{turno.profesionalNombre}</div>
-                      <div className="text-primary text-[11px]">{turno.especialidadNombre}</div>
+                      <div className="font-semibold text-foreground">{turno.profesionalNombre}</div>
+                      <div className="text-sky-700 dark:text-sky-400 font-semibold text-[11px]">{turno.especialidadNombre}</div>
                     </td>
                     <td className="p-4">
                       {turno.estado === 'CONFIRMADO' && (
-                        <span className="rounded-full bg-slate-500/10 px-2.5 py-1 font-semibold text-slate-600">
+                        <span className="rounded-md bg-slate-700 px-2.5 py-1 font-bold text-white shadow-xs">
                           Agendado
                         </span>
                       )}
                       {turno.estado === 'EN_ESPERA' && (
-                        <span className="rounded-full bg-amber-500/10 px-2.5 py-1 font-bold text-amber-600">
+                        <span className="rounded-md bg-amber-600 px-2.5 py-1 font-bold text-white shadow-xs">
                           En Sala de Espera
                         </span>
                       )}
                       {turno.estado === 'ATENDIENDO' && (
-                        <span className="rounded-full bg-blue-500/10 px-2.5 py-1 font-bold text-blue-600">
+                        <span className="rounded-md bg-sky-700 px-2.5 py-1 font-bold text-white shadow-xs">
                           En Consulta
                         </span>
                       )}
                       {turno.estado === 'COMPLETADO' && (
-                        <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 font-semibold text-emerald-600">
+                        <span className="rounded-md bg-emerald-700 px-2.5 py-1 font-bold text-white shadow-xs">
                           Finalizado
                         </span>
                       )}
                       {turno.estado === 'AUSENTE' && (
-                        <span className="rounded-full bg-destructive/10 px-2.5 py-1 font-semibold text-destructive">
+                        <span className="rounded-md bg-rose-700 px-2.5 py-1 font-bold text-white shadow-xs">
                           Ausente
                         </span>
                       )}
