@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Ecosistema de Salud Unificado (ESU) — Arquitectura de Sistema y Frontend RBAC",
+    "visual_preset": "signal-flow"
+  },
+  "components": [
+    { "id": "users", "type": "external", "label": "Usuarios / Browser", "sublabel": "Desktop y Mobile", "pos": [40, 250], "size": [120, 60] },
+    { "id": "public_portal", "type": "frontend", "label": "PublicLayout", "sublabel": "Portal & Turnero", "pos": [230, 100], "size": [130, 60] },
+    { "id": "spa_router", "type": "frontend", "label": "Router Central", "sublabel": "React 19 SPA", "pos": [230, 250], "size": [130, 60], "tag": "Vite + TS" },
+    { "id": "auth_guard", "type": "security", "label": "RoleGuard RBAC", "sublabel": "Filtro JWT & Roles", "pos": [230, 400], "size": [130, 60], "tag": "RBAC" },
+    { "id": "clinical_views", "type": "frontend", "label": "Módulo Clínico", "sublabel": "Mis Turnos / HCU", "pos": [440, 100], "size": [130, 60] },
+    { "id": "dashboard", "type": "frontend", "label": "DashboardLayout", "sublabel": "Topbar + Sidebar", "pos": [440, 250], "size": [130, 60] },
+    { "id": "admin_views", "type": "frontend", "label": "Módulo Gestión", "sublabel": "Padrón / Usuarios", "pos": [440, 400], "size": [130, 60] },
+    { "id": "api_client", "type": "frontend", "label": "Hooks & Client", "sublabel": "useTurnos, Axios/Fetch", "pos": [650, 250], "size": [130, 60] },
+    { "id": "spring_boot", "type": "backend", "label": "Spring Boot API", "sublabel": "REST Controllers", "pos": [860, 250], "size": [130, 60], "tag": "Java 17" },
+    { "id": "mysql_db", "type": "database", "label": "MySQL Database", "sublabel": "Esquema Salud", "pos": [860, 400], "size": [130, 60], "tag": "InnoDB" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Esu-Frontend: Arquitectura SPA y Layouts", "wraps": ["public_portal", "spa_router", "auth_guard", "clinical_views", "dashboard", "admin_views", "api_client"] },
+    { "kind": "security-group", "label": "Esu-Backend: Spring Boot & Base de Datos", "wraps": ["spring_boot", "mysql_db"] }
+  ],
+  "connections": [
+    { "id": "user-request", "from": "users", "to": "spa_router", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "router-public", "from": "spa_router", "to": "public_portal", "fromSide": "top", "toSide": "bottom" },
+    { "id": "router-guard", "from": "spa_router", "to": "auth_guard", "fromSide": "bottom", "toSide": "top" },
+    { "id": "guard-dash", "from": "auth_guard", "to": "dashboard", "variant": "emphasis" },
+    { "id": "dash-clinical", "from": "dashboard", "to": "clinical_views", "fromSide": "top", "toSide": "bottom" },
+    { "id": "dash-admin", "from": "dashboard", "to": "admin_views", "fromSide": "bottom", "toSide": "top" },
+    { "id": "dash-client", "from": "dashboard", "to": "api_client" },
+    { "id": "client-api", "from": "api_client", "to": "spring_boot", "label": "Bearer JWT", "variant": "emphasis" },
+    { "id": "api-mysql", "from": "spring_boot", "to": "mysql_db", "label": "JPA / SQL", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelDy": 45 }
+  ]
+}
