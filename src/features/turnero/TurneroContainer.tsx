@@ -40,6 +40,10 @@ export function TurneroContainer() {
     selectedSlot,
     morningSlots,
     afternoonSlots,
+    availabilityLoading,
+    availabilityError,
+    availabilityCanRetry,
+    retryAvailability,
     patientForm,
     confirmedAppointment,
     isReceiptOpen,
@@ -130,6 +134,10 @@ export function TurneroContainer() {
             afternoonSlots={afternoonSlots}
             selectedSlot={selectedSlot}
             onSelectSlot={handleSelectSlot}
+            availabilityLoading={availabilityLoading}
+            availabilityError={availabilityError}
+            availabilityCanRetry={availabilityCanRetry}
+            onRetryAvailability={retryAvailability}
             onProceed={handleProceedToConfirmation}
             onBackToDoctor={() => handleGoToStep(3)}
           />

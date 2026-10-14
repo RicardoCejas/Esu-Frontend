@@ -1,4 +1,6 @@
 import { useState, useMemo, useCallback } from 'react'
+import { useAvailability } from './useAvailability'
+import { formatLocalDate, isBookableSlot } from '../availability'
 import type {
   HealthCenter,
   MedicalSpecialty,
@@ -13,8 +15,6 @@ import {
   MOCK_CENTERS,
   MOCK_SPECIALTIES,
   MOCK_DOCTORS,
-  MOCK_MORNING_SLOTS,
-  MOCK_AFTERNOON_SLOTS,
 } from '../data/mockTurneroData'
 
 const INITIAL_PATIENT_FORM: PatientBookingForm = {
@@ -44,8 +44,9 @@ export function useTurnero() {
   const [selectedDoctor, setSelectedDoctor] = useState<MedicalDoctor | null>(null)
 
   // Step 4: Date & Slot state
-  const [selectedDate, setSelectedDate] = useState<string>('2026-09-25')
+  const [selectedDate, setSelectedDate] = useState<string>(formatLocalDate(new Date()))
   const [selectedSlot, setSelectedSlot] = useState<AppointmentSlot | null>(null)
+  const availability = useAvailability(selectedDoctor?.id ?? '', selectedDate)
 
   // Step 5: Patient Form state
   const [patientForm, setPatientForm] = useState<PatientBookingForm>(INITIAL_PATIENT_FORM)
@@ -87,9 +88,14 @@ export function useTurnero() {
     })
   }, [selectedCenter, selectedSpecialty])
 
-  // Slots
-  const morningSlots = MOCK_MORNING_SLOTS
-  const afternoonSlots = MOCK_AFTERNOON_SLOTS
+  const morningSlots = availability.slots.filter((slot) => slot.period === 'MORNING')
+  const afternoonSlots = availability.slots.filter((slot) => slot.period === 'AFTERNOON')
+
+  const handleSelectDate = useCallback((date: string) => {
+    if (date < formatLocalDate(new Date())) return
+    setSelectedDate(date)
+    setSelectedSlot(null)
+  }, [])
 
   // Navigation handlers
   const handleSelectCenter = useCallback((center: HealthCenter) => {
@@ -114,14 +120,17 @@ export function useTurnero() {
   }, [])
 
   const handleSelectSlot = useCallback((slot: AppointmentSlot) => {
-    setSelectedSlot(slot)
-  }, [])
+    const currentSlot = availability.slots.find((availableSlot) => availableSlot.id === slot.id)
+    if (!currentSlot || !isBookableSlot(currentSlot, selectedDate)) return
+    setSelectedSlot(currentSlot)
+  }, [availability.slots, selectedDate])
 
   const handleProceedToConfirmation = useCallback(() => {
-    if (selectedSlot) {
+    const currentSlot = availability.slots.find((slot) => slot.id === selectedSlot?.id)
+    if (currentSlot && isBookableSlot(currentSlot, selectedDate)) {
       setCurrentStep(5)
     }
-  }, [selectedSlot])
+  }, [availability.slots, selectedDate, selectedSlot])
 
   const handlePatientFormChange = useCallback((field: keyof PatientBookingForm, value: string) => {
     setPatientForm((prev) => ({ ...prev, [field]: value }))
@@ -160,6 +169,7 @@ export function useTurnero() {
     setSelectedSpecialty(null)
     setSelectedDoctor(null)
     setSelectedSlot(null)
+    setSelectedDate(formatLocalDate(new Date()))
     setPatientForm(INITIAL_PATIENT_FORM)
     setConfirmedAppointment(null)
     setIsReceiptOpen(false)
@@ -181,10 +191,14 @@ export function useTurnero() {
     selectedDoctor,
     availableDoctors,
     selectedDate,
-    setSelectedDate,
-    selectedSlot,
+    setSelectedDate: handleSelectDate,
+    selectedSlot: availability.slots.find((slot) => slot.id === selectedSlot?.id && isBookableSlot(slot, selectedDate)) ?? null,
     morningSlots,
     afternoonSlots,
+    availabilityLoading: availability.isLoading,
+    availabilityError: availability.error,
+    availabilityCanRetry: availability.canRetry,
+    retryAvailability: availability.retry,
     patientForm,
     confirmedAppointment,
     isReceiptOpen,
