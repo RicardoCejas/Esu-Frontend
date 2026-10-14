@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import {
   User,
-  Calendar,
   ChevronLeft,
   ChevronRight,
   Stethoscope,
@@ -204,12 +203,6 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                         <span className="font-semibold text-slate-700">Días: </span>
                         <span>{doctor.availableDays.join(', ')}</span>
                       </p>
-                      <div className="flex items-center gap-1.5 text-xs pt-0.5 text-slate-600">
-                        <Calendar className="size-3.5 text-slate-400 shrink-0" />
-                        <span className="font-semibold text-slate-800">
-                          Próximo cupo: {doctor.nextAvailableDate}
-                        </span>
-                      </div>
                     </div>
                   </div>
 
@@ -272,8 +265,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1">
-                      Atiende: {doctor.availableDays.join(', ')} •{' '}
-                      <span className="font-semibold text-slate-700">Cupo: {doctor.nextAvailableDate}</span>
+                      Atiende: {doctor.availableDays.join(', ')} · Horarios sujetos a disponibilidad de la demostración
                     </p>
                   </div>
                 </div>

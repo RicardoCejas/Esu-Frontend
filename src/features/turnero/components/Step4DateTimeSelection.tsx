@@ -16,6 +16,7 @@ interface Step4DateTimeSelectionProps {
   availabilityLoading: boolean
   availabilityError: string | null
   availabilityCanRetry: boolean
+  bookingError?: string | null
   onRetryAvailability: () => void
   onProceed: () => void
   onBackToDoctor: () => void
@@ -33,6 +34,7 @@ export function Step4DateTimeSelection({
   availabilityLoading,
   availabilityError,
   availabilityCanRetry,
+  bookingError,
   onRetryAvailability,
   onProceed,
   onBackToDoctor,
@@ -89,6 +91,7 @@ export function Step4DateTimeSelection({
           )}
         </div>
       )}
+      {bookingError && <p role="alert" className="rounded-lg border border-rose-700 bg-white p-4 text-sm font-medium text-rose-800">{bookingError}</p>}
       {!availabilityLoading && !availabilityError && !hasSlots && (
         <p role="status" className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700">
           No hay horarios disponibles para esta fecha. Probá con otro día.
