@@ -1,17 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
+import { loginSchema, type LoginFormData } from '@/schemas/authSchema';
 import { Activity, LogIn, Lock, Mail, ShieldAlert, ArrowLeft, User, Stethoscope, UserCheck, Shield } from 'lucide-react';
 import type { UserRole } from '@/types';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
 
-  const [emailOrDni, setEmailOrDni] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isQuickLoading, setIsQuickLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit: handleFormSubmit,
+    formState: { errors, isSubmitting: isFormSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: 'onTouched',
+    defaultValues: { emailOrDni: '', password: '' },
+  });
+
+  const isSubmitting = isFormSubmitting || isQuickLoading;
 
   const redirectByRole = (rol: UserRole) => {
     switch (rol) {
@@ -31,34 +46,31 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: LoginFormData) => {
     setError(null);
-    setIsSubmitting(true);
-
     try {
       const user = await login({
-        email: emailOrDni || undefined,
-        dni: emailOrDni || undefined,
-        password: password || undefined,
+        email: data.emailOrDni,
+        dni: data.emailOrDni,
+        password: data.password,
       });
-
+      toast.success(`¡Bienvenido/a, ${user.nombre}!`, 'Sesión iniciada correctamente.');
       // Redirección inteligente según el rol registrado en la BD / Mocks
       redirectByRole(user.rol);
     } catch {
       setError('Error al iniciar sesión. Verifique sus credenciales.');
-    } finally {
-      setIsSubmitting(false);
+      toast.error('No se pudo iniciar sesión', 'Verifique sus credenciales e intente nuevamente.');
     }
   };
 
   const handleQuickLogin = async (role: UserRole) => {
-    setIsSubmitting(true);
+    setIsQuickLoading(true);
     try {
       const user = await login({ rolSimulado: role });
+      toast.success(`¡Bienvenido/a, ${user.nombre}!`, `Ingresaste como ${role.toLowerCase()}.`);
       redirectByRole(user.rol);
     } finally {
-      setIsSubmitting(false);
+      setIsQuickLoading(false);
     }
   };
 
@@ -96,35 +108,45 @@ export const LoginPage: React.FC = () => {
           )}
 
           {/* Formulario Principal Único: DNI / Email + Contraseña */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleFormSubmit(onSubmit)} noValidate className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground">
+              <label htmlFor="emailOrDni" className="text-xs font-bold text-foreground">
                 Correo electrónico o DNI
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 <input
+                  id="emailOrDni"
                   type="text"
-                  required
+                  autoComplete="username"
                   placeholder="ej: 38123456 o usuario@email.com"
-                  value={emailOrDni}
-                  onChange={(e) => setEmailOrDni(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition shadow-inner"
+                  aria-invalid={Boolean(errors.emailOrDni)}
+                  aria-describedby={errors.emailOrDni ? 'emailOrDni-error' : undefined}
+                  {...register('emailOrDni')}
+                  className={`w-full rounded-xl border bg-background pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 transition shadow-inner ${
+                    errors.emailOrDni ? 'border-rose-400 focus:ring-rose-400' : 'border-input focus:ring-teal-500'
+                  }`}
                 />
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                El sistema detectará automáticamente tu perfil (Paciente, Médico o Administración).
-              </p>
+              {errors.emailOrDni ? (
+                <p id="emailOrDni-error" role="alert" className="text-[11px] font-semibold text-rose-600">
+                  {errors.emailOrDni.message}
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  El sistema detectará automáticamente tu perfil (Paciente, Médico o Administración).
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-foreground">Contraseña</label>
+                <label htmlFor="password" className="text-xs font-bold text-foreground">Contraseña</label>
                 <a
                   href="#recuperar"
                   onClick={(e) => {
                     e.preventDefault();
-                    alert('Por favor contacte a la mesa de ayuda de Cruz del Eje o ingrese con su DNI.');
+                    toast.info('Recuperar contraseña', 'Contacte a la mesa de ayuda de Cruz del Eje o ingrese con su DNI.');
                   }}
                   className="text-[11px] font-semibold text-teal-700 hover:underline"
                 >
@@ -132,16 +154,25 @@ export const LoginPage: React.FC = () => {
                 </a>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 <input
+                  id="password"
                   type="password"
-                  required
+                  autoComplete="current-password"
                   placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition shadow-inner"
+                  aria-invalid={Boolean(errors.password)}
+                  aria-describedby={errors.password ? 'password-error' : undefined}
+                  {...register('password')}
+                  className={`w-full rounded-xl border bg-background pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 transition shadow-inner ${
+                    errors.password ? 'border-rose-400 focus:ring-rose-400' : 'border-input focus:ring-teal-500'
+                  }`}
                 />
               </div>
+              {errors.password && (
+                <p id="password-error" role="alert" className="text-[11px] font-semibold text-rose-600">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             <button
