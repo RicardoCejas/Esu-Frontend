@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.gitignore
+.vscode
+.idea
+*.log
+.DS_Store
+generate_sprint6_pdf.cjs
