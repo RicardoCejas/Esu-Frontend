@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* HU-59: el modo oscuro se activa con la clase .dark en <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-heading: 'Outfit', 'Plus Jakarta Sans', sans-serif;
@@ -29,11 +32,93 @@
   body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: var(--color-foreground);
-    background-color: #edf5fa;
+    background-color: var(--color-background);
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
     letter-spacing: -0.02em;
   }
+
+  /* HU-59: Foco visible y consistente para navegación por teclado */
+  :focus-visible {
+    outline: 3px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* HU-59: Respeta la preferencia de movimiento reducido del sistema */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
+
+/* HU-59: Tokens del Modo Oscuro (azul noche clínico) */
+.dark {
+  color-scheme: dark;
+  --color-background: #0b1220;
+  --color-foreground: #e2e8f0;
+  --color-card: #111a2e;
+  --color-card-foreground: #e2e8f0;
+  --color-popover: #111a2e;
+  --color-popover-foreground: #e2e8f0;
+  --color-primary: #38bdf8;
+  --color-primary-foreground: #0b1220;
+  --color-secondary: #1e293b;
+  --color-secondary-foreground: #bae6fd;
+  --color-muted: #1a2438;
+  --color-muted-foreground: #94a3b8;
+  --color-accent: #1e293b;
+  --color-accent-foreground: #bae6fd;
+  --color-border: #1e3a5f;
+  --color-input: #1e3a5f;
+  --color-ring: #38bdf8;
+}
+
+/* Ajustes para clases con colores fijos usadas en las pantallas públicas */
+.dark .bg-white,
+.dark [class*="bg-white/"] { background-color: var(--color-card) !important; }
+.dark [class*="from-[#edf5fa]"],
+.dark [class*="from-sky-100"],
+.dark [class*="from-white"] { --tw-gradient-from: #0b1220 !important; }
+.dark [class*="via-[#e2eef7]"],
+.dark [class*="via-[#edf5fa]"],
+.dark [class*="via-sky-50"] { --tw-gradient-via: #0f1a2e !important; }
+.dark [class*="to-[#edf5fa]"],
+.dark [class*="to-[#e2eef7]"],
+.dark [class*="to-cyan-50"] { --tw-gradient-to: #0b1220 !important; }
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700,
+.dark .text-foreground { color: #e2e8f0 !important; }
+.dark .text-slate-600,
+.dark .text-slate-500 { color: #94a3b8 !important; }
+.dark [class*="border-sky-200"],
+.dark [class*="border-teal-100"],
+.dark [class*="border-slate-200"] { border-color: #1e3a5f !important; }
+.dark [class*="bg-sky-50"],
+.dark [class*="bg-sky-100"],
+.dark [class*="bg-teal-50"],
+.dark [class*="bg-[#edf5fa]"] { background-color: #13213a !important; }
+
+/* HU-59: Enlace "Saltar al contenido" visible solo con teclado */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  font-weight: 700;
+  font-size: 0.8rem;
+  transition: top 0.2s ease;
+}
+.skip-link:focus { top: 0.75rem; }

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Activity, LogIn, UserCheck, LogOut } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import type { UserRole } from '@/types';
 
 export const PublicNavbar: React.FC = () => {
@@ -60,10 +61,14 @@ export const PublicNavbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-sky-200/70 bg-[#edf5fa]/95 backdrop-blur supports-[backdrop-filter]:bg-[#edf5fa]/80 shadow-xs">
+      {/* HU-59: Saltar al contenido principal (solo visible con teclado) */}
+      <a href="#main-content" className="skip-link">
+        Saltar al contenido principal
+      </a>
       <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Brand / Logo */}
-        <Link to="/" className="flex items-center gap-2.5 transition hover:opacity-90">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-600 to-teal-600 text-white shadow-md shadow-sky-600/20">
+        <Link to="/" aria-label="ESU Cruz del Eje - Ir al inicio" className="flex items-center gap-2.5 transition hover:opacity-90">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-600 to-teal-600 text-white shadow-md shadow-sky-600/20" aria-hidden="true">
             <Activity className="h-6 w-6" />
           </div>
           <div className="flex flex-col">
@@ -77,7 +82,7 @@ export const PublicNavbar: React.FC = () => {
         </Link>
 
         {/* Links de Navegación Pública */}
-        <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-muted-foreground">
+        <nav aria-label="Navegación principal" className="hidden md:flex items-center gap-7 text-sm font-semibold text-muted-foreground">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.path && !link.path.includes('#');
             return (
@@ -85,6 +90,7 @@ export const PublicNavbar: React.FC = () => {
                 key={link.path}
                 href={link.path}
                 onClick={(e) => handleNavClick(e, link.path)}
+                aria-current={isActive ? 'page' : undefined}
                 className={`transition-colors hover:text-sky-600 cursor-pointer ${
                   isActive ? 'text-sky-700 font-bold border-b-2 border-sky-600 pb-0.5' : ''
                 }`}
@@ -97,6 +103,7 @@ export const PublicNavbar: React.FC = () => {
 
         {/* Estado de Sesión — visible e informativo */}
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {user ? (
             <div className="flex items-center gap-2">
               {/* Avatar con inicial */}

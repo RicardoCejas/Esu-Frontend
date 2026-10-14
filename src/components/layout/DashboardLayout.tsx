@@ -3,6 +3,7 @@ import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '@/context/AuthContext';
 import { Activity, LogOut, ArrowLeft } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import type { UserRole } from '@/types';
 
 export const DashboardLayout: React.FC = () => {
@@ -68,13 +69,16 @@ export const DashboardLayout: React.FC = () => {
             ))}
           </div>
 
+          <ThemeToggle />
+
           {/* Botón Salir */}
           <button
             onClick={handleLogout}
             title="Cerrar Sesión"
+            aria-label="Cerrar sesión"
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-input bg-background text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </header>
@@ -82,7 +86,7 @@ export const DashboardLayout: React.FC = () => {
       {/* Contenedor Principal: Sidebar + Contenido de la Pantalla */}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-muted/20">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-muted/20">
           <Outlet />
         </main>
       </div>

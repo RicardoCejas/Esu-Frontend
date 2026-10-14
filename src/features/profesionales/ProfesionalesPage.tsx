@@ -32,7 +32,7 @@ export const ProfesionalesPage: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-teal-500 selection:text-white">
       <PublicNavbar />
 
-      <main className="flex-1">
+      <main id="main-content" tabIndex={-1} className="flex-1">
         <StaffMedicosSection
           profesionales={profesionales}
           centros={centros}

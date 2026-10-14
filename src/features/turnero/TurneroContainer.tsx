@@ -88,7 +88,7 @@ export function TurneroContainer() {
       <TurneroStepper currentStep={currentStep} onGoToStep={handleGoToStep} />
 
       {/* Main Content Area: max-w-7xl with fluid padding */}
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5">
+      <main id="main-content" tabIndex={-1} className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5">
         {currentStep === 1 && (
           <Step1CenterSelection
             centers={filteredCenters}
