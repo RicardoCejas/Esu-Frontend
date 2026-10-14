@@ -1,7 +1,7 @@
 import React from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Building2, Stethoscope, User, Calendar, Clock, ChevronLeft, CheckCircle2 } from 'lucide-react'
+import { Building2, Stethoscope, User, Calendar, Clock, ChevronLeft } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,7 +18,6 @@ interface Step5PatientConfirmationProps {
   selectedSlot: AppointmentSlot
   patientForm: PatientBookingForm
   onFormChange: (field: keyof PatientBookingForm, value: string) => void
-  onConfirm: () => void
   onBackToSlots: () => void
 }
 
@@ -30,10 +29,9 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
   selectedSlot,
   patientForm,
   onFormChange,
-  onConfirm,
   onBackToSlots,
 }) => {
-  const { register, handleSubmit, formState: { errors } } = useForm<PatientBookingForm>({
+  const { register, formState: { errors } } = useForm<PatientBookingForm>({
     resolver: zodResolver(patientBookingSchema),
     defaultValues: patientForm,
     mode: 'onBlur',
@@ -138,11 +136,11 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                 Datos Personales del Paciente
               </h3>
               <p className="text-xs text-slate-500">
-                Información para la emisión oficial del turno y envío del comprobante digital
+                Revise sus datos antes de solicitar el turno. Todavía no se envían ni se guardan.
               </p>
             </div>
 
-            <form noValidate onSubmit={handleSubmit(onConfirm)}>
+            <form noValidate onSubmit={(event) => event.preventDefault()}>
             <div className="grid gap-3.5 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="patient-dni" className="text-xs font-semibold text-slate-700">DNI / Documento *</Label>
@@ -249,16 +247,19 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
               </div>
             </div>
 
+            <p role="status" className="rounded-lg border border-amber-600 bg-white p-3 text-xs font-medium text-slate-900">
+              La reserva en línea todavía no está conectada. Sus datos no se enviarán ni se guardarán. Para solicitar el turno, comuníquese con {selectedCenter.name} al {selectedCenter.phone}.
+            </p>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-4">
               <span className="text-[11px] text-slate-500">
-                * Complete los campos obligatorios para confirmar.
+                * Puede revisar los datos, pero aún no confirmar la reserva en línea.
               </span>
               <Button
-                type="submit"
+                type="button"
+                disabled
                 className="h-10 px-6 rounded-lg bg-sky-700 font-semibold text-xs text-white hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
               >
-                <CheckCircle2 className="size-4 mr-1.5" />
-                <span>Confirmar Turno y Emitir Comprobante</span>
+                <span>Reserva en línea no disponible</span>
               </Button>
             </div>
             </form>

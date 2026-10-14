@@ -8,14 +8,12 @@ import {
   canSelectDate,
   canProceedToPatient,
 } from '../bookingStepValidation'
-import { patientBookingSchema } from '../patientValidation'
 import type {
   HealthCenter,
   MedicalSpecialty,
   MedicalDoctor,
   AppointmentSlot,
   PatientBookingForm,
-  ConfirmedAppointment,
   BookingStep,
   CenterType,
 } from '../types'
@@ -58,8 +56,6 @@ export function useTurnero() {
 
   // Step 5: Patient Form state
   const [patientForm, setPatientForm] = useState<PatientBookingForm>(INITIAL_PATIENT_FORM)
-  const [confirmedAppointment, setConfirmedAppointment] = useState<ConfirmedAppointment | null>(null)
-  const [isReceiptOpen, setIsReceiptOpen] = useState(false)
 
   // Filtered Centers
   const filteredCenters = useMemo(() => {
@@ -146,29 +142,6 @@ export function useTurnero() {
     setPatientForm((prev) => ({ ...prev, [field]: value }))
   }, [])
 
-  const handleConfirmAppointment = useCallback(() => {
-    if (!selectedCenter || !selectedSpecialty || !selectedDoctor || !selectedSlot ||
-      !patientBookingSchema.safeParse(patientForm).success ||
-      !canProceedToPatient(selectedCenter, selectedSpecialty, selectedDoctor, selectedDate, selectedSlot, availability.slots)) return
-
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000)
-    const code = `LUVIA-CDE-${randomSuffix}`
-
-    const newAppointment: ConfirmedAppointment = {
-      bookingCode: code,
-      center: selectedCenter,
-      specialty: selectedSpecialty,
-      doctor: selectedDoctor,
-      date: selectedDate,
-      slot: selectedSlot,
-      patient: patientForm,
-      createdAt: new Date().toISOString(),
-    }
-
-    setConfirmedAppointment(newAppointment)
-    setIsReceiptOpen(true)
-  }, [selectedCenter, selectedSpecialty, selectedDoctor, selectedSlot, selectedDate, patientForm, availability.slots])
-
   const handleGoToStep = useCallback((step: BookingStep) => {
     // Only allow going back or jumping to completed steps
     if (step < currentStep) {
@@ -183,8 +156,6 @@ export function useTurnero() {
     setSelectedSlot(null)
     setSelectedDate(formatLocalDate(new Date()))
     setPatientForm(INITIAL_PATIENT_FORM)
-    setConfirmedAppointment(null)
-    setIsReceiptOpen(false)
     setCurrentStep(1)
   }, [])
 
@@ -212,16 +183,12 @@ export function useTurnero() {
     availabilityCanRetry: availability.canRetry,
     retryAvailability: availability.retry,
     patientForm,
-    confirmedAppointment,
-    isReceiptOpen,
-    setIsReceiptOpen,
     handleSelectCenter,
     handleSelectSpecialty,
     handleSelectDoctor,
     handleSelectSlot,
     handleProceedToConfirmation,
     handlePatientFormChange,
-    handleConfirmAppointment,
     handleGoToStep,
     handleResetBooking,
   }

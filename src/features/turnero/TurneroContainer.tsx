@@ -8,7 +8,6 @@ import { Step2SpecialtySelection } from './components/Step2SpecialtySelection'
 import { Step3DoctorSelection } from './components/Step3DoctorSelection'
 import { Step4DateTimeSelection } from './components/Step4DateTimeSelection'
 import { Step5PatientConfirmation } from './components/Step5PatientConfirmation'
-import { AppointmentReceiptModal } from './components/AppointmentReceiptModal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -45,16 +44,12 @@ export function TurneroContainer() {
     availabilityCanRetry,
     retryAvailability,
     patientForm,
-    confirmedAppointment,
-    isReceiptOpen,
-    setIsReceiptOpen,
     handleSelectCenter,
     handleSelectSpecialty,
     handleSelectDoctor,
     handleSelectSlot,
     handleProceedToConfirmation,
     handlePatientFormChange,
-    handleConfirmAppointment,
     handleGoToStep,
     handleResetBooking,
   } = useTurnero()
@@ -152,19 +147,10 @@ export function TurneroContainer() {
             selectedSlot={selectedSlot}
             patientForm={patientForm}
             onFormChange={handlePatientFormChange}
-            onConfirm={handleConfirmAppointment}
             onBackToSlots={() => handleGoToStep(4)}
           />
         )}
       </main>
-
-      {/* Confirmation & Printable QR Receipt Modal */}
-      <AppointmentReceiptModal
-        isOpen={isReceiptOpen}
-        onClose={() => setIsReceiptOpen(false)}
-        appointment={confirmedAppointment}
-        onNewBooking={handleResetBooking}
-      />
 
       {/* Quick Lookup Modal */}
       <Dialog open={isLookupOpen} onOpenChange={setIsLookupOpen}>
