@@ -1,6 +1,14 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useAvailability } from './useAvailability'
 import { formatLocalDate, isBookableSlot } from '../availability'
+import {
+  canSelectCenter,
+  canSelectSpecialty,
+  canSelectDoctor,
+  canSelectDate,
+  canProceedToPatient,
+} from '../bookingStepValidation'
+import { patientBookingSchema } from '../patientValidation'
 import type {
   HealthCenter,
   MedicalSpecialty,
@@ -92,13 +100,14 @@ export function useTurnero() {
   const afternoonSlots = availability.slots.filter((slot) => slot.period === 'AFTERNOON')
 
   const handleSelectDate = useCallback((date: string) => {
-    if (date < formatLocalDate(new Date())) return
+    if (!canSelectDate(date)) return
     setSelectedDate(date)
     setSelectedSlot(null)
   }, [])
 
   // Navigation handlers
   const handleSelectCenter = useCallback((center: HealthCenter) => {
+    if (!canSelectCenter(center, MOCK_CENTERS)) return
     setSelectedCenter(center)
     setSelectedSpecialty(null)
     setSelectedDoctor(null)
@@ -107,37 +116,40 @@ export function useTurnero() {
   }, [])
 
   const handleSelectSpecialty = useCallback((specialty: MedicalSpecialty) => {
+    if (!canSelectSpecialty(selectedCenter, specialty, availableSpecialties)) return
     setSelectedSpecialty(specialty)
     setSelectedDoctor(null)
     setSelectedSlot(null)
     setCurrentStep(3)
-  }, [])
+  }, [selectedCenter, availableSpecialties])
 
   const handleSelectDoctor = useCallback((doctor: MedicalDoctor) => {
+    if (!canSelectDoctor(selectedCenter, selectedSpecialty, doctor, availableDoctors)) return
     setSelectedDoctor(doctor)
     setSelectedSlot(null)
     setCurrentStep(4)
-  }, [])
+  }, [selectedCenter, selectedSpecialty, availableDoctors])
 
   const handleSelectSlot = useCallback((slot: AppointmentSlot) => {
     const currentSlot = availability.slots.find((availableSlot) => availableSlot.id === slot.id)
-    if (!currentSlot || !isBookableSlot(currentSlot, selectedDate)) return
+    if (!currentSlot || !canSelectDate(selectedDate) || !isBookableSlot(currentSlot, selectedDate)) return
     setSelectedSlot(currentSlot)
   }, [availability.slots, selectedDate])
 
   const handleProceedToConfirmation = useCallback(() => {
-    const currentSlot = availability.slots.find((slot) => slot.id === selectedSlot?.id)
-    if (currentSlot && isBookableSlot(currentSlot, selectedDate)) {
+    if (canProceedToPatient(selectedCenter, selectedSpecialty, selectedDoctor, selectedDate, selectedSlot, availability.slots)) {
       setCurrentStep(5)
     }
-  }, [availability.slots, selectedDate, selectedSlot])
+  }, [selectedCenter, selectedSpecialty, selectedDoctor, availability.slots, selectedDate, selectedSlot])
 
   const handlePatientFormChange = useCallback((field: keyof PatientBookingForm, value: string) => {
     setPatientForm((prev) => ({ ...prev, [field]: value }))
   }, [])
 
   const handleConfirmAppointment = useCallback(() => {
-    if (!selectedCenter || !selectedSpecialty || !selectedDoctor || !selectedSlot) return
+    if (!selectedCenter || !selectedSpecialty || !selectedDoctor || !selectedSlot ||
+      !patientBookingSchema.safeParse(patientForm).success ||
+      !canProceedToPatient(selectedCenter, selectedSpecialty, selectedDoctor, selectedDate, selectedSlot, availability.slots)) return
 
     const randomSuffix = Math.floor(1000 + Math.random() * 9000)
     const code = `LUVIA-CDE-${randomSuffix}`
@@ -155,7 +167,7 @@ export function useTurnero() {
 
     setConfirmedAppointment(newAppointment)
     setIsReceiptOpen(true)
-  }, [selectedCenter, selectedSpecialty, selectedDoctor, selectedSlot, selectedDate, patientForm])
+  }, [selectedCenter, selectedSpecialty, selectedDoctor, selectedSlot, selectedDate, patientForm, availability.slots])
 
   const handleGoToStep = useCallback((step: BookingStep) => {
     // Only allow going back or jumping to completed steps

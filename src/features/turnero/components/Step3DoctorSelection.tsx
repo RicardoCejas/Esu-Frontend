@@ -216,6 +216,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                   <div className="flex items-center justify-end border-t border-slate-100 pt-3">
                     <Button
                       type="button"
+                      aria-label={`Ver horarios de ${doctor.name}`}
                       onClick={(e) => {
                         e.stopPropagation()
                         onSelectDoctor(doctor)
@@ -280,6 +281,11 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                 <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pl-13 sm:pl-0">
                   <Button
                     type="button"
+                    aria-label={`Ver horarios de ${doctor.name}`}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onSelectDoctor(doctor)
+                    }}
                     size="sm"
                     className={`h-8 px-3.5 text-xs font-semibold rounded-lg ${
                       isSelected
