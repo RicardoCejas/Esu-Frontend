@@ -13,6 +13,8 @@ export interface User {
   centroSaludId?: string; // Para recepcionistas o médicos asociados a un centro
   obraSocial?: string; // Para pacientes
   activo?: boolean;
+  twoFactorEnabled?: boolean; // HU-42
+  emailVerified?: boolean; // HU-43
 }
 
 export interface CentroSalud {

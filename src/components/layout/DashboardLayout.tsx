@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '@/context/AuthContext';
-import { LogOut, ArrowLeft, Sun, Moon, Calendar } from 'lucide-react';
+import { LogOut, ArrowLeft, Sun, Moon, Calendar, ShieldCheck } from 'lucide-react';
 import type { UserRole, Turno } from '@/types';
 import { turnosService } from '@/api/turnosService';
+import { TwoFactorSetupModal } from '@/features/auth/TwoFactorSetupModal';
+import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner';
 
 export const DashboardLayout: React.FC = () => {
   const { user, logout, switchRole } = useAuth();
@@ -17,6 +19,9 @@ export const DashboardLayout: React.FC = () => {
 
   // HU-30: Indicador de Próximo Turno en Topbar
   const [proximoTurno, setProximoTurno] = useState<Turno | null>(null);
+
+  // HU-42: Modal de Configuración 2FA
+  const [is2FASetupOpen, setIs2FASetupOpen] = useState(false);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -49,8 +54,8 @@ export const DashboardLayout: React.FC = () => {
     setIsDarkMode((prev) => !prev);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
@@ -94,8 +99,23 @@ export const DashboardLayout: React.FC = () => {
           )}
         </div>
 
-        {/* Controles de Sesión, Rol Rápido y Tema */}
-        <div className="flex items-center gap-2.5">
+        {/* Controles de Sesión, Rol Rápido, 2FA y Tema */}
+        <div className="flex items-center gap-2">
+          {/* HU-42: Botón de Configuración 2FA */}
+          <button
+            type="button"
+            onClick={() => setIs2FASetupOpen(true)}
+            title={user?.twoFactorEnabled ? '2FA Activo (Configurar)' : 'Activar Doble Factor (2FA)'}
+            className={`flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition cursor-pointer ${
+              user?.twoFactorEnabled
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300'
+                : 'border-input bg-background text-muted-foreground hover:bg-accent hover:text-foreground'
+            }`}
+          >
+            <ShieldCheck className={`h-4 w-4 ${user?.twoFactorEnabled ? 'text-emerald-600' : 'text-teal-600'}`} />
+            <span className="hidden sm:inline">{user?.twoFactorEnabled ? '2FA Activo' : 'Activar 2FA'}</span>
+          </button>
+
           {/* HU-39: Selector de Tema (Modo Oscuro / Claro) */}
           <button
             type="button"
@@ -147,6 +167,9 @@ export const DashboardLayout: React.FC = () => {
         </div>
       </header>
 
+      {/* HU-43: Banner de verificación de email en el portal */}
+      <EmailVerificationBanner />
+
       {/* Contenedor Principal: Sidebar + Contenido de la Pantalla */}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
@@ -154,6 +177,12 @@ export const DashboardLayout: React.FC = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Modal de Configuración 2FA (HU-42) */}
+      <TwoFactorSetupModal
+        isOpen={is2FASetupOpen}
+        onClose={() => setIs2FASetupOpen(false)}
+      />
     </div>
   );
 };
