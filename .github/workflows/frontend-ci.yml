@@ -1,0 +1,49 @@
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - develop
+      - feat/turnero-mocks
+      - feat/turnero-mocks-*
+  pull_request:
+    branches:
+      - develop
+      - feat/turnero-mocks
+      - feat/turnero-mocks-*
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-checks:
+    name: Frontend tests and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify the complete turnero integration
+        shell: bash
+        run: |
+          if [ ! -f src/features/turnero/demoBookingStore.ts ]; then
+            echo '::notice::This stacked slice is incomplete by design; full tests and build run once the demo integration is in the chain.'
+            exit 0
+          fi
+
+          node --experimental-strip-types --test tests/*.test.mjs
+          npm run build

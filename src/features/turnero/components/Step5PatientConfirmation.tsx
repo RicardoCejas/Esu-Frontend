@@ -1,11 +1,14 @@
 import React from 'react'
-import { Building2, Stethoscope, User, Calendar, Clock, ChevronLeft, CheckCircle2 } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Building2, Stethoscope, User, Calendar, Clock, ChevronLeft } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { HealthCenter, MedicalSpecialty, MedicalDoctor, AppointmentSlot, PatientBookingForm } from '../types'
 import { AVAILABLE_INSURANCES } from '../data/mockTurneroData'
+import { patientBookingSchema } from '../patientValidation'
 
 interface Step5PatientConfirmationProps {
   selectedCenter: HealthCenter
@@ -15,7 +18,6 @@ interface Step5PatientConfirmationProps {
   selectedSlot: AppointmentSlot
   patientForm: PatientBookingForm
   onFormChange: (field: keyof PatientBookingForm, value: string) => void
-  onConfirm: () => void
   onBackToSlots: () => void
 }
 
@@ -27,14 +29,20 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
   selectedSlot,
   patientForm,
   onFormChange,
-  onConfirm,
   onBackToSlots,
 }) => {
-  const isFormValid =
-    patientForm.dni.trim().length >= 7 &&
-    patientForm.firstName.trim().length > 1 &&
-    patientForm.lastName.trim().length > 1 &&
-    patientForm.phone.trim().length >= 6
+  const { register, formState: { errors } } = useForm<PatientBookingForm>({
+    resolver: zodResolver(patientBookingSchema),
+    defaultValues: patientForm,
+    mode: 'onBlur',
+    shouldFocusError: true,
+  })
+
+  const fieldProps = (field: keyof PatientBookingForm) => register(field, {
+    onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      onFormChange(field, event.target.value)
+    },
+  })
 
   return (
     <section className="space-y-4">
@@ -128,20 +136,26 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                 Datos Personales del Paciente
               </h3>
               <p className="text-xs text-slate-500">
-                Información para la emisión oficial del turno y envío del comprobante digital
+                Revise sus datos antes de solicitar el turno. Todavía no se envían ni se guardan.
               </p>
             </div>
 
+            <form noValidate onSubmit={(event) => event.preventDefault()}>
             <div className="grid gap-3.5 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="patient-dni" className="text-xs font-semibold text-slate-700">DNI / Documento *</Label>
                 <Input
                   id="patient-dni"
                   placeholder="Ej: 38123456"
-                  value={patientForm.dni}
-                  onChange={(e) => onFormChange('dni', e.target.value)}
-                  className="h-9 rounded-lg border-slate-200 text-xs focus-visible:ring-slate-900"
+                  required
+                  inputMode="numeric"
+                  autoComplete="off"
+                  aria-invalid={Boolean(errors.dni)}
+                  aria-describedby={errors.dni ? 'patient-dni-error' : undefined}
+                  {...fieldProps('dni')}
+                  className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
                 />
+                {errors.dni && <p id="patient-dni-error" role="alert" className="text-xs font-medium text-rose-700">{errors.dni.message}</p>}
               </div>
 
               <div className="space-y-1">
@@ -149,10 +163,15 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                 <Input
                   id="patient-phone"
                   placeholder="Ej: 3549 15412345"
-                  value={patientForm.phone}
-                  onChange={(e) => onFormChange('phone', e.target.value)}
-                  className="h-9 rounded-lg border-slate-200 text-xs focus-visible:ring-slate-900"
+                  required
+                  type="tel"
+                  autoComplete="tel"
+                  aria-invalid={Boolean(errors.phone)}
+                  aria-describedby={errors.phone ? 'patient-phone-error' : undefined}
+                  {...fieldProps('phone')}
+                  className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
                 />
+                {errors.phone && <p id="patient-phone-error" role="alert" className="text-xs font-medium text-rose-700">{errors.phone.message}</p>}
               </div>
 
               <div className="space-y-1">
@@ -160,10 +179,14 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                 <Input
                   id="patient-firstname"
                   placeholder="Ej: Juan Carlos"
-                  value={patientForm.firstName}
-                  onChange={(e) => onFormChange('firstName', e.target.value)}
-                  className="h-9 rounded-lg border-slate-200 text-xs focus-visible:ring-slate-900"
+                  required
+                  autoComplete="given-name"
+                  aria-invalid={Boolean(errors.firstName)}
+                  aria-describedby={errors.firstName ? 'patient-firstname-error' : undefined}
+                  {...fieldProps('firstName')}
+                  className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
                 />
+                {errors.firstName && <p id="patient-firstname-error" role="alert" className="text-xs font-medium text-rose-700">{errors.firstName.message}</p>}
               </div>
 
               <div className="space-y-1">
@@ -171,10 +194,14 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                 <Input
                   id="patient-lastname"
                   placeholder="Ej: Pérez"
-                  value={patientForm.lastName}
-                  onChange={(e) => onFormChange('lastName', e.target.value)}
-                  className="h-9 rounded-lg border-slate-200 text-xs focus-visible:ring-slate-900"
+                  required
+                  autoComplete="family-name"
+                  aria-invalid={Boolean(errors.lastName)}
+                  aria-describedby={errors.lastName ? 'patient-lastname-error' : undefined}
+                  {...fieldProps('lastName')}
+                  className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
                 />
+                {errors.lastName && <p id="patient-lastname-error" role="alert" className="text-xs font-medium text-rose-700">{errors.lastName.message}</p>}
               </div>
 
               <div className="space-y-1 sm:col-span-2">
@@ -183,24 +210,30 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                   id="patient-email"
                   type="email"
                   placeholder="nombre@ejemplo.com"
-                  value={patientForm.email}
-                  onChange={(e) => onFormChange('email', e.target.value)}
-                  className="h-9 rounded-lg border-slate-200 text-xs focus-visible:ring-slate-900"
+                  autoComplete="email"
+                  aria-invalid={Boolean(errors.email)}
+                  aria-describedby={errors.email ? 'patient-email-error' : undefined}
+                  {...fieldProps('email')}
+                  className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
                 />
+                {errors.email && <p id="patient-email-error" role="alert" className="text-xs font-medium text-rose-700">{errors.email.message}</p>}
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="patient-insurance" className="text-xs font-semibold text-slate-700">Cobertura Médica / Obra Social</Label>
                 <select
                   id="patient-insurance"
-                  value={patientForm.healthInsurance}
-                  onChange={(e) => onFormChange('healthInsurance', e.target.value)}
-                  className="w-full h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-800 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
+                  required
+                  aria-invalid={Boolean(errors.healthInsurance)}
+                  aria-describedby={errors.healthInsurance ? 'patient-insurance-error' : undefined}
+                  {...fieldProps('healthInsurance')}
+                  className="w-full h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
                 >
                   {AVAILABLE_INSURANCES.map((ins) => (
                     <option key={ins} value={ins}>{ins}</option>
                   ))}
                 </select>
+                {errors.healthInsurance && <p id="patient-insurance-error" role="alert" className="text-xs font-medium text-rose-700">{errors.healthInsurance.message}</p>}
               </div>
 
               <div className="space-y-1">
@@ -208,31 +241,28 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                 <Input
                   id="patient-affiliate"
                   placeholder="Ej: 102938475-01"
-                  value={patientForm.affiliateNumber}
-                  onChange={(e) => onFormChange('affiliateNumber', e.target.value)}
-                  className="h-9 rounded-lg border-slate-200 text-xs focus-visible:ring-slate-900"
+                  {...fieldProps('affiliateNumber')}
+                  className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
                 />
               </div>
             </div>
 
+            <p role="status" className="rounded-lg border border-amber-600 bg-white p-3 text-xs font-medium text-slate-900">
+              La reserva en línea todavía no está conectada. Sus datos no se enviarán ni se guardarán. Para solicitar el turno, comuníquese con {selectedCenter.name} al {selectedCenter.phone}.
+            </p>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-4">
               <span className="text-[11px] text-slate-500">
-                {isFormValid ? '✓ Campos requeridos completos' : '* Complete los campos obligatorios para continuar'}
+                * Puede revisar los datos, pero aún no confirmar la reserva en línea.
               </span>
               <Button
                 type="button"
-                onClick={onConfirm}
-                disabled={!isFormValid}
-                className={`h-10 px-6 rounded-lg font-semibold text-xs text-white transition-all ${
-                  isFormValid
-                    ? 'cursor-pointer bg-slate-900 hover:bg-slate-800 shadow-xs'
-                    : 'cursor-not-allowed bg-slate-100 text-slate-400 border border-slate-200 shadow-none'
-                }`}
+                disabled
+                className="h-10 px-6 rounded-lg bg-sky-700 font-semibold text-xs text-white hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
               >
-                <CheckCircle2 className="size-4 mr-1.5" />
-                <span>Confirmar Turno y Emitir Comprobante</span>
+                <span>Reserva en línea no disponible</span>
               </Button>
             </div>
+            </form>
           </CardContent>
         </Card>
       </div>
