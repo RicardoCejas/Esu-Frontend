@@ -45,7 +45,16 @@ export interface Profesional {
   foto?: string;
 }
 
-export type EstadoTurno = 'PENDIENTE' | 'CONFIRMADO' | 'EN_ESPERA' | 'ATENDIENDO' | 'COMPLETADO' | 'CANCELADO' | 'AUSENTE';
+export type EstadoTurno = 'PENDIENTE' | 'CONFIRMADO' | 'EN_ESPERA' | 'EN_SALA_DE_ESPERA' | 'ATENDIENDO' | 'COMPLETADO' | 'CANCELADO' | 'AUSENTE';
+
+export interface ConsultorioFisico {
+  id: string;
+  centroSaludId: string;
+  numero: string;
+  planta: string; // ej: 'Planta Baja', 'Piso 1'
+  especialidadAsignada?: string;
+  activo: boolean;
+}
 
 export interface Turno {
   id: string;
@@ -57,6 +66,12 @@ export interface Turno {
   pacienteDni: string;
   pacienteTelefono: string;
   obraSocial?: string;
+  numeroAfiliado?: string;
+  copagoMonto?: number;
+  numeroBono?: string;
+  esPrimeraVez?: boolean;
+  consultorioNumero?: string;
+  planta?: string;
   profesionalId: string;
   profesionalNombre: string;
   especialidadNombre: string;
@@ -65,7 +80,10 @@ export interface Turno {
   estado: EstadoTurno;
   motivoConsulta?: string;
   observaciones?: string;
+  justificativoCancelacion?: string;
   fechaCreacion: string;
+  horaCheckIn?: string;
+  horaLlamado?: string;
 }
 
 export interface ConsultaMedica {

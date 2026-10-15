@@ -21,11 +21,14 @@ import { AtencionConsultaPage } from '@/features/medico/AtencionConsultaPage';
 import { RecepcionPage } from '@/features/recepcion/RecepcionPage';
 import { PadronPacientesPage } from '@/features/recepcion/PadronPacientesPage';
 import { GestionTurnosAdminPage } from '@/features/recepcion/GestionTurnosAdminPage';
+import { SalasEsperaKanbanPage } from '@/features/recepcion/SalasEsperaKanbanPage';
+import { PantallaTurnosTVPage } from '@/features/recepcion/PantallaTurnosTVPage';
 
 // Vistas Admin
 import { AdminDashboardPage } from '@/features/admin/AdminDashboardPage';
 import { AdminUsuariosPage } from '@/features/admin/AdminUsuariosPage';
 import { AdminEspecialidadesPage } from '@/features/admin/AdminEspecialidadesPage';
+import { AdminSedesPage } from '@/features/admin/AdminSedesPage';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -37,6 +40,9 @@ export const AppRoutes: React.FC = () => {
       <Route path="/medicos" element={<Navigate to="/profesionales" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
+      {/* HU-55: Pantalla Pública Tótem / TV de Turnos */}
+      <Route path="/pantalla-turnos" element={<PantallaTurnosTVPage />} />
+      <Route path="/totem" element={<Navigate to="/pantalla-turnos" replace />} />
 
       {/* Rutas Protegidas del Dashboard con Layout Unificado y AuthGuard */}
       <Route element={<AuthGuard />}>
@@ -53,16 +59,18 @@ export const AppRoutes: React.FC = () => {
             <Route path="medico/atencion" element={<AtencionConsultaPage />} />
           </Route>
 
-          {/* Módulo Recepción y Sala de Espera */}
+          {/* Módulo Recepción y Sala de Espera (HU-53, HU-54, HU-55) */}
           <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA', 'MEDICO', 'ADMIN']} />}>
             <Route path="recepcion" element={<RecepcionPage />} />
+            <Route path="recepcion/kanban" element={<SalasEsperaKanbanPage />} />
             <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
             <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
           </Route>
 
-          {/* Módulo Administrador */}
+          {/* Módulo Administrador (HU-56) */}
           <Route element={<RoleGuard allowedRoles={['ADMIN']} />}>
             <Route path="admin" element={<AdminDashboardPage />} />
+            <Route path="admin/sedes" element={<AdminSedesPage />} />
             <Route path="admin/usuarios" element={<AdminUsuariosPage />} />
             <Route path="admin/especialidades" element={<AdminEspecialidadesPage />} />
           </Route>
