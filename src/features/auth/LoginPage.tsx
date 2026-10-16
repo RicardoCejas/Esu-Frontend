@@ -86,19 +86,19 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-muted/20 p-4 sm:p-6 selection:bg-teal-500 selection:text-white">
+    <div className="min-h-screen flex flex-col justify-center items-center bg-muted/20 p-4 sm:p-6 selection:bg-sky-600 selection:text-white">
       <div className="w-full max-w-md space-y-6">
         {/* Volver */}
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-teal-700 transition"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-sky-700 transition"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Volver al inicio</span>
         </Link>
 
         {/* Card de Login */}
-        <div className="rounded-3xl border border-teal-100 bg-card p-6 sm:p-8 shadow-xl space-y-6">
+        <div className="rounded-3xl border border-sky-100 bg-card p-6 sm:p-8 shadow-xl space-y-6">
           <div className="text-center space-y-3">
             <div className="flex justify-center">
               <img src="/logo-icon.png" alt="Luvia Logo" className="h-16 w-16 object-contain drop-shadow-md" />
@@ -142,7 +142,7 @@ export const LoginPage: React.FC = () => {
                   placeholder="ej: 38123456 o usuario@email.com"
                   value={emailOrDni}
                   onChange={(e) => setEmailOrDni(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition shadow-inner"
+                  className="w-full rounded-xl border border-input bg-background pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600 transition shadow-inner"
                 />
               </div>
               <p className="text-[11px] text-muted-foreground">
@@ -156,7 +156,7 @@ export const LoginPage: React.FC = () => {
                 {/* Enlace funcional a recuperación de contraseña (HU-43) */}
                 <Link
                   to="/olvido-password"
-                  className="text-[11px] font-semibold text-teal-700 hover:underline"
+                  className="text-[11px] font-semibold text-sky-700 hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
                 </Link>
@@ -169,7 +169,7 @@ export const LoginPage: React.FC = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition shadow-inner"
+                  className="w-full rounded-xl border border-input bg-background pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600 transition shadow-inner"
                 />
               </div>
             </div>
@@ -177,7 +177,7 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-teal-600 py-3 text-sm font-bold text-white shadow-md shadow-teal-600/20 hover:bg-teal-700 hover:scale-[1.01] transition-all disabled:opacity-50 cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 py-3 text-sm font-bold text-white shadow-md shadow-sky-600/20 hover:bg-sky-700 hover:scale-[1.01] transition-all disabled:opacity-50 cursor-pointer"
             >
               <LogIn className="h-4 w-4" />
               <span>{isSubmitting ? 'Verificando...' : 'Ingresar al Sistema'}</span>
@@ -190,7 +190,7 @@ export const LoginPage: React.FC = () => {
               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                 Acceso Rápido para Evaluación:
               </p>
-              <span className="text-[10px] bg-teal-50 text-teal-700 font-bold px-2 py-0.5 rounded-full">
+              <span className="text-[10px] bg-sky-50 text-sky-700 font-bold px-2 py-0.5 rounded-full">
                 1 Clic
               </span>
             </div>
@@ -198,36 +198,36 @@ export const LoginPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleQuickLogin('PACIENTE')}
-                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 hover:border-teal-500 hover:bg-teal-50/50 font-semibold text-foreground transition cursor-pointer"
+                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 hover:border-sky-600 hover:bg-sky-50/50 font-semibold text-foreground transition cursor-pointer"
               >
-                <User className="h-4 w-4 text-teal-600 shrink-0" />
+                <User className="h-4 w-4 text-sky-600 shrink-0" />
                 <span className="truncate">👤 Paciente</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickLogin('MEDICO')}
-                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 hover:border-teal-500 hover:bg-teal-50/50 font-semibold text-foreground transition cursor-pointer"
+                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 hover:border-sky-600 hover:bg-sky-50/50 font-semibold text-foreground transition cursor-pointer"
               >
-                <Stethoscope className="h-4 w-4 text-teal-600 shrink-0" />
+                <Stethoscope className="h-4 w-4 text-sky-600 shrink-0" />
                 <span className="truncate">🩺 Médico</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickLogin('RECEPCIONISTA')}
-                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 hover:border-teal-500 hover:bg-teal-50/50 font-semibold text-foreground transition cursor-pointer"
+                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 hover:border-sky-600 hover:bg-sky-50/50 font-semibold text-foreground transition cursor-pointer"
               >
-                <UserCheck className="h-4 w-4 text-teal-600 shrink-0" />
+                <UserCheck className="h-4 w-4 text-sky-600 shrink-0" />
                 <span className="truncate">📋 Recepción</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickLogin('ADMIN')}
-                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 hover:border-teal-500 hover:bg-teal-50/50 font-semibold text-foreground transition cursor-pointer"
+                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 hover:border-sky-600 hover:bg-sky-50/50 font-semibold text-foreground transition cursor-pointer"
               >
-                <Shield className="h-4 w-4 text-teal-600 shrink-0" />
+                <Shield className="h-4 w-4 text-sky-600 shrink-0" />
                 <span className="truncate">🛡️ Administrador</span>
               </button>
             </div>
@@ -236,7 +236,7 @@ export const LoginPage: React.FC = () => {
 
         <p className="text-center text-xs text-muted-foreground">
           ¿No tienes una cuenta de paciente?{' '}
-          <Link to="/registro" className="font-bold text-teal-700 hover:underline">
+          <Link to="/registro" className="font-bold text-sky-700 hover:underline">
             Regístrate aquí
           </Link>
         </p>

@@ -63,18 +63,18 @@ export const VerifyEmailPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-muted/20 p-4 sm:p-6 selection:bg-teal-500 selection:text-white">
+    <div className="min-h-screen flex flex-col justify-center items-center bg-muted/20 p-4 sm:p-6 selection:bg-sky-600 selection:text-white">
       <div className="w-full max-w-md space-y-6">
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-teal-700 transition"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-sky-700 transition"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Volver al portal principal</span>
         </Link>
 
-        <div className="rounded-3xl border border-teal-100 bg-card p-6 sm:p-8 shadow-xl space-y-6 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-50 text-teal-700 shadow-inner">
+        <div className="rounded-3xl border border-sky-100 bg-card p-6 sm:p-8 shadow-xl space-y-6 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
             <MailCheck className="h-8 w-8" />
           </div>
 
@@ -105,7 +105,7 @@ export const VerifyEmailPage: React.FC = () => {
 
           {isVerifying ? (
             <div className="flex flex-col items-center justify-center py-6 gap-2 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
+              <Loader2 className="h-6 w-6 animate-spin text-sky-600" />
               <p className="text-xs">Confirmando titularidad de la cuenta...</p>
             </div>
           ) : verifiedSuccessfully ? (
@@ -115,7 +115,7 @@ export const VerifyEmailPage: React.FC = () => {
               </p>
               <Link
                 to="/dashboard/paciente"
-                className="inline-block rounded-full bg-teal-600 px-6 py-2.5 text-xs font-bold text-white hover:bg-teal-700 transition"
+                className="inline-block rounded-full bg-sky-600 px-6 py-2.5 text-xs font-bold text-white hover:bg-sky-700 transition"
               >
                 Ir al Dashboard
               </Link>
@@ -131,7 +131,7 @@ export const VerifyEmailPage: React.FC = () => {
                 type="button"
                 onClick={handleResend}
                 disabled={!canResend || isResending}
-                className="flex w-full items-center justify-center gap-2 rounded-full border border-teal-600 bg-teal-50/50 py-3 text-xs font-bold text-teal-700 hover:bg-teal-100/70 transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                className="flex w-full items-center justify-center gap-2 rounded-full border border-sky-700 py-3 text-xs font-bold text-sky-700 hover:bg-sky-700 hover:text-white transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 {isResending ? (
                   <>
@@ -154,7 +154,7 @@ export const VerifyEmailPage: React.FC = () => {
               <div className="pt-2">
                 <Link
                   to="/dashboard/paciente"
-                  className="text-xs font-semibold text-muted-foreground hover:text-teal-700 transition"
+                  className="text-xs font-semibold text-muted-foreground hover:text-sky-700 transition"
                 >
                   Continuar temporalmente al portal →
                 </Link>

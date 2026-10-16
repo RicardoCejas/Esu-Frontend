@@ -35,19 +35,19 @@ export const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-muted/20 p-4 sm:p-6 selection:bg-teal-500 selection:text-white">
+    <div className="min-h-screen flex flex-col justify-center items-center bg-muted/20 p-4 sm:p-6 selection:bg-sky-600 selection:text-white">
       <div className="w-full max-w-md space-y-6">
         <Link
           to="/login"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-teal-700 transition"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-sky-700 transition"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Volver al inicio de sesión</span>
         </Link>
 
-        <div className="rounded-3xl border border-teal-100 bg-card p-6 sm:p-8 shadow-xl space-y-6">
+        <div className="rounded-3xl border border-sky-100 bg-card p-6 sm:p-8 shadow-xl space-y-6">
           <div className="text-center space-y-2">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50 text-teal-700 shadow-inner">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-700 shadow-inner">
               <Mail className="h-7 w-7" />
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight font-heading text-foreground">
@@ -79,7 +79,7 @@ export const ForgotPasswordPage: React.FC = () => {
               </p>
               <Link
                 to="/login"
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-teal-600 py-3 text-sm font-bold text-white hover:bg-teal-700 transition"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 py-3 text-sm font-bold text-white hover:bg-sky-700 transition"
               >
                 Regresar a Iniciar Sesión
               </Link>
@@ -98,7 +98,7 @@ export const ForgotPasswordPage: React.FC = () => {
                     placeholder="ej: usuario@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-xl border border-input bg-background pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition shadow-inner"
+                    className="w-full rounded-xl border border-input bg-background pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600 transition shadow-inner"
                     autoFocus
                   />
                 </div>
@@ -110,7 +110,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-teal-600 py-3 text-sm font-bold text-white shadow-md shadow-teal-600/20 hover:bg-teal-700 transition disabled:opacity-50 cursor-pointer"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 py-3 text-sm font-bold text-white shadow-md shadow-sky-600/20 hover:bg-sky-700 transition disabled:opacity-50 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
