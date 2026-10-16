@@ -14,18 +14,19 @@ export const GestionTurnosAdminPage: React.FC = () => {
   const [turnoAReagendar, setTurnoAReagendar] = useState<Turno | null>(null);
   const [nuevaFecha, setNuevaFecha] = useState('');
   const [nuevaHora, setNuevaHora] = useState('');
+  const [turnoACancelar, setTurnoACancelar] = useState<Turno | null>(null);
 
   useEffect(() => {
     turnosService.getAll().then(setTurnos);
   }, []);
 
-  const handleCancelar = async (id: string) => {
-    if (window.confirm('¿Desea cancelar este turno administrativamente?')) {
-      await turnosService.cancelarTurno(id);
-      setTurnos((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, estado: 'CANCELADO' } : t))
-      );
-    }
+  const handleConfirmarCancelacion = async () => {
+    if (!turnoACancelar) return;
+    await turnosService.cancelarTurno(turnoACancelar.id);
+    setTurnos((prev) =>
+      prev.map((t) => (t.id === turnoACancelar.id ? { ...t, estado: 'CANCELADO' } : t))
+    );
+    setTurnoACancelar(null);
   };
 
   // HU-27: Reagendamiento de cita
@@ -182,16 +183,16 @@ export const GestionTurnosAdminPage: React.FC = () => {
                     <td className="p-4 text-muted-foreground">{t.centroSaludNombre}</td>
                     <td className="p-4">
                       <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-bold text-[10px] ${
+                        className={`inline-flex items-center rounded-md px-2.5 py-1 font-bold text-[10px] text-white shadow-xs ${
                           t.estado === 'CONFIRMADO'
-                            ? 'bg-emerald-500/10 text-emerald-600'
+                            ? 'bg-emerald-700'
                             : t.estado === 'EN_ESPERA'
-                            ? 'bg-amber-500/10 text-amber-600'
+                            ? 'bg-amber-600'
                             : t.estado === 'ATENDIENDO'
-                            ? 'bg-blue-500/10 text-blue-600'
+                            ? 'bg-sky-700'
                             : t.estado === 'CANCELADO'
-                            ? 'bg-destructive/10 text-destructive'
-                            : 'bg-muted text-muted-foreground'
+                            ? 'bg-rose-700'
+                            : 'bg-slate-700'
                         }`}
                       >
                         {t.estado}
@@ -220,8 +221,8 @@ export const GestionTurnosAdminPage: React.FC = () => {
                         {t.estado !== 'CANCELADO' && (
                           <button
                             type="button"
-                            onClick={() => handleCancelar(t.id)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-destructive/20 bg-destructive/10 px-2.5 py-1 text-destructive font-medium hover:bg-destructive hover:text-white transition cursor-pointer"
+                            onClick={() => setTurnoACancelar(t)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1 text-rose-700 font-semibold hover:bg-rose-700 hover:text-white dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-200 transition cursor-pointer"
                             title="Cancelar cita"
                           >
                             <XCircle className="h-3.5 w-3.5" />
@@ -321,6 +322,51 @@ export const GestionTurnosAdminPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Accesible de Cancelación Administrativa */}
+      {turnoACancelar && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/70">
+                <XCircle className="h-6 w-6 text-rose-700 dark:text-rose-300" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-foreground">Cancelar Turno Administrativamente</h3>
+                <p className="text-xs text-muted-foreground">Esta acción anulará la reserva en el sistema.</p>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-muted/50 p-3 text-xs space-y-1.5 border border-border/60">
+              <div><strong className="text-foreground">Paciente:</strong> {turnoACancelar.pacienteNombre}</div>
+              <div><strong className="text-foreground">Médico:</strong> {turnoACancelar.profesionalNombre}</div>
+              <div><strong className="text-foreground">Fecha y Hora:</strong> {turnoACancelar.fecha} ({turnoACancelar.hora} hs)</div>
+              <div><strong className="text-foreground">Centro:</strong> {turnoACancelar.centroSaludNombre}</div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              ¿Desea confirmar la cancelación administrativa de este turno?
+            </p>
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setTurnoACancelar(null)}
+                className="flex-1 rounded-lg border border-input bg-background py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarCancelacion}
+                className="flex-1 rounded-lg bg-rose-700 py-2 text-xs font-bold text-white hover:bg-rose-800 transition cursor-pointer shadow-sm"
+              >
+                Confirmar Cancelación
+              </button>
+            </div>
           </div>
         </div>
       )}

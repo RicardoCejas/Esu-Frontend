@@ -13,9 +13,7 @@ export const PublicNavbar: React.FC = () => {
     { name: 'Inicio', path: '/' },
     { name: 'Quiénes Somos', path: '/#quienes-somos' },
     { name: 'Especialidades', path: '/#especialidades' },
-    { name: 'Nuestros Médicos', path: '/profesionales' },
     { name: 'Turnero Online', path: '/turnero' },
-    { name: 'Guardia 24hs', path: '/#guardia' },
   ];
 
   const getDashboardPath = (rol?: UserRole) => {
@@ -97,43 +95,28 @@ export const PublicNavbar: React.FC = () => {
         <div className="flex items-center gap-2">
           {user ? (
             <div className="flex items-center gap-2">
-              {/* Avatar con inicial */}
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-teal-600 text-white font-extrabold text-sm shadow-md shadow-sky-500/30 shrink-0 select-none">
-                {user.nombre?.charAt(0).toUpperCase()}
-              </div>
-
-              {/* Nombre + rol (visible solo en desktop) */}
-              <div className="hidden sm:flex flex-col leading-tight">
-                <span className="text-xs font-extrabold text-slate-800 leading-tight">
-                  {user.nombre} {user.apellido}
-                </span>
-                <span className="text-[10px] font-semibold text-sky-600 uppercase tracking-wide">
-                  {user.rol === 'MEDICO' ? '🩺 Médico' : user.rol === 'ADMIN' ? '🛡 Admin' : user.rol === 'RECEPCIONISTA' ? '📋 Recepcionista' : '🙋 Paciente'}
-                </span>
-              </div>
-
               {/* Botón Mi Portal */}
               <Link
                 to={getDashboardPath(user.rol)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-sky-600 to-teal-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-sky-600/20 hover:from-sky-700 hover:to-teal-700 hover:scale-[1.02] transition"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-sky-700 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-sky-800 transition cursor-pointer"
               >
                 <UserCheck className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Mi Portal</span>
+                <span>Mi Portal</span>
               </Link>
 
               {/* Botón Cerrar Sesión */}
               <button
                 onClick={handleLogout}
                 title="Cerrar Sesión"
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 bg-white/90 text-rose-400 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300 transition cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-500 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 transition cursor-pointer"
               >
-                <LogOut className="h-3.5 w-3.5" />
+                <LogOut className="h-4 w-4" />
               </button>
             </div>
           ) : (
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-sky-600/20 hover:from-sky-700 hover:to-teal-700 hover:scale-[1.02] transition cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-sky-800 transition cursor-pointer"
             >
               <LogIn className="h-4 w-4" />
               <span>Ingresar</span>

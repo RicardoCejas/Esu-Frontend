@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { LogIn, Lock, Mail, ShieldAlert, ArrowLeft, User, Stethoscope, UserCheck, Shield } from 'lucide-react';
+import { LogIn, Lock, Mail, ShieldAlert, ArrowLeft, User, Stethoscope, UserCheck, Shield, Clock } from 'lucide-react';
 import type { UserRole } from '@/types';
+import { TwoFactorChallengeModal } from './TwoFactorChallengeModal';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const reason = searchParams.get('reason');
 
   const [emailOrDni, setEmailOrDni] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Estados para desafío 2FA bloqueante (HU-42)
+  const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
+  const [tempToken2FA, setTempToken2FA] = useState('');
 
   const redirectByRole = (rol: UserRole) => {
     switch (rol) {
@@ -37,16 +44,25 @@ export const LoginPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const user = await login({
+      const authResponse = await login({
         email: emailOrDni || undefined,
         dni: emailOrDni || undefined,
         password: password || undefined,
       });
 
-      // Redirección inteligente según el rol registrado en la BD / Mocks
-      redirectByRole(user.rol);
-    } catch (err: any) {
-      setError(err?.message || 'Error al iniciar sesión. Verifique sus credenciales.');
+      // Si requiere 2FA, activar modal bloqueante (HU-42)
+      if (authResponse.requires2FA && authResponse.tempToken) {
+        setTempToken2FA(authResponse.tempToken);
+        setIs2FAModalOpen(true);
+        return;
+      }
+
+      if (authResponse.user) {
+        redirectByRole(authResponse.user.rol);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al iniciar sesión. Verifique sus credenciales.';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -55,8 +71,15 @@ export const LoginPage: React.FC = () => {
   const handleQuickLogin = async (role: UserRole) => {
     setIsSubmitting(true);
     try {
-      const user = await login({ rolSimulado: role });
-      redirectByRole(user.rol);
+      const authResponse = await login({ rolSimulado: role });
+      if (authResponse.requires2FA && authResponse.tempToken) {
+        setTempToken2FA(authResponse.tempToken);
+        setIs2FAModalOpen(true);
+        return;
+      }
+      if (authResponse.user) {
+        redirectByRole(authResponse.user.rol);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -90,6 +113,14 @@ export const LoginPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Aviso de cierre de sesión por inactividad (HU-44) */}
+          {reason === 'inactivity' && (
+            <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
+              <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+              <span>Tu sesión se cerró automáticamente tras 15 minutos de inactividad por seguridad clínica.</span>
+            </div>
+          )}
+
           {error && (
             <div className="flex items-center gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive">
               <ShieldAlert className="h-4 w-4 shrink-0" />
@@ -122,16 +153,13 @@ export const LoginPage: React.FC = () => {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-foreground">Contraseña</label>
-                <a
-                  href="#recuperar"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert('Por favor contacte a la mesa de ayuda de Cruz del Eje o ingrese con su DNI.');
-                  }}
+                {/* Enlace funcional a recuperación de contraseña (HU-43) */}
+                <Link
+                  to="/olvido-password"
                   className="text-[11px] font-semibold text-teal-700 hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
-                </a>
+                </Link>
               </div>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
@@ -213,6 +241,20 @@ export const LoginPage: React.FC = () => {
           </Link>
         </p>
       </div>
+
+      {/* Modal Bloqueante de Desafío 2FA (HU-42) */}
+      <TwoFactorChallengeModal
+        isOpen={is2FAModalOpen}
+        tempToken={tempToken2FA}
+        onSuccess={(rol) => {
+          setIs2FAModalOpen(false);
+          redirectByRole(rol);
+        }}
+        onCancel={() => {
+          setIs2FAModalOpen(false);
+          setTempToken2FA('');
+        }}
+      />
     </div>
   );
 };

@@ -28,7 +28,7 @@ export const BANNER_SLIDES: BannerSlide[] = [
     logoType: 'hospital',
     titlePrimary: 'HOSPITAL PROVINCIAL',
     titleSecondary: 'AURELIO CRESPO',
-    subtitle: 'Hospital público cabecera regional con guardia activa las 24 horas, internación y terapia intensiva.',
+    subtitle: 'Hospital público cabecera regional con internación, terapia intensiva y atención médica ambulatoria integral.',
     buttonText: 'Guardia y Turnos',
     buttonLink: '/turnero',
     bgImage: '/centros/hospital_aurelio_crespo.jpg',
@@ -295,23 +295,14 @@ export const CentrosHeroBannerSlider: React.FC = () => {
               {slide.subtitle}
             </p>
 
-            {/* Botón de Acción Estilo Idéntico a la Imagen */}
+            {/* Botones de Acción Uniformes para Todos los Centros */}
             <div className="pt-2 flex flex-wrap items-center gap-3">
-              {slide.buttonLink ? (
-                <Link
-                  to={slide.buttonLink}
-                  className="inline-flex items-center justify-center rounded-md bg-[#104e7a] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#0c3e62] hover:shadow-lg transition-all cursor-pointer"
-                >
-                  {slide.buttonText}
-                </Link>
-              ) : (
-                <button
-                  onClick={() => setModalSlide(slide)}
-                  className="inline-flex items-center justify-center rounded-md bg-[#104e7a] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#0c3e62] hover:shadow-lg transition-all cursor-pointer"
-                >
-                  {slide.buttonText}
-                </button>
-              )}
+              <Link
+                to="/turnero"
+                className="inline-flex items-center justify-center rounded-md bg-[#104e7a] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#0c3e62] hover:shadow-lg transition-all cursor-pointer"
+              >
+                Sacar Turno
+              </Link>
 
               <button
                 onClick={() => setModalSlide(slide)}
@@ -353,10 +344,10 @@ export const CentrosHeroBannerSlider: React.FC = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-end p-5 text-white">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-teal-600 px-2 py-0.5 rounded text-white">
+                  <p className="text-xs text-slate-300 font-medium mb-1">
                     {modalSlide.detalles.tipo}
-                  </span>
-                  <h3 className="text-xl font-bold font-heading text-white mt-1">
+                  </p>
+                  <h3 className="text-xl font-bold font-heading text-white">
                     {modalSlide.detalles.nombreCompleto}
                   </h3>
                 </div>
@@ -393,16 +384,16 @@ export const CentrosHeroBannerSlider: React.FC = () => {
 
               {/* Equipamiento y Especialidades */}
               <div className="space-y-2">
-                <span className="font-bold text-foreground block uppercase text-[11px] tracking-wider">
+                <span className="font-bold text-foreground block text-xs">
                   Servicios y Estudios Disponibles:
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {modalSlide.detalles.servicios.map((srv, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1 rounded-lg bg-teal-50 border border-teal-200 px-2.5 py-1 text-[11px] font-bold text-teal-800"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 border border-slate-200 px-2.5 py-1 text-xs text-slate-700"
                     >
-                      <ShieldCheck className="h-3 w-3 text-teal-600" />
+                      <ShieldCheck className="h-3.5 w-3.5 text-sky-700" />
                       <span>{srv}</span>
                     </span>
                   ))}

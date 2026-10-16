@@ -84,7 +84,7 @@ export const AtencionConsultaPage: React.FC = () => {
       receta: incluirReceta
         ? {
             id: `rec-${Date.now()}`,
-            codigoQR: `LUVIA-REC-QR-${Math.floor(100000 + Math.random() * 900000)}`,
+            codigoQR: `ESU-REC-QR-${Math.floor(100000 + Math.random() * 900000)}`,
             fechaEmision: new Date().toISOString().split('T')[0],
             fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
               .toISOString()
@@ -112,7 +112,7 @@ export const AtencionConsultaPage: React.FC = () => {
   if (guardadoExitoso) {
     return (
       <div className="max-w-xl mx-auto rounded-2xl border border-border bg-card p-8 text-center space-y-6 shadow-md">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-700 text-white shadow-md">
           <CheckCircle2 className="h-8 w-8" />
         </div>
         <div className="space-y-1">
@@ -123,8 +123,8 @@ export const AtencionConsultaPage: React.FC = () => {
         </div>
 
         {incluirReceta && (
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-primary font-medium flex items-center justify-center gap-2">
-            <QrCode className="h-4 w-4" />
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 text-xs text-foreground font-semibold flex items-center justify-center gap-2">
+            <QrCode className="h-4 w-4 text-primary" />
             <span>Receta Digital con QR emitida y disponible para el paciente</span>
           </div>
         )}
@@ -132,7 +132,7 @@ export const AtencionConsultaPage: React.FC = () => {
         <div className="flex gap-3 justify-center pt-2">
           <button
             onClick={() => navigate('/dashboard/medico')}
-            className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition"
+            className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition cursor-pointer"
           >
             Volver a la Agenda Médica
           </button>
@@ -155,7 +155,7 @@ export const AtencionConsultaPage: React.FC = () => {
       {/* Ficha del Paciente */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-border bg-card p-5 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-sky-700 dark:text-sky-300 font-bold border border-slate-200 dark:border-slate-700">
             <User className="h-6 w-6" />
           </div>
           <div>
@@ -167,7 +167,7 @@ export const AtencionConsultaPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-600 border border-blue-500/20">
+          <span className="inline-flex items-center rounded-md bg-sky-700 px-3 py-1 text-xs font-bold text-white shadow-xs">
             En Atención Activa
           </span>
         </div>

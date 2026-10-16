@@ -46,7 +46,7 @@ export function AppointmentReceiptModal({
     // Generar archivo de comprobante descargable
     const contenido = `
 ========================================
-   LUVIA · TU SALUD, UNIFICADA
+   ESU · ECOSISTEMA DE SALUD UNIFICADO
        CRUZ DEL EJE - CÓRDOBA
 ========================================
 COMPROBANTE OFICIAL DE TURNO MÉDICO
@@ -66,7 +66,7 @@ ESPECIALIDAD: ${appointment.specialty.name}
 FECHA: ${appointment.date}
 HORA: ${appointment.slot.time} hs
 
-CÓDIGO DE VALIDACIÓN QR: LUVIA-VERIF-${appointment.bookingCode}
+CÓDIGO DE VALIDACIÓN QR: ESU-VERIF-${appointment.bookingCode}
 ----------------------------------------
 Presente este comprobante en mesa de entradas al llegar.
 Guardia Hospital Aurelio Crespo: 107 / (03549) 422111
@@ -89,7 +89,7 @@ Guardia Hospital Aurelio Crespo: 107 / (03549) 422111
 
   const handleCompartirWhatsapp = () => {
     const texto = encodeURIComponent(
-      `🏥 *Turno Confirmado en Luvia Cruz del Eje*\n\n` +
+      `🏥 *Turno Confirmado en ESU Cruz del Eje*\n\n` +
       `📅 *Fecha:* ${appointment.date}\n` +
       `⏰ *Hora:* ${appointment.slot.time} hs\n` +
       `👨‍⚕️ *Médico:* ${appointment.doctor.name} (${appointment.specialty.name})\n` +
@@ -147,7 +147,7 @@ Guardia Hospital Aurelio Crespo: 107 / (03549) 422111
             <div className="flex flex-col items-center gap-2">
               <QrCode className="h-24 w-24 text-slate-800" />
               <span className="text-[10px] font-mono font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded">
-                LUVIA-VERIF-{appointment.bookingCode}
+                ESU-VERIF-{appointment.bookingCode}
               </span>
             </div>
           </div>
