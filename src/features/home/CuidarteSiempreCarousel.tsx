@@ -18,7 +18,7 @@ const ARTICLES: HealthArticle[] = [
   {
     id: 'art-1',
     badge: 'Ginecología Clínica',
-    badgeColor: 'bg-rose-500/90 text-white',
+    badgeColor: 'bg-rose-700 text-white',
     title: 'Atendemos todas las etapas',
     subtitle: 'Adolescencia, adultez, embarazo y menopausia.',
     description: 'Estamos para acompañarte siempre con controles ginecológicos periódicos, ecografías y prevención temprana.',
@@ -29,7 +29,7 @@ const ARTICLES: HealthArticle[] = [
   {
     id: 'art-2',
     badge: '¡Disfrutá del sol consciente!',
-    badgeColor: 'bg-amber-600/90 text-white',
+    badgeColor: 'bg-amber-600 text-white',
     title: 'Cuidados de la piel en época de calor',
     subtitle: 'La importancia de protegerte en días calurosos.',
     description: 'Conocé los consejos clave de nuestros dermatólogos para evitar quemaduras solares, deshidratación y golpes de calor.',
@@ -40,7 +40,7 @@ const ARTICLES: HealthArticle[] = [
   {
     id: 'art-3',
     badge: 'Salud Visual Integral',
-    badgeColor: 'bg-red-600/90 text-white',
+    badgeColor: 'bg-red-700 text-white',
     title: 'Mitos sobre cirugías y control ocular',
     subtitle: 'Diagnóstico precoz y prevención oftalmológica.',
     description: 'Realizamos chequeos de agudeza visual, fondo de ojos y controles de presión ocular para toda la familia.',
@@ -51,7 +51,7 @@ const ARTICLES: HealthArticle[] = [
   {
     id: 'art-4',
     badge: 'Pediatría y Desarrollo',
-    badgeColor: 'bg-sky-600/90 text-white',
+    badgeColor: 'bg-sky-700 text-white',
     title: 'Control de Niño Sano y Vacunas',
     subtitle: 'Acompañando su crecimiento paso a paso.',
     description: 'Seguimiento nutricional, esquema nacional de vacunación y controles pediátricos desde el primer mes de vida.',
@@ -77,25 +77,25 @@ export const CuidarteSiempreCarousel: React.FC = () => {
   };
 
   return (
-    <section className="relative overflow-hidden py-16 bg-[#eaf6f6] border-b border-teal-100">
+    <section className="relative overflow-hidden py-16 bg-[#eaf6f6] border-b border-sky-100">
       {/* Marca de agua de Cruz de Salud */}
       <div className="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none opacity-30 select-none">
         <div className="relative w-48 h-48 flex items-center justify-center">
-          <div className="absolute w-12 h-44 bg-teal-300 rounded-2xl" />
-          <div className="absolute w-44 h-12 bg-teal-300 rounded-2xl" />
+          <div className="absolute w-12 h-44 bg-sky-300 rounded-2xl" />
+          <div className="absolute w-44 h-12 bg-sky-300 rounded-2xl" />
         </div>
       </div>
 
       <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
         {/* Título Estilo Referencia */}
         <div className="text-center mb-12 space-y-1">
-          <span className="block text-2xl sm:text-3xl font-bold tracking-widest text-teal-600 uppercase font-heading">
+          <span className="block text-2xl sm:text-3xl font-bold tracking-widest text-sky-600 uppercase font-heading">
             CUIDARTE
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-teal-800 uppercase font-heading">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-sky-800 uppercase font-heading">
             SIEMPRE
           </h2>
-          <div className="h-1 w-16 bg-teal-500 mx-auto mt-2 rounded-full" />
+          <div className="h-1 w-16 bg-sky-600 mx-auto mt-2 rounded-full" />
         </div>
 
         {/* Carrusel con Flechas Laterales */}
@@ -103,7 +103,7 @@ export const CuidarteSiempreCarousel: React.FC = () => {
           {/* Flecha Izquierda */}
           <button
             onClick={handlePrev}
-            className="absolute -left-2 sm:-left-5 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl border border-teal-200 bg-white text-teal-700 shadow-md hover:bg-teal-50 transition hover:scale-105 cursor-pointer"
+            className="absolute -left-2 sm:-left-5 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl border border-sky-200 bg-white text-sky-700 shadow-md hover:bg-sky-50 transition hover:scale-105 cursor-pointer"
             aria-label="Anterior"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -136,15 +136,15 @@ export const CuidarteSiempreCarousel: React.FC = () => {
                 </div>
 
                 {/* Contenido Inferior Turquesa Oficial */}
-                <div className="flex flex-1 flex-col justify-between bg-teal-700 p-6 text-white space-y-4">
+                <div className="flex flex-1 flex-col justify-between bg-sky-700 p-6 text-white space-y-4">
                   <div className="space-y-2">
                     <h3 className="font-bold text-base sm:text-lg leading-snug font-heading text-white">
                       {art.title}
                     </h3>
-                    <p className="text-xs text-teal-100 font-medium">
+                    <p className="text-xs text-sky-100 font-medium">
                       {art.subtitle}
                     </p>
-                    <p className="text-xs text-teal-100/90 leading-relaxed line-clamp-3">
+                    <p className="text-xs text-sky-100/90 leading-relaxed line-clamp-3">
                       {art.description}
                     </p>
                   </div>
@@ -153,7 +153,7 @@ export const CuidarteSiempreCarousel: React.FC = () => {
                   <div className="pt-2">
                     <button
                       onClick={() => setSelectedArticle(art)}
-                      className="inline-flex items-center justify-center rounded-full border border-teal-400 bg-teal-800/60 px-5 py-2 text-xs font-bold text-white hover:bg-white hover:text-teal-800 transition-all shadow-xs cursor-pointer"
+                      className="inline-flex items-center justify-center rounded-full bg-sky-700 px-5 py-2 text-xs font-bold text-white hover:bg-sky-800 transition-all shadow-xs cursor-pointer"
                     >
                       <span>Leer Más</span>
                     </button>
@@ -166,7 +166,7 @@ export const CuidarteSiempreCarousel: React.FC = () => {
           {/* Flecha Derecha */}
           <button
             onClick={handleNext}
-            className="absolute -right-2 sm:-right-5 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl border border-teal-200 bg-white text-teal-700 shadow-md hover:bg-teal-50 transition hover:scale-105 cursor-pointer"
+            className="absolute -right-2 sm:-right-5 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl border border-sky-200 bg-white text-sky-700 shadow-md hover:bg-sky-50 transition hover:scale-105 cursor-pointer"
             aria-label="Siguiente"
           >
             <ChevronRight className="h-6 w-6" />
@@ -180,7 +180,7 @@ export const CuidarteSiempreCarousel: React.FC = () => {
               key={idx}
               onClick={() => setStartIndex(idx)}
               className={`h-2.5 rounded-full transition-all cursor-pointer ${
-                startIndex === idx ? 'w-8 bg-teal-600' : 'w-2.5 bg-teal-300 hover:bg-teal-400'
+                startIndex === idx ? 'w-8 bg-sky-600' : 'w-2.5 bg-sky-300 hover:bg-sky-400'
               }`}
               aria-label={`Ir a página ${idx + 1}`}
             />
@@ -216,7 +216,7 @@ export const CuidarteSiempreCarousel: React.FC = () => {
                 <h3 className="text-xl font-bold text-foreground font-heading">
                   {selectedArticle.title}
                 </h3>
-                <p className="text-xs text-teal-600 font-semibold mt-0.5">
+                <p className="text-xs text-sky-600 font-semibold mt-0.5">
                   {selectedArticle.subtitle}
                 </p>
               </div>
@@ -225,8 +225,8 @@ export const CuidarteSiempreCarousel: React.FC = () => {
                 {selectedArticle.fullContent}
               </p>
 
-              <div className="rounded-2xl border border-teal-500/20 bg-teal-50 p-4 text-xs space-y-1">
-                <div className="font-bold text-teal-700 flex items-center gap-1.5">
+              <div className="rounded-2xl border border-border bg-muted/40 p-4 text-xs space-y-1">
+                <div className="font-bold text-sky-700 flex items-center gap-1.5">
                   <HeartPulse className="h-4 w-4" />
                   <span>Atención en Cruz del Eje</span>
                 </div>
@@ -245,7 +245,7 @@ export const CuidarteSiempreCarousel: React.FC = () => {
                 <Link
                   to="/turnero"
                   onClick={() => setSelectedArticle(null)}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-full bg-teal-600 py-2.5 text-xs font-bold text-white hover:bg-teal-700 transition shadow-sm"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-full bg-sky-600 py-2.5 text-xs font-bold text-white hover:bg-sky-700 transition shadow-sm"
                 >
                   <Calendar className="h-4 w-4" />
                   <span>Sacar Turno</span>

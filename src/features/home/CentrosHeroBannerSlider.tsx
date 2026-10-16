@@ -168,14 +168,14 @@ export const CentrosHeroBannerSlider: React.FC = () => {
       case 'hospital':
         return (
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-md">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-md">
               <span className="text-2xl font-extrabold">+</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-bold tracking-wider text-teal-700 font-heading leading-none">
+              <span className="text-xl sm:text-2xl font-bold tracking-wider text-sky-700 font-heading leading-none">
                 HOSPITAL PROVINCIAL
               </span>
-              <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-teal-900 font-heading leading-tight">
+              <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-sky-900 font-heading leading-tight">
                 AURELIO CRESPO
               </span>
             </div>
@@ -184,7 +184,7 @@ export const CentrosHeroBannerSlider: React.FC = () => {
       case 'sanatorio-maria-isabel':
         return (
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 text-white shadow-md border border-slate-600">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-800 text-white shadow-md border border-slate-600">
               <span className="text-2xl font-bold">✚</span>
             </div>
             <div className="flex flex-col">
@@ -200,14 +200,14 @@ export const CentrosHeroBannerSlider: React.FC = () => {
       case 'clinica-cabrera':
         return (
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-md">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-700 text-white shadow-md">
               <span className="text-2xl font-bold">⚕</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-bold tracking-wider text-teal-700 font-heading leading-none">
+              <span className="text-xl sm:text-2xl font-bold tracking-wider text-sky-700 font-heading leading-none">
                 CLÍNICA MÉDICA
               </span>
-              <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-teal-950 font-heading leading-tight">
+              <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-sky-950 font-heading leading-tight">
                 CABRERA
               </span>
             </div>
@@ -233,14 +233,14 @@ export const CentrosHeroBannerSlider: React.FC = () => {
       default:
         return (
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-md">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-md">
               <Calendar className="h-7 w-7 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-bold tracking-wider text-teal-700 font-heading leading-none">
+              <span className="text-xl sm:text-2xl font-bold tracking-wider text-sky-700 font-heading leading-none">
                 PORTAL ASISTENCIAL LUVIA
               </span>
-              <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-teal-950 font-heading leading-tight">
+              <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-sky-950 font-heading leading-tight">
                 TURNOS EN LÍNEA
               </span>
             </div>
@@ -270,7 +270,7 @@ export const CentrosHeroBannerSlider: React.FC = () => {
         {/* Flechas de Navegación Lateral (ocultables en móvil) */}
         <button
           onClick={handlePrev}
-          className="absolute left-3 sm:left-6 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-md backdrop-blur-xs hover:bg-white hover:text-teal-700 hover:scale-110 transition cursor-pointer"
+          className="absolute left-3 sm:left-6 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-md backdrop-blur-xs hover:bg-white hover:text-sky-700 hover:scale-110 transition cursor-pointer"
           aria-label="Anterior"
         >
           <ChevronLeft className="h-6 w-6" />
@@ -278,7 +278,7 @@ export const CentrosHeroBannerSlider: React.FC = () => {
 
         <button
           onClick={handleNext}
-          className="absolute right-3 sm:right-6 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-md backdrop-blur-xs hover:bg-white hover:text-teal-700 hover:scale-110 transition cursor-pointer"
+          className="absolute right-3 sm:right-6 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-md backdrop-blur-xs hover:bg-white hover:text-sky-700 hover:scale-110 transition cursor-pointer"
           aria-label="Siguiente"
         >
           <ChevronRight className="h-6 w-6" />
@@ -299,7 +299,7 @@ export const CentrosHeroBannerSlider: React.FC = () => {
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <Link
                 to="/turnero"
-                className="inline-flex items-center justify-center rounded-md bg-[#104e7a] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#0c3e62] hover:shadow-lg transition-all cursor-pointer"
+                className="inline-flex items-center justify-center rounded-md bg-sky-700 px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-sky-800 hover:shadow-lg transition-all cursor-pointer"
               >
                 Sacar Turno
               </Link>
@@ -369,15 +369,15 @@ export const CentrosHeroBannerSlider: React.FC = () => {
               {/* Ficha Técnica */}
               <div className="rounded-2xl bg-muted/40 p-4 space-y-2 border border-border/80">
                 <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
+                  <MapPin className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
                   <span><strong>Dirección:</strong> {modalSlide.detalles.direccion}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-teal-600 shrink-0" />
+                  <Phone className="h-4 w-4 text-sky-600 shrink-0" />
                   <span><strong>Teléfono:</strong> {modalSlide.detalles.telefono}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-teal-600 shrink-0" />
+                  <Clock className="h-4 w-4 text-sky-600 shrink-0" />
                   <span><strong>Horario:</strong> {modalSlide.detalles.horario}</span>
                 </div>
               </div>
@@ -412,7 +412,7 @@ export const CentrosHeroBannerSlider: React.FC = () => {
                 <Link
                   to="/turnero"
                   onClick={() => setModalSlide(null)}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-full bg-teal-600 py-2.5 font-bold text-white hover:bg-teal-700 transition shadow-sm"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-full bg-sky-600 py-2.5 font-bold text-white hover:bg-sky-700 transition shadow-sm"
                 >
                   <Calendar className="h-4 w-4" />
                   <span>Sacar Turno Aquí</span>

@@ -21,7 +21,7 @@ export const MOCK_OBRAS_SOCIALES: ObraSocialInfo[] = [
     nombre: 'Administración Provincial del Seguro de Salud',
     sigla: 'APROSS',
     color: '#0284c7',
-    bgGradient: 'from-sky-500/15 to-blue-600/10 border-sky-300/40 text-sky-900',
+    bgGradient: 'from-sky-500/15 to-sky-600/10 border-sky-300/40 text-sky-900',
     textColor: 'text-sky-700',
     tipo: 'Provincial Córdoba',
     cobertura: 'Cobertura al 100% en consultas y estudios ambulatorios.',
@@ -33,8 +33,8 @@ export const MOCK_OBRAS_SOCIALES: ObraSocialInfo[] = [
     nombre: 'Instituto Nacional de Servicios Sociales para Jubilados y Pensionados',
     sigla: 'PAMI',
     color: '#0d9488',
-    bgGradient: 'from-teal-500/15 to-emerald-600/10 border-teal-300/40 text-teal-900',
-    textColor: 'text-teal-700',
+    bgGradient: 'from-sky-600/15 to-emerald-600/10 border-sky-300/40 text-sky-900',
+    textColor: 'text-sky-700',
     tipo: 'Nacional Jubilados',
     cobertura: 'Médico de cabecera, especialistas y medicamentos gratuitos según vademécum.',
     centrosAceptados: ['Hospital Aurelio Crespo', 'Clínica Privada Cruz del Eje', 'Dispensario San Pantaleón'],
@@ -45,8 +45,8 @@ export const MOCK_OBRAS_SOCIALES: ObraSocialInfo[] = [
     nombre: 'Organización de Servicios Directos Empresarios',
     sigla: 'OSDE',
     color: '#0284c7',
-    bgGradient: 'from-blue-600/15 to-indigo-600/10 border-blue-300/40 text-blue-900',
-    textColor: 'text-blue-700',
+    bgGradient: 'from-sky-600/15 to-sky-600/10 border-sky-300/40 text-sky-900',
+    textColor: 'text-sky-700',
     tipo: 'Prepaga Nacional',
     cobertura: 'Planes 210, 310, 410 y 450 con cartilla médica directa y reintegros.',
     centrosAceptados: ['Clínica Privada Cruz del Eje', 'Consultorios del Valle'],
@@ -105,8 +105,8 @@ export const MOCK_OBRAS_SOCIALES: ObraSocialInfo[] = [
     nombre: 'Cobertura Universal y Gratuita de Salud Pública',
     sigla: 'SALUD PÚBLICA / SIN OBRA SOCIAL',
     color: '#0d9488',
-    bgGradient: 'from-teal-600/20 to-teal-900/15 border-teal-500/50 text-teal-950',
-    textColor: 'text-teal-800',
+    bgGradient: 'from-sky-600/20 to-sky-900/15 border-sky-600/50 text-sky-950',
+    textColor: 'text-sky-800',
     tipo: 'Atención Gratuita',
     cobertura: '100% gratuita y garantizada para cualquier persona con DNI argentino o pasaporte.',
     centrosAceptados: ['Hospital Provincial Aurelio Crespo', 'Dispensario San Pantaleón'],
@@ -122,8 +122,8 @@ export const ObrasSocialesBar: React.FC = () => {
       <div className="container mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-bold text-teal-700 border border-teal-200 mb-2">
-              <Shield className="h-3.5 w-3.5 text-teal-600" />
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground mb-2">
+              <Shield className="h-3.5 w-3.5 text-sky-600" />
               <span>Convenios de Cobertura y Atención</span>
             </div>
             <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-heading text-foreground">
@@ -135,7 +135,7 @@ export const ObrasSocialesBar: React.FC = () => {
           </div>
 
           <p className="text-xs text-muted-foreground italic flex items-center gap-1.5">
-            <Info className="h-4 w-4 text-teal-600 shrink-0" />
+            <Info className="h-4 w-4 text-sky-600 shrink-0" />
             <span>Haz clic en cualquier obra social para ver detalles y requisitos de turno.</span>
           </p>
         </div>
@@ -146,11 +146,11 @@ export const ObrasSocialesBar: React.FC = () => {
             <button
               key={os.id}
               onClick={() => setSelectedOS(os)}
-              className={`flex flex-col justify-between rounded-2xl border p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-md cursor-pointer bg-gradient-to-br ${os.bgGradient}`}
+              className="flex flex-col justify-between rounded-2xl border bg-card p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-md cursor-pointer"
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/80 border border-black/5 text-foreground">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border">
                     {os.tipo}
                   </span>
                   <CheckCircle2 className={`h-4 w-4 ${os.textColor}`} />
@@ -179,17 +179,17 @@ export const ObrasSocialesBar: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
           <div className="w-full max-w-lg rounded-3xl border border-border bg-card overflow-hidden shadow-2xl space-y-0 animate-in fade-in zoom-in duration-200">
             {/* Header del Modal */}
-            <div className="bg-gradient-to-r from-teal-700 via-teal-800 to-teal-950 p-6 text-white flex items-center justify-between">
+            <div className="bg-sky-800 p-6 text-white flex items-center justify-between">
               <div className="flex items-center gap-3.5">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white shadow-inner font-extrabold text-sm">
                   <Shield className="h-6 w-6" />
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-teal-200 tracking-wider">
+                  <span className="text-[10px] uppercase font-bold text-sky-200 tracking-wider">
                     {selectedOS.tipo}
                   </span>
                   <h3 className="text-xl font-bold font-heading">{selectedOS.sigla}</h3>
-                  <p className="text-xs text-teal-100">{selectedOS.nombre}</p>
+                  <p className="text-xs text-sky-100">{selectedOS.nombre}</p>
                 </div>
               </div>
 
@@ -204,15 +204,15 @@ export const ObrasSocialesBar: React.FC = () => {
             {/* Contenido */}
             <div className="p-6 space-y-5 text-xs">
               {/* Cobertura */}
-              <div className="rounded-2xl bg-teal-50/70 border border-teal-200/60 p-4 space-y-1">
-                <span className="font-bold text-teal-900 block text-xs">Alcance y Cobertura:</span>
-                <p className="text-teal-800 text-xs leading-relaxed">{selectedOS.cobertura}</p>
+              <div className="rounded-2xl bg-sky-50/70 border border-sky-200/60 p-4 space-y-1">
+                <span className="font-bold text-sky-900 block text-xs">Alcance y Cobertura:</span>
+                <p className="text-sky-800 text-xs leading-relaxed">{selectedOS.cobertura}</p>
               </div>
 
               {/* Centros de Salud en Cruz del Eje donde se atiende */}
               <div className="space-y-2">
                 <span className="font-bold text-foreground flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
-                  <Building2 className="h-3.5 w-3.5 text-teal-600" />
+                  <Building2 className="h-3.5 w-3.5 text-sky-600" />
                   <span>Centros en Cruz del Eje con convenio:</span>
                 </span>
                 <div className="grid grid-cols-1 gap-1.5">
@@ -221,7 +221,7 @@ export const ObrasSocialesBar: React.FC = () => {
                       key={i}
                       className="flex items-center gap-2 rounded-xl bg-muted/40 border border-border px-3 py-2 font-medium"
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5 text-teal-600 shrink-0" />
+                      <CheckCircle2 className="h-3.5 w-3.5 text-sky-600 shrink-0" />
                       <span>{centro}</span>
                     </div>
                   ))}
@@ -252,7 +252,7 @@ export const ObrasSocialesBar: React.FC = () => {
                 <Link
                   to="/turnero"
                   onClick={() => setSelectedOS(null)}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-full bg-teal-600 py-2.5 font-bold text-white hover:bg-teal-700 transition shadow-sm"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-full bg-sky-600 py-2.5 font-bold text-white hover:bg-sky-700 transition shadow-sm"
                 >
                   <Calendar className="h-4 w-4" />
                   <span>Sacar Turno con {selectedOS.sigla}</span>

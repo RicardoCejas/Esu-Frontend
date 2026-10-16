@@ -76,9 +76,9 @@ export const getSpecialtyDesign = (id: string, nombre: string): SpecialtyVisualC
   if (id === 'e6' || lower.includes('oftalmo')) {
     return {
       Icon: Eye,
-      iconColor: 'text-teal-700',
-      actionHover: 'group-hover:text-teal-700',
-      arrowHover: 'group-hover:text-teal-700',
+      iconColor: 'text-sky-700',
+      actionHover: 'group-hover:text-sky-700',
+      arrowHover: 'group-hover:text-sky-700',
     };
   }
 

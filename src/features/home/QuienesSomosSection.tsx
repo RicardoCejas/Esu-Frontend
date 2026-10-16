@@ -61,7 +61,7 @@ export const QuienesSomosSection: React.FC = () => {
 
           {/* Pilar 2 */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition-colors hover:border-slate-300">
-            <ShieldCheck className="h-6 w-6 text-teal-700 mb-3" />
+            <ShieldCheck className="h-6 w-6 text-sky-700 mb-3" />
             <h4 className="text-base font-bold text-slate-900 font-heading mb-1.5">
               Historia Clínica Única
             </h4>
