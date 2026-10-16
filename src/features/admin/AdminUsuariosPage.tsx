@@ -113,7 +113,7 @@ export const AdminUsuariosPage: React.FC = () => {
                 onClick={() => setFiltroEstado('ACTIVO')}
                 className={`rounded-md px-2.5 py-1 font-medium transition ${
                   filtroEstado === 'ACTIVO'
-                    ? 'bg-emerald-500/10 text-emerald-600 font-bold shadow-xs'
+                    ? 'bg-emerald-700 text-white font-bold shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >

@@ -44,10 +44,6 @@ export const AdminSedesPage: React.FC = () => {
 
   const [centroSeleccionadoId, setCentroSeleccionadoId] = useState<string>('TODOS');
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
   const cargarDatos = async () => {
     const [cData, csData] = await Promise.all([
       centrosService.getAll(),
@@ -57,6 +53,10 @@ export const AdminSedesPage: React.FC = () => {
     setConsultorios(csData);
     setLoading(false);
   };
+
+  useEffect(() => {
+    cargarDatos();
+  }, []);
 
   const handleAbrirCrearCentro = () => {
     setEditandoCentro(null);
@@ -294,7 +294,7 @@ export const AdminSedesPage: React.FC = () => {
                       {cs.especialidadAsignada || 'Uso Polivalente'}
                     </td>
                     <td className="p-3.5 text-center">
-                      <span className="rounded-full bg-emerald-500/15 text-emerald-700 px-2.5 py-0.5 text-[10px] font-bold border border-emerald-500/30">
+                      <span className="rounded-full bg-emerald-700 text-white px-2.5 py-0.5 text-[10px] font-bold">
                         Habilitado
                       </span>
                     </td>
