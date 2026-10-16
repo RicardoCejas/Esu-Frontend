@@ -10,6 +10,7 @@ import { VerifyEmailPage } from '@/features/auth/VerifyEmailPage';
 import { ActivityMonitor } from '@/components/auth/ActivityMonitor';
 import { ProfesionalesPage } from '@/features/profesionales/ProfesionalesPage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { PerfilLayout } from '@/components/layout/PerfilLayout';
 import { AuthGuard } from './AuthGuard';
 import { RoleGuard } from './RoleGuard';
 
@@ -37,6 +38,9 @@ import { AdminEspecialidadesPage } from '@/features/admin/AdminEspecialidadesPag
 import { AdminSedesPage } from '@/features/admin/AdminSedesPage';
 import { NuevaEspecialidadPage } from '@/features/admin/NuevaEspecialidadPage';
 import { NuevoProfesionalPage } from '@/features/profesionales/NuevoProfesionalPage';
+
+// Perfil (todos los roles)
+import { MiPerfilPage } from '@/features/perfil/MiPerfilPage';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -66,6 +70,11 @@ export const AppRoutes: React.FC = () => {
 
         {/* Rutas Protegidas del Dashboard con Layout Unificado y AuthGuard */}
         <Route element={<AuthGuard />}>
+          {/* Perfil (independiente, sin sidebar; disponible para todos los roles autenticados) */}
+          <Route element={<PerfilLayout />}>
+            <Route path="/dashboard/perfil" element={<MiPerfilPage />} />
+          </Route>
+
           <Route path="/dashboard" element={<DashboardLayout />}>
             {/* Módulo Paciente */}
             <Route element={<RoleGuard allowedRoles={['PACIENTE', 'ADMIN']} />}>
