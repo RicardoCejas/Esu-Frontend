@@ -120,9 +120,7 @@ export const MisTurnosPage: React.FC = () => {
         </div>
       ) : turnos.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center space-y-4">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-            <Calendar className="h-6 w-6" />
-          </div>
+          <Calendar className="mx-auto h-10 w-10 text-muted-foreground/70" />
           <h3 className="font-bold text-base">No tienes turnos agendados</h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             Puedes reservar una cita médica en cualquier centro de salud o con profesionales de Cruz del Eje.
@@ -143,10 +141,7 @@ export const MisTurnosPage: React.FC = () => {
               className="flex flex-col justify-between rounded-xl border border-border bg-card p-5 shadow-xs hover:border-primary/40 transition-all space-y-4"
             >
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
-                    {turno.codigoVerificacion}
-                  </span>
+                <div className="flex items-center justify-end">
                   {getBadgeEstado(turno.estado)}
                 </div>
 
@@ -158,14 +153,14 @@ export const MisTurnosPage: React.FC = () => {
                 <div className="space-y-1.5 text-xs text-muted-foreground pt-1">
                   <div className="flex items-center gap-2 font-medium text-foreground">
                     <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span>{turno.fecha} — {turno.hora} hs</span>
+                    <span className="font-mono">{turno.fecha} — {turno.hora} hs</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <MapPin className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
                     <span>{turno.centroSaludNombre}</span>
                   </div>
                   {turno.motivoConsulta && (
-                    <div className="rounded-lg bg-muted/60 p-2.5 text-[11px] text-muted-foreground border border-border/50">
+                    <div className="rounded-lg bg-muted p-2.5 text-[11px] text-muted-foreground border border-border">
                       <span className="font-semibold text-foreground">Motivo: </span>
                       {turno.motivoConsulta}
                     </div>
@@ -188,7 +183,7 @@ export const MisTurnosPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setTurnoACancelar(turno)}
-                    className="flex items-center justify-center rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-700 hover:text-white dark:bg-rose-950/60 dark:border-rose-900 dark:text-rose-200 dark:hover:bg-rose-900 transition cursor-pointer"
+                    className="flex items-center justify-center rounded-lg border border-rose-200 bg-card px-3 py-2 text-rose-700 hover:border-rose-700 hover:bg-rose-700 hover:text-white transition cursor-pointer"
                     title="Cancelar turno"
                   >
                     <XCircle className="h-3.5 w-3.5" />
@@ -204,10 +199,8 @@ export const MisTurnosPage: React.FC = () => {
       {turnoACancelar && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-rose-600">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/70">
-                <XCircle className="h-6 w-6 text-rose-700 dark:text-rose-300" />
-              </div>
+            <div className="flex items-center gap-3">
+              <XCircle className="h-8 w-8 shrink-0 text-rose-700" />
               <div>
                 <h3 className="text-base font-bold text-foreground">Cancelar Turno Médico</h3>
                 <p className="text-xs text-muted-foreground">Esta acción liberará el horario de atención.</p>
@@ -257,14 +250,14 @@ export const MisTurnosPage: React.FC = () => {
             </div>
 
             {/* Código QR Ilustrativo */}
-            <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-white p-6 text-black shadow-inner">
-              <div className="flex h-36 w-36 items-center justify-center rounded-lg border-2 border-dashed border-gray-400 bg-gray-50">
+            <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-white p-6 text-slate-900 shadow-inner">
+              <div className="flex h-36 w-36 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50">
                 <QrCode className="h-28 w-28 text-slate-800" />
               </div>
               <span className="mt-3 font-mono text-xs font-bold text-slate-800">
                 {selectedTurnoQr.codigoVerificacion}
               </span>
-              <span className="text-[10px] text-gray-600 font-medium mt-0.5">
+              <span className="text-[10px] text-slate-500 font-medium mt-0.5">
                 Presente este código al llegar a recepción
               </span>
             </div>
@@ -289,7 +282,7 @@ export const MisTurnosPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Fecha y Hora:</span>
-                <span className="font-bold text-sky-700 dark:text-sky-400">{selectedTurnoQr.fecha} a las {selectedTurnoQr.hora} hs</span>
+                <span className="font-bold font-mono text-sky-700 dark:text-sky-400">{selectedTurnoQr.fecha} a las {selectedTurnoQr.hora} hs</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Lugar:</span>

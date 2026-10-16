@@ -31,6 +31,32 @@ export const AgendaMedicaPage: React.FC = () => {
     navigate(`/dashboard/medico/atencion?pacienteId=${turno.pacienteId}&turnoId=${turno.id}&pacienteNombre=${encodeURIComponent(turno.pacienteNombre)}&pacienteDni=${turno.pacienteDni}`);
   };
 
+  const getEstadoBadge = (estado: string) => {
+    switch (estado) {
+      case 'CONFIRMADO':
+        return <span className="rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white">Confirmado</span>;
+      case 'EN_ESPERA':
+        return <span className="rounded-md bg-amber-600 px-2.5 py-1 text-[11px] font-bold text-white">En espera</span>;
+      case 'ATENDIENDO':
+        return <span className="rounded-md bg-sky-700 px-2.5 py-1 text-[11px] font-bold text-white">En consulta</span>;
+      case 'COMPLETADO':
+        return <span className="rounded-md bg-slate-700 px-2.5 py-1 text-[11px] font-bold text-white">Atendido</span>;
+      case 'CANCELADO':
+        return <span className="rounded-md bg-rose-700 px-2.5 py-1 text-[11px] font-bold text-white">Cancelado</span>;
+      default:
+        return null;
+    }
+  };
+
+  const ESTADO_LABELS: Record<string, string> = {
+    TODOS: 'Todos',
+    EN_ESPERA: 'En espera',
+    CONFIRMADO: 'Confirmado',
+    ATENDIENDO: 'Atendiendo',
+    COMPLETADO: 'Completado',
+    CANCELADO: 'Cancelado'
+  };
+
   const turnosFiltrados = turnos.filter((t) => {
     if (filtroEstado === 'TODOS') return true;
     return t.estado === filtroEstado;
@@ -48,16 +74,16 @@ export const AgendaMedicaPage: React.FC = () => {
             Agenda Médica y Consultas
           </h1>
           <p className="text-xs text-muted-foreground">
-            {user?.nombre} {user?.apellido} • {user?.matricula || 'MP-34982'} • Hospital Prov. Aurelio Crespo
+            {user?.nombre} {user?.apellido} • <span className="font-mono">{user?.matricula || 'MP-34982'}</span> • Hospital Prov. Aurelio Crespo
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs">
-            <span>{countEnEspera}</span> en sala de espera
+            <span className="font-mono">{countEnEspera}</span> en sala de espera
           </div>
           <div className="rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs">
-            <span>{countAtendidos}</span> atendidos hoy
+            <span className="font-mono">{countAtendidos}</span> atendidos hoy
           </div>
         </div>
       </div>
@@ -74,7 +100,7 @@ export const AgendaMedicaPage: React.FC = () => {
                 : 'bg-card border border-border text-muted-foreground hover:bg-accent'
             }`}
           >
-            {st.replace('_', ' ')}
+            {ESTADO_LABELS[st] ?? st}
           </button>
         ))}
       </div>
@@ -95,14 +121,14 @@ export const AgendaMedicaPage: React.FC = () => {
               key={turno.id}
               className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-5 shadow-xs transition-all ${
                 turno.estado === 'EN_ESPERA'
-                  ? 'border-l-4 border-l-amber-600 border-border bg-card'
+                  ? 'border-amber-500 bg-card'
                   : turno.estado === 'ATENDIENDO'
-                  ? 'border-l-4 border-l-sky-600 border-border bg-card'
+                  ? 'border-sky-500 bg-card'
                   : 'border-border bg-card'
               }`}
             >
               <div className="flex items-start sm:items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-sky-700 dark:text-sky-300 font-bold text-sm border border-slate-200 dark:border-slate-700">
+                <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-lg border border-border bg-card font-mono font-bold text-sm text-foreground">
                   {turno.hora}
                 </div>
 
@@ -115,7 +141,7 @@ export const AgendaMedicaPage: React.FC = () => {
                       DNI: {turno.pacienteDni}
                     </span>
                     {turno.obraSocial && (
-                      <span className="rounded bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                      <span className="rounded bg-slate-700 px-2 py-0.5 text-[10px] font-bold text-white">
                         {turno.obraSocial}
                       </span>
                     )}
@@ -127,8 +153,9 @@ export const AgendaMedicaPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Botones de Estado y Llamado */}
+              {/* Estado y Botones de Llamado */}
               <div className="flex items-center gap-2 self-end sm:self-center">
+                {getEstadoBadge(turno.estado)}
                 {turno.estado === 'CONFIRMADO' && (
                   <button
                     onClick={() => handleCambiarEstado(turno.id, 'EN_ESPERA')}
@@ -146,12 +173,6 @@ export const AgendaMedicaPage: React.FC = () => {
                     <Stethoscope className="h-4 w-4" />
                     <span>{turno.estado === 'ATENDIENDO' ? 'Continuar Atención' : 'Llamar y Atender'}</span>
                   </button>
-                )}
-
-                {turno.estado === 'COMPLETADO' && (
-                  <span className="rounded-xl bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-                    Atención Finalizada
-                  </span>
                 )}
               </div>
             </div>
