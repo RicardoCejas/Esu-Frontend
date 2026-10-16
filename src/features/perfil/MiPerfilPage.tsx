@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme, type Theme } from '@/hooks/useTheme';
 import { ROLE_HOME, ROLE_LABELS, USER_ROLES } from '@/lib/roles';
+import { TwoFactorSetupModal } from '@/features/auth/TwoFactorSetupModal';
 import {
   Mail,
   Phone,
@@ -31,6 +32,7 @@ export const MiPerfilPage: React.FC = () => {
   const { user, logout, switchRole } = useAuth();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const [is2FAOpen, setIs2FAOpen] = useState(false);
 
   const datos: DatoPerfil[] = [
     { icon: Fingerprint, label: 'DNI', value: user?.dni },
@@ -41,8 +43,8 @@ export const MiPerfilPage: React.FC = () => {
     { icon: Stethoscope, label: 'Especialidad', value: user?.especialidad },
   ].filter((d) => Boolean(d.value));
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
@@ -128,6 +130,33 @@ export const MiPerfilPage: React.FC = () => {
             </div>
           </section>
 
+          {/* Seguridad (HU-42) */}
+          <section className="space-y-3 rounded-xl border border-border bg-card p-5">
+            <div>
+              <h2 className="text-sm font-bold text-foreground">Seguridad</h2>
+              <p className="text-xs text-muted-foreground">
+                Protegé tu cuenta con verificación en dos pasos.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIs2FAOpen(true)}
+              className="flex w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 py-2.5 text-xs font-semibold text-foreground transition hover:bg-accent"
+            >
+              <span className="inline-flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                <span>Autenticación en dos pasos</span>
+              </span>
+              <span
+                className={`rounded-md px-2 py-0.5 text-[11px] font-bold text-white ${
+                  user?.twoFactorEnabled ? 'bg-emerald-700' : 'bg-slate-500'
+                }`}
+              >
+                {user?.twoFactorEnabled ? 'Activo' : 'Inactivo'}
+              </span>
+            </button>
+          </section>
+
           {/* Modo demostración */}
           <section className="space-y-3 rounded-xl border border-border bg-card p-5">
             <div>
@@ -177,6 +206,8 @@ export const MiPerfilPage: React.FC = () => {
           </section>
         </div>
       </div>
+
+      <TwoFactorSetupModal isOpen={is2FAOpen} onClose={() => setIs2FAOpen(false)} />
     </div>
   );
 };
