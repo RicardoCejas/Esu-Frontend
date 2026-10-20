@@ -10,7 +10,6 @@ import {
   Minimize2,
   Building2,
   Clock,
-  Sparkles,
   ArrowRight
 } from 'lucide-react';
 
@@ -95,7 +94,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
       {/* Header Superior Tótem / TV */}
       <header className="px-8 py-5 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-600/30">
+          <div className="h-12 w-12 rounded-2xl bg-sky-700 flex items-center justify-center shadow-lg shadow-sky-600/30">
             <span className="text-xl font-black tracking-wider">ESU</span>
           </div>
           <div>
@@ -136,7 +135,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
             }}
             className={`p-2 rounded-xl border transition ${
               sonidoHabilitado
-                ? 'border-sky-500/40 bg-sky-500/10 text-sky-400'
+                ? 'border-sky-600 bg-sky-700 text-white'
                 : 'border-slate-800 bg-slate-900 text-slate-500'
             }`}
             title={sonidoHabilitado ? 'Silenciar sonido' : 'Activar sonido'}
@@ -170,11 +169,11 @@ export const PantallaTurnosTVPage: React.FC = () => {
         {/* PANEL PRINCIPAL: Último llamado médico (Destacado Gigante) */}
         <section className="lg:col-span-8 flex flex-col justify-center">
           {llamadoDestacado ? (
-            <div className="relative rounded-3xl border-2 border-sky-500/50 bg-gradient-to-b from-slate-900 via-slate-900/90 to-sky-950/40 p-8 lg:p-12 shadow-2xl shadow-sky-950/50 flex flex-col justify-between animate-in zoom-in-95 duration-300 ring-4 ring-sky-500/20">
+            <div className="relative rounded-3xl border-2 border-sky-500/50 bg-slate-900 p-8 lg:p-12 shadow-2xl shadow-sky-950/50 flex flex-col justify-between animate-in zoom-in-95 duration-300 ring-4 ring-sky-500/20">
               <div className="flex items-center justify-between pb-6 border-b border-slate-800">
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-4 py-1.5 text-sm font-black uppercase tracking-wider animate-pulse">
-                    <Sparkles className="h-4 w-4" /> ¡Llamado en curso!
+                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-700 text-white px-4 py-1.5 text-sm font-black uppercase tracking-wider">
+                    ¡Llamado en curso!
                   </span>
                   {llamadoDestacado.horaLlamado && (
                     <span className="text-xs text-slate-400 font-mono">
@@ -199,7 +198,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
                 </div>
 
                 {/* Flecha y Destino: Consultorio */}
-                <div className="rounded-2xl bg-sky-500/10 border border-sky-500/30 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="rounded-2xl bg-slate-800 border border-slate-700 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-600 text-white font-black text-2xl shadow-lg shadow-sky-600/40">
                       <ArrowRight className="h-8 w-8 animate-bounce" />
@@ -263,7 +262,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
                     <p className="text-xs text-slate-400">Dr(a). {t.profesionalNombre}</p>
                   </div>
                   <div className="text-right">
-                    <span className="rounded-lg bg-sky-500/20 text-sky-400 px-2 py-1 text-xs font-mono font-black border border-sky-500/30">
+                    <span className="rounded-lg bg-sky-700 text-white px-2 py-1 text-xs font-mono font-black">
                       Cons. {t.consultorioNumero || '102'}
                     </span>
                     <div className="text-[10px] text-slate-500 mt-1 font-mono">{t.horaLlamado || t.hora} hs</div>

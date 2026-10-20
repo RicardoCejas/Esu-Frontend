@@ -136,7 +136,7 @@ export const ActivityMonitor: React.FC = () => {
           <button
             type="button"
             onClick={handleExtendSession}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-teal-600 px-5 py-3 text-xs font-bold text-white shadow-md shadow-teal-600/20 hover:bg-teal-700 transition cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-sky-600 px-5 py-3 text-xs font-bold text-white shadow-md shadow-sky-600/20 hover:bg-sky-700 transition cursor-pointer"
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
             <span>Extender Sesión</span>

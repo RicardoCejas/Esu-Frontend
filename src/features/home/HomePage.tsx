@@ -138,7 +138,7 @@ export const HomePage: React.FC = () => {
             {/* Sub-header con botón de Agregar Médico (Permisos RBAC: Admin / Recepción) */}
             <div className="bg-muted/40 px-6 py-3 border-b border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5 text-teal-600" />
+                <User className="h-3.5 w-3.5 text-sky-600" />
                 <span>
                   <strong>{medicosDeEspecialidad.length}</strong> médicos matriculados en Cruz del Eje
                 </span>
@@ -176,12 +176,12 @@ export const HomePage: React.FC = () => {
                     return (
                       <div
                         key={med.id}
-                        className="rounded-2xl border border-border bg-card p-5 shadow-xs hover:border-teal-500/40 hover:shadow-md transition-all space-y-4"
+                        className="rounded-2xl border border-border bg-card p-5 shadow-xs hover:border-sky-600/40 hover:shadow-md transition-all space-y-4"
                       >
                         {/* Cabecera del Médico */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-700 font-bold text-sm">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground font-bold text-sm">
                               {med.nombre.charAt(0)}{med.apellido.charAt(0)}
                             </div>
                             <div>
@@ -189,11 +189,11 @@ export const HomePage: React.FC = () => {
                                 Dr(a). {med.nombre} {med.apellido}
                               </h5>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <span className="font-mono text-xs font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded">
+                                <span className="font-mono text-xs font-semibold text-white bg-sky-700 px-2 py-0.5 rounded">
                                   {med.matricula}
                                 </span>
                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                  <Clock className="h-3 w-3 text-teal-600" />
+                                  <Clock className="h-3 w-3 text-sky-600" />
                                   <span>{med.diasAtencion.join(', ')}</span>
                                 </span>
                               </div>
@@ -221,7 +221,7 @@ export const HomePage: React.FC = () => {
                             {centrosDelMedico.map((centro) => (
                               <div
                                 key={centro.id}
-                                className="rounded-xl border border-teal-100 bg-teal-50/50 p-3 space-y-2 hover:bg-teal-50 transition"
+                                className="rounded-xl border border-sky-100 bg-sky-50/50 p-3 space-y-2 hover:bg-sky-50 transition"
                               >
                                 <div className="flex items-start justify-between gap-1">
                                   <div>
@@ -236,26 +236,26 @@ export const HomePage: React.FC = () => {
 
                                 <div className="text-[11px] text-muted-foreground space-y-1">
                                   <p className="flex items-center gap-1">
-                                    <MapPin className="h-3 w-3 text-teal-600 shrink-0" />
+                                    <MapPin className="h-3 w-3 text-sky-600 shrink-0" />
                                     <span className="truncate">{centro.direccion}</span>
                                   </p>
                                   <p className="flex items-center gap-1">
-                                    <Phone className="h-3 w-3 text-teal-600 shrink-0" />
+                                    <Phone className="h-3 w-3 text-sky-600 shrink-0" />
                                     <span>{centro.telefono}</span>
                                   </p>
                                 </div>
 
-                                <div className="pt-1 flex items-center justify-between gap-2 border-t border-teal-200/50">
+                                <div className="pt-1 flex items-center justify-between gap-2 border-t border-sky-200/50">
                                   <button
                                     onClick={() => setCentroDetalle(centro)}
-                                    className="text-[11px] font-bold text-teal-700 hover:underline cursor-pointer"
+                                    className="text-[11px] font-bold text-sky-700 hover:underline cursor-pointer"
                                   >
                                     Ver detalles / Sede
                                   </button>
                                   <Link
                                     to="/turnero"
                                     onClick={() => setEspecialidadSeleccionada(null)}
-                                    className="text-[11px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-0.5"
+                                    className="text-[11px] font-bold text-sky-700 hover:text-sky-900 flex items-center gap-0.5"
                                   >
                                     <span>Pedir turno aquí</span>
                                     <ArrowRight className="h-3 w-3" />
@@ -310,7 +310,7 @@ export const HomePage: React.FC = () => {
             <div className="p-6 space-y-4 text-xs">
               <div className="space-y-2 rounded-2xl bg-muted/40 p-4">
                 <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
+                  <MapPin className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold text-foreground block">Dirección:</span>
                     <span className="text-muted-foreground">{centroDetalle.direccion}</span>
@@ -318,15 +318,15 @@ export const HomePage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-teal-600 shrink-0" />
+                  <Phone className="h-4 w-4 text-sky-600 shrink-0" />
                   <div>
                     <span className="font-bold text-foreground inline mr-1">Teléfono:</span>
-                    <span className="font-mono text-teal-700 font-semibold">{centroDetalle.telefono}</span>
+                    <span className="font-mono text-sky-700 font-semibold">{centroDetalle.telefono}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-teal-600 shrink-0" />
+                  <Clock className="h-4 w-4 text-sky-600 shrink-0" />
                   <div>
                     <span className="font-bold text-foreground inline mr-1">Horario:</span>
                     <span className="text-muted-foreground">{centroDetalle.horarioAtencion}</span>

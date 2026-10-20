@@ -37,8 +37,8 @@ export const EmailVerificationBanner: React.FC = () => {
 
         <div className="flex items-center gap-2 shrink-0">
           {sentSuccess ? (
-            <span className="inline-flex items-center gap-1 font-bold text-emerald-900 bg-amber-400/60 px-3 py-1 rounded-full text-[11px]">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-800" />
+            <span className="inline-flex items-center gap-1 font-bold bg-amber-600 text-white px-3 py-1 rounded-full text-[11px]">
+              <CheckCircle2 className="h-3.5 w-3.5 text-white" />
               ¡Enlace reenviado!
             </span>
           ) : (

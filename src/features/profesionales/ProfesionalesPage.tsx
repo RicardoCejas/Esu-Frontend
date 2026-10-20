@@ -29,7 +29,7 @@ export const ProfesionalesPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-teal-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-sky-600 selection:text-white">
       <PublicNavbar />
 
       {/* Barra superior de acción rápida para administración asistencial */}
@@ -63,12 +63,12 @@ export const ProfesionalesPage: React.FC = () => {
       {centroDetalle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
           <div className="w-full max-w-md rounded-3xl border border-border bg-card overflow-hidden shadow-2xl space-y-0 animate-in fade-in zoom-in duration-200">
-            <div className="bg-teal-700 p-5 text-white flex items-center justify-between">
+            <div className="bg-sky-700 p-5 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Building2 className="h-6 w-6 text-teal-200" />
+                <Building2 className="h-6 w-6 text-sky-200" />
                 <div>
                   <h3 className="font-bold text-base font-heading">{centroDetalle.nombre}</h3>
-                  <span className="text-[10px] bg-teal-800 px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-[10px] bg-sky-800 px-2 py-0.5 rounded-full font-bold">
                     {centroDetalle.tipo} • {centroDetalle.ciudad}
                   </span>
                 </div>
@@ -85,7 +85,7 @@ export const ProfesionalesPage: React.FC = () => {
             <div className="p-6 space-y-4 text-xs">
               <div className="space-y-2 rounded-2xl bg-muted/40 p-4">
                 <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
+                  <MapPin className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold text-foreground block">Dirección:</span>
                     <span className="text-muted-foreground">{centroDetalle.direccion}</span>
@@ -93,15 +93,15 @@ export const ProfesionalesPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-teal-600 shrink-0" />
+                  <Phone className="h-4 w-4 text-sky-600 shrink-0" />
                   <div>
                     <span className="font-bold text-foreground inline mr-1">Teléfono:</span>
-                    <span className="font-mono text-teal-700 font-semibold">{centroDetalle.telefono}</span>
+                    <span className="font-mono text-sky-700 font-semibold">{centroDetalle.telefono}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-teal-600 shrink-0" />
+                  <Clock className="h-4 w-4 text-sky-600 shrink-0" />
                   <div>
                     <span className="font-bold text-foreground inline mr-1">Horario:</span>
                     <span className="text-muted-foreground">{centroDetalle.horarioAtencion}</span>
@@ -127,7 +127,7 @@ export const ProfesionalesPage: React.FC = () => {
                 <Link
                   to="/turnero"
                   onClick={() => setCentroDetalle(null)}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-full bg-teal-600 py-2 font-bold text-white hover:bg-teal-700 transition"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-full bg-sky-600 py-2 font-bold text-white hover:bg-sky-700 transition"
                 >
                   <Calendar className="h-3.5 w-3.5" />
                   <span>Sacar Turno</span>

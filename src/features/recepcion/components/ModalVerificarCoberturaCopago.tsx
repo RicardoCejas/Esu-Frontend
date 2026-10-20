@@ -61,7 +61,7 @@ export const ModalVerificarCoberturaCopago: React.FC<ModalVerificarCoberturaCopa
       <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
         <div className="flex items-center justify-between pb-3 border-b border-border">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
@@ -200,7 +200,7 @@ export const ModalVerificarCoberturaCopago: React.FC<ModalVerificarCoberturaCopa
             <button
               type="submit"
               disabled={isSubmitting || !carnetValido}
-              className="rounded-xl bg-emerald-600 px-5 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition shadow-xs disabled:opacity-50"
+              className="rounded-xl bg-emerald-700 px-5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 transition shadow-xs disabled:opacity-50"
             >
               {isSubmitting ? 'Guardando...' : 'Asentar Cobertura'}
             </button>

@@ -174,13 +174,13 @@ export const SalasEsperaKanbanPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* COLUMNA 1: Por Llegar */}
-          <div className="rounded-2xl border border-border bg-muted/30 p-3.5 flex flex-col min-h-[500px]">
-            <div className="flex items-center justify-between pb-3 border-b border-border/80">
+          <div className="rounded-2xl border border-border bg-muted/40 p-3.5 flex flex-col min-h-[500px]">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-slate-400" />
+                <div className="h-2.5 w-2.5 rounded-full bg-slate-500" />
                 <h3 className="font-bold text-xs uppercase tracking-wider text-foreground">Por Llegar</h3>
               </div>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-mono font-bold text-muted-foreground">
+              <span className="rounded-full bg-slate-700 px-2.5 py-0.5 text-xs font-mono font-bold text-white">
                 {porLlegar.length}
               </span>
             </div>
@@ -189,27 +189,27 @@ export const SalasEsperaKanbanPage: React.FC = () => {
               {porLlegar.map((t) => (
                 <div
                   key={t.id}
-                  className="rounded-xl border border-border bg-card p-3 shadow-xs space-y-2 hover:border-primary/50 transition"
+                  className="rounded-xl border border-border bg-card p-3 shadow-xs space-y-2 hover:border-sky-500/50 transition"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-xs text-primary">{t.hora} hs</span>
+                    <span className="font-mono font-bold text-xs text-sky-700">{t.hora} hs</span>
                     {t.esPrimeraVez && (
-                      <span className="rounded-full bg-amber-500/10 text-amber-700 px-2 py-0.5 text-[10px] font-bold border border-amber-500/20">
+                      <span className="rounded-full bg-amber-600 px-2 py-0.5 text-[10px] font-bold text-white">
                         1ª Vez
                       </span>
                     )}
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-foreground">{t.pacienteNombre}</h4>
-                    <p className="text-[11px] text-muted-foreground">DNI {t.pacienteDni}</p>
+                    <p className="text-[11px] text-muted-foreground">DNI <span className="font-mono">{t.pacienteDni}</span></p>
                   </div>
-                  <div className="pt-2 border-t border-border/60 text-[11px] text-muted-foreground flex justify-between">
+                  <div className="pt-2 border-t border-border text-[11px] text-muted-foreground flex justify-between">
                     <span>{t.profesionalNombre}</span>
                     <span className="font-mono font-semibold">Cons. {t.consultorioNumero || '102'}</span>
                   </div>
                   <button
                     onClick={() => handleMoverAEnEspera(t)}
-                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 font-semibold py-1.5 text-xs transition border border-amber-500/30"
+                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold py-1.5 text-xs transition"
                   >
                     <span>Marcar Llegada</span>
                     <ArrowRight className="h-3 w-3" />
@@ -223,13 +223,13 @@ export const SalasEsperaKanbanPage: React.FC = () => {
           </div>
 
           {/* COLUMNA 2: En Sala de Espera */}
-          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3.5 flex flex-col min-h-[500px]">
-            <div className="flex items-center justify-between pb-3 border-b border-amber-500/20">
+          <div className="rounded-2xl border border-border bg-muted/40 p-3.5 flex flex-col min-h-[500px]">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+                <div className="h-2.5 w-2.5 rounded-full bg-amber-600" />
                 <h3 className="font-bold text-xs uppercase tracking-wider text-amber-700">En Espera</h3>
               </div>
-              <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-mono font-bold text-amber-700">
+              <span className="rounded-full bg-amber-600 px-2.5 py-0.5 text-xs font-mono font-bold text-white">
                 {enEspera.length}
               </span>
             </div>
@@ -238,23 +238,25 @@ export const SalasEsperaKanbanPage: React.FC = () => {
               {enEspera.map((t) => (
                 <div
                   key={t.id}
-                  className="rounded-xl border border-amber-500/30 bg-card p-3 shadow-xs space-y-2 hover:shadow-md transition ring-1 ring-amber-500/20"
+                  className="rounded-xl border border-border bg-card p-3 shadow-xs space-y-2 hover:border-amber-500/50 transition"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-xs text-amber-600">{t.hora} hs</span>
-                    <span className="text-[10px] text-muted-foreground">Llegó: {t.horaCheckIn || 'En sala'}</span>
+                    <span className="font-mono font-bold text-xs text-amber-700">{t.hora} hs</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      Llegó: <span className="font-mono">{t.horaCheckIn || 'En sala'}</span>
+                    </span>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-foreground">{t.pacienteNombre}</h4>
                     <p className="text-[11px] text-muted-foreground">{t.obraSocial || 'Particular'}</p>
                   </div>
-                  <div className="pt-2 border-t border-border/60 text-[11px] text-muted-foreground flex justify-between">
+                  <div className="pt-2 border-t border-border text-[11px] text-muted-foreground flex justify-between">
                     <span>{t.profesionalNombre}</span>
                     <span className="font-mono font-semibold text-foreground">Cons. {t.consultorioNumero || '102'}</span>
                   </div>
                   <button
                     onClick={() => handleLlamarAConsultorio(t)}
-                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 text-xs transition shadow-xs"
+                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-sky-700 hover:bg-sky-800 text-white font-semibold py-1.5 text-xs transition shadow-xs"
                   >
                     <Volume2 className="h-3 w-3" />
                     <span>Llamar a Consultorio</span>
@@ -263,19 +265,19 @@ export const SalasEsperaKanbanPage: React.FC = () => {
                 </div>
               ))}
               {enEspera.length === 0 && (
-                <p className="text-center text-xs text-amber-700/60 py-8 italic">Sala de espera despejada</p>
+                <p className="text-center text-xs text-muted-foreground py-8 italic">Sala de espera despejada</p>
               )}
             </div>
           </div>
 
           {/* COLUMNA 3: En Consulta */}
-          <div className="rounded-2xl border border-blue-500/30 bg-blue-500/5 p-3.5 flex flex-col min-h-[500px]">
-            <div className="flex items-center justify-between pb-3 border-b border-blue-500/20">
+          <div className="rounded-2xl border border-border bg-muted/40 p-3.5 flex flex-col min-h-[500px]">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-blue-500 animate-ping" />
-                <h3 className="font-bold text-xs uppercase tracking-wider text-blue-700">En Consulta</h3>
+                <div className="h-2.5 w-2.5 rounded-full bg-sky-600" />
+                <h3 className="font-bold text-xs uppercase tracking-wider text-sky-700">En Consulta</h3>
               </div>
-              <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs font-mono font-bold text-blue-700">
+              <span className="rounded-full bg-sky-700 px-2.5 py-0.5 text-xs font-mono font-bold text-white">
                 {enConsulta.length}
               </span>
             </div>
@@ -284,22 +286,24 @@ export const SalasEsperaKanbanPage: React.FC = () => {
               {enConsulta.map((t) => (
                 <div
                   key={t.id}
-                  className="rounded-xl border border-blue-500/40 bg-card p-3 shadow-xs space-y-2 ring-1 ring-blue-500/30"
+                  className="rounded-xl border border-sky-600 bg-card p-3 shadow-xs space-y-2"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-xs text-blue-600">En atención</span>
-                    <span className="text-[10px] text-muted-foreground font-mono">Llamado: {t.horaLlamado || '09:00'}</span>
+                    <span className="rounded-full bg-sky-700 px-2 py-0.5 text-[10px] font-bold text-white">En atención</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      Llamado: <span className="font-mono">{t.horaLlamado || '09:00'}</span>
+                    </span>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-foreground">{t.pacienteNombre}</h4>
-                    <p className="text-[11px] font-semibold text-blue-600">Consultorio {t.consultorioNumero || '102'}</p>
+                    <p className="text-[11px] font-semibold text-sky-700 font-mono">Consultorio {t.consultorioNumero || '102'}</p>
                   </div>
-                  <div className="pt-2 border-t border-border/60 text-[11px] text-muted-foreground">
+                  <div className="pt-2 border-t border-border text-[11px] text-muted-foreground">
                     Atendido por: <strong className="text-foreground">{t.profesionalNombre}</strong>
                   </div>
                   <button
                     onClick={() => handleFinalizar(t)}
-                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1.5 text-xs transition shadow-xs"
+                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-1.5 text-xs transition shadow-xs"
                   >
                     <CheckCircle2 className="h-3 w-3" />
                     <span>Finalizar Atención</span>
@@ -307,19 +311,19 @@ export const SalasEsperaKanbanPage: React.FC = () => {
                 </div>
               ))}
               {enConsulta.length === 0 && (
-                <p className="text-center text-xs text-blue-700/60 py-8 italic">Ningún consultorio ocupado actualmente</p>
+                <p className="text-center text-xs text-muted-foreground py-8 italic">Ningún consultorio ocupado actualmente</p>
               )}
             </div>
           </div>
 
           {/* COLUMNA 4: Atendidos */}
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-3.5 flex flex-col min-h-[500px]">
-            <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
+          <div className="rounded-2xl border border-border bg-muted/40 p-3.5 flex flex-col min-h-[500px]">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <div className="h-2.5 w-2.5 rounded-full bg-emerald-600" />
                 <h3 className="font-bold text-xs uppercase tracking-wider text-emerald-700">Atendidos</h3>
               </div>
-              <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-mono font-bold text-emerald-700">
+              <span className="rounded-full bg-emerald-700 px-2.5 py-0.5 text-xs font-mono font-bold text-white">
                 {atendidos.length}
               </span>
             </div>
@@ -328,20 +332,20 @@ export const SalasEsperaKanbanPage: React.FC = () => {
               {atendidos.map((t) => (
                 <div
                   key={t.id}
-                  className="rounded-xl border border-emerald-500/20 bg-card p-3 shadow-xs space-y-1.5 opacity-85 hover:opacity-100 transition"
+                  className="rounded-xl border border-border bg-card p-3 shadow-xs space-y-1.5 hover:border-emerald-500/40 transition"
                 >
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold text-foreground">{t.pacienteNombre}</h4>
-                    <span className="text-[10px] text-emerald-600 font-bold">Completado</span>
+                    <span className="rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-bold text-white">Completado</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground">{t.especialidadNombre}</p>
-                  <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/50">
+                  <div className="text-[10px] text-muted-foreground pt-1 border-t border-border">
                     Dr(a). {t.profesionalNombre}
                   </div>
                 </div>
               ))}
               {atendidos.length === 0 && (
-                <p className="text-center text-xs text-emerald-700/60 py-8 italic">Sin pacientes atendidos aún hoy</p>
+                <p className="text-center text-xs text-muted-foreground py-8 italic">Sin pacientes atendidos aún hoy</p>
               )}
             </div>
           </div>

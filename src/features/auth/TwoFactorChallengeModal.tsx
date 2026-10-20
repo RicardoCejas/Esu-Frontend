@@ -54,9 +54,9 @@ export const TwoFactorChallengeModal: React.FC<TwoFactorChallengeModalProps> = (
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-md rounded-3xl border border-teal-200/50 bg-card p-6 sm:p-8 shadow-2xl space-y-6">
+      <div className="w-full max-w-md rounded-3xl border border-sky-200/50 bg-card p-6 sm:p-8 shadow-2xl space-y-6">
         <div className="text-center space-y-2">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 shadow-inner">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 shadow-inner">
             <KeyRound className="h-7 w-7" />
           </div>
           <h2 className="text-xl font-extrabold font-heading text-foreground">
@@ -86,7 +86,7 @@ export const TwoFactorChallengeModal: React.FC<TwoFactorChallengeModalProps> = (
               onChange={(e) =>
                 setCode(useBackupCode ? e.target.value.toUpperCase().slice(0, 8) : e.target.value.replace(/\D/g, '').slice(0, 6))
               }
-              className="w-full text-center tracking-[0.35em] font-mono text-2xl py-3 rounded-2xl border border-input bg-background focus:ring-2 focus:ring-teal-500 focus:outline-none transition shadow-inner"
+              className="w-full text-center tracking-[0.35em] font-mono text-2xl py-3 rounded-2xl border border-input bg-background focus:ring-2 focus:ring-sky-600 focus:outline-none transition shadow-inner"
               autoFocus
               required
             />
@@ -95,7 +95,7 @@ export const TwoFactorChallengeModal: React.FC<TwoFactorChallengeModalProps> = (
           <button
             type="submit"
             disabled={isSubmitting || (useBackupCode ? code.length !== 8 : code.length !== 6)}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-teal-600 py-3 text-sm font-bold text-white shadow-md shadow-teal-600/20 hover:bg-teal-700 transition disabled:opacity-50 cursor-pointer"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 py-3 text-sm font-bold text-white shadow-md shadow-sky-600/20 hover:bg-sky-700 transition disabled:opacity-50 cursor-pointer"
           >
             {isSubmitting ? (
               <>
@@ -120,7 +120,7 @@ export const TwoFactorChallengeModal: React.FC<TwoFactorChallengeModalProps> = (
               setCode('');
               setError(null);
             }}
-            className="text-xs font-semibold text-teal-700 hover:underline cursor-pointer"
+            className="text-xs font-semibold text-sky-700 hover:underline cursor-pointer"
           >
             {useBackupCode
               ? '← Volver a ingresar código TOTP de 6 dígitos'

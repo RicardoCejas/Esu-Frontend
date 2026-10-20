@@ -74,7 +74,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({ isOpen
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-lg rounded-3xl border border-teal-100 bg-card p-6 sm:p-8 shadow-2xl space-y-6 relative max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-lg rounded-3xl border border-sky-100 bg-card p-6 sm:p-8 shadow-2xl space-y-6 relative max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition cursor-pointer"
@@ -84,7 +84,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({ isOpen
 
         {/* Encabezado */}
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-700">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-700">
             <ShieldCheck className="h-6 w-6" />
           </div>
           <div>
@@ -106,7 +106,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({ isOpen
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
-            <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
             <p className="text-xs">Generando credencial criptográfica TOTP...</p>
           </div>
         ) : success ? (
@@ -122,7 +122,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({ isOpen
             </div>
             <button
               onClick={onClose}
-              className="w-full rounded-full bg-teal-600 py-3 text-sm font-bold text-white hover:bg-teal-700 transition cursor-pointer"
+              className="w-full rounded-full bg-sky-600 py-3 text-sm font-bold text-white hover:bg-sky-700 transition cursor-pointer"
             >
               Finalizar y Volver
             </button>
@@ -152,12 +152,12 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({ isOpen
                     ¿No puedes escanear el QR? Copia esta clave manual en tu app:
                   </p>
                   <div className="flex items-center gap-1.5 bg-background p-2 rounded-xl border border-input font-mono text-[11px] select-all">
-                    <Key className="h-3.5 w-3.5 text-teal-600 shrink-0" />
+                    <Key className="h-3.5 w-3.5 text-sky-600 shrink-0" />
                     <span className="truncate">{setupData?.secret}</span>
                     <button
                       type="button"
                       onClick={handleCopyKey}
-                      className="ml-auto text-teal-700 hover:text-teal-900 cursor-pointer"
+                      className="ml-auto text-sky-700 hover:text-sky-900 cursor-pointer"
                       title="Copiar clave"
                     >
                       {copiedKey ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
@@ -187,7 +187,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({ isOpen
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 font-mono text-center text-xs font-semibold text-amber-950">
                 {setupData?.backupCodes.map((codeItem, idx) => (
-                  <span key={idx} className="bg-amber-100/70 py-1 px-1.5 rounded-lg border border-amber-200/80">
+                  <span key={idx} className="bg-muted text-foreground py-1 px-1.5 rounded-lg border border-border">
                     {codeItem}
                   </span>
                 ))}
@@ -206,7 +206,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({ isOpen
                   placeholder="ej: 123456"
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  className="w-full text-center tracking-[0.4em] font-mono text-xl py-2.5 rounded-xl border border-input bg-background focus:ring-2 focus:ring-teal-500 focus:outline-none transition"
+                  className="w-full text-center tracking-[0.4em] font-mono text-xl py-2.5 rounded-xl border border-input bg-background focus:ring-2 focus:ring-sky-600 focus:outline-none transition"
                   autoFocus
                   required
                 />
@@ -223,7 +223,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({ isOpen
                 <button
                   type="submit"
                   disabled={isVerifying || code.length !== 6}
-                  className="inline-flex items-center gap-2 rounded-full bg-teal-600 px-6 py-2.5 text-xs font-bold text-white shadow hover:bg-teal-700 disabled:opacity-50 transition cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-6 py-2.5 text-xs font-bold text-white shadow hover:bg-sky-700 disabled:opacity-50 transition cursor-pointer"
                 >
                   {isVerifying && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   <span>Confirmar y Activar 2FA</span>

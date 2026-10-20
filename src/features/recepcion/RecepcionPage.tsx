@@ -15,7 +15,6 @@ import {
   CalendarPlus,
   Building2,
   Stethoscope,
-  Sparkles,
   Layers,
   MonitorPlay,
   RotateCcw,
@@ -161,7 +160,7 @@ export const RecepcionPage: React.FC = () => {
 
           <Link
             to="/dashboard/recepcion/kanban"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-2 text-xs font-semibold text-indigo-600 transition"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 px-3 py-2 text-xs font-semibold text-white transition"
           >
             <Layers className="h-3.5 w-3.5" />
             <span>Tablero Kanban</span>
@@ -189,31 +188,31 @@ export const RecepcionPage: React.FC = () => {
           <p className="text-[11px] text-muted-foreground">Programados para esta fecha</p>
         </div>
 
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 shadow-xs">
-          <div className="flex items-center justify-between text-amber-600">
+        <div className="rounded-2xl border border-border bg-muted/40 p-4 shadow-xs">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-semibold">En Sala de Espera</span>
             <Clock className="h-4 w-4" />
           </div>
-          <div className="text-2xl font-black text-amber-700 mt-1">{enSalaDeEspera.length}</div>
-          <p className="text-[11px] text-amber-600/80">Acreditados listos para llamado</p>
+          <div className="text-2xl font-black text-foreground mt-1">{enSalaDeEspera.length}</div>
+          <p className="text-[11px] text-muted-foreground">Acreditados listos para llamado</p>
         </div>
 
-        <div className="rounded-2xl border border-blue-500/30 bg-blue-500/5 p-4 shadow-xs">
-          <div className="flex items-center justify-between text-blue-600">
+        <div className="rounded-2xl border border-border bg-muted/40 p-4 shadow-xs">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-semibold">En Consultorio</span>
             <Activity className="h-4 w-4" />
           </div>
-          <div className="text-2xl font-black text-blue-700 mt-1">{enConsulta.length}</div>
-          <p className="text-[11px] text-blue-600/80">Atención médica en curso</p>
+          <div className="text-2xl font-black text-foreground mt-1">{enConsulta.length}</div>
+          <p className="text-[11px] text-muted-foreground">Atención médica en curso</p>
         </div>
 
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 shadow-xs">
-          <div className="flex items-center justify-between text-emerald-600">
+        <div className="rounded-2xl border border-border bg-muted/40 p-4 shadow-xs">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-semibold">Atendidos / Salida</span>
             <UserCheck className="h-4 w-4" />
           </div>
-          <div className="text-2xl font-black text-emerald-700 mt-1">{atendidosHoy.length}</div>
-          <p className="text-[11px] text-emerald-600/80">Consultas completadas hoy</p>
+          <div className="text-2xl font-black text-foreground mt-1">{atendidosHoy.length}</div>
+          <p className="text-[11px] text-muted-foreground">Consultas completadas hoy</p>
         </div>
       </div>
 
@@ -322,9 +321,7 @@ export const RecepcionPage: React.FC = () => {
                   return (
                     <tr
                       key={t.id}
-                      className={`hover:bg-muted/30 transition ${
-                        t.esPrimeraVez ? 'bg-amber-500/5' : ''
-                      }`}
+                      className="hover:bg-muted/30 transition"
                     >
                       {/* Hora */}
                       <td className="p-3.5 font-bold font-mono text-sm text-foreground">
@@ -341,8 +338,8 @@ export const RecepcionPage: React.FC = () => {
                         <div className="flex items-center gap-1.5 font-semibold text-foreground">
                           <span>{t.pacienteNombre}</span>
                           {t.esPrimeraVez && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 text-amber-700 px-2 py-0.5 text-[10px] font-bold border border-amber-500/30">
-                              <Sparkles className="h-2.5 w-2.5" /> 1ª Vez
+                            <span className="inline-flex items-center rounded-full bg-amber-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                              1ª Vez
                             </span>
                           )}
                         </div>
@@ -386,13 +383,13 @@ export const RecepcionPage: React.FC = () => {
                         <span
                           className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold ${
                             esEnEspera
-                              ? 'bg-amber-500/15 text-amber-700 border border-amber-500/30 animate-pulse'
+                              ? 'bg-amber-600 text-white'
                               : esAtendiendo
-                              ? 'bg-blue-500/15 text-blue-700 border border-blue-500/30'
+                              ? 'bg-sky-700 text-white'
                               : esCompletado
-                              ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30'
+                              ? 'bg-emerald-700 text-white'
                               : esCancelado
-                              ? 'bg-destructive/15 text-destructive border border-destructive/30'
+                              ? 'bg-destructive text-white'
                               : 'bg-muted text-muted-foreground'
                           }`}
                         >
@@ -409,7 +406,7 @@ export const RecepcionPage: React.FC = () => {
                           {!esEnEspera && !esAtendiendo && !esCompletado && !esCancelado && (
                             <button
                               onClick={() => handleCheckIn(t)}
-                              className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 text-xs font-semibold shadow-xs transition"
+                              className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white px-2.5 py-1.5 text-xs font-semibold shadow-xs transition"
                               title="Marcar llegada presencial y pasar a EN_SALA_DE_ESPERA"
                             >
                               <UserCheck className="h-3.5 w-3.5" />
