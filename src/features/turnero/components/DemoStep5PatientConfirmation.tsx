@@ -34,7 +34,7 @@ export function DemoStep5PatientConfirmation({ selectedCenter, selectedSpecialty
   selectedDate, selectedSlot, patientForm, onFormChange, bookingError, createdAppointment,
   onConfirm, onBackToSlots }: Props) {
   const { register, handleSubmit, formState: { errors } } = useForm<PatientBookingForm>({
-    resolver: zodResolver(patientBookingSchema), defaultValues: patientForm,
+    resolver: zodResolver(patientBookingSchema) as any, defaultValues: patientForm,
     mode: 'onBlur', shouldFocusError: true,
   })
 
@@ -64,7 +64,7 @@ export function DemoStep5PatientConfirmation({ selectedCenter, selectedSpecialty
           <label htmlFor={`demo-${name}`} className="block text-sm font-semibold text-slate-800">{label}{required ? ' *' : ''}</label>
           <Input id={`demo-${name}`} type={type ?? 'text'} required={required} aria-invalid={Boolean(errors[name])}
             aria-describedby={errors[name] ? `demo-${name}-error` : undefined}
-            {...register(name, { onChange: (event) => onFormChange(name, event.target.value) })}
+            {...register(name, { onChange: (event: React.ChangeEvent<HTMLInputElement>) => onFormChange(name, event.target.value) })}
             className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700" />
           {errors[name] && <p id={`demo-${name}-error`} role="alert" className="text-sm font-medium text-rose-800">{errors[name].message}</p>}
         </div>)}
@@ -72,7 +72,7 @@ export function DemoStep5PatientConfirmation({ selectedCenter, selectedSpecialty
           <label htmlFor="demo-insurance" className="block text-sm font-semibold text-slate-800">Cobertura médica *</label>
           <select id="demo-insurance" required aria-invalid={Boolean(errors.healthInsurance)}
             aria-describedby={errors.healthInsurance ? 'demo-insurance-error' : undefined}
-            {...register('healthInsurance', { onChange: (event) => onFormChange('healthInsurance', event.target.value) })}
+            {...register('healthInsurance', { onChange: (event: React.ChangeEvent<HTMLSelectElement>) => onFormChange('healthInsurance', event.target.value) })}
             className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700">
             {AVAILABLE_INSURANCES.map((insurance) => <option key={insurance} value={insurance}>{insurance}</option>)}
           </select>
