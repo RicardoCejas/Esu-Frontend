@@ -46,3 +46,26 @@
     font-variant-numeric: tabular-nums slashed-zero;
   }
 }
+
+/* HU-FE-68: Clases de Accesibilidad Visual (A11y) */
+html.high-contrast {
+  --color-background: #000000 !important;
+  --color-foreground: #ffff00 !important; /* Amarillo de alto contraste */
+  --color-card: #0a0a0a !important;
+  --color-card-foreground: #ffffff !important;
+  --color-border: #ffff00 !important;
+  --color-input: #ffffff !important;
+  --color-muted: #1a1a1a !important;
+  --color-muted-foreground: #e5e5e5 !important;
+  --color-primary: #facc15 !important;
+  --color-primary-foreground: #000000 !important;
+}
+
+html.text-scale-large {
+  font-size: 115% !important;
+}
+
+html.text-scale-xlarge {
+  font-size: 130% !important;
+}
+

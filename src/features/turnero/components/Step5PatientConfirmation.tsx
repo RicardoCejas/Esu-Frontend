@@ -1,7 +1,7 @@
 import React from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Building2, Stethoscope, User, Calendar, Clock, ChevronLeft } from 'lucide-react'
+import { Building2, Stethoscope, User, Calendar, Clock, ChevronLeft, Users } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import type { HealthCenter, MedicalSpecialty, MedicalDoctor, AppointmentSlot, PatientBookingForm } from '../types'
 import { AVAILABLE_INSURANCES } from '../data/mockTurneroData'
 import { patientBookingSchema } from '../patientValidation'
+import { CoverageValidator } from '@/features/paciente/components/CoverageValidator'
+import { GrupoFamiliarModal, type Familiar } from '@/features/paciente/components/GrupoFamiliarModal'
 
 interface Step5PatientConfirmationProps {
   selectedCenter: HealthCenter
@@ -31,12 +33,28 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
   onFormChange,
   onBackToSlots,
 }) => {
-  const { register, formState: { errors } } = useForm<PatientBookingForm>({
+  const [isFamiliarModalOpen, setIsFamiliarModalOpen] = React.useState(false)
+
+  const { register, setValue, formState: { errors } } = useForm<PatientBookingForm>({
     resolver: zodResolver(patientBookingSchema) as any,
     defaultValues: patientForm,
     mode: 'onBlur',
     shouldFocusError: true,
   })
+
+  const handleSelectFamiliar = (fam: Familiar) => {
+    onFormChange('firstName', fam.nombre)
+    onFormChange('lastName', fam.apellido)
+    onFormChange('dni', fam.dni.replace(/\D/g, ''))
+    if (fam.obraSocial) onFormChange('healthInsurance', fam.obraSocial)
+    if (fam.nroAfiliado) onFormChange('affiliateNumber', fam.nroAfiliado)
+
+    setValue('firstName', fam.nombre, { shouldValidate: true })
+    setValue('lastName', fam.apellido, { shouldValidate: true })
+    setValue('dni', fam.dni.replace(/\D/g, ''), { shouldValidate: true })
+    if (fam.obraSocial) setValue('healthInsurance', fam.obraSocial, { shouldValidate: true })
+    if (fam.nroAfiliado) setValue('affiliateNumber', fam.nroAfiliado)
+  }
 
   const fieldProps = (field: keyof PatientBookingForm) => register(field, {
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -131,13 +149,23 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
         {/* Patient Form */}
         <Card className="rounded-2xl border-slate-200 bg-white shadow-xs lg:col-span-2">
           <CardContent className="space-y-4 p-5 sm:p-6">
-            <div className="border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-bold text-slate-900 font-heading">
-                Datos Personales del Paciente
-              </h3>
-              <p className="text-xs text-slate-500">
-                Revise sus datos antes de solicitar el turno. Todavía no se envían ni se guardan.
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 font-heading">
+                  Datos Personales del Paciente
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Revise sus datos antes de solicitar el turno.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFamiliarModalOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-800 hover:bg-sky-100 transition cursor-pointer"
+              >
+                <Users className="h-3.5 w-3.5 text-sky-700" />
+                <span>¿Turno para un familiar?</span>
+              </button>
             </div>
 
             <form noValidate onSubmit={(event) => event.preventDefault()}>
@@ -247,6 +275,13 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
               </div>
             </div>
 
+            {/* HU-FE-67: Validador de Coberturas Médicas y Estado de Obra Social */}
+            <CoverageValidator
+              obraSocial={patientForm.healthInsurance}
+              nroAfiliado={patientForm.affiliateNumber}
+              className="mt-3"
+            />
+
             <p role="status" className="rounded-lg border border-amber-600 bg-white p-3 text-xs font-medium text-slate-900">
               La reserva en línea todavía no está conectada. Sus datos no se enviarán ni se guardarán. Para solicitar el turno, comuníquese con {selectedCenter.name} al {selectedCenter.phone}.
             </p>
@@ -266,6 +301,13 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
           </CardContent>
         </Card>
       </div>
+
+      {/* HU-FE-66: Modal de Grupo Familiar */}
+      <GrupoFamiliarModal
+        isOpen={isFamiliarModalOpen}
+        onClose={() => setIsFamiliarModalOpen(false)}
+        onSelectFamiliar={handleSelectFamiliar}
+      />
     </section>
   )
 }
