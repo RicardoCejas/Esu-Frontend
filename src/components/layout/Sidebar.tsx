@@ -14,6 +14,7 @@ import {
   ListOrdered,
   ArrowLeft,
   ChevronRight,
+  TrendingUp,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { useProximoTurno } from '@/hooks/useProximoTurno';
@@ -42,8 +43,9 @@ const navItems: NavItem[] = [
   { title: 'Padrón de Pacientes', path: '/dashboard/recepcion/pacientes', icon: Users, roles: ['RECEPCIONISTA', 'MEDICO', 'ADMIN'] },
   { title: 'Gestión de Turnos', path: '/dashboard/recepcion/turnos', icon: ListOrdered, roles: ['RECEPCIONISTA', 'ADMIN'] },
 
-  // Rutas Administrador (HU-56)
+  // Rutas Administrador (HU-56 & HU-70)
   { title: 'Dashboard y Métricas', path: '/dashboard/admin', icon: Layers, roles: ['ADMIN'] },
+  { title: 'Ocupación y Ausentismo', path: '/dashboard/admin/ocupacion-ausentismo', icon: TrendingUp, roles: ['ADMIN'] },
   { title: 'Sedes y Consultorios', path: '/dashboard/admin/sedes', icon: Building2, roles: ['ADMIN'] },
   { title: 'Gestión de Usuarios', path: '/dashboard/admin/usuarios', icon: ShieldCheck, roles: ['ADMIN'] },
   { title: 'Centros y Especialidades', path: '/dashboard/admin/especialidades', icon: Building2, roles: ['ADMIN'] },
