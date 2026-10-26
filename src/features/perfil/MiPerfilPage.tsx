@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme, type Theme } from '@/hooks/useTheme';
 import { ROLE_HOME, ROLE_LABELS, USER_ROLES } from '@/lib/roles';
 import { TwoFactorSetupModal } from '@/features/auth/TwoFactorSetupModal';
+import { AuditoriaSesionesSection } from './components/AuditoriaSesionesSection';
 import {
   Mail,
   Phone,
@@ -206,6 +207,9 @@ export const MiPerfilPage: React.FC = () => {
           </section>
         </div>
       </div>
+
+      {/* HU-72: Sección de Auditoría de Sesiones Activas y Seguridad de Cuenta */}
+      <AuditoriaSesionesSection />
 
       <TwoFactorSetupModal isOpen={is2FAOpen} onClose={() => setIs2FAOpen(false)} />
     </div>
