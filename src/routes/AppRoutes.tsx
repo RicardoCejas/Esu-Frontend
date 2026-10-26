@@ -32,6 +32,7 @@ import { PantallaTurnosTVPage } from '@/features/recepcion/PantallaTurnosTVPage'
 
 // Vistas Admin
 import { AdminDashboardPage } from '@/features/admin/AdminDashboardPage';
+import { MetricasOcupacionAusentismoPage } from '@/features/admin/MetricasOcupacionAusentismoPage';
 import { AdminUsuariosPage } from '@/features/admin/AdminUsuariosPage';
 import { NuevoUsuarioPage } from '@/features/admin/NuevoUsuarioPage';
 import { AdminEspecialidadesPage } from '@/features/admin/AdminEspecialidadesPage';
@@ -41,6 +42,9 @@ import { NuevoProfesionalPage } from '@/features/profesionales/NuevoProfesionalP
 
 // Perfil (todos los roles)
 import { MiPerfilPage } from '@/features/perfil/MiPerfilPage';
+
+// Vistas Farmacia (HU-77)
+import { PharmacyValidationView } from '@/features/farmacia/PharmacyValidationView';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -58,9 +62,14 @@ export const AppRoutes: React.FC = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro" element={<RegisterPage />} />
 
-        {/* HU-43: Rutas de Recuperación de Contraseña y Verificación de Email */}
-        <Route path="/olvido-password" element={<ForgotPasswordPage />} />
-        <Route path="/recuperar" element={<Navigate to="/olvido-password" replace />} />
+        {/* Módulo Farmacia y Validación QR (HU-77) */}
+        <Route path="/farmacia/validar-receta" element={<PharmacyValidationView />} />
+        <Route path="/farmacia" element={<Navigate to="/farmacia/validar-receta" replace />} />
+
+        {/* HU-71 & HU-43: Rutas de Recuperación de Contraseña y Verificación de Email */}
+        <Route path="/recuperar-password" element={<ForgotPasswordPage />} />
+        <Route path="/olvido-password" element={<Navigate to="/recuperar-password" replace />} />
+        <Route path="/recuperar" element={<Navigate to="/recuperar-password" replace />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/verificar-email" element={<VerifyEmailPage />} />
 
@@ -97,9 +106,10 @@ export const AppRoutes: React.FC = () => {
               <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
             </Route>
 
-            {/* Módulo Administrador (HU-56) */}
+            {/* Módulo Administrador (HU-56 & HU-70) */}
             <Route element={<RoleGuard allowedRoles={['ADMIN']} />}>
               <Route path="admin" element={<AdminDashboardPage />} />
+              <Route path="admin/ocupacion-ausentismo" element={<MetricasOcupacionAusentismoPage />} />
               <Route path="admin/sedes" element={<AdminSedesPage />} />
               <Route path="admin/usuarios" element={<AdminUsuariosPage />} />
               <Route path="admin/usuarios/nuevo" element={<NuevoUsuarioPage />} />
