@@ -9,19 +9,23 @@ import {
   Pill,
   ShieldCheck,
   Download,
-  Filter,
   Edit3,
   X,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  RotateCcw
 } from 'lucide-react';
+import { TimelineFilters, highlightMatches, type TipoPastilla } from './components/TimelineFilters';
+import { MedicalAttachmentViewer } from '../medico/components/MedicalAttachmentViewer';
 
 export const MiHistorialPage: React.FC = () => {
   const { user } = useAuth();
   const [consultas, setConsultas] = useState<ConsultaMedica[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // HU-33: Filtro por Rango de Fechas
+  // HU-74: Buscador y Filtro Multifactor en el Timeline de Historia Clínica
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState<TipoPastilla>('TODAS');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
 
@@ -52,11 +56,38 @@ export const MiHistorialPage: React.FC = () => {
     };
   }, [consultaAEditar, consultaAAnular]);
 
-  // HU-33: Filtrado por fechas
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setFiltroTipo('TODAS');
+    setFechaDesde('');
+    setFechaHasta('');
+  };
+
+  // HU-74: Filtrado Multifactor sobre diagnóstico, tratamiento, adendas, profesional y pastillas
   const consultasFiltradas = consultas.filter((c) => {
     const matchDesde = !fechaDesde || c.fecha >= fechaDesde;
     const matchHasta = !fechaHasta || c.fecha <= fechaHasta;
-    return matchDesde && matchHasta;
+
+    let matchTipo = true;
+    if (filtroTipo === 'CONSULTAS') {
+      matchTipo = !c.receta;
+    } else if (filtroTipo === 'RECETAS') {
+      matchTipo = Boolean(c.receta);
+    } else if (filtroTipo === 'ADENDAS') {
+      matchTipo = c.diagnostico.includes('[CORRECCIÓN') || c.motivo.includes('[CORRECCIÓN');
+    }
+
+    let matchBusqueda = true;
+    if (busqueda.trim()) {
+      const q = busqueda.toLowerCase().trim();
+      const inDiag = c.diagnostico.toLowerCase().includes(q);
+      const inMotivo = c.motivo.toLowerCase().includes(q);
+      const inTrat = (c.tratamiento || '').toLowerCase().includes(q);
+      const inProf = c.profesionalNombre.toLowerCase().includes(q);
+      matchBusqueda = inDiag || inMotivo || inTrat || inProf;
+    }
+
+    return matchDesde && matchHasta && matchTipo && matchBusqueda;
   });
 
   // HU-35: Aplicar corrección / nota médica
@@ -124,49 +155,20 @@ export const MiHistorialPage: React.FC = () => {
         </div>
       </div>
 
-      {/* HU-33: Panel de Filtro de Atenciones Médicas por Rango de Fechas */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs print:hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-            <Filter className="h-4 w-4 text-primary" />
-            <span>Filtrar Consultas por Rango de Fechas:</span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 text-xs">
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground">Desde:</span>
-              <input
-                type="date"
-                value={fechaDesde}
-                onChange={(e) => setFechaDesde(e.target.value)}
-                className="rounded-lg border border-input bg-background px-2.5 py-1 text-xs font-mono"
-              />
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground">Hasta:</span>
-              <input
-                type="date"
-                value={fechaHasta}
-                onChange={(e) => setFechaHasta(e.target.value)}
-                className="rounded-lg border border-input bg-background px-2.5 py-1 text-xs font-mono"
-              />
-            </div>
-
-            {(fechaDesde || fechaHasta) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setFechaDesde('');
-                  setFechaHasta('');
-                }}
-                className="rounded-lg border border-input px-2.5 py-1 text-muted-foreground hover:bg-accent transition text-xs cursor-pointer"
-              >
-                Limpiar Fechas
-              </button>
-            )}
-          </div>
-        </div>
+      {/* HU-74: Buscador y Filtro Multifactor en el Timeline */}
+      <div className="print:hidden">
+        <TimelineFilters
+          busqueda={busqueda}
+          onBusquedaChange={setBusqueda}
+          filtroTipo={filtroTipo}
+          onFiltroTipoChange={setFiltroTipo}
+          fechaDesde={fechaDesde}
+          onFechaDesdeChange={setFechaDesde}
+          fechaHasta={fechaHasta}
+          onFechaHastaChange={setFechaHasta}
+          onLimpiarFiltros={limpiarFiltros}
+          resultadosCount={consultasFiltradas.length}
+        />
       </div>
 
       {/* Membrete oficial visible únicamente en impresión/PDF (HU-36) */}
@@ -184,7 +186,10 @@ export const MiHistorialPage: React.FC = () => {
         </div>
       </div>
 
-      {loading ? (
+      {/* HU-73: Vista de Estudios Médicos Complementarios cuando la pastilla seleccionada es ESTUDIOS */}
+      {filtroTipo === 'ESTUDIOS' ? (
+        <MedicalAttachmentViewer pacienteId={user?.id || '1'} readOnly={true} />
+      ) : loading ? (
         <div className="flex h-48 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
@@ -193,8 +198,18 @@ export const MiHistorialPage: React.FC = () => {
           <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="font-bold text-base">Sin registros médicos en este período</h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            No se encontraron consultas registradas que coincidan con las fechas seleccionadas.
+            No se encontraron consultas registradas que coincidan con los criterios de búsqueda o filtros seleccionados.
           </p>
+          {(busqueda || fechaDesde || fechaHasta || filtroTipo !== 'TODAS') && (
+            <button
+              type="button"
+              onClick={limpiarFiltros}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Limpiar filtros y ver todo</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
@@ -210,7 +225,9 @@ export const MiHistorialPage: React.FC = () => {
                     <Activity className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-base text-foreground">{consulta.profesionalNombre}</h3>
+                    <h3 className="font-bold text-base text-foreground">
+                      {highlightMatches(consulta.profesionalNombre, busqueda)}
+                    </h3>
                     <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
                       <Calendar className="h-3.5 w-3.5 text-primary" />
                       <span>Atención realizada el {consulta.fecha}</span>
@@ -274,14 +291,14 @@ export const MiHistorialPage: React.FC = () => {
                 <div className="space-y-1">
                   <span className="font-semibold text-foreground">Motivo de Consulta:</span>
                   <p className="rounded-lg border border-border bg-background p-3 text-muted-foreground">
-                    {consulta.motivo}
+                    {highlightMatches(consulta.motivo, busqueda)}
                   </p>
                 </div>
 
                 <div className="space-y-1">
                   <span className="font-semibold text-foreground">Diagnóstico / Evolución:</span>
                   <p className="rounded-lg border border-border bg-background p-3 font-medium text-foreground">
-                    {consulta.diagnostico}
+                    {highlightMatches(consulta.diagnostico, busqueda)}
                   </p>
                 </div>
               </div>
