@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import type {
   HealthCenter,
   MedicalSpecialty,
@@ -29,6 +30,7 @@ const INITIAL_PATIENT_FORM: PatientBookingForm = {
 }
 
 export function useTurnero() {
+  const [searchParams] = useSearchParams()
   const [currentStep, setCurrentStep] = useState<BookingStep>(1)
 
   // Step 1: Health Center state
@@ -51,6 +53,37 @@ export function useTurnero() {
   const [patientForm, setPatientForm] = useState<PatientBookingForm>(INITIAL_PATIENT_FORM)
   const [confirmedAppointment, setConfirmedAppointment] = useState<ConfirmedAppointment | null>(null)
   const [isReceiptOpen, setIsReceiptOpen] = useState(false)
+
+  // HU-FE-64: Preselección automática si el paciente ingresa desde la Ficha Pública del Profesional
+  useEffect(() => {
+    const profId = searchParams.get('profesionalId') || searchParams.get('doctorId')
+    const espId = searchParams.get('especialidadId')
+    const centerId = searchParams.get('centroSaludId')
+
+    if (profId) {
+      const matchedDoctor =
+        MOCK_DOCTORS.find(
+          (d) => d.id === profId || d.id.includes(profId) || profId.includes(d.id)
+        ) || MOCK_DOCTORS[0]
+
+      if (matchedDoctor) {
+        const targetCenterId = centerId || matchedDoctor.centerIds?.[0] || 'cde-hosp-crespo'
+        const matchedCenter =
+          MOCK_CENTERS.find((c) => c.id === targetCenterId) || MOCK_CENTERS[0]
+
+        const targetSpecId = espId || matchedDoctor.specialtyId
+        const matchedSpec =
+          MOCK_SPECIALTIES.find((s) => s.id === targetSpecId) ||
+          MOCK_SPECIALTIES.find((s) => s.id === matchedDoctor.specialtyId) ||
+          MOCK_SPECIALTIES[0]
+
+        setSelectedCenter(matchedCenter)
+        setSelectedSpecialty(matchedSpec)
+        setSelectedDoctor(matchedDoctor)
+        setCurrentStep(4) // Avanza directo a selección de fecha y hora
+      }
+    }
+  }, [searchParams])
 
   // Filtered Centers
   const filteredCenters = useMemo(() => {
@@ -160,9 +193,6 @@ export function useTurnero() {
     setSelectedSpecialty(null)
     setSelectedDoctor(null)
     setSelectedSlot(null)
-    setPatientForm(INITIAL_PATIENT_FORM)
-    setConfirmedAppointment(null)
-    setIsReceiptOpen(false)
     setCurrentStep(1)
   }, [])
 
