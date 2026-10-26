@@ -46,9 +46,93 @@ export interface Profesional {
   diasAtencion: string[]; // ['Lunes', 'Miércoles', 'Viernes']
   duracionTurnoMin: number;
   foto?: string;
+  biografia?: string;
+  idiomas?: string[];
+  calificacion?: number;
+  opinionesCount?: number;
+  proximoTurnoLibre?: string;
 }
 
-export type EstadoTurno = 'PENDIENTE' | 'CONFIRMADO' | 'EN_ESPERA' | 'EN_SALA_DE_ESPERA' | 'ATENDIENDO' | 'COMPLETADO' | 'CANCELADO' | 'AUSENTE';
+// HU-FE-61: Configuración de Grilla Horaria
+export type DiaSemana =
+  | 'LUNES'
+  | 'MARTES'
+  | 'MIERCOLES'
+  | 'JUEVES'
+  | 'VIERNES'
+  | 'SABADO'
+  | 'DOMINGO'
+  | 'MONDAY'
+  | 'TUESDAY'
+  | 'WEDNESDAY'
+  | 'THURSDAY'
+  | 'FRIDAY'
+  | 'SATURDAY'
+  | 'SUNDAY';
+
+export interface DisponibilidadProfesional {
+  id: string;
+  profesionalId: string;
+  diaSemana: string;
+  horaInicio: string; // HH:mm
+  horaFin: string;    // HH:mm
+  intervaloMinutos: number; // 15, 20, 30
+  centroSaludId: string;
+  centroSaludNombre?: string;
+  activo?: boolean;
+}
+
+export interface DisponibilidadRequest {
+  profesionalId: string;
+  diaSemana: string;
+  horaInicio: string;
+  horaFin: string;
+  intervaloMinutos: number;
+  centroSaludId: string;
+}
+
+// HU-FE-62: Bloqueo de Agenda Médica
+export type MotivoBloqueo = 'LICENCIA' | 'CONGRESO' | 'FERIADO' | 'VACACIONES' | 'OTRO';
+
+export interface BloqueoAgenda {
+  id: string;
+  profesionalId: string;
+  profesionalNombre?: string;
+  fechaInicio: string; // YYYY-MM-DD o ISO
+  fechaFin: string;    // YYYY-MM-DD o ISO
+  horaInicio?: string; // HH:mm
+  horaFin?: string;    // HH:mm
+  motivo: string;
+  turnosAfectados?: number;
+  pacientesAfectados?: Array<{
+    turnoId: string;
+    pacienteNombre: string;
+    pacienteDni: string;
+    hora: string;
+    fecha: string;
+  }>;
+  fechaCreacion?: string;
+}
+
+export interface BloqueoRequest {
+  profesionalId: string;
+  fechaInicio: string;
+  fechaFin: string;
+  horaInicio?: string;
+  horaFin?: string;
+  motivo: string;
+}
+
+export type EstadoTurno =
+  | 'PENDIENTE'
+  | 'CONFIRMADO'
+  | 'EN_ESPERA'
+  | 'EN_SALA_DE_ESPERA'
+  | 'ATENDIENDO'
+  | 'COMPLETADO'
+  | 'CANCELADO'
+  | 'CANCELADO_POR_MEDICO'
+  | 'AUSENTE';
 
 export interface ConsultorioFisico {
   id: string;
@@ -87,6 +171,22 @@ export interface Turno {
   fechaCreacion: string;
   horaCheckIn?: string;
   horaLlamado?: string;
+  // HU-FE-63: Sobreturnos
+  esSobreturno?: boolean;
+  motivoSobreturno?: string;
+}
+
+export interface SobreturnoRequest {
+  profesionalId: string;
+  pacienteId?: string;
+  pacienteNombre: string;
+  pacienteDni: string;
+  pacienteTelefono?: string;
+  obraSocial?: string;
+  centroSaludId: string;
+  fecha: string; // YYYY-MM-DD
+  hora?: string;  // HH:mm
+  motivoSobreturno: string;
 }
 
 export interface ConsultaMedica {
