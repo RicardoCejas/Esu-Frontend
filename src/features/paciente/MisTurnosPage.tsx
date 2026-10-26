@@ -12,9 +12,13 @@ import {
   XCircle,
   CheckCircle2,
   Download,
-  Activity
+  Activity,
+  CreditCard,
+  Users
 } from 'lucide-react';
-import { CardSkeleton } from '@/components/ui/Skeleton';
+import { CardSkeleton } from '@/components/ui/skeleton';
+import { CarnetDigitalModal } from './components/CarnetDigitalModal';
+import { GrupoFamiliarModal } from './components/GrupoFamiliarModal';
 
 export const MisTurnosPage: React.FC = () => {
   const { user } = useAuth();
@@ -22,6 +26,8 @@ export const MisTurnosPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTurnoQr, setSelectedTurnoQr] = useState<Turno | null>(null);
   const [turnoACancelar, setTurnoACancelar] = useState<Turno | null>(null);
+  const [isCarnetOpen, setIsCarnetOpen] = useState(false);
+  const [isGrupoFamiliarOpen, setIsGrupoFamiliarOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -102,13 +108,35 @@ export const MisTurnosPage: React.FC = () => {
           </p>
         </div>
 
-        <Link
-          to="/turnero"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition"
-        >
-          <PlusCircle className="h-4 w-4" />
-          <span>Solicitar Nuevo Turno</span>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* HU-FE-65: Botón Carnet Digital */}
+          <button
+            type="button"
+            onClick={() => setIsCarnetOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-600/40 bg-sky-50 dark:bg-sky-950/40 px-3.5 py-2.5 text-xs font-bold text-sky-800 dark:text-sky-300 shadow-xs hover:bg-sky-100 dark:hover:bg-sky-900/60 transition cursor-pointer"
+          >
+            <CreditCard className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+            <span>Mi Carnet QR</span>
+          </button>
+
+          {/* HU-FE-66: Botón Grupo Familiar */}
+          <button
+            type="button"
+            onClick={() => setIsGrupoFamiliarOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs font-semibold text-foreground shadow-xs hover:bg-muted transition cursor-pointer"
+          >
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <span>Mi Familia</span>
+          </button>
+
+          <Link
+            to="/turnero"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition"
+          >
+            <PlusCircle className="h-4 w-4" />
+            <span>Solicitar Nuevo Turno</span>
+          </Link>
+        </div>
       </div>
 
       {/* Skeletons de Carga Progresiva */}
@@ -310,6 +338,19 @@ export const MisTurnosPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* HU-FE-65: Modal de Carnet Digital con QR */}
+      <CarnetDigitalModal
+        isOpen={isCarnetOpen}
+        onClose={() => setIsCarnetOpen(false)}
+        user={user}
+      />
+
+      {/* HU-FE-66: Modal de Grupo Familiar */}
+      <GrupoFamiliarModal
+        isOpen={isGrupoFamiliarOpen}
+        onClose={() => setIsGrupoFamiliarOpen(false)}
+      />
     </div>
   );
 };

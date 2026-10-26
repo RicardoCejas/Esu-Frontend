@@ -15,6 +15,7 @@ import {
   Sun,
   Moon,
   LogOut,
+  Sparkles,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -27,12 +28,13 @@ interface DatoPerfil {
 const THEME_OPTIONS: { value: Theme; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { value: 'light', label: 'Claro', icon: Sun },
   { value: 'dark', label: 'Oscuro', icon: Moon },
+  { value: 'high-contrast', label: 'Alto Contraste', icon: Sparkles },
 ];
 
 export const MiPerfilPage: React.FC = () => {
   const { user, logout, switchRole } = useAuth();
   const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, fontSize, setFontSize } = useTheme();
   const [is2FAOpen, setIs2FAOpen] = useState(false);
 
   const datos: DatoPerfil[] = [
@@ -107,7 +109,7 @@ export const MiPerfilPage: React.FC = () => {
               <h2 className="text-sm font-bold text-foreground">Apariencia</h2>
               <p className="text-xs text-muted-foreground">Elegí el tema de la interfaz.</p>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {THEME_OPTIONS.map((option) => {
                 const Icon = option.icon;
                 const isActive = theme === option.value;
@@ -117,17 +119,58 @@ export const MiPerfilPage: React.FC = () => {
                     type="button"
                     onClick={() => setTheme(option.value)}
                     aria-pressed={isActive}
-                    className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                    className={`flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-xs font-semibold transition cursor-pointer ${
                       isActive
                         ? 'border-primary bg-primary text-primary-foreground'
                         : 'border-input bg-background text-foreground hover:bg-accent'
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-3.5 w-3.5" />
                     <span>{option.label}</span>
                   </button>
                 );
               })}
+            </div>
+
+            <div className="pt-2 border-t border-border">
+              <label className="text-xs font-semibold text-muted-foreground block mb-1.5">
+                Escala Tipográfica (Accesibilidad A11y)
+              </label>
+              <div className="grid grid-cols-3 gap-2 text-xs font-bold font-mono">
+                <button
+                  type="button"
+                  onClick={() => setFontSize('normal')}
+                  className={`rounded-lg border py-1.5 transition cursor-pointer ${
+                    fontSize === 'normal'
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input bg-background text-foreground hover:bg-accent'
+                  }`}
+                >
+                  Normal (100%)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFontSize('large')}
+                  className={`rounded-lg border py-1.5 transition cursor-pointer text-sm ${
+                    fontSize === 'large'
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input bg-background text-foreground hover:bg-accent'
+                  }`}
+                >
+                  Grande (A+)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFontSize('xlarge')}
+                  className={`rounded-lg border py-1.5 transition cursor-pointer text-base ${
+                    fontSize === 'xlarge'
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input bg-background text-foreground hover:bg-accent'
+                  }`}
+                >
+                  Extra (A++)
+                </button>
+              </div>
             </div>
           </section>
 
