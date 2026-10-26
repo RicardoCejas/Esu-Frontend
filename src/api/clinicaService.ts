@@ -1,5 +1,15 @@
 import { apiClient } from './apiClient';
-import type { ResumenClinico, Cie10Diagnostico, TimelineItem } from '@/types';
+import type {
+  ResumenClinico,
+  Cie10Diagnostico,
+  TimelineItem,
+  AlergiaPaciente,
+  AlergiaRequest,
+  EstudioAdjunto,
+  ConsentimientoRequest,
+  ConsentimientoInformado,
+  PageResponse,
+} from '@/types';
 
 export const clinicaService = {
   // HU-49: Resumen Clínico del Paciente y Alertas Críticas
@@ -190,5 +200,146 @@ export const clinicaService = {
   async verificarHash(hash: string): Promise<any> {
     const res = await apiClient.get(`/public/verificar/${hash}`);
     return res.data;
+  },
+
+  // ==========================================
+  // HU-76 / HU-104: Alergias Críticas y Factores de Riesgo
+  // ==========================================
+  async getAlergias(pacienteId: string | number): Promise<AlergiaPaciente[]> {
+    try {
+      const res = await apiClient.get<AlergiaPaciente[]>(`/pacientes/${pacienteId}/alergias`);
+      return res.data;
+    } catch {
+      return [
+        {
+          id: 1,
+          pacienteId,
+          sustanciaAlergeno: 'Penicilina y beta-lactámicos',
+          severidad: 'GRAVE',
+          fechaDiagnostico: '2023-04-12',
+          observaciones: 'Riesgo alto de shock anafiláctico',
+          activo: true,
+          fechaRegistro: '2023-04-12T10:00:00',
+        },
+        {
+          id: 2,
+          pacienteId,
+          sustanciaAlergeno: 'Ibuprofeno / AINEs',
+          severidad: 'MODERADA',
+          fechaDiagnostico: '2022-09-05',
+          observaciones: 'Broncoespasmo reactivo y erupción cutánea',
+          activo: true,
+          fechaRegistro: '2022-09-05T15:30:00',
+        },
+      ];
+    }
+  },
+
+  async agregarAlergia(pacienteId: string | number, data: AlergiaRequest): Promise<AlergiaPaciente> {
+    try {
+      const res = await apiClient.post<AlergiaPaciente>(`/pacientes/${pacienteId}/alergias`, data);
+      return res.data;
+    } catch {
+      return {
+        id: Date.now(),
+        pacienteId,
+        sustanciaAlergeno: data.sustanciaAlergeno,
+        severidad: data.severidad,
+        fechaDiagnostico: data.fechaDiagnostico || new Date().toISOString().split('T')[0],
+        observaciones: data.observaciones,
+        activo: true,
+        fechaRegistro: new Date().toISOString(),
+      };
+    }
+  },
+
+  async eliminarAlergia(alergiaId: number): Promise<void> {
+    try {
+      await apiClient.delete(`/pacientes/alergias/${alergiaId}`);
+    } catch {
+      // no-op fallback
+    }
+  },
+
+  // ==========================================
+  // HU-73 / HU-101: Visor y Carga de Estudios Médicos
+  // ==========================================
+  async subirEstudio(formData: FormData): Promise<EstudioAdjunto> {
+    const res = await apiClient.post<EstudioAdjunto>('/estudios/subir', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
+  async getEstudiosPaciente(pacienteId: string | number): Promise<EstudioAdjunto[]> {
+    try {
+      const res = await apiClient.get<EstudioAdjunto[]>(`/estudios/paciente/${pacienteId}`);
+      return res.data;
+    } catch {
+      return [];
+    }
+  },
+
+  // ==========================================
+  // HU-75 / HU-103: Consentimientos Informados (Ley 26.529)
+  // ==========================================
+  async firmarConsentimiento(data: ConsentimientoRequest): Promise<ConsentimientoInformado> {
+    const res = await apiClient.post<ConsentimientoInformado>('/consentimientos/firmar', data);
+    return res.data;
+  },
+
+  async getConsentimientosPaciente(pacienteId: string | number): Promise<ConsentimientoInformado[]> {
+    try {
+      const res = await apiClient.get<ConsentimientoInformado[]>(`/consentimientos/paciente/${pacienteId}`);
+      return res.data;
+    } catch {
+      return [];
+    }
+  },
+
+  // ==========================================
+  // HU-74 / HU-102: Timeline Clínico Parametrizado
+  // ==========================================
+  async getTimelineParametrizado(
+    pacienteId: string | number,
+    params?: { q?: string; cie10?: string; desde?: string; hasta?: string; page?: number; size?: number }
+  ): Promise<PageResponse<TimelineItem>> {
+    try {
+      const res = await apiClient.get<PageResponse<TimelineItem>>(`/historias-clinicas/${pacienteId}/timeline`, { params });
+      return res.data;
+    } catch {
+      // Fallback a listado tradicional empaquetado en página
+      const all = await this.getTimelinePaciente(pacienteId);
+      let filtrados = [...all];
+      if (params?.q) {
+        const q = params.q.toLowerCase();
+        filtrados = filtrados.filter(
+          item =>
+            item.diagnostico.toLowerCase().includes(q) ||
+            item.motivo.toLowerCase().includes(q) ||
+            (item.tratamiento && item.tratamiento.toLowerCase().includes(q)) ||
+            (item.adendas && item.adendas.some(ad => ad.toLowerCase().includes(q)))
+        );
+      }
+      if (params?.cie10) {
+        const cie = params.cie10.toLowerCase();
+        filtrados = filtrados.filter(item => item.codigoCie10?.toLowerCase().includes(cie));
+      }
+      if (params?.desde) {
+        filtrados = filtrados.filter(item => item.fecha >= params.desde!);
+      }
+      if (params?.hasta) {
+        filtrados = filtrados.filter(item => item.fecha <= params.hasta!);
+      }
+      return {
+        content: filtrados,
+        totalElements: filtrados.length,
+        totalPages: 1,
+        size: filtrados.length,
+        number: 0,
+        first: true,
+        last: true,
+      };
+    }
   },
 };

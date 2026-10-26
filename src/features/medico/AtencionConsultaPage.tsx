@@ -13,8 +13,12 @@ import {
   ArrowLeft,
   QrCode,
   Plus,
-  Trash2
+  Trash2,
+  FileCheck
 } from 'lucide-react';
+import { CriticalAlertBanner } from './components/CriticalAlertBanner';
+import { MedicalAttachmentViewer } from './components/MedicalAttachmentViewer';
+import { InformedConsentModal } from './components/InformedConsentModal';
 
 export const AtencionConsultaPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -43,6 +47,7 @@ export const AtencionConsultaPage: React.FC = () => {
 
   const [guardadoExitoso, setGuardadoExitoso] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [consentimientoModalAbierto, setConsentimientoModalAbierto] = useState(false);
 
   const agregarMedicamento = () => {
     setMedicamentos([
@@ -167,11 +172,22 @@ export const AtencionConsultaPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setConsentimientoModalAbierto(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-3 py-1.5 text-xs font-bold hover:bg-sky-100 transition cursor-pointer"
+          >
+            <FileCheck className="h-4 w-4" />
+            <span>Consentimiento Ley 26.529</span>
+          </button>
           <span className="inline-flex items-center rounded-md bg-sky-700 px-3 py-1 text-xs font-bold text-white shadow-xs">
             En Atención Activa
           </span>
         </div>
       </div>
+
+      {/* HU-76: Banner Superior Permanente de Alergias Críticas y Factores de Riesgo */}
+      <CriticalAlertBanner pacienteId={pacienteId} pacienteNombre={pacienteNombre} />
 
       {/* Formulario de Atención */}
       <form onSubmit={handleGuardarConsulta} className="space-y-6">
@@ -337,6 +353,9 @@ export const AtencionConsultaPage: React.FC = () => {
           )}
         </div>
 
+        {/* HU-73: Visor y Carga de Estudios Médicos Complementarios */}
+        <MedicalAttachmentViewer pacienteId={pacienteId} evolucionId={turnoId} />
+
         {/* Botón Guardar Consulta */}
         <div className="flex justify-end gap-3">
           <button
@@ -356,6 +375,16 @@ export const AtencionConsultaPage: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* HU-75: Módulo de Firma y Aceptación de Consentimientos Informados */}
+      <InformedConsentModal
+        abierto={consentimientoModalAbierto}
+        onCerrar={() => setConsentimientoModalAbierto(false)}
+        pacienteId={pacienteId}
+        profesionalId={user?.id || '1'}
+        pacienteNombre={pacienteNombre}
+        procedimientoInicial={motivo || 'Procedimiento de Atención Clínica'}
+      />
     </div>
   );
 };

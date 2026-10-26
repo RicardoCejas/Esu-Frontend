@@ -283,3 +283,85 @@ export interface TimelineItem {
   hashIntegridad?: string;
   pdfUrl?: string;
 }
+
+// ==========================================
+// HU-73 / HU-101: Estudios Médicos Adjuntos
+// ==========================================
+export type TipoEstudio = 'LABORATORIO' | 'IMAGEN' | 'INFORME' | 'RAYOS_X';
+
+export interface EstudioAdjunto {
+  id: number;
+  pacienteId: number | string;
+  evolucionId?: number | string;
+  nombreArchivo: string;
+  mimeType: string;
+  tamanioBytes: number;
+  checksumSha256: string;
+  tipoEstudio: TipoEstudio | string;
+  fechaEstudio?: string;
+  fechaCarga: string;
+  urlDescarga: string;
+}
+
+// ==========================================
+// HU-75 / HU-103: Consentimientos Informados
+// ==========================================
+export interface ConsentimientoInformado {
+  id: number;
+  pacienteId: number | string;
+  profesionalId: number | string;
+  profesionalNombre?: string;
+  profesionalMatricula?: string;
+  procedimiento: string;
+  textoLegal: string;
+  firmaDigitalBase64: string;
+  ipFirma: string;
+  hashIntegridadSha256: string;
+  fechaHoraFirma: string;
+  estado: 'FIRMADO' | 'REVOCADO';
+}
+
+export interface ConsentimientoRequest {
+  pacienteId: number | string;
+  profesionalId: number | string;
+  procedimiento: string;
+  textoLegal: string;
+  firmaDigitalBase64: string;
+}
+
+// ==========================================
+// HU-76 / HU-104: Alergias Críticas y Factores de Riesgo
+// ==========================================
+export type SeveridadAlergia = 'LEVE' | 'MODERADA' | 'GRAVE';
+
+export interface AlergiaPaciente {
+  id: number;
+  pacienteId: number | string;
+  sustanciaAlergeno: string;
+  severidad: SeveridadAlergia;
+  fechaDiagnostico?: string;
+  observaciones?: string;
+  activo: boolean;
+  fechaRegistro: string;
+}
+
+export interface AlergiaRequest {
+  sustanciaAlergeno: string;
+  severidad: SeveridadAlergia;
+  fechaDiagnostico?: string;
+  observaciones?: string;
+}
+
+// ==========================================
+// Paginación y Respuestas de Búsqueda
+// ==========================================
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+}
+
