@@ -27,6 +27,9 @@ import { AdminDashboardPage } from '@/features/admin/AdminDashboardPage';
 import { AdminUsuariosPage } from '@/features/admin/AdminUsuariosPage';
 import { AdminEspecialidadesPage } from '@/features/admin/AdminEspecialidadesPage';
 
+// Vistas Farmacia (HU-77)
+import { PharmacyValidationView } from '@/features/farmacia/PharmacyValidationView';
+
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -37,6 +40,10 @@ export const AppRoutes: React.FC = () => {
       <Route path="/medicos" element={<Navigate to="/profesionales" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
+
+      {/* Módulo Farmacia y Validación QR (HU-77) */}
+      <Route path="/farmacia/validar-receta" element={<PharmacyValidationView />} />
+      <Route path="/farmacia" element={<Navigate to="/farmacia/validar-receta" replace />} />
 
       {/* Rutas Protegidas del Dashboard con Layout Unificado y AuthGuard */}
       <Route element={<AuthGuard />}>

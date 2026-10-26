@@ -161,3 +161,46 @@ export interface TimelineItem {
   pdfUrl?: string;
 }
 
+export interface PlantillaClinica {
+  id: string;
+  titulo: string;
+  especialidad: string;
+  motivo: string;
+  anamnesis: string;
+  examenFisico: string;
+  tratamientoSugerido?: string;
+  esPersonalizada?: boolean;
+}
+
+export interface MedicamentoRecetaDetalle {
+  droga: string;
+  nombreComercial?: string;
+  presentacion: string;
+  dosisIndicada: string;
+  viaAdministracion: string;
+  posologia: string;
+  duracion: string;
+  cantidad: string;
+}
+
+export interface RecetaValidacion {
+  codigoReceta: string;
+  fechaEmision: string;
+  fechaVencimiento: string;
+  estado: 'PENDIENTE' | 'DISPENSADA' | 'VENCIDA';
+  medicoNombre: string;
+  medicoMatricula: string;
+  especialidad: string;
+  centroSaludNombre: string;
+  pacienteNombre: string;
+  pacienteDni: string;
+  pacienteObraSocial: string;
+  pacienteNroAfiliado: string;
+  diagnostico: string;
+  codigoCie10?: string;
+  medicamentos: MedicamentoRecetaDetalle[];
+  farmaciaDispensadora?: string;
+  fechaDispensacion?: string;
+  hashIntegridad?: string;
+}
+

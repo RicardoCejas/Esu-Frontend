@@ -15,6 +15,7 @@ export const PublicNavbar: React.FC = () => {
     { name: 'Especialidades', path: '/#especialidades' },
     { name: 'Nuestros Médicos', path: '/profesionales' },
     { name: 'Turnero Online', path: '/turnero' },
+    { name: 'Portal Farmacias', path: '/farmacia/validar-receta' },
     { name: 'Guardia 24hs', path: '/#guardia' },
   ];
 
