@@ -176,6 +176,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                     </span>
                     <Button
                       type="button"
+                      aria-label={`Elegir centro de salud ${center.name}`}
                       onClick={(e) => {
                         e.stopPropagation()
                         onSelectCenter(center)
@@ -208,7 +209,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                 key={center.id}
                 onClick={() => onSelectCenter(center)}
                 className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 transition-colors hover:bg-slate-50/80 cursor-pointer ${
-                  isSelected ? 'bg-slate-50 border-l-4 border-l-slate-900' : ''
+                  isSelected ? 'bg-slate-50 ring-2 ring-slate-900' : ''
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -236,6 +237,11 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                   </span>
                   <Button
                     type="button"
+                    aria-label={`Elegir centro de salud ${center.name}`}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onSelectCenter(center)
+                    }}
                     size="sm"
                     className={`h-8 px-3 text-xs font-semibold rounded-lg ${
                       isSelected

@@ -11,12 +11,17 @@ import {
   Baby,
   HeartPulse,
   Bone,
-  Sparkles,
   Eye,
   Sun,
   Activity,
   ArrowRight,
   ShieldCheck,
+  Star,
+  Globe,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  Award
 } from 'lucide-react';
 
 // Mapeo de fotos ilustrativas de alta calidad para cada médico del sistema
@@ -41,7 +46,7 @@ const getDoctorSpecialtyStyle = (nombre: string) => {
   if (lower.includes('pediatr')) {
     return {
       Icon: Baby,
-      badge: 'bg-amber-50 text-amber-800 border-amber-200',
+      badge: 'bg-amber-600 text-white',
       borderAccent: 'border-amber-500',
       avatarBg: 'bg-amber-100 text-amber-700',
     };
@@ -49,7 +54,7 @@ const getDoctorSpecialtyStyle = (nombre: string) => {
   if (lower.includes('cardio')) {
     return {
       Icon: HeartPulse,
-      badge: 'bg-rose-50 text-rose-700 border-rose-200',
+      badge: 'bg-rose-700 text-white',
       borderAccent: 'border-rose-500',
       avatarBg: 'bg-rose-100 text-rose-700',
     };
@@ -57,15 +62,15 @@ const getDoctorSpecialtyStyle = (nombre: string) => {
   if (lower.includes('trauma') || lower.includes('ortop')) {
     return {
       Icon: Bone,
-      badge: 'bg-blue-50 text-blue-700 border-blue-200',
-      borderAccent: 'border-blue-500',
-      avatarBg: 'bg-blue-100 text-blue-700',
+      badge: 'bg-slate-700 text-white',
+      borderAccent: 'border-sky-500',
+      avatarBg: 'bg-sky-100 text-sky-700',
     };
   }
   if (lower.includes('gineco') || lower.includes('obstetr')) {
     return {
-      Icon: Sparkles,
-      badge: 'bg-pink-50 text-pink-700 border-pink-200',
+      Icon: HeartPulse,
+      badge: 'bg-rose-700 text-white',
       borderAccent: 'border-pink-500',
       avatarBg: 'bg-pink-100 text-pink-700',
     };
@@ -73,7 +78,7 @@ const getDoctorSpecialtyStyle = (nombre: string) => {
   if (lower.includes('oftalmo')) {
     return {
       Icon: Eye,
-      badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      badge: 'bg-emerald-700 text-white',
       borderAccent: 'border-emerald-500',
       avatarBg: 'bg-emerald-100 text-emerald-700',
     };
@@ -81,16 +86,16 @@ const getDoctorSpecialtyStyle = (nombre: string) => {
   if (lower.includes('derma')) {
     return {
       Icon: Sun,
-      badge: 'bg-orange-50 text-orange-700 border-orange-200',
+      badge: 'bg-amber-600 text-white',
       borderAccent: 'border-orange-500',
       avatarBg: 'bg-orange-100 text-orange-700',
     };
   }
   return {
     Icon: Stethoscope,
-    badge: 'bg-teal-50 text-teal-700 border-teal-200',
-    borderAccent: 'border-teal-500',
-    avatarBg: 'bg-teal-100 text-teal-700',
+    badge: 'bg-sky-700 text-white',
+    borderAccent: 'border-sky-600',
+    avatarBg: 'bg-sky-100 text-sky-700',
   };
 };
 
@@ -109,6 +114,8 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
 }) => {
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  // HU-FE-64: Estado para tarjetas médicas expandibles
+  const [expandedDoctorId, setExpandedDoctorId] = useState<string | null>(null);
 
   // Filtrado de profesionales
   const filteredDoctors = profesionales.filter((doctor) => {
@@ -122,20 +129,24 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
     return matchesSpecialty && matchesSearch;
   });
 
+  const toggleExpand = (id: string) => {
+    setExpandedDoctorId((prev) => (prev === id ? null : id));
+  };
+
   return (
-    <section id="staff-medico" className="py-16 sm:py-24 bg-gradient-to-b from-background via-teal-950/[0.02] to-background border-t border-teal-100/60 scroll-mt-14">
+    <section id="staff-medico" className="py-16 sm:py-24 bg-background border-t border-sky-100/60 scroll-mt-14">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-teal-500/30 bg-teal-500/10 px-4 py-1.5 text-xs font-bold text-teal-800 shadow-xs mb-3">
-              <ShieldCheck className="h-4 w-4 text-teal-600" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-sky-700 px-4 py-1.5 text-xs font-bold text-white shadow-xs mb-3">
+              <ShieldCheck className="h-4 w-4 text-white" />
               <span>Profesionales Matriculados • Cruz del Eje</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-heading text-slate-900 leading-tight">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-heading text-slate-900 dark:text-white leading-tight">
               Nuestro Cuerpo Médico
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl">
               Conocé a los especialistas y médicos de cabecera que atienden en el Hospital Provincial Aurelio Crespo, Clínicas Privadas y Dispensarios de nuestra ciudad.
             </p>
           </div>
@@ -148,7 +159,7 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
               placeholder="Buscar médico por nombre o matrícula..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-200 shadow-xs"
+              className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-10 pr-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-200 shadow-xs"
             />
           </div>
         </div>
@@ -160,8 +171,8 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
             onClick={() => setSelectedSpecialtyId('all')}
             className={`cursor-pointer shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-all shadow-xs ${
               selectedSpecialtyId === 'all'
-                ? 'bg-gradient-to-r from-teal-700 to-cyan-800 text-white shadow-teal-700/20'
-                : 'bg-white border border-slate-200 text-slate-700 hover:border-teal-400 hover:bg-teal-50/50'
+                ? 'bg-sky-700 text-white shadow-sky-700/20'
+                : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-sky-400 hover:bg-sky-50/50'
             }`}
           >
             <span>Todos los Especialistas ({profesionales.length})</span>
@@ -179,8 +190,8 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
                 onClick={() => setSelectedSpecialtyId(esp.id)}
                 className={`cursor-pointer shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-all shadow-xs ${
                   isSelected
-                    ? 'bg-gradient-to-r from-teal-700 to-cyan-800 text-white shadow-teal-700/20'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:border-teal-400 hover:bg-teal-50/50'
+                    ? 'bg-sky-700 text-white shadow-sky-700/20'
+                    : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-sky-400 hover:bg-sky-50/50'
                 }`}
               >
                 <span>{esp.nombre} ({count})</span>
@@ -191,9 +202,9 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
 
         {/* Doctors Grid */}
         {filteredDoctors.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-teal-200 bg-white/60 p-12 text-center text-xs text-slate-500 space-y-3">
-            <Stethoscope className="mx-auto h-10 w-10 text-teal-600/50" />
-            <p className="text-sm font-semibold text-slate-800">
+          <div className="rounded-3xl border border-dashed border-sky-200 bg-white/60 dark:bg-slate-900/60 p-12 text-center text-xs text-slate-500 space-y-3">
+            <Stethoscope className="mx-auto h-10 w-10 text-sky-600/50" />
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
               No se encontraron profesionales que coincidan con la búsqueda.
             </p>
             <p>Intente modificar el filtro de especialidad o limpiar el campo de búsqueda.</p>
@@ -202,23 +213,40 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
                 setSelectedSpecialtyId('all');
                 setSearchTerm('');
               }}
-              className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-teal-700 transition"
+              className="inline-flex items-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white hover:bg-sky-700 transition"
             >
               Ver todos los médicos
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
             {filteredDoctors.map((med) => {
               const photoUrl = med.foto || DOCTOR_PHOTOS[med.id] || DOCTOR_PHOTOS['p1'];
               const style = getDoctorSpecialtyStyle(med.especialidadNombre);
               const SpecialtyIcon = style.Icon;
               const centrosDelMedico = centros.filter((c) => med.centrosSaludIds.includes(c.id));
+              const isExpanded = expandedDoctorId === med.id;
+              const calificacion = med.calificacion || 4.9;
+              const opinionesCount = med.opinionesCount || 38;
+              const idiomas = med.idiomas || ['Español', 'Inglés (básico)'];
+              const biografia =
+                med.biografia ||
+                `Especialista matriculado con destacada experiencia clínica en el Hospital Aurelio Crespo y consultorios del Valle de Punilla. Formación médica continua y enfoque de atención humanizada.`;
+              const proximoCupo = med.proximoTurnoLibre || 'Próx. turno disponible: Mañana';
+
+              // Enlace directo preseleccionando al profesional (DoD HU-FE-64)
+              const linkAgendar = `/turnero?profesionalId=${med.id}&especialidadId=${med.especialidadId}&medicoNombre=${encodeURIComponent(
+                `${med.nombre} ${med.apellido}`
+              )}`;
 
               return (
                 <div
                   key={med.id}
-                  className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-white p-5 shadow-xs hover:border-teal-400 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  className={`group relative flex flex-col justify-between rounded-3xl border bg-white dark:bg-slate-900 p-5 shadow-xs transition-all duration-300 ${
+                    isExpanded
+                      ? 'border-sky-500 shadow-xl ring-2 ring-sky-500/20'
+                      : 'border-slate-200/90 dark:border-slate-800 hover:border-sky-400 hover:shadow-lg'
+                  }`}
                 >
                   <div>
                     {/* Top: Doctor Photo & Status */}
@@ -227,34 +255,32 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
                         <img
                           src={photoUrl}
                           alt={`Dr. ${med.nombre} ${med.apellido}`}
-                          className="h-20 w-20 rounded-2xl object-cover border-2 border-teal-100 shadow-md group-hover:border-teal-400 transition-all"
+                          className="h-20 w-20 rounded-2xl object-cover border-2 border-sky-100 dark:border-slate-800 shadow-md group-hover:border-sky-400 transition-all"
                           onError={(e) => {
-                            // Fallback a iniciales si la imagen falla
                             e.currentTarget.style.display = 'none';
                             const fallback = e.currentTarget.parentElement?.querySelector('.fallback-avatar');
                             if (fallback) (fallback as HTMLElement).style.display = 'flex';
                           }}
                         />
-                        <div className="fallback-avatar hidden h-20 w-20 rounded-2xl bg-teal-100 border-2 border-teal-200 items-center justify-center font-extrabold text-teal-800 text-lg shadow-md">
+                        <div className="fallback-avatar hidden h-20 w-20 rounded-2xl bg-sky-100 border-2 border-sky-200 items-center justify-center font-extrabold text-sky-800 text-lg shadow-md">
                           {med.nombre.charAt(0)}{med.apellido.charAt(0)}
                         </div>
                         {/* Live active dot */}
-                        <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-xs">
+                        <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-white dark:bg-slate-900 shadow-xs">
                           <span className="relative flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                           </span>
                         </div>
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 mb-1">
+                        <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-white bg-emerald-700 px-2 py-0.5 rounded-full mb-1">
                           ✓ En Cartilla Activa
                         </span>
-                        <h3 className="font-extrabold text-base text-slate-900 font-heading leading-tight truncate">
+                        <h3 className="font-extrabold text-base text-slate-900 dark:text-white font-heading leading-tight truncate">
                           Dr(a). {med.nombre} {med.apellido}
                         </h3>
-                        <p className="font-mono text-[11px] font-bold text-teal-700 mt-0.5">
+                        <p className="font-mono text-[11px] font-bold text-sky-700 dark:text-sky-400 mt-0.5">
                           {med.matricula}
                         </p>
                       </div>
@@ -262,16 +288,29 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
 
                     {/* Specialty Pill */}
                     <div className="mb-3.5">
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg border ${style.badge}`}>
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg ${style.badge}`}>
                         <SpecialtyIcon className="h-3.5 w-3.5 shrink-0" />
                         <span className="truncate">{med.especialidadNombre}</span>
                       </span>
                     </div>
 
+                    {/* Calificación y Reseña Rápida */}
+                    <div className="flex items-center gap-1.5 mb-3 text-xs text-amber-500">
+                      <div className="flex items-center">
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                      </div>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">{calificacion}</span>
+                      <span className="text-[11px] text-slate-400">({opinionesCount} reseñas)</span>
+                    </div>
+
                     {/* Health Centers where they work */}
                     <div className="space-y-2 mb-4">
-                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                        <Building2 className="h-3 w-3 text-teal-600" />
+                      <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                        <Building2 className="h-3 w-3 text-sky-600" />
                         <span>Atiende en ({centrosDelMedico.length}):</span>
                       </p>
                       <div className="flex flex-wrap gap-1.5">
@@ -280,10 +319,10 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
                             key={c.id}
                             type="button"
                             onClick={() => onSelectCentro(c)}
-                            className="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-teal-100 bg-teal-50/70 px-2 py-1 text-[11px] font-medium text-teal-900 hover:border-teal-400 hover:bg-teal-100 transition"
+                            className="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:border-sky-400 hover:bg-slate-200 transition"
                             title="Ver detalles de la sede"
                           >
-                            <MapPin className="h-2.5 w-2.5 text-teal-600 shrink-0" />
+                            <MapPin className="h-2.5 w-2.5 text-sky-600 shrink-0" />
                             <span className="truncate max-w-[140px]">{c.nombre}</span>
                           </button>
                         ))}
@@ -291,22 +330,89 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
                     </div>
 
                     {/* Attention Days */}
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-600 border-t border-slate-100 pt-3 mb-4">
-                      <Clock className="h-3.5 w-3.5 text-teal-600 shrink-0" />
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-3 mb-3">
+                      <Clock className="h-3.5 w-3.5 text-sky-600 shrink-0" />
                       <span className="truncate">
                         <strong>Días:</strong> {med.diasAtencion.join(', ')}
                       </span>
                     </div>
+
+                    {/* HU-FE-64: Botón para Expandir Ficha Pública */}
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(med.id)}
+                      className="w-full mb-3 flex items-center justify-between rounded-xl border border-sky-200 dark:border-slate-800 bg-sky-50/60 dark:bg-slate-800/60 px-3 py-1.5 text-[11px] font-bold text-sky-800 dark:text-sky-300 hover:bg-sky-100/60 transition cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Info className="h-3.5 w-3.5 text-sky-600" />
+                        {isExpanded ? 'Ocultar Ficha Médica' : 'Ver Ficha Completa y Reseñas'}
+                      </span>
+                      {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    </button>
+
+                    {/* HU-FE-64: Sección Expandida con Biografía, Idiomas e Instituciones de Cruz del Eje */}
+                    {isExpanded && (
+                      <div className="space-y-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 p-3.5 mb-4 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
+                        {/* Acreditación Oficial */}
+                        <div className="flex items-center gap-2 pb-2 border-b border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                          <Award className="h-4 w-4 text-amber-500 shrink-0" />
+                          <span className="font-semibold">
+                            Matrícula Provincial: <strong className="font-mono text-sky-700 dark:text-sky-400">{med.matricula}</strong>
+                          </span>
+                        </div>
+
+                        {/* Biografía del Profesional */}
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Reseña y Trayectoria
+                          </span>
+                          <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
+                            {biografia}
+                          </p>
+                        </div>
+
+                        {/* Idiomas */}
+                        <div className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
+                          <Globe className="h-3.5 w-3.5 text-sky-600 shrink-0" />
+                          <span>Idiomas de consulta: <strong>{idiomas.join(', ')}</strong></span>
+                        </div>
+
+                        {/* Próximo turno disponible */}
+                        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 p-2 text-[11px] text-emerald-800 dark:text-emerald-300 font-semibold flex items-center gap-2">
+                          <Clock className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                          <span>{proximoCupo}</span>
+                        </div>
+
+                        {/* Sedes de atención en Cruz del Eje detalladas */}
+                        <div className="space-y-1.5 pt-1 border-t border-slate-200/80 dark:border-slate-700">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Sedes Habilitadas en Cruz del Eje
+                          </span>
+                          <div className="space-y-1">
+                            {centrosDelMedico.map((c) => (
+                              <div
+                                key={c.id}
+                                onClick={() => onSelectCentro(c)}
+                                className="flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] cursor-pointer hover:border-sky-400 transition"
+                              >
+                                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">{c.nombre}</span>
+                                <span className="text-muted-foreground">{c.tipo}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Actions: Book Appointment */}
+                  {/* Actions: Botón Directo "Agendar con este Profesional" (DoD HU-FE-64) */}
                   <div className="pt-2">
                     <Link
-                      to="/turnero"
-                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-700 py-2.5 px-3 text-xs font-bold text-white shadow-md shadow-teal-600/20 hover:from-teal-700 hover:to-cyan-800 hover:scale-[1.02] transition-all"
+                      to={linkAgendar}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-sky-700 hover:bg-sky-800 py-2.5 px-3 text-xs font-bold text-white shadow-md shadow-sky-700/20 hover:scale-[1.02] transition-all"
                     >
                       <Calendar className="h-4 w-4" />
-                      <span>Sacar Turno con {med.nombre}</span>
+                      <span>Agendar con este Profesional</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>
@@ -317,16 +423,16 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
         )}
 
         {/* Bottom Institutional Assurance Banner */}
-        <div className="mt-12 rounded-3xl border border-teal-200/80 bg-gradient-to-br from-teal-900 via-slate-900 to-cyan-950 p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="mt-12 rounded-3xl border border-sky-200/80 bg-slate-900 p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-500/20 border border-teal-400/30 text-teal-300">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center text-sky-300">
               <Activity className="h-7 w-7" />
             </div>
             <div>
               <h4 className="font-extrabold text-lg text-white font-heading">
                 ¿Sos profesional médico en Cruz del Eje y querés sumar tu agenda a Luvia?
               </h4>
-              <p className="text-xs sm:text-sm text-teal-100/80 mt-1">
+              <p className="text-xs sm:text-sm text-sky-100/80 mt-1">
                 Integramos tu consultorio particular o clínica privada sin costo al padrón unificado de salud.
               </p>
             </div>
@@ -335,7 +441,7 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
           <div className="flex items-center gap-3 shrink-0">
             <Link
               to="/turnero"
-              className="rounded-full bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs px-6 py-3 transition shadow-md"
+              className="rounded-full bg-sky-600 hover:bg-sky-400 text-slate-950 font-extrabold text-xs px-6 py-3 transition shadow-md"
             >
               Explorar Turnero Online
             </Link>

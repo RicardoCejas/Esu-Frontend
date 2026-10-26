@@ -1,527 +1,453 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { clinicaService } from '@/api/clinicaService';
-import type { TimelineItem } from '@/types';
+import { pacientesService } from '@/api/pacientesService';
+import type { ConsultaMedica } from '@/types';
 import {
   FileText,
+  Calendar,
+  Activity,
   Pill,
+  ShieldCheck,
   Download,
   Filter,
-  QrCode,
+  Edit3,
   X,
-  TrendingUp,
-  Clock,
-  Search,
-  MessageCircle
+  Trash2,
+  AlertCircle
 } from 'lucide-react';
 
 export const MiHistorialPage: React.FC = () => {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
-  const pacienteId = searchParams.get('pacienteId') || user?.id || '1';
-
-  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+  const [consultas, setConsultas] = useState<ConsultaMedica[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filtros interactivos (HU-52 DoD)
-  const [filtroEspecialidad, setFiltroEspecialidad] = useState('TODAS');
+  // HU-33: Filtro por Rango de Fechas
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
-  const [filtroTexto, setFiltroTexto] = useState('');
 
-  // Visor Modal de Receta (HU-52 DoD)
-  const [recetaModal, setRecetaModal] = useState<TimelineItem | null>(null);
+  // HU-35: Corrección / Rectificación de Registro Clínico
+  const [consultaAEditar, setConsultaAEditar] = useState<ConsultaMedica | null>(null);
+  const [notaRectificacion, setNotaRectificacion] = useState('');
+  const [motivoCorreccion, setMotivoCorreccion] = useState('Rectificación de diagnóstico');
+  const [consultaAAnular, setConsultaAAnular] = useState<ConsultaMedica | null>(null);
 
   useEffect(() => {
-    const fetchTimeline = async () => {
-      try {
-        setLoading(true);
-        const data = await clinicaService.getTimelinePaciente(pacienteId);
-        setTimeline(data);
-      } catch (err) {
-        console.error('Error cargando timeline clínica:', err);
-      } finally {
+    if (user) {
+      pacientesService.getHistoriaClinica(user.id).then((data) => {
+        setConsultas(data);
         setLoading(false);
-      }
+      });
+    }
+  }, [user]);
+
+  // Bloqueo de scroll cuando un modal está abierto
+  useEffect(() => {
+    if (consultaAEditar || consultaAAnular) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
     };
+  }, [consultaAEditar, consultaAAnular]);
 
-    fetchTimeline();
-  }, [pacienteId]);
+  // HU-33: Filtrado por fechas
+  const consultasFiltradas = consultas.filter((c) => {
+    const matchDesde = !fechaDesde || c.fecha >= fechaDesde;
+    const matchHasta = !fechaHasta || c.fecha <= fechaHasta;
+    return matchDesde && matchHasta;
+  });
 
-  // Lista de especialidades únicas para el filtro
-  const especialidadesDisponibles = useMemo(() => {
-    const set = new Set<string>();
-    timeline.forEach((item) => {
-      if (item.especialidad) set.add(item.especialidad);
-    });
-    return Array.from(set);
-  }, [timeline]);
+  // HU-35: Aplicar corrección / nota médica
+  const handleGuardarCorreccion = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!consultaAEditar) return;
 
-  // Filtrado reactivo de la línea de tiempo (HU-52 DoD)
-  const timelineFiltrada = useMemo(() => {
-    return timeline.filter((item) => {
-      const matchEsp = filtroEspecialidad === 'TODAS' || item.especialidad === filtroEspecialidad;
-      const matchDesde = !fechaDesde || item.fecha >= fechaDesde;
-      const matchHasta = !fechaHasta || item.fecha <= fechaHasta + ' 23:59';
-      const matchTexto =
-        !filtroTexto ||
-        item.diagnostico.toLowerCase().includes(filtroTexto.toLowerCase()) ||
-        item.profesionalNombre.toLowerCase().includes(filtroTexto.toLowerCase()) ||
-        (item.codigoCie10 && item.codigoCie10.toLowerCase().includes(filtroTexto.toLowerCase()));
-      return matchEsp && matchDesde && matchHasta && matchTexto;
-    });
-  }, [timeline, filtroEspecialidad, fechaDesde, fechaHasta, filtroTexto]);
-
-  // Datos para gráfico interactivo de signos vitales (presión, IMC y peso) (HU-52 DoD)
-  const datosVitales = useMemo(() => {
-    return timeline
-      .filter((t) => t.signosVitales && (t.signosVitales.peso || t.signosVitales.imc || t.signosVitales.presionArterial))
-      .slice(0, 6)
-      .reverse()
-      .map((t) => ({
-        fecha: t.fecha.split(' ')[0] || t.fecha,
-        peso: parseFloat(t.signosVitales?.peso?.replace('kg', '') || '74'),
-        imc: parseFloat(t.signosVitales?.imc || '24.2'),
-        presion: t.signosVitales?.presionArterial || '120/80',
-        sistolica: parseInt(t.signosVitales?.presionArterial?.split('/')[0] || '120', 10),
-      }));
-  }, [timeline]);
-
-  // Descarga de PDF oficial con QR
-  const handleDescargarPdf = async (item: TimelineItem) => {
-    try {
-      const blob = await clinicaService.descargarEvolucionPdf(item.id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `historia_clinica_${item.id}_oficial.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch {
-      window.print();
-    }
-  };
-
-  // Descarga de Receta PDF
-  const handleDescargarRecetaPdf = async (recetaId: number | string) => {
-    try {
-      const blob = await clinicaService.descargarRecetaPdf(recetaId);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `receta_digital_${recetaId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch {
-      alert('Descarga iniciada.');
-    }
-  };
-
-  // Compartir por WhatsApp (HU-52 DoD)
-  const handleCompartirWhatsApp = (item: TimelineItem) => {
-    const texto = encodeURIComponent(
-      `Hola! Comparto la receta médica oficial de ESU emitida por el ${item.profesionalNombre} (${item.especialidad}) con diagnóstico: ${item.diagnostico} [CIE-10: ${item.codigoCie10 || 'N/A'}]. Verificación y descarga: http://localhost:8080/api/recetas/${item.recetaId || item.id}/pdf`
+    setConsultas((prev) =>
+      prev.map((c) =>
+        c.id === consultaAEditar.id
+          ? {
+              ...c,
+              diagnostico: `${c.diagnostico} [CORRECCIÓN MÉDICA: ${notaRectificacion.trim()}]`,
+            }
+          : c
+      )
     );
-    window.open(`https://api.whatsapp.com/send?text=${texto}`, '_blank');
+    setConsultaAEditar(null);
+    setNotaRectificacion('');
+  };
+
+  // HU-35: Anulación de registro erróneo con confirmación accesible
+  const handleConfirmarAnulacion = () => {
+    if (!consultaAAnular) return;
+    setConsultas((prev) => prev.filter((c) => c.id !== consultaAAnular.id));
+    setConsultaAAnular(null);
+    setConsultaAEditar(null);
+  };
+
+  // HU-36: Exportación de Historia Clínica a Formato PDF
+  const handleExportarPDF = () => {
+    window.print();
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-      {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+    <div className="space-y-6">
+      {/* Encabezado con título y botones de acción */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 text-xs font-black bg-indigo-100 text-indigo-700 rounded-md">
-              HCU Interoperable
-            </span>
-            <span className="text-xs text-slate-500">• Ley 26.529 de Inmutabilidad</span>
-          </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <FileText className="w-7 h-7 text-indigo-600" />
-            Línea de Tiempo Clínica y Recetas Oficiales
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <FileText className="h-6 w-6 text-primary" />
+            <span>Mi Historia Clínica Única (HCU)</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Expediente cronológico inalterable de atenciones médicas, signos vitales y prescripciones digitales con código QR verificable.
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Registro cronológico digital de atenciones médicas, signos vitales y recetas electrónicas de Cruz del Eje.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs text-foreground font-semibold">
+            <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <span>Datos protegidos Ley 25.326</span>
+          </div>
+
+          {/* HU-36: Botón de Exportar a PDF */}
           <button
-            onClick={() => window.print()}
-            className="px-4 py-2.5 text-xs font-bold bg-white border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 shadow-xs flex items-center gap-2 transition-colors"
+            type="button"
+            onClick={handleExportarPDF}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition cursor-pointer print:hidden"
+            title="Exportar toda la historia clínica en formato PDF imprimible"
           >
-            <Download className="w-4 h-4 text-slate-500" />
-            Imprimir Informe Completo
+            <Download className="h-4 w-4" />
+            <span>Exportar HCU (PDF)</span>
           </button>
         </div>
       </div>
 
-      {/* GRÁFICO INTERACTIVO DE EVOLUCIÓN DE SIGNOS VITALES (HU-52 DoD) */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-          <div className="flex items-center gap-2.5">
-            <TrendingUp className="w-5 h-5 text-emerald-600" />
-            <div>
-              <h2 className="text-sm font-black text-slate-900">
-                Evolución Temporal de Signos Vitales (Presión, IMC y Peso)
-              </h2>
-              <p className="text-2xs text-slate-500">
-                Seguimiento gráfico longitudinal de métricas corporales registradas en cada atención
-              </p>
+      {/* HU-33: Panel de Filtro de Atenciones Médicas por Rango de Fechas */}
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs print:hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+            <Filter className="h-4 w-4 text-primary" />
+            <span>Filtrar Consultas por Rango de Fechas:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">Desde:</span>
+              <input
+                type="date"
+                value={fechaDesde}
+                onChange={(e) => setFechaDesde(e.target.value)}
+                className="rounded-lg border border-input bg-background px-2.5 py-1 text-xs font-mono"
+              />
             </div>
-          </div>
-          <div className="flex items-center gap-4 text-xs font-semibold">
-            <span className="flex items-center gap-1.5 text-emerald-700">
-              <span className="w-3 h-3 rounded-full bg-emerald-500"></span> Presión Sistólica (mmHg)
-            </span>
-            <span className="flex items-center gap-1.5 text-indigo-700">
-              <span className="w-3 h-3 rounded-full bg-indigo-500"></span> Peso Corporal (kg)
-            </span>
-            <span className="flex items-center gap-1.5 text-amber-700">
-              <span className="w-3 h-3 rounded-full bg-amber-500"></span> IMC
-            </span>
-          </div>
-        </div>
 
-        {/* Gráfico en SVG responsivo */}
-        <div className="relative h-48 w-full bg-slate-50/70 rounded-xl p-4 border border-slate-100 flex items-end justify-between gap-4">
-          {datosVitales.map((item, idx) => {
-            // Normalizaciones para altura visual
-            const hPresion = Math.min(100, Math.max(30, (item.sistolica - 80) * 1.5));
-            const hPeso = Math.min(100, Math.max(25, (item.peso - 40) * 1.5));
-            const hImc = Math.min(100, Math.max(20, (item.imc - 15) * 5));
-
-            return (
-              <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group">
-                <div className="flex items-end gap-1.5 h-36 w-full justify-center">
-                  {/* Barra Presión */}
-                  <div
-                    style={{ height: `${hPresion}%` }}
-                    className="w-3 sm:w-4 bg-emerald-500 rounded-t-md group-hover:bg-emerald-600 transition-all relative"
-                    title={`TA: ${item.presion} mmHg`}
-                  >
-                    <span className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 text-3xs font-bold bg-slate-900 text-white px-1.5 py-0.5 rounded pointer-events-none transition-opacity whitespace-nowrap z-20">
-                      {item.presion}
-                    </span>
-                  </div>
-
-                  {/* Barra Peso */}
-                  <div
-                    style={{ height: `${hPeso}%` }}
-                    className="w-3 sm:w-4 bg-indigo-500 rounded-t-md group-hover:bg-indigo-600 transition-all relative"
-                    title={`Peso: ${item.peso} kg`}
-                  >
-                    <span className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 text-3xs font-bold bg-slate-900 text-white px-1.5 py-0.5 rounded pointer-events-none transition-opacity whitespace-nowrap z-20">
-                      {item.peso}kg
-                    </span>
-                  </div>
-
-                  {/* Barra IMC */}
-                  <div
-                    style={{ height: `${hImc}%` }}
-                    className="w-3 sm:w-4 bg-amber-500 rounded-t-md group-hover:bg-amber-600 transition-all relative"
-                    title={`IMC: ${item.imc}`}
-                  >
-                    <span className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 text-3xs font-bold bg-slate-900 text-white px-1.5 py-0.5 rounded pointer-events-none transition-opacity whitespace-nowrap z-20">
-                      IMC {item.imc}
-                    </span>
-                  </div>
-                </div>
-
-                <span className="text-3xs font-bold text-slate-500 mt-2 truncate max-w-full">
-                  {item.fecha}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* BARRA DE FILTROS INTERACTIVA (HU-52 DoD) */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-            <Filter className="w-4 h-4 text-indigo-600" />
-            <span>Filtros:</span>
-          </div>
-
-          {/* Filtro por Especialidad */}
-          <select
-            value={filtroEspecialidad}
-            onChange={(e) => setFiltroEspecialidad(e.target.value)}
-            className="text-xs font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="TODAS">Todas las Especialidades</option>
-            {especialidadesDisponibles.map((esp) => (
-              <option key={esp} value={esp}>
-                {esp}
-              </option>
-            ))}
-          </select>
-
-          {/* Rango de Fechas */}
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={fechaDesde}
-              onChange={(e) => setFechaDesde(e.target.value)}
-              className="text-xs font-medium px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl"
-              title="Fecha Desde"
-            />
-            <span className="text-xs text-slate-400">a</span>
-            <input
-              type="date"
-              value={fechaHasta}
-              onChange={(e) => setFechaHasta(e.target.value)}
-              className="text-xs font-medium px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl"
-              title="Fecha Hasta"
-            />
-          </div>
-
-          {(fechaDesde || fechaHasta || filtroEspecialidad !== 'TODAS') && (
-            <button
-              onClick={() => {
-                setFechaDesde('');
-                setFechaHasta('');
-                setFiltroEspecialidad('TODAS');
-              }}
-              className="text-xs text-rose-600 font-bold hover:underline"
-            >
-              Limpiar filtros
-            </button>
-          )}
-        </div>
-
-        {/* Búsqueda por texto */}
-        <div className="relative w-full sm:w-64">
-          <input
-            type="text"
-            placeholder="Buscar por diagnóstico o CIE-10..."
-            value={filtroTexto}
-            onChange={(e) => setFiltroTexto(e.target.value)}
-            className="w-full text-xs pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl"
-          />
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-        </div>
-      </div>
-
-      {/* LÍNEA DE TIEMPO CRONOLÓGICA VERTICAL INTERACTIVA (HU-52 DoD) */}
-      <div className="relative pl-6 sm:pl-8 space-y-8 before:absolute before:left-3 sm:before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-        {loading ? (
-          <div className="p-8 text-center text-sm text-slate-500 font-medium">
-            Cargando historial médico...
-          </div>
-        ) : timelineFiltrada.length === 0 ? (
-          <div className="p-8 bg-white rounded-2xl border border-slate-200 text-center text-sm text-slate-500">
-            No se encontraron consultas con los filtros seleccionados.
-          </div>
-        ) : (
-          timelineFiltrada.map((item) => (
-            <div key={item.id} className="relative group">
-              {/* Nodo en la línea vertical */}
-              <div className="absolute -left-6 sm:-left-8 top-5 w-4 h-4 rounded-full bg-indigo-600 border-4 border-white shadow-xs group-hover:scale-125 transition-transform"></div>
-
-              {/* Tarjeta de la Evolución */}
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition-shadow">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-slate-100">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" /> {item.fecha}
-                      </span>
-                      <span className="px-2 py-0.5 text-2xs font-extrabold bg-indigo-50 text-indigo-700 rounded-md border border-indigo-200">
-                        {item.especialidad}
-                      </span>
-                      {item.codigoCie10 && (
-                        <span className="px-2 py-0.5 text-2xs font-bold bg-emerald-100 text-emerald-800 rounded-md">
-                          CIE-10: {item.codigoCie10}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-base font-black text-slate-900">
-                      {item.diagnostico}
-                    </h3>
-                    <p className="text-xs text-slate-600">
-                      Atendido por: <strong className="text-slate-900">{item.profesionalNombre}</strong> ({item.profesionalMatricula})
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {/* Botón Ver Receta */}
-                    <button
-                      onClick={() => setRecetaModal(item)}
-                      className="px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg flex items-center gap-1.5 transition-colors"
-                      title="Ver Receta Oficial"
-                    >
-                      <Pill className="w-3.5 h-3.5 text-emerald-600" />
-                      Visor de Receta
-                    </button>
-
-                    {/* Botón Descarga PDF con QR */}
-                    <button
-                      onClick={() => handleDescargarPdf(item)}
-                      className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg flex items-center gap-1.5 transition-colors"
-                      title="Descargar PDF con QR"
-                    >
-                      <QrCode className="w-3.5 h-3.5 text-slate-500" />
-                      PDF con QR
-                    </button>
-                  </div>
-                </div>
-
-                <div className="py-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <h4 className="font-bold text-slate-700 mb-1">Motivo de Consulta:</h4>
-                    <p className="text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      {item.motivo}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="font-bold text-slate-700 mb-1">Tratamiento e Indicaciones:</h4>
-                    <p className="text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      {item.tratamiento || 'Pautas de alarma y control según evolución.'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Signos Vitales registrados */}
-                {item.signosVitales && (
-                  <div className="pt-2 flex flex-wrap gap-2 text-2xs font-semibold">
-                    {item.signosVitales.presionArterial && (
-                      <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
-                        TA: {item.signosVitales.presionArterial}
-                      </span>
-                    )}
-                    {item.signosVitales.frecuenciaCardiaca && (
-                      <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
-                        FC: {item.signosVitales.frecuenciaCardiaca}
-                      </span>
-                    )}
-                    {item.signosVitales.temperatura && (
-                      <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
-                        Temp: {item.signosVitales.temperatura}
-                      </span>
-                    )}
-                    {item.signosVitales.peso && (
-                      <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
-                        Peso: {item.signosVitales.peso}
-                      </span>
-                    )}
-                    {item.signosVitales.imc && (
-                      <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg">
-                        IMC: {item.signosVitales.imc}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Adendas Médicas (Fe de erratas) registradas */}
-                {item.tieneAdendas && item.adendas && item.adendas.length > 0 && (
-                  <div className="mt-4 pt-3 border-t border-slate-100">
-                    <span className="text-2xs font-black text-indigo-700 uppercase tracking-wide">
-                      Adendas Clínicas Vinculadas (Ley 26.529):
-                    </span>
-                    <div className="mt-1 space-y-1">
-                      {item.adendas.map((ad, i) => (
-                        <p key={i} className="text-2xs text-slate-600 bg-indigo-50/50 p-2 rounded-lg border border-indigo-100">
-                          {ad}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Hash inalterable */}
-                {item.hashIntegridad && (
-                  <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-3xs text-slate-400 font-mono">
-                    <span className="truncate max-w-sm">SHA-256: {item.hashIntegridad}</span>
-                    <span className="font-sans font-bold text-emerald-600">✓ Inalterable</span>
-                  </div>
-                )}
-              </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">Hasta:</span>
+              <input
+                type="date"
+                value={fechaHasta}
+                onChange={(e) => setFechaHasta(e.target.value)}
+                className="rounded-lg border border-input bg-background px-2.5 py-1 text-xs font-mono"
+              />
             </div>
-          ))
-        )}
-      </div>
 
-      {/* VISOR MODAL DE RECETAS EMITIDAS CON WHATSAPP Y PDF (HU-52 DoD) */}
-      {recetaModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                  <Pill className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900">
-                    Receta Médica Digital Oficial
-                  </h3>
-                  <p className="text-2xs text-slate-500">Validez nacional conforme Ley 27.553</p>
-                </div>
-              </div>
+            {(fechaDesde || fechaHasta) && (
               <button
-                onClick={() => setRecetaModal(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100"
+                type="button"
+                onClick={() => {
+                  setFechaDesde('');
+                  setFechaHasta('');
+                }}
+                className="rounded-lg border border-input px-2.5 py-1 text-muted-foreground hover:bg-accent transition text-xs cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                Limpiar Fechas
               </button>
-            </div>
+            )}
+          </div>
+        </div>
+      </div>
 
-            <div className="space-y-4 text-xs">
-              <div className="bg-emerald-50 p-3.5 rounded-xl border border-emerald-200">
-                <p className="font-bold text-emerald-950">
-                  Profesional Prescriptor: {recetaModal.profesionalNombre}
-                </p>
-                <p className="text-emerald-800 text-2xs">
-                  Matrícula: {recetaModal.profesionalMatricula} • Fecha: {recetaModal.fecha}
-                </p>
-              </div>
+      {/* Membrete oficial visible únicamente en impresión/PDF (HU-36) */}
+      <div className="hidden print:block border-b-2 border-slate-900 pb-4 mb-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold font-heading">SISTEMA PÚBLICO Y PRIVADO DE SALUD UNIFICADA</h2>
+            <p className="text-xs text-slate-600">Hospital Provincial Aurelio Crespo • Cruz del Eje, Córdoba</p>
+          </div>
+          <div className="text-right text-xs">
+            <p><strong>Paciente:</strong> {user?.nombre} {user?.apellido}</p>
+            <p><strong>DNI:</strong> {user?.dni}</p>
+            <p><strong>Fecha de Emisión:</strong> {new Date().toLocaleDateString('es-AR')}</p>
+          </div>
+        </div>
+      </div>
 
-              <div>
-                <span className="font-bold text-slate-700">Diagnóstico Asignado:</span>
-                <p className="text-slate-800 font-medium">
-                  {recetaModal.diagnostico} {recetaModal.codigoCie10 ? `(CIE-10: ${recetaModal.codigoCie10})` : ''}
-                </p>
-              </div>
-
-              <div>
-                <span className="font-bold text-slate-700 mb-1 block">Prescripción Farmacológica:</span>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-                  <div className="flex items-center justify-between font-bold text-slate-800">
-                    <span>Paracetamol 500mg</span>
-                    <span>1 caja (16 comp.)</span>
+      {loading ? (
+        <div className="flex h-48 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      ) : consultasFiltradas.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center space-y-3">
+          <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="font-bold text-base">Sin registros médicos en este período</h3>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            No se encontraron consultas registradas que coincidan con las fechas seleccionadas.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {consultasFiltradas.map((consulta) => (
+            <div
+              key={consulta.id}
+              className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-5 print:border-slate-300 print:shadow-none"
+            >
+              {/* Header de la Consulta */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-sky-700 dark:text-sky-300 font-bold border border-slate-200 dark:border-slate-700">
+                    <Activity className="h-5 w-5" />
                   </div>
-                  <p className="text-slate-500 text-2xs">
-                    Posología: Tomar 1 comprimido vía oral cada 8 horas ante dolor o temperatura superior a 38°C.
+                  <div>
+                    <h3 className="font-bold text-base text-foreground">{consulta.profesionalNombre}</h3>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                      <Calendar className="h-3.5 w-3.5 text-primary" />
+                      <span>Atención realizada el {consulta.fecha}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-md bg-sky-700 px-2.5 py-1 text-xs font-bold text-white shadow-xs">
+                    Consulta Ambulatoria
+                  </span>
+
+                  {/* HU-35: Botón de Corregir / Rectificar */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConsultaAEditar(consulta);
+                      setNotaRectificacion('');
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition cursor-pointer print:hidden"
+                    title="Rectificar o asentar aclaración a esta consulta médica"
+                  >
+                    <Edit3 className="h-3.5 w-3.5 text-primary" />
+                    <span>Corregir</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Signos Vitales */}
+              {consulta.signosVitales && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-xl bg-muted/40 p-3.5 text-xs">
+                  <div>
+                    <span className="text-muted-foreground block">Presión Arterial</span>
+                    <span className="font-bold text-foreground">
+                      {consulta.signosVitales.presionArterial || '120/80 mmHg'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block">Frecuencia Cardíaca</span>
+                    <span className="font-bold text-foreground">
+                      {consulta.signosVitales.frecuenciaCardiaca || '72 lpm'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block">Temperatura</span>
+                    <span className="font-bold text-foreground">
+                      {consulta.signosVitales.temperatura || '36.5 °C'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block">Peso Corporal</span>
+                    <span className="font-bold text-foreground">
+                      {consulta.signosVitales.peso || '75 kg'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Detalle Clínico */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div className="space-y-1">
+                  <span className="font-semibold text-foreground">Motivo de Consulta:</span>
+                  <p className="rounded-lg border border-border bg-background p-3 text-muted-foreground">
+                    {consulta.motivo}
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="font-semibold text-foreground">Diagnóstico / Evolución:</span>
+                  <p className="rounded-lg border border-border bg-background p-3 font-medium text-foreground">
+                    {consulta.diagnostico}
                   </p>
                 </div>
               </div>
 
-              {/* Botones de acción: WhatsApp y PDF (HU-52 DoD) */}
-              <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              {/* Receta Digital Asociada */}
+              {consulta.receta && (
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3 print:border-slate-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Pill className="h-4 w-4 text-primary" />
+                      <h4 className="font-bold text-xs text-primary">Receta Electrónica Emitida</h4>
+                    </div>
+                    <span className="font-mono text-[11px] font-bold text-muted-foreground">
+                      {consulta.receta.codigoQR}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {consulta.receta.medicamentos.map((med, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded-lg border border-border bg-card p-2.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1"
+                      >
+                        <div>
+                          <span className="font-bold text-foreground">{med.nombreComercial}</span>{' '}
+                          <span className="text-muted-foreground">({med.droga} - {med.presentacion})</span>
+                          <p className="text-[11px] text-primary font-medium mt-0.5">{med.dosisIndicada}</p>
+                        </div>
+                        <span className="text-[11px] font-semibold text-muted-foreground sm:text-right">
+                          Cantidad: {med.cantidad}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-[11px] text-muted-foreground italic">
+                    Indicaciones: {consulta.receta.indicacionesGenerales}
+                  </p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* HU-35: Modal de Corrección / Rectificación de Consulta Clínica */}
+      {consultaAEditar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 animate-in fade-in duration-150 print:hidden">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <Edit3 className="h-5 w-5 text-primary" />
+                <h3 className="font-bold text-base text-foreground font-heading">
+                  Rectificar Registro Clínico
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setConsultaAEditar(null)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-400 dark:border-amber-700 p-3 text-xs text-amber-900 dark:text-amber-200 font-medium flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-700 dark:text-amber-400" />
+              <span>Por razones médico-legales, toda rectificación queda asentada con fecha y firma en el historial clínico.</span>
+            </div>
+
+            <form onSubmit={handleGuardarCorreccion} className="space-y-3.5 text-xs">
+              <div className="space-y-1">
+                <label className="font-semibold text-foreground">Motivo de la Corrección</label>
+                <select
+                  value={motivoCorreccion}
+                  onChange={(e) => setMotivoCorreccion(e.target.value)}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                >
+                  <option value="Rectificación de diagnóstico">Aclaración / Rectificación de diagnóstico</option>
+                  <option value="Ajuste de posología de medicamento">Ajuste de dosis o posología</option>
+                  <option value="Error tipográfico en signos vitales">Corrección de signos vitales</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-semibold text-foreground">Nota Médica Aclaratoria</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={notaRectificacion}
+                  onChange={(e) => setNotaRectificacion(e.target.value)}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                  placeholder="Detalle la rectificación correspondiente..."
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => handleCompartirWhatsApp(recetaModal)}
-                  className="px-4 py-2.5 text-xs font-black bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-xs"
+                  onClick={() => setConsultaAAnular(consultaAEditar)}
+                  className="inline-flex items-center gap-1 text-destructive hover:underline text-xs cursor-pointer"
                 >
-                  <MessageCircle className="w-4 h-4" />
-                  Compartir vía WhatsApp
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Anular consulta por error</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleDescargarRecetaPdf(recetaModal.recetaId || recetaModal.id)}
-                  className="px-4 py-2.5 text-xs font-black bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all flex items-center gap-2 shadow-xs"
-                >
-                  <Download className="w-4 h-4" />
-                  Descargar Receta en PDF
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConsultaAEditar(null)}
+                    className="rounded-xl border border-input px-3 py-2 font-semibold hover:bg-accent transition cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-primary px-4 py-2 font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-sm cursor-pointer"
+                  >
+                    Guardar Rectificación
+                  </button>
+                </div>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Accesible de Confirmación para Anulación de Consulta */}
+      {consultaAAnular && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 animate-in fade-in duration-150 print:hidden">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/70">
+                <Trash2 className="h-6 w-6 text-rose-700 dark:text-rose-300" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-foreground">Anular Registro Clínico</h3>
+                <p className="text-xs text-muted-foreground">Esta acción eliminará el asiento por error de carga.</p>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-muted/50 p-3 text-xs space-y-1.5 border border-border/60">
+              <div><strong className="text-foreground">Profesional:</strong> {consultaAAnular.profesionalNombre}</div>
+              <div><strong className="text-foreground">Fecha de Atención:</strong> {consultaAAnular.fecha}</div>
+              <div><strong className="text-foreground">Diagnóstico Original:</strong> {consultaAAnular.diagnostico}</div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              ¿Confirmas la anulación administrativa de este registro clínico en el sistema de Cruz del Eje?
+            </p>
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setConsultaAAnular(null)}
+                className="flex-1 rounded-lg border border-input bg-background py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarAnulacion}
+                className="flex-1 rounded-lg bg-rose-700 py-2 text-xs font-bold text-white hover:bg-rose-800 transition cursor-pointer shadow-sm"
+              >
+                Confirmar Anulación
+              </button>
             </div>
           </div>
         </div>

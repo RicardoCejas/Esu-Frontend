@@ -4,8 +4,13 @@ import { HomePage } from '@/features/home/HomePage';
 import { TurneroContainer } from '@/features/turnero/TurneroContainer';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RegisterPage } from '@/features/auth/RegisterPage';
+import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage';
+import { VerifyEmailPage } from '@/features/auth/VerifyEmailPage';
+import { ActivityMonitor } from '@/components/auth/ActivityMonitor';
 import { ProfesionalesPage } from '@/features/profesionales/ProfesionalesPage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { PerfilLayout } from '@/components/layout/PerfilLayout';
 import { AuthGuard } from './AuthGuard';
 import { RoleGuard } from './RoleGuard';
 
@@ -20,64 +25,101 @@ import { AtencionConsultaPage } from '@/features/medico/AtencionConsultaPage';
 // Vistas Recepción
 import { RecepcionPage } from '@/features/recepcion/RecepcionPage';
 import { PadronPacientesPage } from '@/features/recepcion/PadronPacientesPage';
+import { NuevoPacientePage } from '@/features/recepcion/NuevoPacientePage';
 import { GestionTurnosAdminPage } from '@/features/recepcion/GestionTurnosAdminPage';
+import { SalasEsperaKanbanPage } from '@/features/recepcion/SalasEsperaKanbanPage';
+import { PantallaTurnosTVPage } from '@/features/recepcion/PantallaTurnosTVPage';
 
 // Vistas Admin
 import { AdminDashboardPage } from '@/features/admin/AdminDashboardPage';
 import { AdminUsuariosPage } from '@/features/admin/AdminUsuariosPage';
+import { NuevoUsuarioPage } from '@/features/admin/NuevoUsuarioPage';
 import { AdminEspecialidadesPage } from '@/features/admin/AdminEspecialidadesPage';
+import { AdminSedesPage } from '@/features/admin/AdminSedesPage';
+import { NuevaEspecialidadPage } from '@/features/admin/NuevaEspecialidadPage';
+import { NuevoProfesionalPage } from '@/features/profesionales/NuevoProfesionalPage';
+
+// Perfil (todos los roles)
+import { MiPerfilPage } from '@/features/perfil/MiPerfilPage';
 
 // Vistas Farmacia (HU-77)
 import { PharmacyValidationView } from '@/features/farmacia/PharmacyValidationView';
 
 export const AppRoutes: React.FC = () => {
   return (
-    <Routes>
-      {/* Rutas Públicas */}
-      <Route path="/" element={<HomePage />} />
-      <Route path="/turnero" element={<TurneroContainer />} />
-      <Route path="/profesionales" element={<ProfesionalesPage />} />
-      <Route path="/medicos" element={<Navigate to="/profesionales" replace />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/registro" element={<RegisterPage />} />
+    <>
+      {/* HU-44: Monitor global de actividad del cliente con advertencia y cierre forzoso */}
+      <ActivityMonitor />
 
-      {/* Módulo Farmacia y Validación QR (HU-77) */}
-      <Route path="/farmacia/validar-receta" element={<PharmacyValidationView />} />
-      <Route path="/farmacia" element={<Navigate to="/farmacia/validar-receta" replace />} />
+      <Routes>
+        {/* Rutas Públicas */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/turnero" element={<TurneroContainer />} />
+        <Route path="/profesionales" element={<ProfesionalesPage />} />
+        <Route path="/profesionales/nuevo" element={<NuevoProfesionalPage />} />
+        <Route path="/medicos" element={<Navigate to="/profesionales" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/registro" element={<RegisterPage />} />
 
-      {/* Rutas Protegidas del Dashboard con Layout Unificado y AuthGuard */}
-      <Route element={<AuthGuard />}>
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          {/* Módulo Paciente */}
-          <Route element={<RoleGuard allowedRoles={['PACIENTE', 'ADMIN']} />}>
-            <Route path="paciente" element={<MisTurnosPage />} />
-            <Route path="paciente/historial" element={<MiHistorialPage />} />
+        {/* Módulo Farmacia y Validación QR (HU-77) */}
+        <Route path="/farmacia/validar-receta" element={<PharmacyValidationView />} />
+        <Route path="/farmacia" element={<Navigate to="/farmacia/validar-receta" replace />} />
+
+        {/* HU-43: Rutas de Recuperación de Contraseña y Verificación de Email */}
+        <Route path="/olvido-password" element={<ForgotPasswordPage />} />
+        <Route path="/recuperar" element={<Navigate to="/olvido-password" replace />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verificar-email" element={<VerifyEmailPage />} />
+
+        {/* HU-55: Pantalla Pública Tótem / TV de Turnos */}
+        <Route path="/pantalla-turnos" element={<PantallaTurnosTVPage />} />
+        <Route path="/totem" element={<Navigate to="/pantalla-turnos" replace />} />
+
+        {/* Rutas Protegidas del Dashboard con Layout Unificado y AuthGuard */}
+        <Route element={<AuthGuard />}>
+          {/* Perfil (independiente, sin sidebar; disponible para todos los roles autenticados) */}
+          <Route element={<PerfilLayout />}>
+            <Route path="/dashboard/perfil" element={<MiPerfilPage />} />
           </Route>
 
-          {/* Módulo Médico */}
-          <Route element={<RoleGuard allowedRoles={['MEDICO', 'ADMIN']} />}>
-            <Route path="medico" element={<AgendaMedicaPage />} />
-            <Route path="medico/atencion" element={<AtencionConsultaPage />} />
-          </Route>
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            {/* Módulo Paciente */}
+            <Route element={<RoleGuard allowedRoles={['PACIENTE', 'ADMIN']} />}>
+              <Route path="paciente" element={<MisTurnosPage />} />
+              <Route path="paciente/historial" element={<MiHistorialPage />} />
+            </Route>
 
-          {/* Módulo Recepción y Sala de Espera */}
-          <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA', 'MEDICO', 'ADMIN']} />}>
-            <Route path="recepcion" element={<RecepcionPage />} />
-            <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
-            <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
-          </Route>
+            {/* Módulo Médico */}
+            <Route element={<RoleGuard allowedRoles={['MEDICO', 'ADMIN']} />}>
+              <Route path="medico" element={<AgendaMedicaPage />} />
+              <Route path="medico/atencion" element={<AtencionConsultaPage />} />
+            </Route>
 
-          {/* Módulo Administrador */}
-          <Route element={<RoleGuard allowedRoles={['ADMIN']} />}>
-            <Route path="admin" element={<AdminDashboardPage />} />
-            <Route path="admin/usuarios" element={<AdminUsuariosPage />} />
-            <Route path="admin/especialidades" element={<AdminEspecialidadesPage />} />
+            {/* Módulo Recepción y Sala de Espera (HU-53, HU-54, HU-55) */}
+            <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA', 'MEDICO', 'ADMIN']} />}>
+              <Route path="recepcion" element={<RecepcionPage />} />
+              <Route path="recepcion/kanban" element={<SalasEsperaKanbanPage />} />
+              <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
+              <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
+              <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
+            </Route>
+
+            {/* Módulo Administrador (HU-56) */}
+            <Route element={<RoleGuard allowedRoles={['ADMIN']} />}>
+              <Route path="admin" element={<AdminDashboardPage />} />
+              <Route path="admin/sedes" element={<AdminSedesPage />} />
+              <Route path="admin/usuarios" element={<AdminUsuariosPage />} />
+              <Route path="admin/usuarios/nuevo" element={<NuevoUsuarioPage />} />
+              <Route path="admin/especialidades" element={<AdminEspecialidadesPage />} />
+              <Route path="admin/especialidades/nueva" element={<NuevaEspecialidadPage />} />
+              <Route path="admin/profesionales/nuevo" element={<NuevoProfesionalPage />} />
+            </Route>
           </Route>
         </Route>
-      </Route>
 
-      {/* Redirección por defecto */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Redirección por defecto */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 };

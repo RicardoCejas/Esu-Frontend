@@ -224,6 +224,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
                   <div className="flex items-center justify-end border-t border-slate-100 pt-3">
                     <Button
                       type="button"
+                      aria-label={`Elegir especialidad ${specialty.name}`}
                       onClick={(e) => {
                         e.stopPropagation()
                         onSelectSpecialty(specialty)
@@ -255,7 +256,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
                 key={specialty.id}
                 onClick={() => onSelectSpecialty(specialty)}
                 className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 transition-colors hover:bg-slate-50/80 cursor-pointer ${
-                  isSelected ? 'bg-slate-50 border-l-4 border-l-slate-900' : ''
+                  isSelected ? 'bg-slate-50 ring-2 ring-slate-900' : ''
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -280,6 +281,11 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
                   </span>
                   <Button
                     type="button"
+                    aria-label={`Elegir especialidad ${specialty.name}`}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onSelectSpecialty(specialty)
+                    }}
                     size="sm"
                     className={`h-8 px-3 text-xs font-semibold rounded-lg ${
                       isSelected

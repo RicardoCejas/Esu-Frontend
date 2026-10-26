@@ -1,13 +1,13 @@
 import React from 'react';
 
-interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
-  className?: string;
-}
-
-export const Skeleton: React.FC<SkeletonProps> = ({ className = '', ...props }) => {
+export const Skeleton: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+  className = '',
+  ...props
+}) => {
   return (
     <div
-      className={`animate-pulse rounded-xl bg-muted/70 ${className}`}
+      aria-hidden="true"
+      className={`animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800 ${className}`}
       {...props}
     />
   );
@@ -15,29 +15,37 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '', ...props }) 
 
 export const CardSkeleton: React.FC = () => {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-xs">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-5 w-20 rounded-full" />
+    <div
+      aria-hidden="true"
+      className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-xs space-y-3 dark:border-slate-800 dark:bg-slate-900/60"
+    >
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-10 w-10 rounded-xl" />
+        <div className="space-y-1.5 flex-1">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
       </div>
-      <Skeleton className="h-5 w-3/4" />
-      <Skeleton className="h-3.5 w-1/2" />
-      <div className="pt-2 border-t border-border/50 space-y-2">
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-3 w-2/3" />
+      <Skeleton className="h-12 w-full rounded-lg" />
+      <div className="flex justify-between pt-2">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-16" />
       </div>
     </div>
   );
 };
 
-export const TableRowSkeleton: React.FC<{ columns?: number }> = ({ columns = 5 }) => {
+export const RouteLoadingFallback: React.FC = () => {
   return (
-    <tr className="border-b border-border/40">
-      {Array.from({ length: columns }).map((_, i) => (
-        <td key={i} className="p-4">
-          <Skeleton className="h-4 w-full max-w-[120px]" />
-        </td>
-      ))}
-    </tr>
+    <div
+      role="status"
+      aria-label="Cargando módulo"
+      className="min-h-[50vh] flex flex-col items-center justify-center gap-3 p-6"
+    >
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-sky-500 border-t-transparent" />
+      <span className="text-xs font-semibold text-muted-foreground animate-pulse">
+        Cargando módulo del sistema ESU...
+      </span>
+    </div>
   );
 };

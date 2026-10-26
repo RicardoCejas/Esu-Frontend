@@ -45,9 +45,11 @@ export const RegisterPage: React.FC = () => {
         password: formData.password,
         rol: 'PACIENTE',
       });
-      navigate('/dashboard/paciente');
-    } catch (err: any) {
-      setError(err?.message || 'Error al crear la cuenta. Intente nuevamente.');
+      // Navegar a la pantalla de espera de verificación de email (DoD HU-43)
+      navigate('/verificar-email');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al crear la cuenta. Intente nuevamente.';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import {
   Calendar,
@@ -11,9 +11,13 @@ import {
   ShieldCheck,
   PlusCircle,
   Layers,
-  ListOrdered
+  ListOrdered,
+  ArrowLeft,
+  ChevronRight,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
+import { useProximoTurno } from '@/hooks/useProximoTurno';
+import { ROLE_LABELS } from '@/lib/roles';
 
 interface NavItem {
   title: string;
@@ -32,52 +36,59 @@ const navItems: NavItem[] = [
   { title: 'Agenda Médica', path: '/dashboard/medico', icon: Calendar, roles: ['MEDICO'] },
   { title: 'Atención Clínica', path: '/dashboard/medico/atencion', icon: Stethoscope, roles: ['MEDICO'] },
 
-  // Rutas Recepcionista
-  { title: 'Sala de Espera', path: '/dashboard/recepcion', icon: Clock, roles: ['RECEPCIONISTA'] },
+  // Rutas Recepcionista (HU-53, HU-54, HU-55)
+  { title: 'Recepción (Daily Board)', path: '/dashboard/recepcion', icon: Clock, roles: ['RECEPCIONISTA', 'ADMIN'] },
+  { title: 'Tablero Kanban Espera', path: '/dashboard/recepcion/kanban', icon: Layers, roles: ['RECEPCIONISTA', 'MEDICO', 'ADMIN'] },
   { title: 'Padrón de Pacientes', path: '/dashboard/recepcion/pacientes', icon: Users, roles: ['RECEPCIONISTA', 'MEDICO', 'ADMIN'] },
-  { title: 'Gestión de Turnos', path: '/dashboard/recepcion/turnos', icon: ListOrdered, roles: ['RECEPCIONISTA'] },
+  { title: 'Gestión de Turnos', path: '/dashboard/recepcion/turnos', icon: ListOrdered, roles: ['RECEPCIONISTA', 'ADMIN'] },
 
-  // Rutas Administrador
-  { title: 'Panel de Control', path: '/dashboard/admin', icon: Layers, roles: ['ADMIN'] },
+  // Rutas Administrador (HU-56)
+  { title: 'Dashboard y Métricas', path: '/dashboard/admin', icon: Layers, roles: ['ADMIN'] },
+  { title: 'Sedes y Consultorios', path: '/dashboard/admin/sedes', icon: Building2, roles: ['ADMIN'] },
   { title: 'Gestión de Usuarios', path: '/dashboard/admin/usuarios', icon: ShieldCheck, roles: ['ADMIN'] },
   { title: 'Centros y Especialidades', path: '/dashboard/admin/especialidades', icon: Building2, roles: ['ADMIN'] },
 ];
 
+const INDEX_PATHS = ['/dashboard/paciente', '/dashboard/medico', '/dashboard/recepcion', '/dashboard/admin'];
+
 export const Sidebar: React.FC = () => {
   const { user } = useAuth();
   const userRole = user?.rol || 'PACIENTE';
-
   const visibleItems = navItems.filter((item) => item.roles.includes(userRole));
+  const proximoTurno = useProximoTurno(user?.id, userRole === 'PACIENTE' || userRole === 'ADMIN');
 
   return (
-    <aside className="w-64 border-r border-border bg-card/40 backdrop-blur-sm flex flex-col justify-between p-4 shrink-0">
-      <div className="space-y-6">
-        {/* Perfil Mini */}
-        <div className="rounded-xl border border-border/80 bg-background/60 p-3.5 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold">
-              {user?.nombre.charAt(0)}
-              {user?.apellido.charAt(0)}
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-semibold text-foreground truncate">
-                {user?.nombre} {user?.apellido}
-              </span>
-              <span className="text-[11px] font-medium text-primary uppercase tracking-wider">
-                Rol: {user?.rol}
-              </span>
-            </div>
+    <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-card">
+      {/* Marca y acceso al Portal Público */}
+      <div className="flex items-center gap-2 border-b border-border px-3 py-3.5">
+        <Link
+          to="/"
+          className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg transition hover:opacity-90"
+        >
+          <img src="/logo-icon.png" alt="ESU" className="h-9 w-9 shrink-0 object-contain" />
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate font-heading text-sm font-bold leading-tight text-foreground">
+              ESU <span className="text-xs text-primary">Cruz del Eje</span>
+            </span>
+            <span className="truncate text-[10px] leading-none text-muted-foreground">
+              Ecosistema de Salud Unificado
+            </span>
           </div>
-          {user?.matricula && (
-            <div className="mt-2 pt-2 border-t border-border/60 text-[11px] text-muted-foreground">
-              Matrícula: <span className="font-mono text-foreground">{user.matricula}</span>
-            </div>
-          )}
-        </div>
+        </Link>
+        <Link
+          to="/"
+          title="Volver al Portal Público"
+          aria-label="Volver al Portal Público"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-input text-muted-foreground transition hover:bg-accent hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+      </div>
 
-        {/* Lista de Navegación Dinámica */}
+      {/* Navegación */}
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
         <div className="space-y-1">
-          <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+          <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Módulos del Sistema
           </p>
           {visibleItems.map((item) => {
@@ -86,7 +97,7 @@ export const Sidebar: React.FC = () => {
               <NavLink
                 key={item.path}
                 to={item.path}
-                end={item.path === '/dashboard/paciente' || item.path === '/dashboard/medico' || item.path === '/dashboard/recepcion' || item.path === '/dashboard/admin'}
+                end={INDEX_PATHS.includes(item.path)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
                     isActive
@@ -101,15 +112,55 @@ export const Sidebar: React.FC = () => {
             );
           })}
         </div>
-      </div>
 
-      {/* Info Institucional */}
-      <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5 font-semibold text-foreground mb-1">
-          <img src="/logo-icon.png" alt="Luvia Logo" className="h-3.5 w-3.5 object-contain" />
-          <span>Luvia v1.0.0</span>
-        </div>
-        <p className="text-[11px]">Cruz del Eje - Tu Salud, Unificada</p>
+        {/* Próximo Turno (HU-30) */}
+        {proximoTurno && (
+          <Link
+            to="/dashboard/paciente"
+            className="block rounded-lg border border-border bg-background p-3 transition hover:border-primary/50"
+          >
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-sky-700 dark:text-sky-400" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Próximo Turno
+              </span>
+            </div>
+            <p className="mt-2 text-sm font-bold text-foreground">
+              {proximoTurno.fecha} · {proximoTurno.hora} hs
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {proximoTurno.profesionalNombre}
+            </p>
+          </Link>
+        )}
+      </nav>
+
+      {/* Perfil de usuario → página de perfil */}
+      <div className="border-t border-border p-3">
+        <NavLink
+          to="/dashboard/perfil"
+          className={({ isActive }) =>
+            `flex items-center gap-3 rounded-lg border p-2.5 transition ${
+              isActive
+                ? 'border-primary/50 bg-accent'
+                : 'border-border bg-background hover:bg-accent'
+            }`
+          }
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-700 text-sm font-bold text-white">
+            {user?.nombre?.charAt(0)}
+            {user?.apellido?.charAt(0)}
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-sm font-semibold text-foreground">
+              {user?.nombre} {user?.apellido}
+            </span>
+            <span className="truncate text-xs text-muted-foreground">
+              {user?.rol ? ROLE_LABELS[user.rol] : ''}
+            </span>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </NavLink>
       </div>
     </aside>
   );
