@@ -14,7 +14,8 @@ flowchart TD
         subgraph Layouts["Sistema de Layouts"]
             PublicL["PublicLayout<br/>• Navbar público<br/>• Footer institucional"]
             AuthL["AuthLayout<br/>• Card centrada<br/>• Brand institucional"]
-            DashL["DashboardLayout (Protegido)<br/>• Topbar con Perfil y Notificaciones<br/>• Sidebar Dinámico según Rol"]
+            DashL["DashboardLayout (Protegido)<br/>• Sidebar Dinámico según Rol<br/>• Sin topbar (marca, sesión y perfil en el sidebar)"]
+            PerfilL["PerfilLayout (Protegido)<br/>• Independiente, SIN sidebar<br/>• Barra superior con retorno al panel"]
         end
 
         subgraph Guards["Seguridad y Guards"]
@@ -28,6 +29,7 @@ flowchart TD
             MedViews["Rol: MEDICO<br/>• Agenda Diaria y Semanal<br/>• Atención Médica y Registro HCU<br/>• Emisión de Recetas Digitales<br/>• Bloqueo de Horarios"]
             RecViews["Rol: RECEPCIONISTA / CENTRO MEDICO<br/>• Padrón General de Pacientes (Alta y Edición)<br/>• Tablero General de Sala de Espera<br/>• Reagendamiento / Cancelación Administrativa<br/>• Nómina de Profesionales"]
             AdmViews["Rol: ADMINISTRADOR<br/>• Gestión de Usuarios (Filtro Activo/Inactivo y Baja)<br/>• Catálogo de Especialidades Médicas<br/>• Auditoría de Accesos y Seguridad<br/>• Configuraciones Globales"]
+            PerfilView["Todos los Roles<br/>• Mi Perfil:<br/>datos personales, apariencia<br/>(tema claro/oscuro) y sesión"]
         end
 
         subgraph DataLayer["Capa de Integración (Hooks + API Client)"]
@@ -47,7 +49,10 @@ flowchart TD
     Router -->|Rutas privadas: /dashboard/*| AuthGuard
 
     AuthGuard -->|No autenticado| AuthL
+    AuthGuard -->|/dashboard/perfil| PerfilL
     AuthGuard -->|Autenticado| RoleGuard
+
+    PerfilL --> PerfilView
 
     RoleGuard --> DashL
     DashL -->|rol == PACIENTE| PacViews
@@ -73,16 +78,17 @@ flowchart TD
 |---|---|:---:|:---:|:---:|:---:|
 | **Portal y Turnero Rápido** | `/` y `/turnero` | ✅ | ✅ | ✅ | ✅ |
 | **Login y Recuperación** | `/login` | ✅ | ✅ | ✅ | ✅ |
-| **Mis Turnos (Consulta/Cancelación)** | `/dashboard/mis-turnos` | ✅ | ❌ | ❌ | ❌ |
-| **HCU Personal (Ver consultas)** | `/dashboard/mi-historial` | ✅ | ❌ | ❌ | ❌ |
-| **Agenda y Sala de Consulta** | `/dashboard/agenda` | ❌ | ✅ | ❌ | ❌ |
-| **Carga de Historia Clínica (Atención)** | `/dashboard/atencion/:pacienteId` | ❌ | ✅ | ❌ | ❌ |
-| **Padrón Asistencial de Pacientes** | `/dashboard/pacientes` | ❌ | 👁️ (Lectura) | ✅ (CRUD) | ✅ |
+| **Mi Perfil (Datos, Apariencia y Sesión)** | `/dashboard/perfil` | ✅ | ✅ | ✅ | ✅ |
+| **Mis Turnos (Consulta/Cancelación)** | `/dashboard/paciente` | ✅ | ❌ | ❌ | ❌ |
+| **HCU Personal (Ver consultas)** | `/dashboard/paciente/historial` | ✅ | ❌ | ❌ | ❌ |
+| **Agenda y Sala de Consulta** | `/dashboard/medico` | ❌ | ✅ | ❌ | ❌ |
+| **Carga de Historia Clínica (Atención)** | `/dashboard/medico/atencion` | ❌ | ✅ | ❌ | ❌ |
+| **Padrón Asistencial de Pacientes** | `/dashboard/recepcion/pacientes` | ❌ | 👁️ (Lectura) | ✅ (CRUD) | ✅ |
 | **Tablero de Recepción y Espera** | `/dashboard/recepcion` | ❌ | ❌ | ✅ | ✅ |
-| **Reagendamiento y Cancelación Admin** | `/dashboard/turnos-admin` | ❌ | ❌ | ✅ | ✅ |
-| **Nómina de Profesionales y Matrículas**| `/dashboard/profesionales` | ❌ | ❌ | ✅ | ✅ |
-| **Gestión de Usuarios y Bajas** | `/dashboard/usuarios` | ❌ | ❌ | ❌ | ✅ |
-| **Catálogo de Especialidades** | `/dashboard/especialidades`| ❌ | ❌ | ❌ | ✅ |
+| **Reagendamiento y Cancelación Admin** | `/dashboard/recepcion/turnos` | ❌ | ❌ | ✅ | ✅ |
+| **Nómina de Profesionales y Matrículas**| `/profesionales` | ❌ | ❌ | ✅ | ✅ |
+| **Gestión de Usuarios y Bajas** | `/dashboard/admin/usuarios` | ❌ | ❌ | ❌ | ✅ |
+| **Catálogo de Especialidades** | `/dashboard/admin/especialidades`| ❌ | ❌ | ❌ | ✅ |
 
 ---
 
@@ -90,7 +96,11 @@ flowchart TD
 
 1. **Sin aplicaciones separadas:** No existen dos aplicaciones Vite. El sistema es una única SPA unificada.
 2. **Sidebar Dinámico:** El `Sidebar` lee el `user.rol` desde el `AuthContext` y filtra los ítems de navegación según la matriz RBAC.
-3. **Smart Containers (`< 100 líneas`):** Cada vista es un contenedor que orquesta los custom hooks y delega la renderización a componentes atómicos en `/components`.
+3. **DashboardLayout sin topbar:** La marca, el acceso al portal público, el indicador de próximo turno y el acceso al perfil se concentran en el `Sidebar`. Se eliminó la topbar superior para liberar espacio vertical y simplificar la jerarquía de la pantalla.
+4. **PerfilLayout independiente:** La vista de perfil (`/dashboard/perfil`) se renderiza fuera del `DashboardLayout`, en un layout propio **sin sidebar**, con una barra superior mínima de retorno al panel. Centraliza los datos personales, las preferencias de apariencia (tema claro/oscuro) y el cierre de sesión, evitando recargar el sidebar con controles de cuenta.
+5. **Smart Containers (`< 100 líneas`):** Cada vista es un contenedor que orquesta los custom hooks y delega la renderización a componentes atómicos en `/components`.
+
+> **Nota:** los nombres de ruta de la matriz reflejan el estado actual del enrutador (`AppRoutes.tsx`, convención `/dashboard/<rol>/...`). Las rutas de sesión y preferencias viven aisladas del shell del dashboard.
 
 ---
 

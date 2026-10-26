@@ -241,7 +241,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                 key={doctor.id}
                 onClick={() => onSelectDoctor(doctor)}
                 className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 transition-colors hover:bg-slate-50/80 cursor-pointer ${
-                  isSelected ? 'bg-slate-50 border-l-4 border-l-slate-900' : ''
+                  isSelected ? 'bg-slate-50 ring-2 ring-slate-900' : ''
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">

@@ -32,7 +32,7 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
   onBackToSlots,
 }) => {
   const { register, formState: { errors } } = useForm<PatientBookingForm>({
-    resolver: zodResolver(patientBookingSchema),
+    resolver: zodResolver(patientBookingSchema) as any,
     defaultValues: patientForm,
     mode: 'onBlur',
     shouldFocusError: true,

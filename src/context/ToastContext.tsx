@@ -14,6 +14,7 @@ interface ToastContextType {
   success: (message: string) => void;
   error: (message: string) => void;
   info: (message: string) => void;
+  warning: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -40,9 +41,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const success = useCallback((msg: string) => showToast(msg, 'success'), [showToast]);
   const error = useCallback((msg: string) => showToast(msg, 'error'), [showToast]);
   const info = useCallback((msg: string) => showToast(msg, 'info'), [showToast]);
+  const warning = useCallback((msg: string) => showToast(msg, 'warning'), [showToast]);
 
   return (
-    <ToastContext.Provider value={{ showToast, success, error, info }}>
+    <ToastContext.Provider value={{ showToast, success, error, info, warning }}>
       {children}
       {/* Contenedor flotante de notificaciones Toasts (HU-37) */}
       <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm pointer-events-none">
@@ -63,7 +65,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               {t.type === 'success' && <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />}
               {t.type === 'error' && <XCircle className="h-4 w-4 text-rose-400 shrink-0" />}
               {t.type === 'warning' && <AlertCircle className="h-4 w-4 text-amber-400 shrink-0" />}
-              {t.type === 'info' && <Info className="h-4 w-4 text-cyan-400 shrink-0" />}
+              {t.type === 'info' && <Info className="h-4 w-4 text-sky-400 shrink-0" />}
               <span className="leading-snug">{t.message}</span>
             </div>
             <button
