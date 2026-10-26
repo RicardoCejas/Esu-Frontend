@@ -11,6 +11,8 @@ interface BannerSlide {
   buttonText: string;
   buttonLink?: string;
   bgImage: string;
+  bgPosition?: string;
+  bgOpacity?: string;
   detalles: {
     nombreCompleto: string;
     tipo: string;
@@ -32,6 +34,8 @@ export const BANNER_SLIDES: BannerSlide[] = [
     buttonText: 'Guardia y Turnos',
     buttonLink: '/turnero',
     bgImage: '/centros/hospital_aurelio_crespo.jpg',
+    bgPosition: 'bg-[center_36%]',
+    bgOpacity: 'opacity-90',
     detalles: {
       nombreCompleto: 'Hospital Provincial Dr. Aurelio Crespo',
       tipo: 'Hospital Público Provincial de Agudos',
@@ -257,15 +261,15 @@ export const CentrosHeroBannerSlider: React.FC = () => {
     >
       {/* Contenedor del Slide Activo con Transición Suave */}
       <div className="relative min-h-[380px] sm:min-h-[440px] md:min-h-[480px] w-full flex items-center">
-        {/* Foto de Fondo con Filtro Limpio */}
+        {/* Foto de Fondo con Filtro Luminoso y Claro */}
         <div
-          className="absolute inset-0 bg-cover bg-center transition-all duration-700"
+          className={`absolute inset-0 bg-cover ${slide.bgPosition || 'bg-center'} ${slide.bgOpacity || 'opacity-90'} brightness-[1.04] transition-all duration-700`}
           style={{ backgroundImage: `url(${slide.bgImage})` }}
         />
 
-        {/* Degradado Suave Blanco/Celeste en el lado izquierdo para máxima legibilidad idéntico a la referencia */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/85 to-white/20 sm:via-white/80 sm:to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-transparent to-transparent" />
+        {/* Degradado Suave y Luminoso para máxima claridad y legibilidad */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-white/20 sm:via-white/70 sm:to-transparent dark:from-slate-950 dark:via-slate-950/85 dark:to-slate-950/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-transparent to-white/20 dark:from-slate-950/60 dark:via-transparent dark:to-slate-950/20" />
 
         {/* Flechas de Navegación Lateral (ocultables en móvil) */}
         <button
