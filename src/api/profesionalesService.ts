@@ -169,6 +169,15 @@ export const profesionalesService = {
     }
   },
 
+  async getById(id: string): Promise<Profesional | undefined> {
+    try {
+      const res = await apiClient.get<Profesional>(`/profesionales/${id}`);
+      return res.data;
+    } catch {
+      return profesionalesState.find((p) => p.id === id);
+    }
+  },
+
   async getEspecialidades(): Promise<Especialidad[]> {
     try {
       const res = await apiClient.get<any[]>('/especialidades');

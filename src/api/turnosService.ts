@@ -1,6 +1,7 @@
 import { apiClient } from './apiClient';
 import { MOCK_TURNOS } from './mockData';
 import type { Turno, EstadoTurno, SobreturnoRequest } from '@/types';
+import { createPersistedTurno, type CreateTurnoRequest, type CreatedTurnoResponse } from './turnoCreation';
 
 // Almacén en memoria local para persistencia durante la sesión
 let turnosState: Turno[] = [...MOCK_TURNOS];
@@ -39,20 +40,8 @@ export const turnosService = {
     }
   },
 
-  async createTurno(turnoData: Omit<Turno, 'id' | 'codigoVerificacion' | 'fechaCreacion'>): Promise<Turno> {
-    try {
-      const response = await apiClient.post<Turno>('/turnos', turnoData);
-      return response.data;
-    } catch {
-      const nuevoTurno: Turno = {
-        ...turnoData,
-        id: `t-${Date.now()}`,
-        codigoVerificacion: `ESU-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-        fechaCreacion: new Date().toISOString().split('T')[0],
-      };
-      turnosState = [nuevoTurno, ...turnosState];
-      return nuevoTurno;
-    }
+  async createTurno(turnoData: CreateTurnoRequest): Promise<CreatedTurnoResponse> {
+    return createPersistedTurno((path, body) => apiClient.post<unknown>(path, body), turnoData);
   },
 
   async updateEstado(id: string, estado: EstadoTurno): Promise<Turno | null> {

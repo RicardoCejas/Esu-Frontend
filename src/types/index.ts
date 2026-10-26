@@ -11,7 +11,9 @@ export interface User {
   matricula?: string; // Para médicos
   especialidad?: string; // Para médicos
   centroSaludId?: string; // Para recepcionistas o médicos asociados a un centro
-  obraSocial?: string; // Para pacientes
+  obraSocial?: string;
+  nroAfiliado?: string;
+  grupoSanguineo?: string; // Para pacientes
   activo?: boolean;
   twoFactorEnabled?: boolean; // HU-42
   emailVerified?: boolean; // HU-43
@@ -153,6 +155,8 @@ export interface Turno {
   pacienteDni: string;
   pacienteTelefono: string;
   obraSocial?: string;
+  nroAfiliado?: string;
+  grupoSanguineo?: string;
   numeroAfiliado?: string;
   copagoMonto?: number;
   numeroBono?: string;
@@ -227,4 +231,55 @@ export interface RecetaDigital {
   }>;
   diagnostico: string;
   indicacionesGenerales: string;
+}
+
+export interface Cie10Diagnostico {
+  id?: number;
+  codigo: string;
+  descripcion: string;
+  capitulo?: string;
+}
+
+export interface ResumenClinico {
+  pacienteId: number | string;
+  nombreCompleto: string;
+  dni: string;
+  edad?: number;
+  fechaNacimiento?: string;
+  obraSocial?: string;
+  nroAfiliado?: string;
+  grupoSanguineo?: string;
+  telefono?: string;
+  alertasCriticas: string[];
+  antecedentes: string[];
+  ultimosSignosVitales: {
+    presionArterial?: string;
+    frecuenciaCardiaca?: string;
+    temperatura?: string;
+    peso?: string;
+    talla?: string;
+    imc?: string;
+  };
+  ultimaConsultaFecha?: string;
+  ultimoDiagnostico?: string;
+}
+
+export interface TimelineItem {
+  id: number | string;
+  fecha: string;
+  tipo: string;
+  profesionalNombre: string;
+  profesionalMatricula: string;
+  especialidad: string;
+  motivo: string;
+  diagnostico: string;
+  codigoCie10?: string;
+  descripcionCie10?: string;
+  tratamiento?: string;
+  signosVitales?: Record<string, string>;
+  recetaId?: number;
+  tieneAdendas?: boolean;
+  adendas?: string[];
+  hashIntegridad?: string;
+  pdfUrl?: string;
 }

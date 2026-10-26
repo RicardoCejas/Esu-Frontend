@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useTurnero } from './hooks/useTurnero'
+import { useDemoTurnero } from './hooks/useDemoTurnero'
 import { AppHeader, SUPPORTED_CITIES, type CityOption } from '@/components/layout/AppHeader'
 import { TurneroHeader } from './components/TurneroHeader'
 import { TurneroStepper } from './components/TurneroStepper'
@@ -7,8 +7,7 @@ import { Step1CenterSelection } from './components/Step1CenterSelection'
 import { Step2SpecialtySelection } from './components/Step2SpecialtySelection'
 import { Step3DoctorSelection } from './components/Step3DoctorSelection'
 import { Step4DateTimeSelection } from './components/Step4DateTimeSelection'
-import { Step5PatientConfirmation } from './components/Step5PatientConfirmation'
-import { AppointmentReceiptModal } from './components/AppointmentReceiptModal'
+import { DemoStep5PatientConfirmation } from './components/DemoStep5PatientConfirmation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -40,20 +39,23 @@ export function TurneroContainer() {
     selectedSlot,
     morningSlots,
     afternoonSlots,
+    availabilityLoading,
+    availabilityError,
+    availabilityCanRetry,
+    retryAvailability,
     patientForm,
-    confirmedAppointment,
-    isReceiptOpen,
-    setIsReceiptOpen,
+    bookingError,
+    createdAppointment,
     handleSelectCenter,
     handleSelectSpecialty,
     handleSelectDoctor,
     handleSelectSlot,
     handleProceedToConfirmation,
+    handleConfirmBooking,
     handlePatientFormChange,
-    handleConfirmAppointment,
     handleGoToStep,
     handleResetBooking,
-  } = useTurnero()
+  } = useDemoTurnero()
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white">
@@ -85,6 +87,9 @@ export function TurneroContainer() {
 
       {/* Main Content Area: max-w-7xl with fluid padding */}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5">
+        <p role="status" className="mb-5 rounded-xl border-2 border-amber-700 bg-amber-50 p-4 text-sm font-semibold text-slate-900">
+          Modo demostración: las sedes, profesionales y horarios son datos de prueba. No se crean reservas reales ni se envían recordatorios; los turnos de prueba viven solo en memoria de esta pestaña.
+        </p>
         {currentStep === 1 && (
           <Step1CenterSelection
             centers={filteredCenters}
@@ -130,33 +135,32 @@ export function TurneroContainer() {
             afternoonSlots={afternoonSlots}
             selectedSlot={selectedSlot}
             onSelectSlot={handleSelectSlot}
+            availabilityLoading={availabilityLoading}
+            availabilityError={availabilityError}
+            availabilityCanRetry={availabilityCanRetry}
+            bookingError={bookingError}
+            onRetryAvailability={retryAvailability}
             onProceed={handleProceedToConfirmation}
             onBackToDoctor={() => handleGoToStep(3)}
           />
         )}
 
         {currentStep === 5 && selectedCenter && selectedSpecialty && selectedDoctor && selectedSlot && (
-          <Step5PatientConfirmation
+          <DemoStep5PatientConfirmation
             selectedCenter={selectedCenter}
             selectedSpecialty={selectedSpecialty}
             selectedDoctor={selectedDoctor}
             selectedDate={selectedDate}
             selectedSlot={selectedSlot}
             patientForm={patientForm}
+            bookingError={bookingError}
+            createdAppointment={createdAppointment}
+            onConfirm={handleConfirmBooking}
             onFormChange={handlePatientFormChange}
-            onConfirm={handleConfirmAppointment}
             onBackToSlots={() => handleGoToStep(4)}
           />
         )}
       </main>
-
-      {/* Confirmation & Printable QR Receipt Modal */}
-      <AppointmentReceiptModal
-        isOpen={isReceiptOpen}
-        onClose={() => setIsReceiptOpen(false)}
-        appointment={confirmedAppointment}
-        onNewBooking={handleResetBooking}
-      />
 
       {/* Quick Lookup Modal */}
       <Dialog open={isLookupOpen} onOpenChange={setIsLookupOpen}>
@@ -204,7 +208,7 @@ export function TurneroContainer() {
                 size="sm"
                 onClick={() => {
                   if (lookupCode.trim()) {
-                    setLookupMessage(`Consulta para '${lookupCode}': Sin turnos previos registrados en la sesión actual. Próxima integración directa con Spring Boot (/api/turnos).`)
+                    setLookupMessage('La búsqueda de turnos reales no está disponible en esta demostración. El comprobante de prueba se muestra al finalizar el recorrido actual.')
                   }
                 }}
                 className="h-7 cursor-pointer gap-1.5 bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800"

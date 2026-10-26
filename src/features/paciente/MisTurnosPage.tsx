@@ -14,7 +14,7 @@ import {
   Download,
   Activity
 } from 'lucide-react';
-import { CardSkeleton } from '@/components/ui/skeleton';
+import { CardSkeleton } from '@/components/ui/Skeleton';
 
 export const MisTurnosPage: React.FC = () => {
   const { user } = useAuth();
