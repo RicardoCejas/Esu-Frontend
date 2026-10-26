@@ -9,8 +9,11 @@ import {
   Building2,
   Volume2,
   MonitorPlay,
-  CheckCircle2
+  CheckCircle2,
+  Flame,
+  Plus
 } from 'lucide-react';
+import { ModalCrearSobreturno } from '@/features/medico/components/ModalCrearSobreturno';
 
 export const SalasEsperaKanbanPage: React.FC = () => {
   const [turnos, setTurnos] = useState<Turno[]>([]);
@@ -19,16 +22,21 @@ export const SalasEsperaKanbanPage: React.FC = () => {
   const [filtroPlanta, setFiltroPlanta] = useState<string>('TODOS');
   const [loading, setLoading] = useState(true);
   const [consultorioSeleccionado, setConsultorioSeleccionado] = useState<string>('102');
+  const [isModalSobreturnoOpen, setIsModalSobreturnoOpen] = useState(false);
 
-  useEffect(() => {
+  const hoyStr = new Date().toISOString().split('T')[0];
+
+  const cargarDatos = () => {
     Promise.all([turnosService.getAll(), centrosService.getAll()]).then(([t, c]) => {
       setTurnos(t);
       setCentros(c);
       setLoading(false);
     });
-  }, []);
+  };
 
-  const hoyStr = new Date().toISOString().split('T')[0];
+  useEffect(() => {
+    cargarDatos();
+  }, []);
 
   // Turnos del día filtrados por sede y planta
   const turnosFiltrados = useMemo(() => {
@@ -41,10 +49,6 @@ export const SalasEsperaKanbanPage: React.FC = () => {
   }, [turnos, hoyStr, filtroCentro, filtroPlanta]);
 
   // Columnas operativas según HU-55:
-  // 1. 'Por Llegar': PENDIENTE o CONFIRMADO
-  // 2. 'En Espera': EN_SALA_DE_ESPERA o EN_ESPERA
-  // 3. 'En Consulta': ATENDIENDO
-  // 4. 'Atendidos': COMPLETADO
   const porLlegar = turnosFiltrados.filter(
     (t) => t.estado === 'PENDIENTE' || t.estado === 'CONFIRMADO'
   );
@@ -53,6 +57,10 @@ export const SalasEsperaKanbanPage: React.FC = () => {
   );
   const enConsulta = turnosFiltrados.filter((t) => t.estado === 'ATENDIENDO');
   const atendidos = turnosFiltrados.filter((t) => t.estado === 'COMPLETADO');
+
+  // HU-FE-63: Contador de sobreturnos asignados en la jornada
+  const sobreturnosHoy = turnosFiltrados.filter((t) => t.esSobreturno && t.estado !== 'CANCELADO');
+  const countSobreturnos = sobreturnosHoy.length;
 
   // Mover a En Espera (Check-In)
   const handleMoverAEnEspera = async (turno: Turno) => {
@@ -74,7 +82,7 @@ export const SalasEsperaKanbanPage: React.FC = () => {
     }
   };
 
-  // Finalizar Consulta (Atendido)
+  // Finalizar atención
   const handleFinalizar = async (turno: Turno) => {
     const updated = await turnosService.updateEstado(turno.id, 'COMPLETADO');
     if (updated) {
@@ -84,8 +92,8 @@ export const SalasEsperaKanbanPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Kanban */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Header y Control de Flujo */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Tablero Kanban de Salas de Espera
@@ -96,9 +104,33 @@ export const SalasEsperaKanbanPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {/* HU-FE-63: Contador visible de Sobreturnos en la jornada */}
+          <div
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold border transition ${
+              countSobreturnos >= 3
+                ? 'border-rose-300 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200'
+                : 'border-amber-300 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200'
+            }`}
+            title="Cupo diario de sobreturnos asignados en sala"
+          >
+            <Flame className="h-4 w-4 text-amber-600 shrink-0" />
+            <span>Sobreturnos en Sala:</span>
+            <span className="font-mono text-xs font-black">{countSobreturnos}/3</span>
+          </div>
+
+          {/* HU-FE-63: Botón de Acción Rápida "+ Agregar Sobreturno" */}
+          <button
+            type="button"
+            onClick={() => setIsModalSobreturnoOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-2 text-xs shadow-xs transition cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            <span>+ Agregar Sobreturno</span>
+          </button>
+
           <button
             onClick={() => soundNotification.playChime()}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition cursor-pointer"
             title="Probar sonido de llamado"
           >
             <Volume2 className="h-4 w-4 text-primary" />
@@ -189,15 +221,28 @@ export const SalasEsperaKanbanPage: React.FC = () => {
               {porLlegar.map((t) => (
                 <div
                   key={t.id}
-                  className="rounded-xl border border-border bg-card p-3 shadow-xs space-y-2 hover:border-sky-500/50 transition"
+                  className={`rounded-xl border p-3 shadow-xs space-y-2 transition ${
+                    t.esSobreturno
+                      ? 'border-amber-400 bg-amber-50/20 dark:bg-amber-950/20 border-l-4 border-l-amber-500'
+                      : 'border-border bg-card hover:border-sky-500/50'
+                  }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono font-bold text-xs text-sky-700">{t.hora} hs</span>
-                    {t.esPrimeraVez && (
-                      <span className="rounded-full bg-amber-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                        1ª Vez
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {/* Badge Sobreturno Ámbar */}
+                      {t.esSobreturno && (
+                        <span className="rounded-md bg-amber-500 text-white font-black px-2 py-0.5 text-[10px] tracking-wide shadow-2xs flex items-center gap-1">
+                          <Flame className="h-3 w-3" />
+                          Sobreturno
+                        </span>
+                      )}
+                      {t.esPrimeraVez && (
+                        <span className="rounded-full bg-amber-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                          1ª Vez
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-foreground">{t.pacienteNombre}</h4>
@@ -209,7 +254,7 @@ export const SalasEsperaKanbanPage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleMoverAEnEspera(t)}
-                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold py-1.5 text-xs transition"
+                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold py-1.5 text-xs transition cursor-pointer"
                   >
                     <span>Marcar Llegada</span>
                     <ArrowRight className="h-3 w-3" />
@@ -238,13 +283,25 @@ export const SalasEsperaKanbanPage: React.FC = () => {
               {enEspera.map((t) => (
                 <div
                   key={t.id}
-                  className="rounded-xl border border-border bg-card p-3 shadow-xs space-y-2 hover:border-amber-500/50 transition"
+                  className={`rounded-xl border p-3 shadow-xs space-y-2 transition ${
+                    t.esSobreturno
+                      ? 'border-amber-400 bg-amber-50/30 dark:bg-amber-950/30 border-l-4 border-l-amber-500'
+                      : 'border-border bg-card hover:border-amber-500/50'
+                  }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono font-bold text-xs text-amber-700">{t.hora} hs</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      Llegó: <span className="font-mono">{t.horaCheckIn || 'En sala'}</span>
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {t.esSobreturno && (
+                        <span className="rounded-md bg-amber-500 text-white font-black px-2 py-0.5 text-[10px] tracking-wide shadow-2xs flex items-center gap-1">
+                          <Flame className="h-3 w-3" />
+                          Sobreturno
+                        </span>
+                      )}
+                      <span className="text-[10px] text-muted-foreground">
+                        Llegó: <span className="font-mono">{t.horaCheckIn || 'En sala'}</span>
+                      </span>
+                    </div>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-foreground">{t.pacienteNombre}</h4>
@@ -256,7 +313,7 @@ export const SalasEsperaKanbanPage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleLlamarAConsultorio(t)}
-                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-sky-700 hover:bg-sky-800 text-white font-semibold py-1.5 text-xs transition shadow-xs"
+                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-sky-700 hover:bg-sky-800 text-white font-semibold py-1.5 text-xs transition shadow-xs cursor-pointer"
                   >
                     <Volume2 className="h-3 w-3" />
                     <span>Llamar a Consultorio</span>
@@ -286,13 +343,25 @@ export const SalasEsperaKanbanPage: React.FC = () => {
               {enConsulta.map((t) => (
                 <div
                   key={t.id}
-                  className="rounded-xl border border-sky-600 bg-card p-3 shadow-xs space-y-2"
+                  className={`rounded-xl border p-3 shadow-xs space-y-2 ${
+                    t.esSobreturno
+                      ? 'border-l-4 border-l-amber-500 border-sky-600 bg-card'
+                      : 'border-sky-600 bg-card'
+                  }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="rounded-full bg-sky-700 px-2 py-0.5 text-[10px] font-bold text-white">En atención</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      Llamado: <span className="font-mono">{t.horaLlamado || '09:00'}</span>
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {t.esSobreturno && (
+                        <span className="rounded-md bg-amber-500 text-white font-black px-2 py-0.5 text-[10px] tracking-wide shadow-2xs flex items-center gap-1">
+                          <Flame className="h-3 w-3" />
+                          Sobreturno
+                        </span>
+                      )}
+                      <span className="text-[10px] text-muted-foreground">
+                        Llamado: <span className="font-mono">{t.horaLlamado || '09:00'}</span>
+                      </span>
+                    </div>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-foreground">{t.pacienteNombre}</h4>
@@ -303,7 +372,7 @@ export const SalasEsperaKanbanPage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleFinalizar(t)}
-                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-1.5 text-xs transition shadow-xs"
+                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-1.5 text-xs transition shadow-xs cursor-pointer"
                   >
                     <CheckCircle2 className="h-3 w-3" />
                     <span>Finalizar Atención</span>
@@ -351,6 +420,19 @@ export const SalasEsperaKanbanPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal HU-FE-63: Sobreturno desde Recepción */}
+      <ModalCrearSobreturno
+        isOpen={isModalSobreturnoOpen}
+        onClose={() => setIsModalSobreturnoOpen(false)}
+        profesionalId="p1"
+        centroSaludId={filtroCentro !== 'TODOS' ? filtroCentro : 'c1'}
+        fecha={hoyStr}
+        sobreturnosHoyCount={countSobreturnos}
+        onSobreturnoCreado={() => {
+          cargarDatos();
+        }}
+      />
     </div>
   );
 };

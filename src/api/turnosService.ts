@@ -1,6 +1,6 @@
 import { apiClient } from './apiClient';
 import { MOCK_TURNOS } from './mockData';
-import type { Turno, EstadoTurno } from '@/types';
+import type { Turno, EstadoTurno, SobreturnoRequest } from '@/types';
 import { createPersistedTurno, type CreateTurnoRequest, type CreatedTurnoResponse } from './turnoCreation';
 
 // Almacén en memoria local para persistencia durante la sesión
@@ -108,6 +108,61 @@ export const turnosService = {
       };
       turnosState = [nuevoTurno, ...turnosState];
       return nuevoTurno;
+    }
+  },
+
+  // HU-FE-63: Endpoint y lógica de Sobreturnos y Demanda Espontánea
+  async crearSobreturno(data: SobreturnoRequest): Promise<Turno> {
+    try {
+      const response = await apiClient.post<Turno>('/turnos/sobreturno', data);
+      turnosState = [response.data, ...turnosState];
+      return response.data;
+    } catch (err: any) {
+      // Si el backend responde con error 422 ProblemDetail
+      if (err.response?.data?.detail) {
+        throw new Error(err.response.data.detail);
+      }
+
+      // Fallback local con validación de límite de 3 sobreturnos por día
+      const count = turnosState.filter(
+        (t) =>
+          t.profesionalId === data.profesionalId &&
+          t.fecha === data.fecha &&
+          t.esSobreturno &&
+          t.estado !== 'CANCELADO'
+      ).length;
+
+      if (count >= 3) {
+        throw new Error('Cupo máximo de sobreturnos alcanzado para esta jornada (máximo 3 sobreturnos diarios por médico).');
+      }
+
+      const now = new Date();
+      const horaActual =
+        data.hora || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      const nuevo: Turno = {
+        id: `t-sob-${Date.now()}`,
+        codigoVerificacion: `ESU-SOB-${Math.floor(1000 + Math.random() * 9000)}`,
+        fecha: data.fecha,
+        hora: horaActual,
+        pacienteId: data.pacienteId || `pac-exp-${Date.now()}`,
+        pacienteNombre: data.pacienteNombre,
+        pacienteDni: data.pacienteDni,
+        pacienteTelefono: data.pacienteTelefono || '03549-150000',
+        obraSocial: data.obraSocial || 'Demanda Espontánea',
+        profesionalId: data.profesionalId,
+        profesionalNombre: 'Dr. Carlos Bustos',
+        especialidadNombre: 'Medicina General',
+        centroSaludId: data.centroSaludId,
+        centroSaludNombre: 'Hospital Provincial Aurelio Crespo',
+        estado: 'EN_ESPERA',
+        motivoConsulta: `Sobreturno: ${data.motivoSobreturno}`,
+        esSobreturno: true,
+        motivoSobreturno: data.motivoSobreturno,
+        fechaCreacion: new Date().toISOString().split('T')[0],
+      };
+      turnosState = [nuevo, ...turnosState];
+      return nuevo;
     }
   },
 
