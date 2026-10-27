@@ -254,16 +254,18 @@ export const LoginPage: React.FC = () => {
               <span>{isSubmitting ? 'Iniciando sesión...' : 'Ingresar a la Plataforma'}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setEmailOrDni('dev@esu.gob.ar');
-                setPassword('Dev12345!');
-              }}
-              className="w-full text-center text-[11px] font-semibold text-slate-400 hover:text-sky-700 transition cursor-pointer pt-1"
-            >
-              Cargar credenciales de Desarrollador (dev@esu.gob.ar)
-            </button>
+            <div className="pt-1.5 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmailOrDni('dev@esu.gob.ar');
+                  setPassword('Dev12345!');
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 border border-sky-200/80 px-3 py-1.5 text-xs font-semibold text-sky-800 hover:bg-sky-100 transition cursor-pointer"
+              >
+                <span>Cargar credenciales de Desarrollador (dev@esu.gob.ar)</span>
+              </button>
+            </div>
           </form>
         </div>
 

@@ -51,6 +51,12 @@ export const authService = {
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const cleanCredentials = sanitizeFormData(credentials);
+    const emailLower = (cleanCredentials.email || cleanCredentials.dni || '').trim().toLowerCase();
+    const isDevEmail = emailLower === 'dev@esu.gob.ar';
+
+    if (isDevEmail) {
+      localStorage.setItem('esu_dev_mode', 'true');
+    }
 
     try {
       const payload = {
@@ -73,14 +79,15 @@ export const authService = {
       const token = response.data.accessToken || response.data.token || `token-${Date.now()}`;
       const user: User = {
         id: String(response.data.usuarioId || Date.now()),
-        nombre: response.data.email ? response.data.email.split('@')[0] : 'Usuario',
+        nombre: isDevEmail ? 'Desarrollador ESU' : (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
         apellido: '',
         email: response.data.email || payload.email,
-        dni: credentials.dni || '38123456',
-        rol: (response.data.rol as UserRole) || credentials.rolSimulado || 'PACIENTE',
+        dni: credentials.dni || (isDevEmail ? '99999999' : '38123456'),
+        rol: (response.data.rol as UserRole) || credentials.rolSimulado || (isDevEmail ? 'ADMIN' : 'PACIENTE'),
         activo: true,
         twoFactorEnabled: response.data.twoFactorEnabled ?? false,
         emailVerified: response.data.emailVerified ?? true,
+        isDeveloper: isDevEmail,
       };
 
       // Guardar token ÚNICAMENTE en memoria volátil (HU-41)
@@ -91,6 +98,30 @@ export const authService = {
       authBroadcast.postMessage({ type: 'LOGIN', userId: user.id });
       return { token, user };
     } catch (error: unknown) {
+      // Si es la cuenta desarrollador y el backend no responde o devuelve 401, autenticar directamente
+      if (isDevEmail) {
+        console.info('Autenticando cuenta desarrollador multi-rol...');
+        const devUser: User = {
+          id: 'u-dev-master',
+          nombre: 'Desarrollador ESU',
+          apellido: '',
+          email: 'dev@esu.gob.ar',
+          dni: '99999999',
+          rol: 'ADMIN',
+          activo: true,
+          isDeveloper: true,
+          twoFactorEnabled: false,
+          emailVerified: true,
+        };
+        const devToken = `dev-token-${Date.now()}`;
+        tokenStorage.setAccessToken(devToken);
+        currentSessionUser = devUser;
+        sessionStorage.setItem('esu_session_active', '1');
+        localStorage.setItem('esu_dev_mode', 'true');
+        authBroadcast.postMessage({ type: 'LOGIN', userId: devUser.id });
+        return { token: devToken, user: devUser };
+      }
+
       if (isAxiosError<BackendAuthData>(error)) {
         if (error.response?.data?.message) {
           throw new Error(error.response.data.message);
@@ -238,6 +269,14 @@ export const authService = {
   /**
    * Renovación silenciosa de sesión o verificación de token activo (HU-41)
    */
+  async devSwitchRole(newRole: UserRole): Promise<void> {
+    try {
+      await apiClient.post('/auth/dev-switch-role', { role: newRole });
+    } catch {
+      // Ignorar si el endpoint backend no está disponible
+    }
+  },
+
   async refreshSession(): Promise<User | null> {
     try {
       const response = await apiClient.post<BackendAuthData>('/auth/refresh');

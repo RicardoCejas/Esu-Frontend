@@ -29,14 +29,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initAuth = async () => {
       try {
         const sessionActive = sessionStorage.getItem('esu_session_active');
-        if (sessionActive) {
-          // Intentar refresh silencioso con cookies HttpOnly del backend
-          const refreshedUser = await authService.refreshSession();
-          if (isMounted && refreshedUser) {
+        const isDev = localStorage.getItem('esu_dev_mode') === 'true';
+        if (sessionActive || isDev) {
+          const savedRole = (localStorage.getItem('esu_dev_active_role') as UserRole) || null;
+          let refreshedUser: User | null = null;
+          try {
+            refreshedUser = await authService.refreshSession();
+          } catch {
+            // Backend offline
+          }
+          if (isMounted && refreshedUser && !isDev) {
             setUser(refreshedUser);
           } else if (isMounted) {
-            // Si no responde el backend pero había sesión activa en desarrollo
-            const fallbackUser = authService.getCurrentUser() || MOCK_USERS[0];
+            let fallbackUser = authService.getCurrentUser();
+            if (isDev && savedRole) {
+              const matched = MOCK_USERS.find((u) => u.rol === savedRole);
+              if (matched) {
+                fallbackUser = { ...matched, isDeveloper: true };
+              }
+            }
+            if (!fallbackUser) {
+              fallbackUser = isDev
+                ? { ...(MOCK_USERS.find((u) => u.email === 'dev@esu.gob.ar') || MOCK_USERS[4]), isDeveloper: true }
+                : (authService.getCurrentUser() || MOCK_USERS[0]);
+            }
             setUser(fallbackUser);
             authService.setCurrentUser(fallbackUser);
           }
@@ -103,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  // Función utilitaria para cambiar de rol en entorno de evaluación
+  // Función utilitaria para cambiar de rol en entorno de evaluación (HU-DEV)
   const switchRole = (newRole: UserRole) => {
     const isDev = user?.isDeveloper || localStorage.getItem('esu_dev_mode') === 'true';
     const baseUser = MOCK_USERS.find((u) => u.rol === newRole) || {
@@ -122,6 +138,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     authService.setCurrentUser(targetUser);
     setUser(targetUser);
     sessionStorage.setItem('esu_session_active', '1');
+    localStorage.setItem('esu_dev_mode', 'true');
+    localStorage.setItem('esu_dev_active_role', newRole);
+    authService.devSwitchRole(newRole);
   };
 
   return (

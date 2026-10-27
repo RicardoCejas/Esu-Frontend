@@ -27,10 +27,10 @@ export const DevRoleSwitcher: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center gap-1.5 bg-slate-900/90 text-white px-2.5 py-1 rounded-full text-xs shadow-md border border-slate-700/80">
+    <div className="flex items-center gap-1.5 rounded-full border border-sky-300/60 bg-slate-900/95 text-white px-3 py-1 text-xs shadow-md backdrop-blur-xs">
       <div className="flex items-center gap-1 text-[11px] font-bold text-amber-400 mr-1 shrink-0">
         <Code2 className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">Cuenta Dev:</span>
+        <span className="hidden sm:inline">Modo Dev:</span>
       </div>
 
       <div className="flex items-center gap-1">
@@ -47,7 +47,7 @@ export const DevRoleSwitcher: React.FC = () => {
                   ? 'bg-sky-500 text-white font-bold shadow-xs'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800'
               }`}
-              title={`Intercalar rol a ${r.label}`}
+              title={`Ver vistas y funciones de ${r.label}`}
             >
               <Icon className="h-3 w-3" />
               <span>{r.label}</span>

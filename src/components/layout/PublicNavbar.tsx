@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { LogIn, UserCheck, LogOut } from 'lucide-react';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { DevRoleSwitcher } from '@/components/dev/DevRoleSwitcher';
 import type { UserRole } from '@/types';
 
 export const PublicNavbar: React.FC = () => {
@@ -94,6 +95,8 @@ export const PublicNavbar: React.FC = () => {
 
         {/* Estado de Sesión — visible e informativo */}
         <div className="flex items-center gap-2.5">
+          <DevRoleSwitcher />
+
           {user ? (
             <div className="flex items-center gap-2">
               {/* Campana de Notificaciones (HU-69) */}
