@@ -250,6 +250,19 @@ export const MOCK_USERS: User[] = [
     telefono: '3549-423000',
     rol: 'ADMIN',
   },
+  {
+    id: 'u-dev-master',
+    nombre: 'Desarrollador',
+    apellido: 'Equipo ESU',
+    email: 'dev@esu.gob.ar',
+    dni: '99999999',
+    telefono: '3549-999999',
+    rol: 'ADMIN',
+    matricula: 'DEV-001',
+    especialidad: 'Medicina General / Auditoría',
+    centroSaludId: 'c1',
+    isDeveloper: true,
+  },
 ];
 
 const hoyStr = new Date().toISOString().split('T')[0];

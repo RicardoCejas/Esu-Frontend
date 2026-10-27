@@ -105,7 +105,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Función utilitaria para cambiar de rol en entorno de evaluación
   const switchRole = (newRole: UserRole) => {
-    const targetUser = MOCK_USERS.find((u) => u.rol === newRole) || {
+    const isDev = user?.isDeveloper || localStorage.getItem('esu_dev_mode') === 'true';
+    const baseUser = MOCK_USERS.find((u) => u.rol === newRole) || {
       id: `u-${newRole.toLowerCase()}-demo`,
       nombre: `Usuario ${newRole}`,
       apellido: 'Demo',
@@ -116,6 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       twoFactorEnabled: false,
       emailVerified: true,
     };
+    const targetUser = { ...baseUser, isDeveloper: isDev };
     tokenStorage.setAccessToken(`mock-token-${targetUser.id}`);
     authService.setCurrentUser(targetUser);
     setUser(targetUser);

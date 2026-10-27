@@ -9,12 +9,14 @@ import {
   Building2,
   Stethoscope,
   ShieldCheck,
-  PlusCircle,
   Layers,
   ListOrdered,
   ArrowLeft,
   ChevronRight,
   TrendingUp,
+  Pill,
+  FileCheck,
+  User,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { useProximoTurno } from '@/hooks/useProximoTurno';
@@ -28,10 +30,13 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  // Rutas Paciente
-  { title: 'Mis Turnos', path: '/dashboard/paciente', icon: Calendar, roles: ['PACIENTE'] },
-  { title: 'Solicitar Turno', path: '/turnero', icon: PlusCircle, roles: ['PACIENTE'] },
+  // Rutas Paciente (Portal de Salud Unificado)
+  { title: 'Turnos', path: '/dashboard/paciente', icon: Calendar, roles: ['PACIENTE'] },
   { title: 'Mi Historia Clínica (HCU)', path: '/dashboard/paciente/historial', icon: FileText, roles: ['PACIENTE'] },
+  { title: 'Mis Recetas / Medicación', path: '/dashboard/paciente/recetas', icon: Pill, roles: ['PACIENTE'] },
+  { title: 'Estudios y Resultados', path: '/dashboard/paciente/estudios', icon: FileCheck, roles: ['PACIENTE'] },
+  { title: 'Centros y Dispensarios', path: '/dashboard/paciente/centros', icon: Building2, roles: ['PACIENTE'] },
+  { title: 'Perfil y Contacto', path: '/dashboard/perfil', icon: User, roles: ['PACIENTE'] },
 
   // Rutas Médico
   { title: 'Agenda Médica', path: '/dashboard/medico', icon: Calendar, roles: ['MEDICO'] },

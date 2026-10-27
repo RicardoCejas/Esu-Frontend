@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { DevRoleSwitcher } from '@/components/dev/DevRoleSwitcher';
 
 export const DashboardLayout: React.FC = () => {
   return (
@@ -13,9 +14,14 @@ export const DashboardLayout: React.FC = () => {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
-          {/* Header Superior del Dashboard con Campana de Notificaciones (HU-69) */}
-          <header className="flex h-14 shrink-0 items-center justify-end gap-3 border-b border-border bg-card/60 px-4 sm:px-6 backdrop-blur-xs">
-            <NotificationCenter />
+          {/* Header Superior del Dashboard con Switcher Dev e Indicadores */}
+          <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-card/60 px-4 sm:px-6 backdrop-blur-xs">
+            <div className="flex items-center gap-2">
+              <DevRoleSwitcher />
+            </div>
+            <div className="flex items-center gap-3">
+              <NotificationCenter />
+            </div>
           </header>
 
           <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto bg-muted/20 p-4 sm:p-6 lg:p-8">

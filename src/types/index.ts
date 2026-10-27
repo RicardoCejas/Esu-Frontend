@@ -17,6 +17,7 @@ export interface User {
   activo?: boolean;
   twoFactorEnabled?: boolean; // HU-42
   emailVerified?: boolean; // HU-43
+  isDeveloper?: boolean;
 }
 
 export interface CentroSalud {

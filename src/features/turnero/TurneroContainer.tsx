@@ -87,9 +87,6 @@ export function TurneroContainer() {
 
       {/* Main Content Area: max-w-7xl with fluid padding */}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5">
-        <p role="status" className="mb-5 rounded-xl border-2 border-amber-700 bg-amber-50 p-4 text-sm font-semibold text-slate-900">
-          Modo demostración: las sedes, profesionales y horarios son datos de prueba. No se crean reservas reales ni se envían recordatorios; los turnos de prueba viven solo en memoria de esta pestaña.
-        </p>
         {currentStep === 1 && (
           <Step1CenterSelection
             centers={filteredCenters}

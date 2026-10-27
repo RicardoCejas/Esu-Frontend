@@ -17,6 +17,9 @@ import { RoleGuard } from './RoleGuard';
 // Vistas Paciente
 import { MisTurnosPage } from '@/features/paciente/MisTurnosPage';
 import { MiHistorialPage } from '@/features/paciente/MiHistorialPage';
+import { MisRecetasPage } from '@/features/paciente/MisRecetasPage';
+import { MisEstudiosPage } from '@/features/paciente/MisEstudiosPage';
+import { CentrosSaludPacientePage } from '@/features/paciente/CentrosSaludPacientePage';
 
 // Vistas Médico
 import { AgendaMedicaPage } from '@/features/medico/AgendaMedicaPage';
@@ -89,6 +92,9 @@ export const AppRoutes: React.FC = () => {
             <Route element={<RoleGuard allowedRoles={['PACIENTE', 'ADMIN']} />}>
               <Route path="paciente" element={<MisTurnosPage />} />
               <Route path="paciente/historial" element={<MiHistorialPage />} />
+              <Route path="paciente/recetas" element={<MisRecetasPage />} />
+              <Route path="paciente/estudios" element={<MisEstudiosPage />} />
+              <Route path="paciente/centros" element={<CentrosSaludPacientePage />} />
             </Route>
 
             {/* Módulo Médico */}

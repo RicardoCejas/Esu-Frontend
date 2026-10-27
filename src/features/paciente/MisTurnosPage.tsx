@@ -14,7 +14,9 @@ import {
   Download,
   Activity,
   CreditCard,
-  Users
+  Users,
+  Info,
+  History
 } from 'lucide-react';
 import { CardSkeleton } from '@/components/ui/skeleton';
 import { CarnetDigitalModal } from './components/CarnetDigitalModal';
@@ -24,6 +26,7 @@ export const MisTurnosPage: React.FC = () => {
   const { user } = useAuth();
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tabActiva, setTabActiva] = useState<'proximos' | 'historial'>('proximos');
   const [selectedTurnoQr, setSelectedTurnoQr] = useState<Turno | null>(null);
   const [turnoACancelar, setTurnoACancelar] = useState<Turno | null>(null);
   const [isCarnetOpen, setIsCarnetOpen] = useState(false);
@@ -97,6 +100,14 @@ export const MisTurnosPage: React.FC = () => {
     }
   };
 
+  const proximosTurnos = turnos.filter((t) =>
+    ['CONFIRMADO', 'PENDIENTE', 'EN_ESPERA', 'ATENDIENDO'].includes(t.estado)
+  );
+  const historialTurnos = turnos.filter((t) =>
+    ['COMPLETADO', 'CANCELADO'].includes(t.estado)
+  );
+  const turnosAMostrar = tabActiva === 'proximos' ? proximosTurnos : historialTurnos;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -129,13 +140,29 @@ export const MisTurnosPage: React.FC = () => {
             <span>Mi Familia</span>
           </button>
 
-          <Link
-            to="/turnero"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition"
-          >
-            <PlusCircle className="h-4 w-4" />
-            <span>Solicitar Nuevo Turno</span>
-          </Link>
+          {/* Botón superior: solo visible cuando existen turnos en la lista */}
+          {!loading && turnos.length > 0 && (
+            <Link
+              to="/turnero"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition"
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span>+ Solicitar Nuevo Turno</span>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* Información de preparación / Requisitos obligatorios */}
+      <div className="flex items-start gap-3 rounded-xl border border-sky-200/80 bg-sky-50/60 p-4 text-xs text-sky-950 dark:border-sky-900/60 dark:bg-sky-950/20 dark:text-sky-200 shadow-xs">
+        <Info className="h-5 w-5 text-sky-700 dark:text-sky-400 shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <p className="font-bold text-sky-900 dark:text-sky-100">
+            Documentación y preparación requerida para la atención
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Recordá presentarte en ventanilla con <strong>15 minutos de anticipación</strong> presentando tu <strong>DNI físico original</strong> y la <strong>credencial de Obra Social o constancia del Programa SUMAR</strong>. Si contás con estudios previos relacionados, llevalos impresos o en formato digital.
+          </p>
         </div>
       </div>
 
@@ -147,79 +174,159 @@ export const MisTurnosPage: React.FC = () => {
           <CardSkeleton />
         </div>
       ) : turnos.length === 0 ? (
+        /* Estado vacío global cuando no hay ningún turno */
         <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center space-y-4">
           <Calendar className="mx-auto h-10 w-10 text-muted-foreground/70" />
-          <h3 className="font-bold text-base">No tienes turnos agendados</h3>
+          <h3 className="font-bold text-base text-foreground">No tienes turnos agendados</h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             Puedes reservar una cita médica en cualquier centro de salud o con profesionales de Cruz del Eje.
           </p>
           <Link
             to="/turnero"
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-sm"
           >
             <PlusCircle className="h-4 w-4" />
             <span>Sacar Turno Ahora</span>
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {turnos.map((turno) => (
-            <div
-              key={turno.id}
-              className="flex flex-col justify-between rounded-xl border border-border bg-card p-5 shadow-xs hover:border-primary/40 transition-all space-y-4"
+        /* Con turnos: Tabs / Filtros de estado */
+        <div className="space-y-5">
+          <div className="flex border-b border-border">
+            <button
+              type="button"
+              onClick={() => setTabActiva('proximos')}
+              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition cursor-pointer ${
+                tabActiva === 'proximos'
+                  ? 'border-primary text-primary font-bold'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
             >
-              <div className="space-y-3">
-                <div className="flex items-center justify-end">
-                  {getBadgeEstado(turno.estado)}
-                </div>
+              <Calendar className="h-4 w-4" />
+              <span>Próximos Turnos</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  tabActiva === 'proximos'
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {proximosTurnos.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTabActiva('historial')}
+              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition cursor-pointer ${
+                tabActiva === 'historial'
+                  ? 'border-primary text-primary font-bold'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <History className="h-4 w-4" />
+              <span>Historial de Turnos</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  tabActiva === 'historial'
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {historialTurnos.length}
+              </span>
+            </button>
+          </div>
 
-                <div>
-                  <h3 className="font-bold text-base text-foreground">{turno.profesionalNombre}</h3>
-                  <p className="text-xs font-semibold text-sky-700 dark:text-sky-400">{turno.especialidadNombre}</p>
-                </div>
-
-                <div className="space-y-1.5 text-xs text-muted-foreground pt-1">
-                  <div className="flex items-center gap-2 font-medium text-foreground">
-                    <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span className="font-mono">{turno.fecha} — {turno.hora} hs</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                    <span>{turno.centroSaludNombre}</span>
-                  </div>
-                  {turno.motivoConsulta && (
-                    <div className="rounded-lg bg-muted p-2.5 text-[11px] text-muted-foreground border border-border">
-                      <span className="font-semibold text-foreground">Motivo: </span>
-                      {turno.motivoConsulta}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Acciones de la Card */}
-              <div className="flex items-center gap-2 pt-3 border-t border-border/60">
-                <button
-                  type="button"
-                  onClick={() => setSelectedTurnoQr(turno)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-input bg-background py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
-                >
-                  <QrCode className="h-3.5 w-3.5 text-primary" />
-                  <span>Ver Comprobante</span>
-                </button>
-
-                {turno.estado !== 'CANCELADO' && turno.estado !== 'COMPLETADO' && (
-                  <button
-                    type="button"
-                    onClick={() => setTurnoACancelar(turno)}
-                    className="flex items-center justify-center rounded-lg border border-rose-200 bg-card px-3 py-2 text-rose-700 hover:border-rose-700 hover:bg-rose-700 hover:text-white transition cursor-pointer"
-                    title="Cancelar turno"
+          {/* Grilla de turnos o estado vacío de pestaña */}
+          {turnosAMostrar.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-card/60 p-8 text-center space-y-2">
+              <p className="text-sm font-semibold text-foreground">
+                {tabActiva === 'proximos'
+                  ? 'No tienes turnos próximos programados'
+                  : 'No registras turnos anteriores en tu historial'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {tabActiva === 'proximos'
+                  ? 'Puedes solicitar una nueva cita médica desde el turnero online.'
+                  : 'Los turnos atendidos o cancelados aparecerán listados aquí para tu consulta.'}
+              </p>
+              {tabActiva === 'proximos' && (
+                <div className="pt-2">
+                  <Link
+                    to="/turnero"
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-xs"
                   >
-                    <XCircle className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
+                    <PlusCircle className="h-4 w-4" />
+                    <span>Solicitar Turno</span>
+                  </Link>
+                </div>
+              )}
             </div>
-          ))}
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {turnosAMostrar.map((turno) => (
+                <div
+                  key={turno.id}
+                  className="flex flex-col justify-between rounded-xl border border-border bg-card p-5 shadow-xs hover:border-primary/40 transition-all space-y-4"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-end">
+                      {getBadgeEstado(turno.estado)}
+                    </div>
+
+                    <div>
+                      <h3 className="font-bold text-base text-foreground">{turno.profesionalNombre}</h3>
+                      <p className="text-xs font-semibold text-sky-700 dark:text-sky-400">
+                        {turno.especialidadNombre}
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs text-muted-foreground pt-1">
+                      <div className="flex items-center gap-2 font-medium text-foreground">
+                        <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="font-mono">
+                          {turno.fecha} — {turno.hora} hs
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <MapPin className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                        <span>{turno.centroSaludNombre}</span>
+                      </div>
+                      {turno.motivoConsulta && (
+                        <div className="rounded-lg bg-muted p-2.5 text-[11px] text-muted-foreground border border-border">
+                          <span className="font-semibold text-foreground">Motivo: </span>
+                          {turno.motivoConsulta}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Acciones de la Card */}
+                  <div className="flex items-center gap-2 pt-3 border-t border-border/60">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTurnoQr(turno)}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-input bg-background py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
+                    >
+                      <QrCode className="h-3.5 w-3.5 text-primary" />
+                      <span>Ver Comprobante</span>
+                    </button>
+
+                    {turno.estado !== 'CANCELADO' && turno.estado !== 'COMPLETADO' && (
+                      <button
+                        type="button"
+                        onClick={() => setTurnoACancelar(turno)}
+                        className="flex items-center justify-center rounded-lg border border-rose-200 bg-card px-3 py-2 text-rose-700 hover:border-rose-700 hover:bg-rose-700 hover:text-white transition cursor-pointer"
+                        title="Cancelar turno"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -236,9 +343,16 @@ export const MisTurnosPage: React.FC = () => {
             </div>
 
             <div className="rounded-lg bg-muted/50 p-3 text-xs space-y-1.5 border border-border/60">
-              <div><strong className="text-foreground">Médico:</strong> {turnoACancelar.profesionalNombre}</div>
-              <div><strong className="text-foreground">Fecha y Hora:</strong> {turnoACancelar.fecha} ({turnoACancelar.hora} hs)</div>
-              <div><strong className="text-foreground">Centro:</strong> {turnoACancelar.centroSaludNombre}</div>
+              <div>
+                <strong className="text-foreground">Médico:</strong> {turnoACancelar.profesionalNombre}
+              </div>
+              <div>
+                <strong className="text-foreground">Fecha y Hora:</strong> {turnoACancelar.fecha} (
+                {turnoACancelar.hora} hs)
+              </div>
+              <div>
+                <strong className="text-foreground">Centro:</strong> {turnoACancelar.centroSaludNombre}
+              </div>
             </div>
 
             <p className="text-xs text-muted-foreground">
@@ -310,7 +424,9 @@ export const MisTurnosPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Fecha y Hora:</span>
-                <span className="font-bold font-mono text-sky-700 dark:text-sky-400">{selectedTurnoQr.fecha} a las {selectedTurnoQr.hora} hs</span>
+                <span className="font-bold font-mono text-sky-700 dark:text-sky-400">
+                  {selectedTurnoQr.fecha} a las {selectedTurnoQr.hora} hs
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Lugar:</span>
