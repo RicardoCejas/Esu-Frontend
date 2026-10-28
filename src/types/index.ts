@@ -11,6 +11,7 @@ export interface User {
   matricula?: string; // Para médicos
   especialidad?: string; // Para médicos
   centroSaludId?: string; // Para recepcionistas o médicos asociados a un centro
+  centroSaludNombre?: string; // Nombre del centro de salud al que pertenece
   obraSocial?: string;
   nroAfiliado?: string;
   grupoSanguineo?: string; // Para pacientes

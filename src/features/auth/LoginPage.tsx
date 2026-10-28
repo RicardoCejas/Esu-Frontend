@@ -31,12 +31,17 @@ export const LoginPage: React.FC = () => {
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
   const [tempToken2FA, setTempToken2FA] = useState('');
 
-  // Cargar usuario recordado
+  // Cargar credenciales recordadas (usuario y contraseña)
   useEffect(() => {
     try {
       const savedUser = localStorage.getItem('esu_remember_login');
+      const savedPass = localStorage.getItem('esu_remember_password');
       if (savedUser) {
         setEmailOrDni(savedUser);
+        setRememberLogin(true);
+      }
+      if (savedPass) {
+        setPassword(savedPass);
       }
     } catch {
       // Ignore
@@ -72,8 +77,12 @@ export const LoginPage: React.FC = () => {
       }
       if (rememberLogin) {
         localStorage.setItem('esu_remember_login', emailOrDni.trim());
+        if (password) {
+          localStorage.setItem('esu_remember_password', password);
+        }
       } else {
         localStorage.removeItem('esu_remember_login');
+        localStorage.removeItem('esu_remember_password');
       }
 
       const authResponse = await login({
@@ -241,7 +250,7 @@ export const LoginPage: React.FC = () => {
                 className="rounded border-slate-300 text-sky-600 focus:ring-sky-600 h-4 w-4 cursor-pointer"
               />
               <label htmlFor="rememberLogin" className="text-xs text-slate-600 font-medium cursor-pointer select-none">
-                Recordar mi correo / DNI en este equipo
+                Recordar mi usuario y contraseña en este equipo
               </label>
             </div>
 
@@ -260,6 +269,7 @@ export const LoginPage: React.FC = () => {
                 onClick={() => {
                   setEmailOrDni('dev@esu.gob.ar');
                   setPassword('Dev12345!');
+                  setRememberLogin(true);
                 }}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 border border-sky-200/80 px-3 py-1.5 text-xs font-semibold text-sky-800 hover:bg-sky-100 transition cursor-pointer"
               >

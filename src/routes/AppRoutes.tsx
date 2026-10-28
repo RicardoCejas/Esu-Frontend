@@ -32,6 +32,9 @@ import { NuevoPacientePage } from '@/features/recepcion/NuevoPacientePage';
 import { GestionTurnosAdminPage } from '@/features/recepcion/GestionTurnosAdminPage';
 import { SalasEsperaKanbanPage } from '@/features/recepcion/SalasEsperaKanbanPage';
 import { PantallaTurnosTVPage } from '@/features/recepcion/PantallaTurnosTVPage';
+import { MedicosCentroPage } from '@/features/recepcion/MedicosCentroPage';
+import { NuevoMedicoPage } from '@/features/recepcion/NuevoMedicoPage';
+import { EspecialidadesCentroPage } from '@/features/recepcion/EspecialidadesCentroPage';
 
 // Vistas Admin
 import { AdminDashboardPage } from '@/features/admin/AdminDashboardPage';
@@ -110,6 +113,9 @@ export const AppRoutes: React.FC = () => {
               <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
               <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
               <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
+              <Route path="recepcion/medicos" element={<MedicosCentroPage />} />
+              <Route path="recepcion/medicos/nuevo" element={<NuevoMedicoPage />} />
+              <Route path="recepcion/especialidades" element={<EspecialidadesCentroPage />} />
             </Route>
 
             {/* Módulo Administrador (HU-56 & HU-70) */}

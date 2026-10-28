@@ -1,50 +1,81 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authService } from '@/api/authService';
-import type { UserRole } from '@/types';
-import { UserPlus, ArrowLeft, Save, Shield } from 'lucide-react';
+import { MOCK_USERS, MOCK_CENTROS } from '@/api/mockData';
+import type { CentroSalud, User } from '@/types';
+import { Building2, ArrowLeft, Save, Shield } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 export const NuevoUsuarioPage: React.FC = () => {
   const navigate = useNavigate();
+  const { success } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
-    nombre: '',
-    apellido: '',
-    dni: '',
-    email: '',
+    nombreCentro: '',
+    tipo: 'CLINICA' as CentroSalud['tipo'],
+    direccion: '',
     telefono: '',
-    rol: 'PACIENTE' as UserRole,
-    matricula: '',
-    especialidad: '',
-    password: 'password123',
+    emailInstitucional: '',
+    password: '',
+    horarioAtencion: 'Lunes a Viernes 08:00 a 20:00',
+    disponibleGuardia: false,
+    responsable: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData((prev) => ({ ...prev, [name]: checked }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nombre.trim() || !formData.apellido.trim() || !formData.dni.trim() || !formData.email.trim()) {
+    if (!formData.nombreCentro.trim() || !formData.emailInstitucional.trim() || !formData.password.trim()) {
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await authService.register({
-        nombre: formData.nombre.trim(),
-        apellido: formData.apellido.trim(),
-        email: formData.email.trim(),
-        dni: formData.dni.trim(),
-        telefono: formData.telefono.trim() || undefined,
-        rol: formData.rol,
-        password: formData.password || 'password123',
-      });
+      const nuevoId = `c-${Date.now()}`;
+      
+      // Registrar en MOCK_CENTROS
+      const nuevoCentro: CentroSalud = {
+        id: nuevoId,
+        nombre: formData.nombreCentro.trim(),
+        tipo: formData.tipo,
+        direccion: formData.direccion.trim() || 'Cruz del Eje, Córdoba',
+        telefono: formData.telefono.trim() || '03549-422001',
+        ciudad: 'Cruz del Eje',
+        horarioAtencion: formData.horarioAtencion,
+        disponibleGuardia: formData.disponibleGuardia,
+      };
+      MOCK_CENTROS.push(nuevoCentro);
+
+      // Registrar cuenta institucional en MOCK_USERS
+      const nuevaCuentaUser: User = {
+        id: `u-${nuevoId}`,
+        nombre: formData.nombreCentro.trim(),
+        apellido: '(Centro de Salud)',
+        email: formData.emailInstitucional.trim().toLowerCase(),
+        dni: String(Date.now()).slice(-8),
+        telefono: formData.telefono.trim(),
+        rol: 'RECEPCIONISTA',
+        centroSaludId: nuevoId,
+        centroSaludNombre: formData.nombreCentro.trim(),
+        activo: true,
+      };
+      MOCK_USERS.push(nuevaCuentaUser);
+
+      success(`Cuenta creada exitosamente para ${formData.nombreCentro}`);
       navigate('/dashboard/admin/usuarios');
     } catch {
-      // Si la API remota falla o mockea, igual redirigimos al listado
       navigate('/dashboard/admin/usuarios');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -55,207 +86,193 @@ export const NuevoUsuarioPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <Link
             to="/dashboard/admin/usuarios"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-input bg-background text-muted-foreground hover:bg-accent hover:text-foreground transition cursor-pointer"
-            title="Volver a Gestión de Usuarios"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-input bg-card text-muted-foreground hover:bg-accent hover:text-foreground transition cursor-pointer"
+            title="Volver a Cuentas de Centros de Salud"
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              <span>Alta de Usuario (RBAC)</span>
+            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2 font-heading">
+              <Building2 className="h-5 w-5 text-primary" />
+              <span>Crear Cuenta para Centro de Salud</span>
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Registro administrativo de credenciales, roles y accesos perimetrales.
+              Alta institucional de centro médico y creación de credenciales de acceso.
             </p>
           </div>
         </div>
 
-        <div className="hidden sm:flex items-center gap-1.5 rounded-md bg-slate-900 text-white dark:bg-slate-800 px-3 py-1 text-xs font-semibold">
-          <UserPlus className="h-3.5 w-3.5 text-sky-400" />
-          <span>Control Administrativo</span>
+        <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-sky-50 border border-sky-200 px-3 py-1 text-xs font-bold text-sky-800">
+          <Shield className="h-3.5 w-3.5 text-sky-700" />
+          <span>Administración Central</span>
         </div>
       </div>
 
-      {/* Formulario de Alta Administrativa */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-xs">
-        <form onSubmit={handleSubmit} className="space-y-5 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label htmlFor="nombre" className="font-semibold text-foreground">
-                Nombre <span className="text-rose-600">*</span>
-              </label>
-              <input
-                id="nombre"
-                name="nombre"
-                type="text"
-                required
-                value={formData.nombre}
-                onChange={handleChange}
-                placeholder="Ej. Ana"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+      {/* Nota Explicativa */}
+      <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-4 text-xs text-sky-950 space-y-1">
+        <p className="font-bold text-sky-900">Responsabilidad de la cuenta del Centro de Salud</p>
+        <p className="text-muted-foreground leading-relaxed">
+          Una vez creada la cuenta, el centro de salud podrá iniciar sesión de forma autónoma para <strong>crear las cuentas de sus médicos</strong>, <strong>asignar especialidades</strong> y <strong>gestionar la recepción de turnos</strong>.
+        </p>
+      </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="apellido" className="font-semibold text-foreground">
-                Apellido <span className="text-rose-600">*</span>
-              </label>
-              <input
-                id="apellido"
-                name="apellido"
-                type="text"
-                required
-                value={formData.apellido}
-                onChange={handleChange}
-                placeholder="Ej. Gómez"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+      {/* Formulario */}
+      <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-4 text-xs">
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-foreground">
+            Nombre Oficial de la Institución Sanitaria *
+          </label>
+          <input
+            type="text"
+            required
+            name="nombreCentro"
+            placeholder="ej: Hospital Regional Aurelio Crespo, Clínica Cabrera"
+            value={formData.nombreCentro}
+            onChange={handleChange}
+            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-foreground">Tipo de Centro Médico *</label>
+            <select
+              name="tipo"
+              value={formData.tipo}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+            >
+              <option value="HOSPITAL">Hospital Público</option>
+              <option value="CLINICA">Clínica Privada</option>
+              <option value="CONSULTORIO_PRIVADO">Centro de Diagnóstico / Consultorio</option>
+              <option value="DISPENSARIO">Centro de Salud Barrial (CAPS)</option>
+            </select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label htmlFor="dni" className="font-semibold text-foreground">
-                DNI / Documento <span className="text-rose-600">*</span>
-              </label>
-              <input
-                id="dni"
-                name="dni"
-                type="text"
-                required
-                value={formData.dni}
-                onChange={handleChange}
-                placeholder="Ej. 29384756"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="telefono" className="font-semibold text-foreground">
-                Teléfono
-              </label>
-              <input
-                id="telefono"
-                name="telefono"
-                type="tel"
-                value={formData.telefono}
-                onChange={handleChange}
-                placeholder="Ej. 3549-551122"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-foreground">Teléfono Institucional *</label>
+            <input
+              type="tel"
+              required
+              name="telefono"
+              placeholder="ej: 03549-422001"
+              value={formData.telefono}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label htmlFor="email" className="font-semibold text-foreground">
-                Correo Electrónico <span className="text-rose-600">*</span>
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-foreground">Dirección en Cruz del Eje *</label>
+          <input
+            type="text"
+            required
+            name="direccion"
+            placeholder="ej: Av. Juan B. Justo 1200, Cruz del Eje"
+            value={formData.direccion}
+            onChange={handleChange}
+            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+
+        {/* Credenciales de Acceso para el Centro */}
+        <div className="rounded-xl border border-sky-200/80 bg-sky-50/50 p-4 space-y-3">
+          <h3 className="font-bold text-xs text-sky-950 flex items-center gap-1.5">
+            <Shield className="h-3.5 w-3.5 text-sky-700" />
+            <span>Credenciales de Inicio de Sesión del Centro de Salud</span>
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-700">
+                Correo Institucional de Acceso *
               </label>
               <input
-                id="email"
-                name="email"
                 type="email"
                 required
-                value={formData.email}
+                name="emailInstitucional"
+                placeholder="ej: centro.salud@esu.gob.ar"
+                value={formData.emailInstitucional}
                 onChange={handleChange}
-                placeholder="ana.gomez@esu.gob.ar"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="rol" className="font-semibold text-foreground">
-                Rol del Usuario <span className="text-rose-600">*</span>
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-700">
+                Contraseña Inicial de Acceso *
               </label>
-              <select
-                id="rol"
-                name="rol"
-                value={formData.rol}
+              <input
+                type="password"
+                required
+                name="password"
+                placeholder="Mínimo 8 caracteres"
+                value={formData.password}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="PACIENTE">PACIENTE</option>
-                <option value="MEDICO">MEDICO</option>
-                <option value="RECEPCIONISTA">RECEPCIONISTA</option>
-                <option value="ADMIN">ADMIN (Administrador)</option>
-              </select>
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
+              />
             </div>
           </div>
+        </div>
 
-          {/* Campos exclusivos para profesionales médicos */}
-          {formData.rol === 'MEDICO' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3.5 rounded-lg border border-sky-300 bg-sky-50/50 dark:bg-sky-950/30 dark:border-sky-800">
-              <div className="space-y-1.5">
-                <label htmlFor="matricula" className="font-semibold text-foreground">
-                  Matrícula Profesional <span className="text-rose-600">*</span>
-                </label>
-                <input
-                  id="matricula"
-                  name="matricula"
-                  type="text"
-                  required
-                  value={formData.matricula}
-                  onChange={handleChange}
-                  placeholder="Ej. MP-48190"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label htmlFor="especialidad" className="font-semibold text-foreground">
-                  Especialidad Médica <span className="text-rose-600">*</span>
-                </label>
-                <input
-                  id="especialidad"
-                  name="especialidad"
-                  type="text"
-                  required
-                  value={formData.especialidad}
-                  onChange={handleChange}
-                  placeholder="Ej. Cardiología"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <label htmlFor="password" className="font-semibold text-foreground">
-              Contraseña Inicial
-            </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-foreground">Horario de Atención</label>
             <input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
+              type="text"
+              name="horarioAtencion"
+              placeholder="ej: Lunes a Viernes 08:00 a 20:00"
+              value={formData.horarioAtencion}
               onChange={handleChange}
-              placeholder="Contraseña provisoria"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <p className="text-[11px] text-muted-foreground">
-              Por defecto se asigna 'password123'. El usuario podrá cambiarla luego.
-            </p>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/70">
-            <Link
-              to="/dashboard/admin/usuarios"
-              className="rounded-lg border border-input bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
-            >
-              Cancelar
-            </Link>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition shadow-xs cursor-pointer disabled:opacity-50"
-            >
-              <Save className="h-3.5 w-3.5" />
-              <span>{isSubmitting ? 'Registrando...' : 'Registrar Usuario'}</span>
-            </button>
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-foreground">Responsable / Director de Sede</label>
+            <input
+              type="text"
+              name="responsable"
+              placeholder="ej: Dr. Fernando Cabrera"
+              value={formData.responsable}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
-        </form>
-      </div>
+        </div>
+
+        <div className="flex items-center gap-2 pt-2">
+          <input
+            type="checkbox"
+            id="disponibleGuardia"
+            name="disponibleGuardia"
+            checked={formData.disponibleGuardia}
+            onChange={handleChange}
+            className="rounded border-input text-primary h-4 w-4 cursor-pointer"
+          />
+          <label htmlFor="disponibleGuardia" className="text-xs text-foreground font-medium cursor-pointer select-none">
+            Centro con servicio de Guardia Médica Permanente (24 horas)
+          </label>
+        </div>
+
+        <div className="flex items-center gap-3 pt-3 border-t border-border">
+          <Link
+            to="/dashboard/admin/usuarios"
+            className="flex-1 rounded-xl border border-input py-2.5 text-xs font-semibold text-center hover:bg-accent transition"
+          >
+            Cancelar
+          </Link>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition disabled:opacity-50 cursor-pointer"
+          >
+            <Save className="h-4 w-4" />
+            <span>{isSubmitting ? 'Registrando...' : 'Crear Cuenta Institucional'}</span>
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

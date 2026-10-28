@@ -42,17 +42,19 @@ const navItems: NavItem[] = [
   { title: 'Agenda Médica', path: '/dashboard/medico', icon: Calendar, roles: ['MEDICO'] },
   { title: 'Atención Clínica', path: '/dashboard/medico/atencion', icon: Stethoscope, roles: ['MEDICO'] },
 
-  // Rutas Recepcionista (HU-53, HU-54, HU-55)
+  // Rutas Centro de Salud / Recepción
   { title: 'Recepción (Daily Board)', path: '/dashboard/recepcion', icon: Clock, roles: ['RECEPCIONISTA', 'ADMIN'] },
   { title: 'Tablero Kanban Espera', path: '/dashboard/recepcion/kanban', icon: Layers, roles: ['RECEPCIONISTA', 'MEDICO', 'ADMIN'] },
   { title: 'Padrón de Pacientes', path: '/dashboard/recepcion/pacientes', icon: Users, roles: ['RECEPCIONISTA', 'MEDICO', 'ADMIN'] },
   { title: 'Gestión de Turnos', path: '/dashboard/recepcion/turnos', icon: ListOrdered, roles: ['RECEPCIONISTA', 'ADMIN'] },
+  { title: 'Médicos del Centro', path: '/dashboard/recepcion/medicos', icon: Stethoscope, roles: ['RECEPCIONISTA', 'ADMIN'] },
+  { title: 'Especialidades Habilitadas', path: '/dashboard/recepcion/especialidades', icon: Building2, roles: ['RECEPCIONISTA', 'ADMIN'] },
 
   // Rutas Administrador (HU-56 & HU-70)
   { title: 'Dashboard y Métricas', path: '/dashboard/admin', icon: Layers, roles: ['ADMIN'] },
   { title: 'Ocupación y Ausentismo', path: '/dashboard/admin/ocupacion-ausentismo', icon: TrendingUp, roles: ['ADMIN'] },
   { title: 'Sedes y Consultorios', path: '/dashboard/admin/sedes', icon: Building2, roles: ['ADMIN'] },
-  { title: 'Gestión de Usuarios', path: '/dashboard/admin/usuarios', icon: ShieldCheck, roles: ['ADMIN'] },
+  { title: 'Cuentas de Centros de Salud', path: '/dashboard/admin/usuarios', icon: ShieldCheck, roles: ['ADMIN'] },
   { title: 'Centros y Especialidades', path: '/dashboard/admin/especialidades', icon: Building2, roles: ['ADMIN'] },
 ];
 
@@ -91,6 +93,21 @@ export const Sidebar: React.FC = () => {
           <ArrowLeft className="h-4 w-4" />
         </Link>
       </div>
+
+      {/* Indicador de Centro de Salud del usuario */}
+      {user?.centroSaludNombre && (
+        <div className="border-b border-border bg-sky-50/60 dark:bg-sky-950/20 px-3 py-2">
+          <div className="flex items-center gap-2 text-xs text-sky-800 dark:text-sky-300">
+            <Building2 className="h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] uppercase font-bold tracking-wider text-sky-600 dark:text-sky-400">
+                {user.rol === 'PACIENTE' ? 'Centro de Referencia' : user.rol === 'MEDICO' ? 'Profesional Adscripto' : 'Centro de Salud'}
+              </p>
+              <p className="truncate font-semibold text-foreground">{user.centroSaludNombre}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Navegación */}
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
