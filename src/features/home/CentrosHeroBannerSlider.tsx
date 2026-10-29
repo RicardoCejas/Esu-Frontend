@@ -142,171 +142,70 @@ export const CentrosHeroBannerSlider: React.FC = () => {
     setCurrentSlide((prev) => (prev + 1) % BANNER_SLIDES.length);
   };
 
-  // Render del logo estilizado idéntico a la imagen provista
-  const renderLogo = (type: BannerSlide['logoType']) => {
-    switch (type) {
-      case 'centro-diag':
-        return (
-          <div className="flex items-center gap-3">
-            {/* Cruz de 4 aspas curvas idéntica al Centro de Diagnóstico Cruz del Eje */}
-            <div className="relative h-12 w-12 shrink-0">
-              <div className="absolute top-0 left-0 h-6 w-6 rounded-tr-2xl bg-[#005f9e]" />
-              <div className="absolute top-0 right-0 h-6 w-6 rounded-tl-2xl bg-[#0284c7]" />
-              <div className="absolute bottom-0 left-0 h-6 w-6 rounded-br-2xl bg-[#0ea5e9]" />
-              <div className="absolute bottom-0 right-0 h-6 w-6 rounded-bl-2xl bg-[#0369a1]" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-bold tracking-wider text-[#0284c7] font-heading leading-none">
-                CENTRO DE DIAGNÓSTICO
-              </span>
-              <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-[#004f82] font-heading leading-tight">
-                CRUZ DEL EJE
-              </span>
-            </div>
-          </div>
-        );
-      case 'hospital':
-        return (
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-md">
-              <span className="text-2xl font-extrabold">+</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-bold tracking-wider text-sky-700 font-heading leading-none">
-                HOSPITAL PROVINCIAL
-              </span>
-              <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-sky-900 font-heading leading-tight">
-                AURELIO CRESPO
-              </span>
-            </div>
-          </div>
-        );
-      case 'sanatorio-maria-isabel':
-        return (
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-800 text-white shadow-md border border-slate-600">
-              <span className="text-2xl font-bold">✚</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-bold tracking-wider text-slate-700 font-heading leading-none">
-                SANATORIO
-              </span>
-              <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-slate-950 font-heading leading-tight">
-                MARÍA ISABEL
-              </span>
-            </div>
-          </div>
-        );
-      case 'clinica-cabrera':
-        return (
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-700 text-white shadow-md">
-              <span className="text-2xl font-bold">⚕</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-bold tracking-wider text-sky-700 font-heading leading-none">
-                CLÍNICA MÉDICA
-              </span>
-              <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-sky-950 font-heading leading-tight">
-                CABRERA
-              </span>
-            </div>
-          </div>
-        );
-      case 'dispensario':
-        return (
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md">
-              <span className="text-2xl font-extrabold">♥</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-bold tracking-wider text-emerald-700 font-heading leading-none">
-                DISPENSARIO MUNICIPAL
-              </span>
-              <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-emerald-950 font-heading leading-tight">
-                SAN PANTALEÓN
-              </span>
-            </div>
-          </div>
-        );
-      case 'turnero':
-      default:
-        return (
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-md">
-              <Calendar className="h-7 w-7 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-bold tracking-wider text-sky-700 font-heading leading-none">
-                PORTAL ASISTENCIAL LUVIA
-              </span>
-              <span className="text-2xl sm:text-3xl font-extrabold tracking-widest text-sky-950 font-heading leading-tight">
-                TURNOS EN LÍNEA
-              </span>
-            </div>
-          </div>
-        );
-    }
-  };
-
   return (
     <div
-      className="relative w-full border-b border-border bg-slate-100 overflow-hidden select-none"
+      className="relative w-full overflow-hidden select-none"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Contenedor del Slide Activo con Transición Suave */}
       <div className="relative min-h-[380px] sm:min-h-[440px] md:min-h-[480px] w-full flex items-center">
-        {/* Foto de Fondo con Filtro Limpio */}
+        {/* Foto de Fondo con Nitidez Total */}
         <div
           className="absolute inset-0 bg-cover bg-center transition-all duration-700"
           style={{ backgroundImage: `url(${slide.bgImage})` }}
         />
 
-        {/* Degradado Suave Blanco/Celeste en el lado izquierdo para máxima legibilidad idéntico a la referencia */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/85 to-white/20 sm:via-white/80 sm:to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-transparent to-transparent" />
+        {/* Overlay Oscuro Sutil Elegante (Idéntico a la imagen de referencia para que la foto y las letras se aprecien al 100%) */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/50 to-slate-950/25" />
 
-        {/* Flechas de Navegación Lateral (ocultables en móvil) */}
+        {/* Flechas de Navegación Lateral Minimalistas (Idénticas a la imagen de referencia) */}
         <button
           onClick={handlePrev}
-          className="absolute left-3 sm:left-6 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-md backdrop-blur-xs hover:bg-white hover:text-sky-700 hover:scale-110 transition cursor-pointer"
+          className="absolute left-3 sm:left-6 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center text-white/70 hover:text-white hover:scale-110 transition cursor-pointer"
           aria-label="Anterior"
         >
-          <ChevronLeft className="h-6 w-6" />
+          <ChevronLeft className="h-8 w-8 sm:h-10 sm:w-10 stroke-[1.5]" />
         </button>
 
         <button
           onClick={handleNext}
-          className="absolute right-3 sm:right-6 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/80 text-slate-700 shadow-md backdrop-blur-xs hover:bg-white hover:text-sky-700 hover:scale-110 transition cursor-pointer"
+          className="absolute right-3 sm:right-6 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center text-white/70 hover:text-white hover:scale-110 transition cursor-pointer"
           aria-label="Siguiente"
         >
-          <ChevronRight className="h-6 w-6" />
+          <ChevronRight className="h-8 w-8 sm:h-10 sm:w-10 stroke-[1.5]" />
         </button>
 
-        {/* Contenido Textual Izquierdo con Diseño Idéntico a la Referencia */}
+        {/* Contenido Textual Izquierdo (Idéntico a la imagen de referencia: eyebrow + título grande blanco + bajada + botón) */}
         <div className="container relative z-10 mx-auto max-w-7xl px-8 sm:px-14 lg:px-20 py-12">
-          <div className="max-w-xl space-y-5 animate-in fade-in duration-300">
-            {/* Logo e Identidad de la Institución */}
-            {renderLogo(slide.logoType)}
+          <div className="max-w-xl space-y-4 animate-in fade-in duration-300">
+            {/* Eyebrow / Categoría */}
+            <span className="text-xs sm:text-sm font-semibold tracking-wide text-white/90 drop-shadow-sm block">
+              {slide.titlePrimary}
+            </span>
+
+            {/* Título Principal Blanco Grande y Nítido */}
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight font-heading drop-shadow-md">
+              {slide.titleSecondary}
+            </h2>
 
             {/* Bajada / Subtítulo */}
-            <p className="text-sm sm:text-base md:text-lg font-medium text-[#1e3a5f] leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg text-slate-200 font-normal leading-relaxed drop-shadow-sm">
               {slide.subtitle}
             </p>
 
-            {/* Botones de Acción Uniformes para Todos los Centros */}
+            {/* Botones de Acción */}
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <Link
                 to="/turnero"
-                className="inline-flex items-center justify-center rounded-md bg-sky-700 px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-sky-800 hover:shadow-lg transition-all cursor-pointer"
+                className="inline-flex items-center justify-center rounded-lg bg-[#005a87] hover:bg-[#00486c] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all cursor-pointer"
               >
                 Sacar Turno
               </Link>
 
               <button
                 onClick={() => setModalSlide(slide)}
-                className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white/80 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-white transition cursor-pointer"
+                className="inline-flex items-center justify-center rounded-lg border border-white/60 bg-white/10 hover:bg-white/20 px-5 py-2.5 text-xs font-bold text-white backdrop-blur-xs transition cursor-pointer"
               >
                 Conocer Instalaciones
               </button>
@@ -314,7 +213,7 @@ export const CentrosHeroBannerSlider: React.FC = () => {
           </div>
         </div>
 
-        {/* Puntos de Paginación (5 Puntos Idénticos a la Referencia) */}
+        {/* Puntos de Paginación Minimalistas (Idénticos a la referencia: circulitos con borde blanco) */}
         <div className="absolute bottom-5 left-0 right-0 z-20 flex justify-center items-center gap-2">
           {BANNER_SLIDES.map((_, index) => (
             <button
@@ -322,8 +221,8 @@ export const CentrosHeroBannerSlider: React.FC = () => {
               onClick={() => setCurrentSlide(index)}
               className={`rounded-full transition-all cursor-pointer ${
                 currentSlide === index
-                  ? 'h-3 w-3 bg-white border-2 border-[#104e7a] ring-2 ring-white shadow-md scale-125'
-                  : 'h-2.5 w-2.5 bg-slate-300/80 border border-slate-400 hover:bg-slate-400'
+                  ? 'h-2.5 w-2.5 bg-white border border-white'
+                  : 'h-2.5 w-2.5 bg-transparent border border-white/70 hover:border-white'
               }`}
               aria-label={`Ir al slide ${index + 1}`}
             />

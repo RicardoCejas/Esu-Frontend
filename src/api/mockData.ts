@@ -34,13 +34,13 @@ export const MOCK_CENTROS: CentroSalud[] = [
 ];
 
 export const MOCK_ESPECIALIDADES: Especialidad[] = [
-  { id: 'e1', nombre: 'Clínica Médica / Medicina General', descripcion: 'Atención primaria y control integral de la salud.' },
+  { id: 'e1', nombre: 'Traumatología', descripcion: 'Diagnóstico y tratamiento de lesiones óseas, articulares y musculares.' },
   { id: 'e2', nombre: 'Pediatría', descripcion: 'Cuidado y seguimiento médico infantil y adolescentes.' },
   { id: 'e3', nombre: 'Cardiología', descripcion: 'Prevención, diagnóstico y tratamiento de afecciones cardíacas.' },
-  { id: 'e4', nombre: 'Traumatología y Ortopedia', descripcion: 'Lesiones óseas, articulares y musculares.' },
+  { id: 'e4', nombre: 'Oftalmología', descripcion: 'Salud visual, control oftalmológico y graduación óptica.' },
   { id: 'e5', nombre: 'Ginecología y Obstetricia', descripcion: 'Salud reproductiva y controles periódicos.' },
-  { id: 'e6', nombre: 'Oftalmología', descripcion: 'Salud visual y graduación óptica.' },
-  { id: 'e7', nombre: 'Dermatología', descripcion: 'Cuidado y tratamiento de afecciones de la piel.' },
+  { id: 'e6', nombre: 'Dermatología', descripcion: 'Cuidado y tratamiento de afecciones de la piel.' },
+  { id: 'e7', nombre: 'Odontología Integral', descripcion: 'Salud bucal, prevención y tratamientos odontológicos.' },
 ];
 
 export const MOCK_PROFESIONALES: Profesional[] = [

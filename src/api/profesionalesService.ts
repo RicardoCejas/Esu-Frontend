@@ -96,7 +96,12 @@ const getInitialEspecialidades = (): Especialidad[] => {
   const saved = localStorage.getItem(STORAGE_KEY_ESPECIALIDADES);
   if (saved) {
     try {
-      return JSON.parse(saved);
+      const parsed: Especialidad[] = JSON.parse(saved);
+      return parsed.map((e) =>
+        e.nombre.toLowerCase().includes('clinica')
+          ? { ...e, nombre: 'Traumatología', descripcion: 'Diagnóstico y tratamiento de lesiones óseas, articulares y musculares.' }
+          : e
+      );
     } catch {
       // ignore
     }
@@ -182,11 +187,17 @@ export const profesionalesService = {
     try {
       const res = await apiClient.get<any[]>('/especialidades');
       if (Array.isArray(res.data) && res.data.length > 0) {
-        return res.data.map((e: any) => ({
-          id: String(e.id),
-          nombre: e.nombre,
-          descripcion: e.descripcion || 'Atención médica especializada en Cruz del Eje.',
-        }));
+        return res.data.map((e: any) => {
+          const rawName = e.nombre || '';
+          const isClinica = rawName.toLowerCase().includes('clinica');
+          return {
+            id: String(e.id),
+            nombre: isClinica ? 'Traumatología' : rawName,
+            descripcion: isClinica
+              ? 'Diagnóstico y tratamiento de lesiones óseas, articulares y musculares.'
+              : e.descripcion || 'Atención médica especializada en Cruz del Eje.',
+          };
+        });
       }
       return [...especialidadesState];
     } catch {

@@ -62,15 +62,15 @@ export const HomePage: React.FC = () => {
         <CentrosHeroBannerSlider />
       </div>
 
-      {/* Hero Section: Acceso Rápido y Búsqueda Centralizada */}
-      <section className="relative overflow-hidden border-b border-slate-200 bg-slate-50/80 py-12 sm:py-16">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="max-w-3xl space-y-6">
-            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl text-slate-900 font-heading leading-tight">
-              Cuidamos la salud de <span className="text-sky-700">Cruz del Eje</span> en un solo lugar.
+      {/* Hero Section: Acceso Rápido con gris azulado marcado para alto contraste contra el blanco */}
+      <section className="relative overflow-hidden border-b border-[#c5d3e0] bg-[#d8e2ec] py-14 sm:py-20">
+        <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="max-w-4xl space-y-7">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#003855] font-heading leading-tight">
+              Cuidamos la salud de <span className="text-[#005a87]">Cruz del Eje</span> en un solo lugar.
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
+            <p className="text-lg sm:text-2xl text-slate-700 leading-relaxed font-normal max-w-3xl">
               El <strong>Ecosistema de Salud Unificado (Luvia)</strong> conecta hospitales, dispensarios municipales, clínicas y consultorios independientes para facilitarte el acceso a turnos, historias clínicas y recetas electrónicas.
             </p>
 
@@ -78,7 +78,7 @@ export const HomePage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <Link
                 to="/turnero"
-                className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-sky-700 px-8 py-4 text-base sm:text-lg font-bold text-white shadow-md hover:bg-sky-800 hover:shadow-lg transition-all cursor-pointer"
+                className="inline-flex items-center justify-center gap-3 rounded-full bg-[#005a87] px-9 py-4 text-base sm:text-lg font-bold text-white shadow-md hover:bg-[#00486c] hover:shadow-lg transition-all cursor-pointer"
               >
                 <Calendar className="h-5 w-5" />
                 <span>Sacar Turno Online</span>
@@ -87,9 +87,9 @@ export const HomePage: React.FC = () => {
 
               <Link
                 to="/dashboard/paciente"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-4 text-base font-semibold text-slate-800 shadow-xs hover:bg-slate-50 transition cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#005a87] bg-white px-8 py-4 text-base sm:text-lg font-bold text-[#005a87] shadow-xs hover:bg-slate-50 transition cursor-pointer"
               >
-                <UserCheck className="h-5 w-5 text-sky-700" />
+                <UserCheck className="h-5 w-5 text-[#005a87]" />
                 <span>Consultar Mis Turnos</span>
               </Link>
             </div>
