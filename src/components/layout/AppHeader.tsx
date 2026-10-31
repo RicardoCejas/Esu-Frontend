@@ -35,14 +35,14 @@ export function AppHeader({
 
   return (
     <header className="sticky top-0 z-40 border-b border-sky-200/70 bg-[#edf5fa]/95 backdrop-blur supports-[backdrop-filter]:bg-[#edf5fa]/80 text-slate-900 shadow-xs">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="w-full flex h-16 items-center justify-between px-3 sm:px-8 lg:px-12 xl:px-14">
         {/* Left: Brand + Geographic Location Selector */}
-        <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-2.5 hover:opacity-90 transition">
-            <img src="/logo-icon.png" alt="Luvia Logo" className="h-9 w-9 object-contain drop-shadow-xs" />
+        <div className="flex items-center gap-3 sm:gap-6">
+          <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition shrink-0">
+            <img src="/logo-icon.png" alt="Luvia Logo" className="h-8 sm:h-9 w-8 sm:w-9 object-contain drop-shadow-xs" />
             <div className="flex flex-col">
-              <span className="text-lg font-extrabold tracking-tight text-slate-900 leading-none font-heading">
-                Luvia <span className="text-sky-600 text-xs font-bold">Cruz del Eje</span>
+              <span className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 leading-none font-heading">
+                Luvia <span className="text-sky-600 text-xs font-bold hidden xs:inline">Cruz del Eje</span>
               </span>
               <span className="text-[10px] font-semibold text-muted-foreground hidden sm:inline leading-tight mt-0.5">
                 Tu Salud, Unificada
@@ -57,12 +57,12 @@ export function AppHeader({
             <button
               type="button"
               onClick={() => setIsCityDropdownOpen((prev) => !prev)}
-              className="flex items-center gap-1.5 rounded-full border border-sky-200/80 bg-white/90 px-3 py-1.5 text-xs font-bold text-slate-700 hover:border-sky-400 hover:bg-sky-50 transition-colors cursor-pointer shadow-xs"
+              className="flex items-center gap-1 sm:gap-1.5 rounded-full border border-sky-200/80 bg-white/90 px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-bold text-slate-700 hover:border-sky-400 hover:bg-sky-50 transition-colors cursor-pointer shadow-xs max-w-[130px] sm:max-w-none"
               title="Cambiar localidad de atención"
             >
-              <MapPin className="size-3.5 text-sky-600" />
-              <span>{selectedCity.name}, {selectedCity.province}</span>
-              <ChevronDown className="size-3 text-slate-500" />
+              <MapPin className="size-3 sm:size-3.5 text-sky-600 shrink-0" />
+              <span className="truncate">{selectedCity.name}<span className="hidden sm:inline">, {selectedCity.province}</span></span>
+              <ChevronDown className="size-2.5 sm:size-3 text-slate-500 shrink-0" />
             </button>
 
             {isCityDropdownOpen && (

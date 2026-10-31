@@ -69,3 +69,22 @@ html.text-scale-xlarge {
   font-size: 130% !important;
 }
 
+@keyframes turnero-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-turnero-marquee {
+  display: flex;
+  width: max-content;
+  animation: turnero-marquee 30s linear infinite;
+}
+
+.animate-turnero-marquee:hover {
+  animation-play-state: paused;
+}
+
