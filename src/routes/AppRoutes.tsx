@@ -9,8 +9,8 @@ import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage';
 import { VerifyEmailPage } from '@/features/auth/VerifyEmailPage';
 import { ActivityMonitor } from '@/components/auth/ActivityMonitor';
 import { ProfesionalesPage } from '@/features/profesionales/ProfesionalesPage';
+import { AgendaMedicaPublicaPage } from '@/features/agenda/AgendaMedicaPage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { PerfilLayout } from '@/components/layout/PerfilLayout';
 import { AuthGuard } from './AuthGuard';
 import { RoleGuard } from './RoleGuard';
 
@@ -44,6 +44,7 @@ import { NuevoUsuarioPage } from '@/features/admin/NuevoUsuarioPage';
 import { AdminEspecialidadesPage } from '@/features/admin/AdminEspecialidadesPage';
 import { AdminSedesPage } from '@/features/admin/AdminSedesPage';
 import { NuevaEspecialidadPage } from '@/features/admin/NuevaEspecialidadPage';
+import { AdminMapaPinesPage } from '@/features/admin/AdminMapaPinesPage';
 import { NuevoProfesionalPage } from '@/features/profesionales/NuevoProfesionalPage';
 
 // Perfil (todos los roles)
@@ -61,6 +62,9 @@ export const AppRoutes: React.FC = () => {
       <Routes>
         {/* Rutas Públicas */}
         <Route path="/" element={<HomePage />} />
+        <Route path="/agenda-medica" element={<AgendaMedicaPublicaPage />} />
+        <Route path="/agenda" element={<Navigate to="/agenda-medica" replace />} />
+        <Route path="/especialidades/agenda" element={<Navigate to="/agenda-medica" replace />} />
         <Route path="/turnero" element={<TurneroContainer />} />
         <Route path="/profesionales" element={<ProfesionalesPage />} />
         <Route path="/profesionales/nuevo" element={<NuevoProfesionalPage />} />
@@ -85,12 +89,9 @@ export const AppRoutes: React.FC = () => {
 
         {/* Rutas Protegidas del Dashboard con Layout Unificado y AuthGuard */}
         <Route element={<AuthGuard />}>
-          {/* Perfil (independiente, sin sidebar; disponible para todos los roles autenticados) */}
-          <Route element={<PerfilLayout />}>
-            <Route path="/dashboard/perfil" element={<MiPerfilPage />} />
-          </Route>
-
           <Route path="/dashboard" element={<DashboardLayout />}>
+            {/* Perfil con Sidebar siempre visible a la izquierda (todos los roles) */}
+            <Route path="perfil" element={<MiPerfilPage />} />
             {/* Módulo Paciente */}
             <Route element={<RoleGuard allowedRoles={['PACIENTE', 'ADMIN']} />}>
               <Route path="paciente" element={<MisTurnosPage />} />
@@ -127,6 +128,7 @@ export const AppRoutes: React.FC = () => {
               <Route path="admin/usuarios/nuevo" element={<NuevoUsuarioPage />} />
               <Route path="admin/especialidades" element={<AdminEspecialidadesPage />} />
               <Route path="admin/especialidades/nueva" element={<NuevaEspecialidadPage />} />
+              <Route path="admin/mapa" element={<AdminMapaPinesPage />} />
               <Route path="admin/profesionales/nuevo" element={<NuevoProfesionalPage />} />
             </Route>
           </Route>

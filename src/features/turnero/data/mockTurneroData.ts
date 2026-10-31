@@ -15,7 +15,7 @@ export const MOCK_CENTERS: HealthCenter[] = [
       'esp-oftalmo', 'esp-odonto', 'esp-cirugia', 'esp-neurologia', 'esp-urologia',
       'esp-neumonologia', 'esp-gastro', 'esp-endocrino', 'esp-dermatologia', 'esp-kinesiologia',
       'esp-nutricion', 'esp-psiquiatria', 'esp-psicologia', 'esp-otorrino', 'esp-nefrologia',
-      'esp-oncologia', 'esp-reumatologia'
+      'esp-oncologia', 'esp-reumatologia', 'esp-vacunacion', 'esp-laboratorio'
     ],
   },
   {
@@ -210,6 +210,20 @@ export const MOCK_SPECIALTIES: MedicalSpecialty[] = [
     name: 'Urología',
     description: 'Salud urológica integral masculina y femenina, próstata y litiasis urinaria.',
     iconName: 'Activity',
+    totalDoctors: 3,
+  },
+  {
+    id: 'esp-vacunacion',
+    name: 'Vacunación',
+    description: 'Calendario oficial de inmunizaciones, vacunas antigripales y refuerzos pediátricos y adultos.',
+    iconName: 'Syringe',
+    totalDoctors: 2,
+  },
+  {
+    id: 'esp-laboratorio',
+    name: 'Laboratorio',
+    description: 'Análisis clínicos integrales, extracciones de sangre, química clínica y microbiología.',
+    iconName: 'FlaskConical',
     totalDoctors: 3,
   },
 ]
@@ -465,6 +479,39 @@ export const MOCK_DOCTORS: MedicalDoctor[] = [
     consultationType: 'PRESENCIAL',
     availableDays: ['Miércoles', 'Viernes'],
     nextAvailableDate: 'Viernes 26, 09:00 hs',
+  },
+  // Psiquiatría
+  {
+    id: 'doc-ramos',
+    name: 'Dra. Carolina Ramos',
+    specialtyId: 'esp-psiquiatria',
+    centerIds: ['cde-hosp-crespo', 'cde-clin-cabrera', 'cde-centro-diag'],
+    licenseNumber: 'MP 27.810',
+    consultationType: 'PRESENCIAL',
+    availableDays: ['Lunes', 'Miércoles'],
+    nextAvailableDate: 'Miércoles 24, 11:30 hs',
+  },
+  // Vacunación
+  {
+    id: 'doc-vacunacion',
+    name: 'Lic. Mariana Gómez (Vacunatorio)',
+    specialtyId: 'esp-vacunacion',
+    centerIds: ['cde-hosp-crespo', 'cde-clin-cabrera', 'cde-centro-diag'],
+    licenseNumber: 'MP 8.140',
+    consultationType: 'PRESENCIAL',
+    availableDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+    nextAvailableDate: 'Hoy, 08:00 hs',
+  },
+  // Laboratorio
+  {
+    id: 'doc-laboratorio',
+    name: 'Bioq. Esteban Morales (Laboratorio)',
+    specialtyId: 'esp-laboratorio',
+    centerIds: ['cde-hosp-crespo', 'cde-clin-cabrera', 'cde-centro-diag'],
+    licenseNumber: 'MP 14.520',
+    consultationType: 'PRESENCIAL',
+    availableDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+    nextAvailableDate: 'Mañana, 07:30 hs',
   },
 ]
 

@@ -232,7 +232,7 @@ export const MiPerfilPage: React.FC = () => {
               <h2 className="text-sm font-bold text-slate-900 font-heading">
                 Datos Personales y de Identidad
               </h2>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 Registrados según padrón oficial y Registro Civil
               </p>
             </div>
@@ -241,8 +241,8 @@ export const MiPerfilPage: React.FC = () => {
           <div className="space-y-3 text-xs">
             <div>
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold text-slate-600">DNI / Documento de Identidad</label>
-                <span className="flex items-center gap-1 text-[10px] text-slate-600 font-medium">
+                <label className="text-xs sm:text-sm font-bold text-slate-700">DNI / Documento de Identidad</label>
+                <span className="flex items-center gap-1 text-xs text-slate-500 font-medium">
                   <Lock className="h-3 w-3 text-slate-500" />
                   Protegido
                 </span>
@@ -251,16 +251,16 @@ export const MiPerfilPage: React.FC = () => {
                 type="text"
                 disabled
                 value={user?.dni || '38123456'}
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono font-bold text-slate-700 cursor-not-allowed"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs sm:text-sm font-mono font-bold text-slate-700 cursor-not-allowed"
               />
-              <p className="text-[10px] text-slate-600 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 Para rectificar tu DNI o nombre legal, debés presentar tu DNI físico en la ventanilla de recepción del hospital o centro de salud.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] font-bold text-slate-600">Fecha de Nacimiento</label>
+                <label className="text-xs sm:text-sm font-bold text-slate-700">Fecha de Nacimiento</label>
                 <div className="relative mt-1">
                   <Calendar className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-600" />
                   <input
@@ -272,33 +272,33 @@ export const MiPerfilPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="text-[11px] font-bold text-slate-600">Sexo / Género</label>
+                <label className="text-xs sm:text-sm font-bold text-slate-700">Sexo / Género</label>
                 <input
                   type="text"
                   disabled
                   value="Masculino"
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 cursor-not-allowed"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-700 cursor-not-allowed"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] font-bold text-slate-600">CUIL</label>
+                <label className="text-xs sm:text-sm font-bold text-slate-700">CUIL</label>
                 <input
                   type="text"
                   disabled
                   value={`20-${user?.dni || '38123456'}-7`}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono text-slate-700 cursor-not-allowed"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs sm:text-sm font-mono text-slate-700 cursor-not-allowed"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-slate-600">Nacionalidad</label>
+                <label className="text-xs sm:text-sm font-bold text-slate-700">Nacionalidad</label>
                 <input
                   type="text"
                   disabled
                   value="Argentina"
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 cursor-not-allowed"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-700 cursor-not-allowed"
                 />
               </div>
             </div>
@@ -316,7 +316,7 @@ export const MiPerfilPage: React.FC = () => {
                 <h2 className="text-sm font-bold text-slate-900 font-heading">
                   Contacto y Notificaciones
                 </h2>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Teléfonos de aviso para turnos y guardia
                 </p>
               </div>
@@ -347,7 +347,7 @@ export const MiPerfilPage: React.FC = () => {
                   className="w-full rounded-xl border border-slate-300 bg-white pl-8 pr-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
                 />
               </div>
-              <p className="text-[10px] text-slate-600 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 Aquí recibirás recordatorios de citas y avisos de reprogramación por guardia.
               </p>
             </div>
@@ -359,7 +359,7 @@ export const MiPerfilPage: React.FC = () => {
                 value={formData.telefonoAlternativo}
                 onChange={(e) => handleChange('telefonoAlternativo', e.target.value)}
                 placeholder="ej: 3549-421000"
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
               />
             </div>
 
@@ -406,7 +406,7 @@ export const MiPerfilPage: React.FC = () => {
                 <h2 className="text-sm font-bold text-slate-900 font-heading">
                   Domicilio y Residencia
                 </h2>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Para asignación de dispensarios barriales (CAPS)
                 </p>
               </div>
@@ -430,7 +430,7 @@ export const MiPerfilPage: React.FC = () => {
                 value={formData.calle}
                 onChange={(e) => handleChange('calle', e.target.value)}
                 placeholder="ej: Av. Sarmiento 840"
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
               />
             </div>
 
@@ -439,7 +439,7 @@ export const MiPerfilPage: React.FC = () => {
               <select
                 value={formData.barrio}
                 onChange={(e) => handleChange('barrio', e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition cursor-pointer"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition cursor-pointer"
               >
                 {BARRIOS_CRUZ_DEL_EJE.map((b) => (
                   <option key={b} value={b}>
@@ -456,7 +456,7 @@ export const MiPerfilPage: React.FC = () => {
                   type="text"
                   disabled
                   value="Cruz del Eje, Córdoba"
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 cursor-not-allowed"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-700 cursor-not-allowed"
                 />
               </div>
               <div>
@@ -465,7 +465,7 @@ export const MiPerfilPage: React.FC = () => {
                   type="text"
                   value={formData.codigoPostal}
                   onChange={(e) => handleChange('codigoPostal', e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
                 />
               </div>
             </div>
@@ -483,7 +483,7 @@ export const MiPerfilPage: React.FC = () => {
                 <h2 className="text-sm font-bold text-slate-900 font-heading">
                   Cobertura Médica y Obra Social
                 </h2>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Convenios para aranceles y consultas
                 </p>
               </div>
@@ -507,7 +507,7 @@ export const MiPerfilPage: React.FC = () => {
                 value={formData.obraSocial}
                 onChange={(e) => handleChange('obraSocial', e.target.value)}
                 placeholder="ej: APROSS, PAMI, SUMAR o Particular"
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
               />
             </div>
 
@@ -519,7 +519,7 @@ export const MiPerfilPage: React.FC = () => {
                   value={formData.nroAfiliado}
                   onChange={(e) => handleChange('nroAfiliado', e.target.value)}
                   placeholder="ej: 20-38123456-01"
-                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
                 />
               </div>
               <div>
@@ -529,7 +529,7 @@ export const MiPerfilPage: React.FC = () => {
                   value={formData.plan}
                   onChange={(e) => handleChange('plan', e.target.value)}
                   placeholder="ej: Integral, Clásico"
-                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
                 />
               </div>
             </div>
@@ -554,7 +554,7 @@ export const MiPerfilPage: React.FC = () => {
                 <h2 className="text-sm font-bold text-slate-900 font-heading">
                   Ficha Médica de Emergencia y Datos Críticos
                 </h2>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Información visible para médicos de guardia en caso de urgencia
                 </p>
               </div>
@@ -592,7 +592,7 @@ export const MiPerfilPage: React.FC = () => {
                 type="text"
                 disabled
                 value="Registrado (Ley Justina 27.447)"
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 cursor-not-allowed"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-700 cursor-not-allowed"
               />
             </div>
 
@@ -601,7 +601,7 @@ export const MiPerfilPage: React.FC = () => {
               <select
                 value={formData.centroReferencia}
                 onChange={(e) => handleChange('centroReferencia', e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition cursor-pointer"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition cursor-pointer"
               >
                 {CENTROS_SALUD.map((c) => (
                   <option key={c} value={c}>
@@ -618,7 +618,7 @@ export const MiPerfilPage: React.FC = () => {
                 value={formData.contactoEmergenciaNombre}
                 onChange={(e) => handleChange('contactoEmergenciaNombre', e.target.value)}
                 placeholder="ej: Marta Elena Gómez"
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
               />
             </div>
 
@@ -629,7 +629,7 @@ export const MiPerfilPage: React.FC = () => {
                 value={formData.contactoEmergenciaVinculo}
                 onChange={(e) => handleChange('contactoEmergenciaVinculo', e.target.value)}
                 placeholder="ej: Madre, Pareja, Hijo/a"
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
               />
             </div>
 
@@ -658,7 +658,7 @@ export const MiPerfilPage: React.FC = () => {
                   value={formData.alergias}
                   onChange={(e) => handleChange('alergias', e.target.value)}
                   placeholder="ej: Penicilina, AINEs, Yodo, Ninguna"
-                  className="mt-1 w-full rounded-xl border border-rose-200 bg-rose-50/40 px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+                  className="mt-1 w-full rounded-xl border border-rose-200 bg-rose-50/40 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
                 />
               </div>
 
@@ -671,7 +671,7 @@ export const MiPerfilPage: React.FC = () => {
                   value={formData.condicionesCronicas}
                   onChange={(e) => handleChange('condicionesCronicas', e.target.value)}
                   placeholder="ej: Hipertensión arterial, Asma, Ninguna"
-                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
                 />
               </div>
             </div>
@@ -695,7 +695,7 @@ export const MiPerfilPage: React.FC = () => {
                   <h3 className="text-sm font-bold text-slate-900 font-heading">
                     Solicitar Cambio de Correo Electrónico
                   </h3>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-slate-500">
                     Proceso de seguridad para pacientes
                   </p>
                 </div>
@@ -720,7 +720,7 @@ export const MiPerfilPage: React.FC = () => {
                   type="email"
                   disabled
                   value={formData.email}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600 cursor-not-allowed"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-600 cursor-not-allowed"
                 />
               </div>
 
@@ -732,7 +732,7 @@ export const MiPerfilPage: React.FC = () => {
                   value={nuevoEmail}
                   onChange={(e) => setNuevoEmail(e.target.value)}
                   placeholder="ej: nuevo.correo@email.com"
-                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
                 />
               </div>
 
@@ -744,7 +744,7 @@ export const MiPerfilPage: React.FC = () => {
                   value={nuevoEmailConfirm}
                   onChange={(e) => setNuevoEmailConfirm(e.target.value)}
                   placeholder="Reingresá el nuevo correo"
-                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
                 />
               </div>
 
@@ -755,7 +755,7 @@ export const MiPerfilPage: React.FC = () => {
                   value={motivoCambioEmail}
                   onChange={(e) => setMotivoCambioEmail(e.target.value)}
                   placeholder="ej: Pérdida de acceso a casilla anterior"
-                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
                 />
               </div>
 

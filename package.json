@@ -15,6 +15,7 @@
     "axios": "^1.20.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
+    "maplibre-gl": "^6.16.0",
     "pdfkit": "^0.20.2",
     "radix-ui": "^1.6.7",
     "react": "^19.2.8",

@@ -303,40 +303,60 @@ export const MiHistorialPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Receta Digital Asociada */}
+              {/* Receta Digital Asociada - Diseño Médico de Alto Contraste */}
               {consulta.receta && (
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3 print:border-slate-300">
-                  <div className="flex items-center justify-between">
+                <div className="rounded-2xl border border-sky-200 bg-sky-50/70 p-4 sm:p-5 space-y-3.5 shadow-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-200/60 pb-2.5">
                     <div className="flex items-center gap-2">
-                      <Pill className="h-4 w-4 text-primary" />
-                      <h4 className="font-bold text-xs text-primary">Receta Electrónica Emitida</h4>
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-600 text-white shadow-2xs">
+                        <Pill className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-900 font-heading">
+                          Receta Electrónica Emitida
+                        </h4>
+                        <span className="text-xs font-medium text-sky-800">
+                          Prescripción digital con validez oficial (Ley 27.553)
+                        </span>
+                      </div>
                     </div>
-                    <span className="font-mono text-[11px] font-bold text-muted-foreground">
+                    <span className="font-mono text-xs font-bold text-sky-900 bg-white border border-sky-300 px-3 py-1 rounded-lg shadow-2xs">
                       {consulta.receta.codigoQR}
                     </span>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {consulta.receta.medicamentos.map((med, idx) => (
                       <div
                         key={idx}
-                        className="rounded-lg border border-border bg-card p-2.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1"
+                        className="rounded-xl border border-sky-200/80 bg-white p-3.5 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs"
                       >
                         <div>
-                          <span className="font-bold text-foreground">{med.nombreComercial}</span>{' '}
-                          <span className="text-muted-foreground">({med.droga} - {med.presentacion})</span>
-                          <p className="text-[11px] text-primary font-medium mt-0.5">{med.dosisIndicada}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold text-slate-900 text-sm sm:text-base">
+                              {med.nombreComercial}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/70">
+                              {med.droga} • {med.presentacion}
+                            </span>
+                          </div>
+                          <p className="text-xs sm:text-sm text-sky-800 font-bold mt-1">
+                            Dosis indicada: {med.dosisIndicada}
+                          </p>
                         </div>
-                        <span className="text-[11px] font-semibold text-muted-foreground sm:text-right">
+                        <span className="text-xs font-bold text-slate-800 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 sm:text-right shrink-0">
                           Cantidad: {med.cantidad}
                         </span>
                       </div>
                     ))}
                   </div>
 
-                  <p className="text-[11px] text-muted-foreground italic">
-                    Indicaciones: {consulta.receta.indicacionesGenerales}
-                  </p>
+                  {consulta.receta.indicacionesGenerales && (
+                    <div className="rounded-xl bg-white border border-sky-200/70 p-3 text-xs sm:text-sm text-slate-700">
+                      <strong className="text-sky-900 font-bold">Indicaciones Médicas:</strong>{' '}
+                      <span>{consulta.receta.indicacionesGenerales}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

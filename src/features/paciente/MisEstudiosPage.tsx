@@ -56,7 +56,7 @@ export const MisEstudiosPage: React.FC = () => {
         <h1 className="text-2xl font-extrabold tracking-tight font-heading text-slate-900">
           Estudios y Resultados
         </h1>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-sm text-slate-600 mt-1">
           Informes de laboratorio, estudios complementarios por imágenes y derivaciones oficiales vinculadas a tu Historia Clínica Única.
         </p>
       </div>
@@ -69,17 +69,17 @@ export const MisEstudiosPage: React.FC = () => {
           >
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200/60">
+                <span className="text-xs font-bold text-sky-800 bg-sky-50 px-3 py-1 rounded-full border border-sky-200">
                   {est.tipoEstudio}
                 </span>
                 <span className="text-[10px] font-mono text-slate-400">{est.tamano}</span>
               </div>
 
-              <h3 className="text-sm font-bold text-slate-900 leading-snug">
+              <h3 className="text-base font-bold text-slate-900 leading-snug font-heading">
                 {est.nombre}
               </h3>
 
-              <div className="space-y-1 text-xs text-slate-500 pt-1">
+              <div className="space-y-1.5 text-xs sm:text-sm text-slate-600 pt-1">
                 <p className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                   <span>Realizado: {est.fecha}</span>
@@ -98,7 +98,7 @@ export const MisEstudiosPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleDescargar(est.nombre)}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 py-2.5 text-xs font-bold transition cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 py-2.5 text-xs sm:text-sm font-bold transition cursor-pointer"
             >
               <Download className="h-4 w-4 text-sky-700" />
               <span>Descargar Informe PDF</span>

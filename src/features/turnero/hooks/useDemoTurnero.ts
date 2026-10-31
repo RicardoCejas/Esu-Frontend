@@ -57,7 +57,7 @@ export function useDemoTurnero() {
     })
     if (autoAdvance) {
       setCreatedAppointment(null); setBookingError(null); setCurrentStep(2)
-      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+      if (typeof window !== 'undefined') window.scrollTo(0, 0)
     }
   }, [])
 
@@ -68,7 +68,7 @@ export function useDemoTurnero() {
   const handleProceedToSpecialty = useCallback(() => {
     if (!selectedCenter) return
     setCreatedAppointment(null); setBookingError(null); setCurrentStep(2)
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (typeof window !== 'undefined') window.scrollTo(0, 0)
   }, [selectedCenter])
 
   const handleSelectSpecialty = useCallback((specialty: MedicalSpecialty, autoAdvance: boolean = false) => {
@@ -81,14 +81,14 @@ export function useDemoTurnero() {
     })
     if (autoAdvance) {
       setCreatedAppointment(null); setBookingError(null); setCurrentStep(3)
-      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+      if (typeof window !== 'undefined') window.scrollTo(0, 0)
     }
   }, [selectedCenter, availableSpecialties])
 
   const handleProceedToDoctor = useCallback(() => {
     if (!selectedSpecialty) return
     setCreatedAppointment(null); setBookingError(null); setCurrentStep(3)
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (typeof window !== 'undefined') window.scrollTo(0, 0)
   }, [selectedSpecialty])
 
   const handleSelectDoctor = useCallback((doctor: MedicalDoctor, autoAdvance: boolean = true) => {
@@ -101,33 +101,36 @@ export function useDemoTurnero() {
     })
     if (autoAdvance) {
       setCreatedAppointment(null); setBookingError(null); setCurrentStep(4)
-      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+      if (typeof window !== 'undefined') window.scrollTo(0, 0)
     }
   }, [selectedCenter, selectedSpecialty, availableDoctors])
 
   const handleProceedToDateTime = useCallback(() => {
     if (!selectedDoctor) return
     setCreatedAppointment(null); setBookingError(null); setCurrentStep(4)
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (typeof window !== 'undefined') window.scrollTo(0, 0)
   }, [selectedDoctor])
 
   const handleSelectDate = useCallback((date: string) => {
     if (!canSelectDate(date)) return
     setSelectedDate(date); setSelectedSlot(null); setCreatedAppointment(null); setBookingError(null)
   }, [])
+
   const handleSelectSlot = (slot: AppointmentSlot) => {
     const currentSlot = slots.find((candidate) => candidate.id === slot.id)
     if (!currentSlot?.isAvailable) return
     setSelectedSlot(currentSlot); setCreatedAppointment(null); setBookingError(null)
   }
+
   const handleProceedToConfirmation = () => {
     if (!canProceedToPatient(selectedCenter, selectedSpecialty, selectedDoctor, selectedDate, liveSelectedSlot, slots)) {
       setBookingError('Seleccioná un centro, profesional, fecha y horario disponible antes de continuar.')
       return
     }
     setBookingError(null); setCurrentStep(5)
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (typeof window !== 'undefined') window.scrollTo(0, 0)
   }
+
   const handleConfirmBooking = (patient: PatientBookingForm) => {
     if (createdAppointment) return
     if (!selectedCenter || !selectedSpecialty || !selectedDoctor || !liveSelectedSlot ||
@@ -139,19 +142,22 @@ export function useDemoTurnero() {
       const booking = demoBookingStore.book({ centerId: selectedCenter.id, specialtyId: selectedSpecialty.id,
         doctor: selectedDoctor, date: selectedDate, slotId: liveSelectedSlot.id, patient })
       setPatientForm(patient); setCreatedAppointment(booking); setBookingError(null); setBookingRevision((value) => value + 1)
-      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+      if (typeof window !== 'undefined') window.scrollTo(0, 0)
     } catch (error) {
       setBookingError(error instanceof Error ? error.message : 'No se pudo completar la demostración.')
       setBookingRevision((value) => value + 1)
     }
   }
+
   const handlePatientFormChange = useCallback((field: keyof PatientBookingForm, value: string) => {
     setPatientForm((current) => ({ ...current, [field]: value }))
   }, [])
+
   const handleGoToStep = useCallback((step: BookingStep) => {
     setCurrentStep(step)
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (typeof window !== 'undefined') window.scrollTo(0, 0)
   }, [])
+
   const handleResetBooking = useCallback(() => {
     setSelectedCenter(null); setSelectedSpecialty(null); setSelectedDoctor(null); setSelectedSlot(null)
     setSelectedDate(formatLocalDate(new Date())); setPatientForm(INITIAL_PATIENT_FORM)

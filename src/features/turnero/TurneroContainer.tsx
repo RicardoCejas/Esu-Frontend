@@ -46,7 +46,6 @@ export function TurneroContainer() {
     bookingError,
     createdAppointment,
     handleSelectCenter,
-    handleUnselectCenter,
     handleProceedToSpecialty,
     handleSelectSpecialty,
     handleProceedToDoctor,
@@ -93,81 +92,80 @@ export function TurneroContainer() {
 
       {/* Main Content Area: Dedicated full-screen per step */}
       <main className="w-full px-3 sm:px-8 lg:px-12 xl:px-14 py-3 sm:py-5">
-        <div key={currentStep} className="animate-in fade-in slide-in-from-right-3 duration-300">
-        {currentStep === 1 && (
-          <Step1CenterSelection
-            centers={filteredCenters}
-            selectedCenter={selectedCenter}
-            searchTerm={centerSearch}
-            onSearchChange={setCenterSearch}
-            typeFilter={centerTypeFilter}
-            onTypeFilterChange={setCenterTypeFilter}
-            onSelectCenter={handleSelectCenter}
-            onUnselectCenter={handleUnselectCenter}
-            onProceed={handleProceedToSpecialty}
-          />
-        )}
+        <div key={currentStep}>
+          {currentStep === 1 && (
+            <Step1CenterSelection
+              centers={filteredCenters}
+              selectedCenter={selectedCenter}
+              searchTerm={centerSearch}
+              onSearchChange={setCenterSearch}
+              typeFilter={centerTypeFilter}
+              onTypeFilterChange={setCenterTypeFilter}
+              onSelectCenter={(center) => handleSelectCenter(center, true)}
+              onProceed={handleProceedToSpecialty}
+            />
+          )}
 
-        {currentStep === 2 && selectedCenter && (
-          <Step2SpecialtySelection
-            selectedCenter={selectedCenter}
-            specialties={availableSpecialties}
-            selectedSpecialty={selectedSpecialty}
-            searchTerm={specialtySearch}
-            onSearchChange={setSpecialtySearch}
-            onSelectSpecialty={handleSelectSpecialty}
-            onBackToCenter={() => handleGoToStep(1)}
-            onProceed={handleProceedToDoctor}
-          />
-        )}
+          {currentStep === 2 && selectedCenter && (
+            <Step2SpecialtySelection
+              selectedCenter={selectedCenter}
+              specialties={availableSpecialties}
+              selectedSpecialty={selectedSpecialty}
+              searchTerm={specialtySearch}
+              onSearchChange={setSpecialtySearch}
+              onSelectSpecialty={handleSelectSpecialty}
+              onBackToCenter={() => handleGoToStep(1)}
+              onProceed={handleProceedToDoctor}
+            />
+          )}
 
-        {currentStep === 3 && selectedCenter && selectedSpecialty && (
-          <Step3DoctorSelection
-            selectedCenter={selectedCenter}
-            selectedSpecialty={selectedSpecialty}
-            doctors={availableDoctors}
-            selectedDoctor={selectedDoctor}
-            onSelectDoctor={handleSelectDoctor}
-            onBackToSpecialty={() => handleGoToStep(2)}
-            onProceed={handleProceedToDateTime}
-          />
-        )}
+          {currentStep === 3 && selectedCenter && selectedSpecialty && (
+            <Step3DoctorSelection
+              selectedCenter={selectedCenter}
+              selectedSpecialty={selectedSpecialty}
+              doctors={availableDoctors}
+              selectedDoctor={selectedDoctor}
+              onSelectDoctor={handleSelectDoctor}
+              onBackToSpecialty={() => handleGoToStep(2)}
+              onProceed={handleProceedToDateTime}
+            />
+          )}
 
-        {currentStep === 4 && selectedDoctor && selectedSpecialty && (
-          <Step4DateTimeSelection
-            selectedDoctor={selectedDoctor}
-            selectedSpecialty={selectedSpecialty}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-            morningSlots={morningSlots}
-            afternoonSlots={afternoonSlots}
-            selectedSlot={selectedSlot}
-            onSelectSlot={handleSelectSlot}
-            availabilityLoading={availabilityLoading}
-            availabilityError={availabilityError}
-            availabilityCanRetry={availabilityCanRetry}
-            bookingError={bookingError}
-            onRetryAvailability={retryAvailability}
-            onProceed={handleProceedToConfirmation}
-            onBackToDoctor={() => handleGoToStep(3)}
-          />
-        )}
+          {currentStep === 4 && selectedDoctor && selectedSpecialty && (
+            <Step4DateTimeSelection
+              selectedDoctor={selectedDoctor}
+              selectedSpecialty={selectedSpecialty}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              morningSlots={morningSlots}
+              afternoonSlots={afternoonSlots}
+              selectedSlot={selectedSlot}
+              onSelectSlot={handleSelectSlot}
+              availabilityLoading={availabilityLoading}
+              availabilityError={availabilityError}
+              availabilityCanRetry={availabilityCanRetry}
+              bookingError={bookingError}
+              onRetryAvailability={retryAvailability}
+              onProceed={handleProceedToConfirmation}
+              onBackToDoctor={() => handleGoToStep(3)}
+            />
+          )}
 
-        {currentStep === 5 && selectedCenter && selectedSpecialty && selectedDoctor && selectedSlot && (
-          <DemoStep5PatientConfirmation
-            selectedCenter={selectedCenter}
-            selectedSpecialty={selectedSpecialty}
-            selectedDoctor={selectedDoctor}
-            selectedDate={selectedDate}
-            selectedSlot={selectedSlot}
-            patientForm={patientForm}
-            bookingError={bookingError}
-            createdAppointment={createdAppointment}
-            onConfirm={handleConfirmBooking}
-            onFormChange={handlePatientFormChange}
-            onBackToSlots={() => handleGoToStep(4)}
-          />
-        )}
+          {currentStep === 5 && selectedCenter && selectedSpecialty && selectedDoctor && selectedSlot && (
+            <DemoStep5PatientConfirmation
+              selectedCenter={selectedCenter}
+              selectedSpecialty={selectedSpecialty}
+              selectedDoctor={selectedDoctor}
+              selectedDate={selectedDate}
+              selectedSlot={selectedSlot}
+              patientForm={patientForm}
+              bookingError={bookingError}
+              createdAppointment={createdAppointment}
+              onConfirm={handleConfirmBooking}
+              onFormChange={handlePatientFormChange}
+              onBackToSlots={() => handleGoToStep(4)}
+            />
+          )}
         </div>
       </main>
 
@@ -217,7 +215,9 @@ export function TurneroContainer() {
                 size="sm"
                 onClick={() => {
                   if (lookupCode.trim()) {
-                    setLookupMessage('La búsqueda de turnos reales no está disponible en esta demostración. El comprobante de prueba se muestra al finalizar el recorrido actual.')
+                    setLookupMessage(
+                      'La búsqueda de turnos reales no está disponible en esta demostración. El comprobante de prueba se muestra al finalizar el recorrido actual.'
+                    )
                   }
                 }}
                 className="h-7 cursor-pointer gap-1.5 bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800"

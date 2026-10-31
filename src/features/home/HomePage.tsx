@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import { PublicNavbar } from '@/components/layout/PublicNavbar';
 import { Footer } from '@/components/layout/Footer';
 import { CentrosHeroBannerSlider } from './CentrosHeroBannerSlider';
 import { QuienesSomosSection } from './QuienesSomosSection';
+import { ObrasSocialesCarousel } from './ObrasSocialesCarousel';
 import { EspecialidadesSection, getSpecialtyDesign } from './EspecialidadesSection';
+import { MapaCruzDelEje } from './MapaCruzDelEje';
 import { centrosService } from '@/api/centrosService';
 import { profesionalesService } from '@/api/profesionalesService';
 import type { CentroSalud, Especialidad, Profesional } from '@/types';
@@ -20,18 +23,34 @@ import {
   User,
   Building2,
   PlusCircle,
+  LogIn,
+  UserPlus,
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
   const [centros, setCentros] = useState<CentroSalud[]>([]);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
+
+  // Modal para seleccionar entre Iniciar Sesión o Registrarse
+  const [showAuthChoiceModal, setShowAuthChoiceModal] = useState(false);
 
   // Estado para el modal de médicos por especialidad
   const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState<Especialidad | null>(null);
 
   // Estado para modal de detalles de un centro de salud
   const [centroDetalle, setCentroDetalle] = useState<CentroSalud | null>(null);
+
+  const handleConsultarTurnos = () => {
+    if (isAuthenticated && user) {
+      navigate('/dashboard/paciente');
+    } else {
+      setShowAuthChoiceModal(false); // reset
+      setShowAuthChoiceModal(true);
+    }
+  };
 
   const recargarDatos = async () => {
     const [c, e, p] = await Promise.all([
@@ -85,13 +104,14 @@ export const HomePage: React.FC = () => {
                 <ArrowRight className="h-5 w-5" />
               </Link>
 
-              <Link
-                to="/dashboard/paciente"
+              <button
+                type="button"
+                onClick={handleConsultarTurnos}
                 className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#005a87] bg-white px-8 py-4 text-base sm:text-lg font-bold text-[#005a87] shadow-xs hover:bg-slate-50 transition cursor-pointer"
               >
                 <UserCheck className="h-5 w-5 text-[#005a87]" />
                 <span>Consultar Mis Turnos</span>
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -100,12 +120,19 @@ export const HomePage: React.FC = () => {
       {/* QUIÉNES SOMOS / INSTITUCIONAL ESU */}
       <QuienesSomosSection />
 
+      {/* Obras Sociales y Prepagas Aceptadas - De punta a punta */}
+      <ObrasSocialesCarousel />
+
       {/* Especialidades Médicas Rediseñadas (Cartilla Médica Moderna) */}
       <EspecialidadesSection
         especialidades={especialidades}
         profesionales={profesionales}
+        centros={centros}
         onSelectSpecialty={(esp) => setEspecialidadSeleccionada(esp)}
       />
+
+      {/* MAPA SANITARIO INTERACTIVO (MAPLIBRE + OPENFREEMAP / OPENSTREETMAP) */}
+      <MapaCruzDelEje />
 
       {/* MODAL PRINCIPAL: NÓMINA DE MÉDICOS CON GUÍA DETALLADA DE SEDES / HOSPITALES Y OPCIÓN DE AGREGAR ROL ADMIN */}
       {especialidadSeleccionada && (
@@ -353,6 +380,77 @@ export const HomePage: React.FC = () => {
                   <span>Sacar Turno</span>
                 </Link>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL IDENTIFICACIÓN PARA CONSULTAR MIS TURNOS */}
+      {showAuthChoiceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl border border-sky-100 bg-white p-6 sm:p-8 shadow-2xl space-y-6 relative animate-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setShowAuthChoiceModal(false)}
+              className="absolute top-4 right-4 h-8 w-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="text-center space-y-2">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-700">
+                <UserCheck className="h-7 w-7" />
+              </div>
+              <h3 className="text-2xl font-bold font-heading text-slate-900">
+                Consultar Mis Turnos
+              </h3>
+              <p className="text-sm text-slate-600">
+                Para consultar tus citas agendadas e historial de salud en Cruz del Eje, ingresa a tu cuenta o regístrate si es tu primera vez.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <Link
+                to="/login?redirect=/dashboard/paciente"
+                className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-[#005a87] bg-[#005a87] text-white font-bold hover:bg-[#00486c] transition shadow-md group cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <LogIn className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-base font-bold leading-tight">Iniciar Sesión</p>
+                    <p className="text-xs text-sky-100 font-normal">Ya tengo cuenta registrada</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" />
+              </Link>
+
+              <Link
+                to="/registro?redirect=/dashboard/paciente"
+                className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-bold hover:border-sky-300 transition shadow-xs group cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-sky-50 flex items-center justify-center">
+                    <UserPlus className="h-5 w-5 text-sky-700" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-base font-bold leading-tight text-slate-900">Crear Cuenta</p>
+                    <p className="text-xs text-slate-500 font-normal">Soy un nuevo paciente</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-sky-600 transform group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={() => setShowAuthChoiceModal(false)}
+                className="text-xs font-semibold text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                Continuar navegando en el portal
+              </button>
             </div>
           </div>
         </div>

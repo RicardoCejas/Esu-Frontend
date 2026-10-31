@@ -262,6 +262,8 @@ export const authService = {
       tokenStorage.clearToken();
       currentSessionUser = null;
       sessionStorage.removeItem('esu_session_active');
+      localStorage.removeItem('esu_dev_mode');
+      localStorage.removeItem('esu_dev_active_role');
       authBroadcast.postMessage({ type: 'LOGOUT', reason: 'user' });
     }
   },

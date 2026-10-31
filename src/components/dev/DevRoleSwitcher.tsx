@@ -5,10 +5,17 @@ import { User, Stethoscope, Building2, Shield, Code2 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
 export const DevRoleSwitcher: React.FC = () => {
-  const { user, switchRole } = useAuth();
+  const { user, switchRole, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const isDev = user?.isDeveloper || user?.email === 'dev@esu.gob.ar' || localStorage.getItem('esu_dev_mode') === 'true';
+  // El panel de desarrollador solo debe figurar si el usuario está activamente autenticado en la cuenta dev
+  const isDev =
+    isAuthenticated &&
+    !!user &&
+    (user.isDeveloper === true ||
+      user.email === 'dev@esu.gob.ar' ||
+      user.email?.toLowerCase().startsWith('dev@') ||
+      (localStorage.getItem('esu_dev_mode') === 'true' && user.email?.toLowerCase().includes('dev')));
 
   if (!isDev) {
     return null;

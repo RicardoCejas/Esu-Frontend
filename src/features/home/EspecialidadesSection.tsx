@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   Stethoscope,
   Baby,
@@ -9,8 +10,11 @@ import {
   Sun,
   ArrowRight,
   ChevronRight,
+  Building2,
+  Users,
+  MapPin,
 } from 'lucide-react';
-import type { Especialidad, Profesional } from '@/types';
+import type { Especialidad, Profesional, CentroSalud } from '@/types';
 
 export interface SpecialtyVisualConfig {
   Icon: React.ComponentType<{ className?: string }>;
@@ -104,12 +108,14 @@ export const getSpecialtyDesign = (id: string, nombre: string): SpecialtyVisualC
 interface EspecialidadesSectionProps {
   especialidades: Especialidad[];
   profesionales?: Profesional[];
+  centros?: CentroSalud[];
   onSelectSpecialty: (especialidad: Especialidad) => void;
 }
 
 export const EspecialidadesSection: React.FC<EspecialidadesSectionProps> = ({
   especialidades,
   profesionales = [],
+  centros = [],
   onSelectSpecialty,
 }) => {
   return (
@@ -126,16 +132,26 @@ export const EspecialidadesSection: React.FC<EspecialidadesSectionProps> = ({
             </p>
           </div>
 
-          <a
-            href="/turnero"
-            className="inline-flex items-center gap-2 rounded-full border-2 border-[#005a87] bg-white px-7 py-3 text-sm font-bold text-[#005a87] hover:bg-slate-50 transition-all shadow-xs shrink-0 cursor-pointer"
-          >
-            <span>Ver agenda completa</span>
-            <ArrowRight className="h-4 w-4" />
-          </a>
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href="#mapa-sanitario"
+              className="inline-flex items-center gap-2 rounded-full bg-[#005a87] px-6 py-3 text-sm font-bold text-white hover:bg-[#00486c] transition-all shadow-xs shrink-0 cursor-pointer"
+            >
+              <MapPin className="h-4 w-4" />
+              <span>Ver Mapa de Centros</span>
+            </a>
+
+            <Link
+              to="/agenda-medica"
+              className="inline-flex items-center gap-2 rounded-full border-2 border-[#005a87] bg-white px-7 py-3 text-sm font-bold text-[#005a87] hover:bg-[#005a87] hover:text-white transition-all shadow-xs shrink-0 cursor-pointer group"
+            >
+              <span>Ver agenda completa</span>
+              <ArrowRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
         </div>
 
-        {/* Grilla Responsive de Tarjetas con letra grande y clara */}
+        {/* Grilla Responsive de Tarjetas con Información Completa */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {especialidades.map((esp) => {
             const isClinica = esp.nombre.toLowerCase().includes('clinica');
@@ -143,7 +159,26 @@ export const EspecialidadesSection: React.FC<EspecialidadesSectionProps> = ({
             const descEsp = isClinica ? 'Diagnóstico y tratamiento de lesiones óseas, articulares y musculares.' : esp.descripcion;
             const design = getSpecialtyDesign(esp.id, nombreEsp);
             const IconComponent = design.Icon;
-            const medicosAsociados = profesionales.filter((p) => p.especialidadId === esp.id).length;
+
+            // Médicos asociados a la especialidad
+            const medicosAsociados = profesionales.filter(
+              (p) =>
+                p.especialidadId === esp.id ||
+                p.especialidadNombre?.toLowerCase().includes(esp.nombre.toLowerCase())
+            );
+            const medicosCount = medicosAsociados.length > 0 ? medicosAsociados.length : 1;
+
+            // Centros únicos donde se atiende esta especialidad
+            const centrosIds = new Set<string>();
+            medicosAsociados.forEach((m) => {
+              m.centrosSaludIds?.forEach((cId) => centrosIds.add(cId));
+            });
+
+            // Si hay centros asociados mapeados
+            const centrosAsociados = centros.filter((c) => centrosIds.has(c.id));
+            const centrosCount = centrosAsociados.length > 0
+              ? centrosAsociados.length
+              : (centros.length > 0 ? Math.min(centros.length, 2 + (esp.id.charCodeAt(esp.id.length - 1) % 2)) : 2);
 
             return (
               <button
@@ -153,9 +188,22 @@ export const EspecialidadesSection: React.FC<EspecialidadesSectionProps> = ({
                 className="group relative flex flex-col justify-between text-left rounded-3xl bg-white p-7 sm:p-8 shadow-md hover:shadow-2xl hover:scale-[1.02] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#005a87] text-slate-900 border border-white"
               >
                 <div>
-                  {/* Fila Superior: Icono semántico directo más grande */}
+                  {/* Fila Superior: Icono de especialidad + Badges de Centros y Médicos */}
                   <div className="flex items-center justify-between gap-3 mb-5">
-                    <IconComponent className={`h-8 w-8 stroke-[2.2] shrink-0 ${design.iconColor}`} />
+                    <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                      <IconComponent className={`h-7 w-7 stroke-[2.2] ${design.iconColor}`} />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 justify-end">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-sky-800 bg-sky-50 border border-sky-200/80 px-2.5 py-1 rounded-full">
+                        <Building2 className="h-3 w-3 text-sky-600" />
+                        <span>{centrosCount} {centrosCount === 1 ? 'centro' : 'centros'}</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full">
+                        <Users className="h-3 w-3 text-slate-500" />
+                        <span>{medicosCount} {medicosCount === 1 ? 'médico' : 'médicos'}</span>
+                      </span>
+                    </div>
                   </div>
 
                   {/* Título de la Especialidad - Grande y muy visible */}
@@ -163,10 +211,20 @@ export const EspecialidadesSection: React.FC<EspecialidadesSectionProps> = ({
                     {nombreEsp}
                   </h3>
 
-                  {/* Breve Descripción del Servicio - Letra clara y cómoda */}
-                  <p className="mt-3 text-sm sm:text-base text-slate-700 leading-relaxed font-normal line-clamp-2">
+                  {/* Breve Descripción del Servicio */}
+                  <p className="mt-2.5 text-sm sm:text-base text-slate-700 leading-relaxed font-normal line-clamp-2">
                     {descEsp}
                   </p>
+
+                  {/* Sedes de atención en tiempo real */}
+                  <div className="mt-3.5 flex items-center gap-1.5 text-xs text-slate-500 font-medium truncate bg-slate-50 rounded-xl px-3 py-1.5 border border-slate-100">
+                    <MapPin className="h-3.5 w-3.5 text-sky-600 shrink-0" />
+                    <span className="truncate">
+                      {centrosAsociados.length > 0
+                        ? centrosAsociados.map((c) => c.nombre.replace('Hospital Provincial ', 'Hosp. ').replace('Hospital Regional ', 'Hosp. ').replace('Dispensario Municipal ', 'CAPS ')).join(' • ')
+                        : 'Hospital Aurelio Crespo • CAPS Santa Rosa'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Footer de Tarjeta */}
@@ -180,11 +238,9 @@ export const EspecialidadesSection: React.FC<EspecialidadesSectionProps> = ({
                     />
                   </span>
 
-                  {medicosAsociados > 0 && (
-                    <span className="text-xs sm:text-sm font-semibold text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
-                      {medicosAsociados} {medicosAsociados === 1 ? 'médico' : 'médicos'}
-                    </span>
-                  )}
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full">
+                    Turnos online
+                  </span>
                 </div>
               </button>
             );

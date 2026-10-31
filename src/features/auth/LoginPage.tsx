@@ -19,6 +19,7 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const reason = searchParams.get('reason');
+  const redirectUrl = searchParams.get('redirect');
 
   const [emailOrDni, setEmailOrDni] = useState('');
   const [password, setPassword] = useState('');
@@ -49,6 +50,10 @@ export const LoginPage: React.FC = () => {
   }, []);
 
   const redirectByRole = (rol: UserRole) => {
+    if (redirectUrl && redirectUrl.startsWith('/')) {
+      navigate(redirectUrl);
+      return;
+    }
     switch (rol) {
       case 'MEDICO':
         navigate('/dashboard/medico');
@@ -178,6 +183,25 @@ export const LoginPage: React.FC = () => {
             </span>
           </div>
 
+          {redirectUrl && (
+            <div className="rounded-2xl bg-sky-50 border border-sky-200 p-3 text-xs text-sky-900 space-y-1">
+              <div className="flex items-center gap-2 font-bold">
+                <LogIn className="h-4 w-4 text-sky-700 shrink-0" />
+                <span>Identificación requerida para consultar turnos</span>
+              </div>
+              <p className="text-slate-600">
+                Inicia sesión con tu cuenta o{' '}
+                <Link
+                  to={`/registro?redirect=${encodeURIComponent(redirectUrl)}`}
+                  className="font-bold text-sky-700 underline"
+                >
+                  regístrate como nuevo paciente
+                </Link>{' '}
+                si aún no tienes usuario.
+              </p>
+            </div>
+          )}
+
           {reason === 'inactivity' && (
             <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
               <Clock className="h-4 w-4 text-amber-600 shrink-0" />
@@ -281,7 +305,10 @@ export const LoginPage: React.FC = () => {
 
         <p className="text-center text-xs text-slate-600 font-medium">
           ¿No tienes una cuenta de paciente?{' '}
-          <Link to="/registro" className="font-bold text-sky-700 hover:underline">
+          <Link
+            to={redirectUrl ? `/registro?redirect=${encodeURIComponent(redirectUrl)}` : '/registro'}
+            className="font-bold text-sky-700 hover:underline"
+          >
             Regístrate aquí
           </Link>
         </p>

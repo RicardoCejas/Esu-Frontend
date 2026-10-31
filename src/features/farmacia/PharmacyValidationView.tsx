@@ -270,21 +270,21 @@ export const PharmacyValidationView: React.FC = () => {
               onClick={() => cargarDemo('REC-CDE-2026-001')}
               className="text-[10px] font-bold px-2 py-1 bg-emerald-50 text-emerald-800 border border-emerald-300 rounded hover:bg-emerald-100"
             >
-              ✅ Receta Válida y Vigente
+              <span className="inline-flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-600" /> Receta Válida y Vigente</span>
             </button>
             <button
               type="button"
               onClick={() => cargarDemo('REC-CDE-2026-002')}
               className="text-[10px] font-bold px-2 py-1 bg-rose-50 text-rose-800 border border-rose-300 rounded hover:bg-rose-100"
             >
-              ❌ Receta Vencida (&gt;30 días)
+              <span className="inline-flex items-center gap-1"><XCircle className="w-3 h-3 text-rose-600" /> Receta Vencida (&gt;30 días)</span>
             </button>
             <button
               type="button"
               onClick={() => cargarDemo('REC-CDE-2026-003')}
               className="text-[10px] font-bold px-2 py-1 bg-amber-50 text-amber-800 border border-amber-300 rounded hover:bg-amber-100"
             >
-              ⚠️ Receta Ya Dispensada
+              <span className="inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-amber-600" /> Receta Ya Dispensada</span>
             </button>
           </div>
 

@@ -46,7 +46,7 @@ const INITIAL_DISPONIBILIDADES: DisponibilidadProfesional[] = [
     horaFin: '12:00',
     intervaloMinutos: 20,
     centroSaludId: 'c2',
-    centroSaludNombre: 'Dispensario Municipal San Pantaleón',
+    centroSaludNombre: 'Dispensario Municipal Santa Rosa',
     activo: true,
   },
 ];
@@ -253,6 +253,76 @@ export const profesionalesService = {
     }
   },
 
+  async updateEspecialidad(id: string, data: Partial<Especialidad>): Promise<Especialidad> {
+    try {
+      const res = await apiClient.put<Especialidad>(`/especialidades/${id}`, data);
+      especialidadesState = especialidadesState.map((e) => (e.id === id ? { ...e, ...res.data } : e));
+      saveState();
+      return res.data;
+    } catch {
+      especialidadesState = especialidadesState.map((e) => (e.id === id ? { ...e, ...data } : e));
+      saveState();
+      const updated = especialidadesState.find((e) => e.id === id)!;
+      return updated;
+    }
+  },
+
+  async deleteEspecialidad(id: string): Promise<boolean> {
+    try {
+      await apiClient.delete(`/especialidades/${id}`);
+      especialidadesState = especialidadesState.filter((e) => e.id !== id);
+      saveState();
+      return true;
+    } catch {
+      especialidadesState = especialidadesState.filter((e) => e.id !== id);
+      saveState();
+      return true;
+    }
+  },
+
+  async updateProfesional(id: string, data: Partial<Profesional>): Promise<Profesional> {
+    try {
+      const res = await apiClient.put<Profesional>(`/profesionales/${id}`, data);
+      profesionalesState = profesionalesState.map((p) => (p.id === id ? { ...p, ...res.data } : p));
+      saveState();
+      return res.data;
+    } catch {
+      profesionalesState = profesionalesState.map((p) => (p.id === id ? { ...p, ...data } : p));
+      saveState();
+      const updated = profesionalesState.find((p) => p.id === id)!;
+      return updated;
+    }
+  },
+
+  async deleteProfesional(id: string): Promise<boolean> {
+    try {
+      await apiClient.delete(`/profesionales/${id}`);
+      profesionalesState = profesionalesState.filter((p) => p.id !== id);
+      saveState();
+      return true;
+    } catch {
+      profesionalesState = profesionalesState.filter((p) => p.id !== id);
+      saveState();
+      return true;
+    }
+  },
+
+  async desvincularCentro(profesionalId: string, centroId: string): Promise<boolean> {
+    try {
+      const prof = profesionalesState.find((p) => p.id === profesionalId);
+      if (prof) {
+        const centros = prof.centrosSaludIds.filter((c) => c !== centroId);
+        profesionalesState = profesionalesState.map((p) =>
+          p.id === profesionalId ? { ...p, centrosSaludIds: centros } : p
+        );
+        saveState();
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
   // HU-FE-61: Configuración de Grilla Horaria
   async getDisponibilidad(profesionalId: string): Promise<DisponibilidadProfesional[]> {
     try {
@@ -281,7 +351,7 @@ export const profesionalesService = {
         centroSaludNombre: data.centroSaludId === 'c1'
           ? 'Hospital Provincial Aurelio Crespo'
           : data.centroSaludId === 'c2'
-          ? 'Dispensario Municipal San Pantaleón'
+          ? 'Dispensario Municipal Santa Rosa'
           : 'Clínica Privada Cruz del Eje',
         activo: true,
       };

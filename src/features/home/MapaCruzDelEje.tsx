@@ -1,259 +1,509 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import {
+  Map as MapLibreMap,
+  Marker as MapLibreMarker,
+  NavigationControl,
+  FullscreenControl,
+  AttributionControl,
+  setWorkerUrl,
+  type StyleSpecification,
+  type ErrorEvent,
+} from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   MapPin,
-  Building2,
   Phone,
   Clock,
   ExternalLink,
   Calendar,
   HeartPulse,
   Navigation,
+  Globe2,
+  X,
+  Sparkles,
+  Maximize2,
+  Settings,
 } from 'lucide-react';
+import {
+  type CentroMapaPin,
+  mapaCentrosService,
+} from './mapaCentrosData';
 
-interface CentroMapa {
-  id: string;
-  nombre: string;
-  tipo: string;
-  badgeTipo: string;
-  badgeColor: string;
-  direccion: string;
-  telefono: string;
-  horario: string;
-  esGuardia: boolean;
-  lat: number;
-  lng: number;
-  googleMapsUrl: string;
+// Configurar URL del worker para MapLibre GL
+if (typeof window !== 'undefined') {
+  try {
+    const workerOrigin = window.location.origin;
+    setWorkerUrl(`${workerOrigin}/maplibre-gl-worker.mjs`);
+  } catch (err) {
+    console.warn('Worker de MapLibre no configurado:', err);
+  }
 }
 
-const CENTROS_CDE: CentroMapa[] = [
-  {
-    id: 'c1',
-    nombre: 'Hospital Provincial Dr. Aurelio Crespo',
-    tipo: 'Público Provincial',
-    badgeTipo: 'Hospital Zonal',
-    badgeColor: 'bg-rose-700 text-white',
-    direccion: 'Av. Eva Perón 450, Cruz del Eje',
-    telefono: '(03549) 422111 / 107',
-    horario: 'Atención 24hs (Guardia Activa)',
-    esGuardia: true,
-    lat: -30.7291,
-    lng: -64.7963,
-    googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Hospital+Provincial+Aurelio+Crespo+Cruz+del+Eje',
-  },
-  {
-    id: 'c2',
-    nombre: 'Clínica Privada San Roque',
-    tipo: 'Sector Privado',
-    badgeTipo: 'Clínica Quirúrgica',
-    badgeColor: 'bg-sky-700 text-white',
-    direccion: 'Sarmiento 450, Centro, Cruz del Eje',
-    telefono: '(03549) 422400',
-    horario: 'Lunes a Viernes 07:30 a 20:30 hs',
-    esGuardia: false,
-    lat: -30.7245,
-    lng: -64.8012,
-    googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Clinica+San+Roque+Cruz+del+Eje',
-  },
-  {
-    id: 'c3',
-    nombre: 'Centro de Diagnóstico Cruz del Eje',
-    tipo: 'Sector Privado',
-    badgeTipo: 'Imágenes & Laboratorio',
-    badgeColor: 'bg-slate-700 text-white',
-    direccion: 'San Martín 280, Cruz del Eje',
-    telefono: '(03549) 423500',
-    horario: 'Lunes a Viernes 07:00 a 19:00 hs',
-    esGuardia: false,
-    lat: -30.7228,
-    lng: -64.8041,
-    googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Centro+de+Diagnostico+San+Martin+Cruz+del+Eje',
-  },
-  {
-    id: 'c4',
-    nombre: 'Dispensario Municipal San Pantaleón',
-    tipo: 'Público Municipal',
-    badgeTipo: 'CAPS Barrial',
-    badgeColor: 'bg-emerald-700 text-white',
-    direccion: 'Barrio Los Altos, Cruz del Eje',
-    telefono: '(03549) 424100',
-    horario: 'Lunes a Viernes 07:00 a 14:00 hs',
-    esGuardia: false,
-    lat: -30.735,
-    lng: -64.789,
-    googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Dispensario+San+Pantaleon+Cruz+del+Eje',
-  },
-  {
-    id: 'c5',
-    nombre: 'Dispensario Dr. René Favaloro',
-    tipo: 'Público Municipal',
-    badgeTipo: 'CAPS Santa Rosa',
-    badgeColor: 'bg-sky-700 text-white',
-    direccion: 'Barrio Santa Rosa, Cruz del Eje',
-    telefono: '(03549) 424200',
-    horario: 'Lunes a Viernes 07:30 a 14:30 hs',
-    esGuardia: false,
-    lat: -30.718,
-    lng: -64.809,
-    googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Dispensario+Favaloro+Cruz+del+Eje',
-  },
-  {
-    id: 'c6',
-    nombre: 'Consultorios Médicos del Valle',
-    tipo: 'Sector Privado',
-    badgeTipo: 'Consultorios Médicos',
-    badgeColor: 'bg-amber-600 text-white',
-    direccion: 'Mitre 320, Cruz del Eje',
-    telefono: '(03549) 421900',
-    horario: 'Lunes a Viernes 08:00 a 19:30 hs',
-    esGuardia: false,
-    lat: -30.7262,
-    lng: -64.7985,
-    googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Mitre+320+Cruz+del+Eje',
-  },
-];
+// Centro urbano de Cruz del Eje que abarca perfectamente los 4 centros de salud
+const CRUZ_DEL_EJE_CENTER: [number, number] = [-64.7946, -30.7356];
+const DEFAULT_ZOOM = 14.1;
 
-export const MapaCruzDelEje: React.FC = () => {
-  const [selectedCentro, setSelectedCentro] = useState<CentroMapa>(CENTROS_CDE[0]);
+// Estilo OpenStreetMap oficial (Raster nítido, sin fallas ni pantallas en blanco)
+const OSM_RASTER_STYLE: StyleSpecification = {
+  version: 8,
+  sources: {
+    'osm-tiles': {
+      type: 'raster',
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> colaboradores',
+      maxzoom: 19,
+    },
+  },
+  layers: [
+    {
+      id: 'osm-tiles-layer',
+      type: 'raster',
+      source: 'osm-tiles',
+      minzoom: 0,
+      maxzoom: 19,
+    },
+  ],
+};
 
-  // Generar URL del iframe de OpenStreetMap centrada en Cruz del Eje con el marcador del centro seleccionado
-  const bbox = `${selectedCentro.lng - 0.015}%2C${selectedCentro.lat - 0.012}%2C${selectedCentro.lng + 0.015}%2C${selectedCentro.lat + 0.012}`;
-  const iframeSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${selectedCentro.lat}%2C${selectedCentro.lng}`;
+const OPENFREEMAP_BRIGHT_URL = 'https://tiles.openfreemap.org/styles/bright';
+
+type StyleKey = 'vista1' | 'vista2';
+
+interface MapaCruzDelEjeProps {
+  className?: string;
+  onSelectPin?: (pin: CentroMapaPin) => void;
+}
+
+export const MapaCruzDelEje: React.FC<MapaCruzDelEjeProps> = ({ className = '', onSelectPin }) => {
+  const { user } = useAuth();
+  const isAdminOrDev = user?.rol === 'ADMIN' || localStorage.getItem('esu_dev_mode') === 'true';
+
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const markersRef = useRef<MapLibreMarker[]>([]);
+
+  const [centros] = useState<CentroMapaPin[]>(() => mapaCentrosService.getCentros());
+  const [selectedCentro, setSelectedCentro] = useState<CentroMapaPin | null>(() => centros[0] || null);
+  const [mapStyleKey, setMapStyleKey] = useState<StyleKey>('vista1');
+
+  // Manejar selección de centro y vuelo suave de la cámara
+  const handleSelectCentro = useCallback(
+    (centro: CentroMapaPin) => {
+      setSelectedCentro(centro);
+      if (onSelectPin) onSelectPin(centro);
+
+      const map = mapRef.current;
+      if (map) {
+        map.flyTo({
+          center: [centro.lng, centro.lat],
+          zoom: 15.7,
+          pitch: 30,
+          bearing: 0,
+          duration: 900,
+          essential: true,
+        });
+      }
+    },
+    [onSelectPin]
+  );
+
+  // 1. Inicialización de MapLibre GL
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    const map = new MapLibreMap({
+      container: mapContainerRef.current,
+      style: OSM_RASTER_STYLE,
+      center: CRUZ_DEL_EJE_CENTER,
+      zoom: DEFAULT_ZOOM,
+      pitch: 0,
+      bearing: 0,
+      attributionControl: false,
+    });
+
+    map.addControl(new NavigationControl({ visualizePitch: true, showCompass: true }), 'top-right');
+    map.addControl(new FullscreenControl(), 'top-right');
+    map.addControl(new AttributionControl({ compact: true }), 'bottom-right');
+
+    map.on('load', () => {
+      map.resize();
+    });
+
+    map.on('error', (e: ErrorEvent) => {
+      console.warn('MapLibre error evento:', e);
+    });
+
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // 2. Cambio dinámico de estilo
+  const handleChangeStyle = (key: StyleKey) => {
+    setMapStyleKey(key);
+    const map = mapRef.current;
+    if (!map) return;
+
+    try {
+      if (key === 'vista1') {
+        map.setStyle(OSM_RASTER_STYLE);
+      } else if (key === 'vista2') {
+        map.setStyle(OPENFREEMAP_BRIGHT_URL);
+      }
+    } catch (err) {
+      console.warn('Error alternando estilo, regresando a Vista 1:', err);
+      map.setStyle(OSM_RASTER_STYLE);
+    }
+  };
+
+  // 3. Renderizar marcadores (pines) en el mapa sin sobreescribir transform de MapLibre
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Limpiar marcadores previos
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+
+    centros.forEach((centro) => {
+      // Contenedor principal del marcador gestionado exclusivamente por MapLibre
+      const el = document.createElement('div');
+      el.className = 'cde-pin-root cursor-pointer select-none';
+
+      const colorBg =
+        centro.tipo === 'HOSPITAL'
+          ? '#e11d48' // Rojo/Rosa
+          : centro.tipo === 'CLINICA'
+          ? '#0284c7' // Celeste
+          : '#059669'; // Verde esmeralda (Diagnóstico)
+
+      const iconSymbol =
+        centro.tipo === 'HOSPITAL' ? '✚' : centro.tipo === 'CLINICA' ? '🏥' : '🔬';
+
+      const etiqueta = centro.nombreCorto;
+
+      // Elemento interno animable. NUNCA tocamos el transform de `el`, solo el de `innerDiv`
+      const innerDiv = document.createElement('div');
+      innerDiv.style.display = 'flex';
+      innerDiv.style.flexDirection = 'column';
+      innerDiv.style.alignItems = 'center';
+      innerDiv.style.transition = 'transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.18s ease';
+      innerDiv.style.willChange = 'transform';
+      innerDiv.style.pointerEvents = 'auto';
+
+      innerDiv.innerHTML = `
+        <div style="background-color: ${colorBg}; color: white; width: 34px; height: 34px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; border: 2.5px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.35);">
+          <div style="transform: rotate(45deg); font-weight: 900; font-size: 14px; line-height: 1;">
+            ${iconSymbol}
+          </div>
+        </div>
+        <div style="background: white; color: #0f172a; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 8px; white-space: nowrap; margin-top: 3px; border: 1.5px solid ${colorBg}; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+          ${etiqueta}
+        </div>
+      `;
+
+      // Eventos Hover: se escalan SOLO en el div interno para que el pin no desaparezca ni salte
+      innerDiv.addEventListener('mouseenter', () => {
+        innerDiv.style.transform = 'scale(1.18) translateY(-4px)';
+        el.style.zIndex = '50';
+      });
+      innerDiv.addEventListener('mouseleave', () => {
+        innerDiv.style.transform = 'scale(1) translateY(0)';
+        el.style.zIndex = '10';
+      });
+
+      // Evento Click: abre la ventanita informativa
+      innerDiv.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleSelectCentro(centro);
+      });
+
+      el.appendChild(innerDiv);
+
+      const marker = new MapLibreMarker({ element: el, anchor: 'bottom' })
+        .setLngLat([centro.lng, centro.lat])
+        .addTo(map);
+
+      markersRef.current.push(marker);
+    });
+  }, [centros, handleSelectCentro]);
+
+  // Resetear vista al centro general de Cruz del Eje
+  const handleResetCamera = () => {
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: CRUZ_DEL_EJE_CENTER,
+        zoom: DEFAULT_ZOOM,
+        pitch: 0,
+        bearing: 0,
+        duration: 800,
+        essential: true,
+      });
+    }
+  };
 
   return (
-    <div className="relative rounded-3xl border border-sky-200/90 bg-card p-5 sm:p-7 shadow-xl shadow-sky-950/5 text-slate-900 overflow-hidden">
-      {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sky-100 pb-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-md shadow-sky-600/25">
-            <MapPin className="h-6 w-6" />
-          </div>
+    <section id="mapa-sanitario" className={`py-12 sm:py-16 bg-[#e9eff5] border-t border-[#c5d3e0] ${className}`}>
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6">
+        {/* Cabecera Principal */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5 mb-8">
           <div>
-            <h4 className="font-extrabold text-base text-slate-900 font-heading">
-              Mapa Sanitario • Solo Cruz del Eje
-            </h4>
-            <p className="text-xs text-sky-800 font-medium">
-              Geolocalización de efectores públicos, privados y de guardia
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold mb-2.5 border border-sky-200">
+              <Sparkles className="h-3.5 w-3.5 text-sky-600" />
+              <span>Mapa Sanitario • Cruz del Eje</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight font-heading text-[#003855]">
+              Mapa Sanitario • Cruz del Eje
+            </h2>
+            <p className="text-sm sm:text-lg text-slate-700 mt-2 max-w-3xl leading-relaxed">
+              Explorá la red de efectores de salud en Cruz del Eje. Tocá el pin del <strong>Hospital Aurelio Crespo</strong>, <strong>Clínica Cabrera</strong>, <strong>Sanatorio María Isabel</strong> o <strong>Centro de Diagnóstico</strong> para ver sus fotos reales, ubicación exacta y abrir la vista satelital en 3D.
             </p>
           </div>
+
+          {/* Selector de Vistas Prolijo y Profesional */}
+          <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
+            <div className="inline-flex rounded-xl bg-white p-1 border border-sky-200 shadow-xs">
+              <button
+                type="button"
+                onClick={() => handleChangeStyle('vista1')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  mapStyleKey === 'vista1'
+                    ? 'bg-[#005a87] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Vista 1: Mapa urbano detallado con nombres de calles y referencias"
+              >
+                Vista 1
+              </button>
+              <button
+                type="button"
+                onClick={() => handleChangeStyle('vista2')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  mapStyleKey === 'vista2'
+                    ? 'bg-[#005a87] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Vista 2: Mapa vectorial moderno"
+              >
+                Vista 2
+              </button>
+            </div>
+
+            {/* Enlace directo al panel de calibración solo para administradores / desarrolladores */}
+            {isAdminOrDev && (
+              <Link
+                to="/dashboard/admin/mapa"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 transition shadow-xs"
+                title="Abre el panel privado de calibración para mover pines arrastrándolos con el mouse"
+              >
+                <Settings className="h-3.5 w-3.5 text-amber-700" />
+                <span>Panel Calibrar Pines (Admin)</span>
+              </Link>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-3 py-1 text-[11px] font-bold text-white">
-            <span className="inline-flex h-2 w-2 rounded-full bg-white"></span>
-            <span>CDE Activo</span>
-          </span>
-        </div>
-      </div>
+        {/* Carrusel de Pastillas (Pills) para Acceso Rápido a los 4 Centros */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 scrollbar-none">
+          <button
+            type="button"
+            onClick={handleResetCamera}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-xs"
+          >
+            <Maximize2 className="h-3.5 w-3.5 text-[#005a87]" />
+            <span>Ver toda la ciudad</span>
+          </button>
 
-      {/* Selector Pills de Centros de Cruz del Eje */}
-      <div className="space-y-1.5 mb-4">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-          <Building2 className="h-3 w-3 text-sky-600" />
-          <span>Seleccionar Centro para ubicar en el mapa:</span>
-        </span>
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {CENTROS_CDE.map((centro) => {
-            const isSelected = selectedCentro.id === centro.id;
+          {centros.map((centro) => {
+            const isSelected = selectedCentro?.id === centro.id;
             return (
               <button
                 key={centro.id}
                 type="button"
-                onClick={() => setSelectedCentro(centro)}
-                className={`cursor-pointer shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition-all border ${
+                onClick={() => handleSelectCentro(centro)}
+                className={`shrink-0 inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all border cursor-pointer ${
                   isSelected
-                    ? 'bg-sky-700 hover:bg-sky-800 text-white border-sky-600 shadow-sm shadow-sky-700/20 scale-[1.02]'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-sky-400 hover:bg-sky-50/50'
+                    ? 'bg-[#005a87] text-white border-[#00486c] shadow-md scale-[1.02]'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-sky-300 hover:bg-sky-50/60'
                 }`}
               >
-                <span>{centro.nombre.replace('Dispensario Municipal ', 'Disp. ').replace('Hospital Provincial ', 'Hosp. ')}</span>
+                <span
+                  className={`h-2.5 w-2.5 rounded-full ${
+                    centro.esGuardia ? 'bg-rose-500 animate-pulse' : 'bg-sky-500'
+                  }`}
+                />
+                <span>{centro.nombreCorto}</span>
               </button>
             );
           })}
         </div>
-      </div>
 
-      {/* Mapa Interactivo Embebido OpenStreetMap (100% Cruz del Eje) */}
-      <div className="relative rounded-2xl border border-sky-200 overflow-hidden shadow-inner bg-slate-100 h-56 sm:h-64 w-full">
-        <iframe
-          title={`Mapa de ${selectedCentro.nombre} en Cruz del Eje`}
-          src={iframeSrc}
-          className="w-full h-full border-0"
-          loading="lazy"
-        />
+        {/* CONTENEDOR DEL MAPA + VENTANITA CHIQUITA FLOTANTE */}
+        <div className="relative rounded-3xl border border-sky-200/90 bg-white shadow-2xl shadow-sky-950/10 overflow-hidden">
+          {/* Canvas de MapLibre */}
+          <div
+            ref={mapContainerRef}
+            className="w-full h-[540px] sm:h-[620px] cursor-grab active:cursor-grabbing"
+          />
 
-        {/* Floating Pin Overlay Tag */}
-        <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5 rounded-xl bg-white/95 backdrop-blur-md px-3 py-1.5 text-xs font-extrabold text-slate-900 border border-sky-200 shadow-md">
-          <Navigation className="h-3.5 w-3.5 text-sky-600" />
-          <span className="truncate max-w-[200px] sm:max-w-[280px]">
-            {selectedCentro.nombre}
-          </span>
-        </div>
-      </div>
-
-      {/* Info Card of the Selected Center (Light, Clear & Vibrant) */}
-      <div className="mt-4 rounded-2xl border border-sky-100 bg-white p-4 shadow-sm space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-          <div>
-            <span className={`inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-full mb-1 ${selectedCentro.badgeColor}`}>
-              {selectedCentro.badgeTipo} • {selectedCentro.tipo}
-            </span>
-            <h5 className="font-extrabold text-sm text-slate-900 font-heading">
-              {selectedCentro.nombre}
-            </h5>
+          {/* Tag en la esquina superior izquierda */}
+          <div className="absolute top-4 left-4 z-10 flex items-center gap-2 rounded-2xl bg-white/95 backdrop-blur-md px-3.5 py-2 text-xs font-extrabold text-slate-800 border border-sky-200/80 shadow-md pointer-events-none">
+            <Navigation className="h-4 w-4 text-[#005a87]" />
+            <span>Cruz del Eje • 4 Centros de Salud Principales</span>
           </div>
 
-          {selectedCentro.esGuardia && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-rose-700 px-2.5 py-1 text-[10px] font-extrabold text-white self-start sm:self-auto">
-              <HeartPulse className="h-3 w-3 text-white" />
-              <span>Guardia 24hs Activa</span>
-            </span>
+          {/* Botón flotante para reabrir la ficha si el usuario la cerró */}
+          {!selectedCentro && (
+            <button
+              type="button"
+              onClick={() => handleSelectCentro(centros[0])}
+              className="absolute bottom-4 right-4 z-10 flex items-center gap-2 rounded-2xl bg-[#005a87] text-white px-4 py-2.5 text-xs font-bold shadow-lg hover:bg-[#00486c] transition cursor-pointer"
+            >
+              <MapPin className="h-4 w-4" />
+              <span>Ver ficha del Hospital Crespo</span>
+            </button>
+          )}
+
+          {/* VENTANITA CHIQUITA DENTRO DE LA MISMA PÁGINA (Sin bug de renderizado) */}
+          {selectedCentro && (
+            <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:bottom-4 z-20 w-auto sm:w-[420px] max-w-full rounded-2xl border border-sky-200 bg-white/98 backdrop-blur-md p-4 sm:p-5 shadow-2xl shadow-slate-950/25 animate-in slide-in-from-bottom-4 duration-200">
+              {/* Cabecera con botón de cierre */}
+              <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-3 mb-3">
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                    <span
+                      className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${selectedCentro.badgeColor}`}
+                    >
+                      {selectedCentro.badgeTipo}
+                    </span>
+                    {selectedCentro.esGuardia && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-white bg-rose-700 px-2 py-0.5 rounded-full">
+                        <HeartPulse className="h-3 w-3" />
+                        <span>Guardia 24hs Activa</span>
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-base sm:text-lg font-extrabold text-[#003855] font-heading leading-tight">
+                    {selectedCentro.nombre}
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedCentro(null)}
+                  className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer"
+                  title="Cerrar ventanita"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* FOTO DEL LUGAR (Hospital Aurelio Crespo, Clínica Cabrera, etc.) */}
+              <div className="relative rounded-xl overflow-hidden border border-slate-200 h-36 sm:h-40 mb-3 bg-slate-100 shadow-inner group">
+                <img
+                  src={selectedCentro.fotoUrl}
+                  alt={`Fachada de ${selectedCentro.nombre}`}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = '/centros/clinica_cabrera.jpg';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute bottom-2 left-2 right-2 text-white text-xs font-semibold drop-shadow flex items-center justify-between">
+                  <span className="truncate">{selectedCentro.direccion}</span>
+                  <span className="text-[10px] bg-white/20 backdrop-blur-md px-2 py-0.5 rounded font-mono">
+                    Cruz del Eje
+                  </span>
+                </div>
+              </div>
+
+              {/* Información de Contacto y Horarios */}
+              <div className="space-y-1.5 text-xs text-slate-600 mb-3.5">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5 text-[#005a87] shrink-0" />
+                  <span className="font-semibold text-slate-800">{selectedCentro.direccion}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3.5 w-3.5 text-[#005a87] shrink-0" />
+                  <a
+                    href={`tel:${selectedCentro.telefono.replace(/[^0-9]/g, '')}`}
+                    className="font-bold text-[#005a87] hover:underline"
+                  >
+                    {selectedCentro.telefono}
+                  </a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-[#005a87] shrink-0" />
+                  <span>{selectedCentro.horario}</span>
+                </div>
+              </div>
+
+              {/* Especialidades destacadas */}
+              {selectedCentro.especialidades && selectedCentro.especialidades.length > 0 && (
+                <div className="mb-4 pt-2 border-t border-slate-100">
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Servicios destacados:
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedCentro.especialidades.map((esp, i) => (
+                      <span
+                        key={i}
+                        className="text-[10px] bg-sky-50 text-sky-800 border border-sky-200/60 font-semibold px-2 py-0.5 rounded-md"
+                      >
+                        {esp}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* BOTONES DE ACCIÓN: Google Maps, Google Earth 3D y Pedir Turno */}
+              <div className="space-y-2 pt-1 border-t border-slate-100">
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Link a Google Maps */}
+                  <a
+                    href={selectedCentro.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-sky-700 bg-sky-50/60 py-2 px-2 text-xs font-bold text-[#005a87] hover:bg-sky-700 hover:text-white transition shadow-xs cursor-pointer text-center"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    <span>Google Maps</span>
+                  </a>
+
+                  {/* Link a Google Earth / Vista Satelital 3D */}
+                  <a
+                    href={selectedCentro.googleMaps3dUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-700 bg-indigo-50/60 py-2 px-2 text-xs font-bold text-indigo-800 hover:bg-indigo-700 hover:text-white transition shadow-xs cursor-pointer text-center"
+                    title="Abre la vista 3D Satelital de Google con relieve y edificios"
+                  >
+                    <Globe2 className="h-3.5 w-3.5" />
+                    <span>Ver en 3D / Earth</span>
+                  </a>
+                </div>
+
+                {/* Botón Pedir Turno Online */}
+                <Link
+                  to="/turnero"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#005a87] py-2.5 px-3 text-xs font-bold text-white shadow-md hover:bg-[#00486c] transition cursor-pointer"
+                >
+                  <Calendar className="h-4 w-4" />
+                  <span>Pedir Turno Online en esta Sede</span>
+                </Link>
+              </div>
+            </div>
           )}
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs text-slate-600">
-          <div className="flex items-start gap-1.5">
-            <MapPin className="h-3.5 w-3.5 text-sky-600 shrink-0 mt-0.5" />
-            <span className="truncate">{selectedCentro.direccion}</span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <Phone className="h-3.5 w-3.5 text-sky-600 shrink-0" />
-            <a
-              href={`tel:${selectedCentro.telefono.replace(/[^0-9]/g, '')}`}
-              className="font-bold text-sky-800 hover:underline"
-            >
-              {selectedCentro.telefono}
-            </a>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 text-sky-600 shrink-0" />
-            <span className="truncate">{selectedCentro.horario}</span>
-          </div>
-        </div>
-
-        {/* Action Buttons: Navigate or Book Appointment */}
-        <div className="flex flex-col sm:flex-row items-center gap-2 pt-2 border-t border-slate-100">
-          <a
-            href={selectedCentro.googleMapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full sm:w-auto flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-sky-700 py-2 px-3 text-xs font-bold text-sky-700 hover:bg-sky-700 hover:text-white transition"
-          >
-            <ExternalLink className="h-3.5 w-3.5 text-sky-600" />
-            <span>Cómo llegar (Google Maps)</span>
-          </a>
-
-          <Link
-            to="/turnero"
-            className="w-full sm:w-auto flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-sky-700 py-2 px-3 text-xs font-bold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-800 transition"
-          >
-            <Calendar className="h-3.5 w-3.5" />
-            <span>Pedir Turno en esta Sede</span>
-          </Link>
-        </div>
       </div>
-    </div>
+    </section>
   );
 };

@@ -29,8 +29,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initAuth = async () => {
       try {
         const sessionActive = sessionStorage.getItem('esu_session_active');
-        const isDev = localStorage.getItem('esu_dev_mode') === 'true';
-        if (sessionActive || isDev) {
+        if (sessionActive) {
+          const isDev = localStorage.getItem('esu_dev_mode') === 'true';
           const savedRole = (localStorage.getItem('esu_dev_active_role') as UserRole) || null;
           let refreshedUser: User | null = null;
           try {
@@ -56,6 +56,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(fallbackUser);
             authService.setCurrentUser(fallbackUser);
           }
+        } else {
+          localStorage.removeItem('esu_dev_mode');
+          localStorage.removeItem('esu_dev_active_role');
         }
       } catch (err) {
         console.warn('No se pudo restaurar la sesión en memoria:', err);
@@ -71,6 +74,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Sincronización multi-pestaña mediante BroadcastChannel (HU-44)
     const unsubscribeBroadcast = authBroadcast.subscribe((msg: AuthBroadcastMessage) => {
       if (msg.type === 'LOGOUT') {
+        localStorage.removeItem('esu_dev_mode');
+        localStorage.removeItem('esu_dev_active_role');
         setUser(null);
         tokenStorage.clearToken();
       }
@@ -106,6 +111,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = useCallback(async () => {
+    localStorage.removeItem('esu_dev_mode');
+    localStorage.removeItem('esu_dev_active_role');
     await authService.logout();
     setUser(null);
   }, []);

@@ -6,7 +6,7 @@
   /* Tipografía numérica única de ESU: una sola fuente para DNI, horas, códigos y métricas. */
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
 
-  --color-background: #f4f8fb;
+  --color-background: #e3eff6;
   --color-foreground: #0f172a;
   --color-card: #ffffff;
   --color-card-foreground: #0f172a;
@@ -28,10 +28,15 @@
 }
 
 @layer base {
+  html, body {
+    min-height: 100%;
+    background-color: #e3eff6;
+  }
+
   body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: var(--color-foreground);
-    background-color: #f4f8fb;
+    background-color: #e3eff6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -88,3 +93,52 @@ html.text-scale-xlarge {
   animation-play-state: paused;
 }
 
+/* Transiciones fluidas, calmadas y accesibles para pestañas y modales de ESU */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoomIn95 {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes stepFadeSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation-duration: 260ms;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.zoom-in-95 {
+  animation-name: zoomIn95;
+}
+
+.animate-step-enter {
+  animation: stepFadeSlide 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

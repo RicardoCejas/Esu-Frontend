@@ -90,7 +90,7 @@ export const MisRecetasPage: React.FC = () => {
         <h1 className="text-2xl font-extrabold tracking-tight font-heading text-slate-900">
           Mis Recetas y Medicación
         </h1>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-sm text-slate-600 mt-1">
           Prescripciones electrónicas activas y recetas con código QR oficial para retiro en farmacias hospitalarias y dispensarios de Cruz del Eje.
         </p>
       </div>
@@ -100,7 +100,7 @@ export const MisRecetasPage: React.FC = () => {
         <Pill className="h-5 w-5 text-sky-600 shrink-0 mt-0.5" />
         <div className="space-y-1">
           <p className="font-bold">¿Cómo retirar tus medicamentos en farmacia?</p>
-          <p className="text-slate-600 leading-relaxed text-[11px]">
+          <p className="text-slate-700 leading-relaxed text-xs sm:text-sm">
             Presentá el código QR en la farmacia del Hospital Regional Aurelio Crespo o en tu dispensario barrial asignado junto con tu DNI físico. Las recetas cuentan con firma digital homologada bajo la Ley 27.553.
           </p>
         </div>
@@ -120,17 +120,17 @@ export const MisRecetasPage: React.FC = () => {
                     {receta.codigoReceta}
                   </span>
                   {receta.estado === 'DISPONIBLE' && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                       <CheckCircle2 className="h-3 w-3" /> Vigente
                     </span>
                   )}
                   {receta.estado === 'DISPENSADA' && (
-                    <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full">
                       Entregada
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-700 font-semibold mt-1.5">{receta.diagnostico}</p>
+                <p className="text-sm text-slate-900 font-bold mt-1.5">{receta.diagnostico}</p>
               </div>
 
               <button
@@ -145,23 +145,23 @@ export const MisRecetasPage: React.FC = () => {
 
             {/* Medicamentos indicados */}
             <div className="space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 Fármacos prescriptos:
               </span>
               {receta.medicamentos.map((med, idx) => (
-                <div key={idx} className="rounded-xl bg-slate-50/70 p-3 border border-slate-100 text-xs space-y-1">
+                <div key={idx} className="rounded-xl bg-slate-50/70 p-3.5 border border-slate-200/80 space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-slate-900">{med.droga}</span>
-                    <span className="text-[10px] text-slate-500 font-medium">{med.presentacion}</span>
+                    <span className="font-bold text-sm sm:text-base text-slate-900">{med.droga}</span>
+                    <span className="text-xs font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">{med.presentacion}</span>
                   </div>
-                  <p className="text-[11px] text-slate-600">{med.posologia}</p>
-                  <p className="text-[10px] text-sky-700 font-semibold">Cantidad: {med.cantidad} • Duración: {med.duracion}</p>
+                  <p className="text-xs sm:text-sm text-slate-700 font-medium">{med.posologia}</p>
+                  <p className="text-xs text-sky-800 font-bold">Cantidad: {med.cantidad} • Duración: {med.duracion}</p>
                 </div>
               ))}
             </div>
 
             {/* Profesional y Centro */}
-            <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex flex-wrap justify-between items-center gap-2">
+            <div className="pt-2.5 border-t border-slate-100 text-xs text-slate-600 flex flex-wrap justify-between items-center gap-2">
               <span className="flex items-center gap-1">
                 <User className="h-3 w-3 text-slate-400" />
                 {receta.medicoNombre} ({receta.medicoMatricula})

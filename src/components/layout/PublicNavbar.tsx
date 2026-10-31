@@ -15,6 +15,7 @@ export const PublicNavbar: React.FC = () => {
     { name: 'Inicio', path: '/' },
     { name: 'Quiénes Somos', path: '/#quienes-somos' },
     { name: 'Especialidades', path: '/#especialidades' },
+    { name: 'Mapa Cruz del Eje', path: '/#mapa-sanitario' },
     { name: 'Turnero Online', path: '/turnero' },
   ];
 
@@ -33,6 +34,8 @@ export const PublicNavbar: React.FC = () => {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('esu_dev_mode');
+    localStorage.removeItem('esu_dev_active_role');
     logout();
     navigate('/');
   };
@@ -95,10 +98,11 @@ export const PublicNavbar: React.FC = () => {
 
         {/* Estado de Sesión — visible e informativo */}
         <div className="flex items-center gap-2.5">
-          <DevRoleSwitcher />
-
           {user ? (
             <div className="flex items-center gap-2">
+              {/* Switcher de Roles exclusivo para cuenta Desarrollador activa */}
+              <DevRoleSwitcher />
+
               {/* Campana de Notificaciones (HU-69) */}
               <NotificationCenter />
 

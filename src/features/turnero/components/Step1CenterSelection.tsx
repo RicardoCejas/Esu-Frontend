@@ -1,9 +1,8 @@
 import React, { useState } from 'react'
-import { Search, MapPin, Phone, Building2, ChevronRight, ChevronLeft, X, LayoutGrid, List, Check } from 'lucide-react'
+import { Search, MapPin, Phone, Building2, ChevronRight, X, LayoutGrid, List, Check, ArrowRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { TurneroObrasSocialesCarousel } from './TurneroObrasSocialesCarousel'
 import type { HealthCenter, CenterType } from '../types'
 
 interface Step1CenterSelectionProps {
@@ -14,7 +13,6 @@ interface Step1CenterSelectionProps {
   typeFilter: CenterType | 'ALL'
   onTypeFilterChange: (type: CenterType | 'ALL') => void
   onSelectCenter: (center: HealthCenter) => void
-  onUnselectCenter?: () => void
   onProceed?: () => void
 }
 
@@ -63,16 +61,40 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
   typeFilter,
   onTypeFilterChange,
   onSelectCenter,
-  onUnselectCenter,
   onProceed,
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [modalCenter, setModalCenter] = useState<HealthCenter | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleCardClick = (center: HealthCenter) => {
+    if (selectedCenter?.id === center.id) {
+      onSelectCenter(center)
+      if (onProceed) {
+        onProceed()
+      }
+      return
+    }
+    setModalCenter(center)
+    setIsModalOpen(true)
+  }
+
+  const handleConfirmCenter = () => {
+    if (!modalCenter) return
+    const centerToProceed = modalCenter
+    setIsModalOpen(false)
+    setModalCenter(null)
+    onSelectCenter(centerToProceed)
+    if (onProceed) {
+      onProceed()
+    }
+  }
 
   return (
-    <section className="space-y-6 sm:space-y-8 pb-16 sm:pb-16">
-      {/* Controls Bar: Search, Category Chips & View Toggle con acentos del logo */}
+    <section className="space-y-6 sm:space-y-8 pb-16 sm:pb-20">
+      {/* Controls Bar: Search, Category Chips & View Toggle */}
       <div className="flex flex-col gap-3.5 sm:gap-4 rounded-2xl sm:rounded-3xl border border-sky-200/90 bg-white/95 backdrop-blur-md p-4 sm:p-6 shadow-md lg:flex-row lg:items-center lg:justify-between relative overflow-hidden">
-        {/* Franja superior con degradado del logo */}
+        {/* Franja superior con degradado */}
         <div className="absolute top-0 left-0 right-0 h-1 sm:h-1.5 bg-gradient-to-r from-[#005a87] via-[#0284c7] to-[#00a896]" />
 
         <div>
@@ -106,19 +128,19 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
             )}
           </div>
 
-          {/* Category Filter Pills con gradiente y contraste */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none w-full sm:w-auto">
+          {/* Filter Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             {FILTER_OPTIONS.map((opt) => {
-              const isSelected = typeFilter === opt.value
+              const active = typeFilter === opt.value
               return (
                 <button
                   key={opt.value}
                   type="button"
                   onClick={() => onTypeFilterChange(opt.value)}
-                  className={`cursor-pointer shrink-0 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold transition-all ${
-                    isSelected
-                      ? 'bg-gradient-to-r from-[#005a87] to-[#00a896] text-white shadow-md shadow-[#005a87]/20 scale-105'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
+                  className={`h-9 px-3.5 text-xs sm:text-sm font-bold rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+                    active
+                      ? 'bg-gradient-to-r from-[#005a87] to-[#00a896] text-white shadow-sm'
+                      : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700'
                   }`}
                 >
                   {opt.label}
@@ -127,25 +149,25 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
             })}
           </div>
 
-          {/* View Mode Switcher */}
-          <div className="hidden sm:flex items-center rounded-xl border border-slate-200 bg-slate-100 p-1 ml-auto">
+          {/* View Toggle */}
+          <div className="hidden sm:flex items-center gap-1 border border-slate-200 rounded-xl p-1 bg-slate-50">
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              title="Vista en Tarjetas"
-              className={`p-2 rounded-lg transition-all cursor-pointer ${
-                viewMode === 'grid' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                viewMode === 'grid' ? 'bg-[#005a87] text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
               }`}
+              title="Vista en cuadrícula"
             >
               <LayoutGrid className="size-4" />
             </button>
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              title="Vista en Directorio"
-              className={`p-2 rounded-lg transition-all cursor-pointer ${
-                viewMode === 'list' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                viewMode === 'list' ? 'bg-[#005a87] text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
               }`}
+              title="Vista en lista"
             >
               <List className="size-4" />
             </button>
@@ -153,41 +175,34 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
         </div>
       </div>
 
-      {/* Grid or List View Rendering con tarjetas intercaladas Azul/Turquesa */}
+      {/* Grid or List Display */}
       {viewMode === 'grid' ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
           {centers.map((center, index) => {
             const isSelected = selectedCenter?.id === center.id
             const isTealTheme = index % 2 === 1
             const typeInfo = getCenterTypeBadge(center.type)
 
-            // Colores intercalados según la paleta del logo:
-            // Par (0, 2): Azul Institucional Marino / Océano
-            // Impar (1, 3): Turquesa Médico / Verde Esmeralda
             const theme = isTealTheme
               ? {
-                  stripe: isSelected
-                    ? 'bg-gradient-to-r from-[#007064] via-[#00a896] to-[#2dd4bf]'
-                    : 'bg-gradient-to-r from-[#007064]/40 via-[#00a896]/40 to-[#2dd4bf]/40 group-hover:from-[#007064] group-hover:via-[#00a896] group-hover:to-[#2dd4bf]',
-                  iconBg: 'bg-gradient-to-br from-[#007064] via-[#008f80] to-[#00a896] text-white shadow-md shadow-[#00a896]/25',
-                  badge: 'bg-teal-50 text-[#007064] border-teal-300',
-                  buttonUnselected: 'border-2 border-[#007064] text-[#007064] hover:bg-gradient-to-r hover:from-[#007064] hover:to-[#00a896] hover:text-white hover:border-transparent',
-                  selectedCard: 'border-[#007064] ring-4 ring-[#00a896]/35 shadow-[0_24px_50px_-10px_rgba(0,168,150,0.28)] bg-gradient-to-b from-white via-teal-50/30 to-sky-50/20 -translate-y-2.5',
-                  hoverCard: 'border-slate-200/90 shadow-[0_12px_30px_-10px_rgba(15,23,42,0.08)] hover:border-[#00a896]/70 hover:shadow-[0_24px_50px_-12px_rgba(0,168,150,0.25)] hover:-translate-y-3',
+                  stripe: 'bg-gradient-to-r from-[#007064] via-[#008f80] to-[#00a896]',
+                  iconBg: 'bg-gradient-to-br from-[#007064] to-[#00a896] shadow-md shadow-[#00a896]/20',
+                  badge: typeInfo.badgeClass,
+                  hoverCard: 'hover:border-[#00a896]/70 hover:shadow-xl hover:-translate-y-1',
+                  selectedCard: 'border-[#00a896] ring-4 ring-[#00a896]/25 shadow-xl bg-teal-50/20 -translate-y-1',
+                  buttonUnselected: 'border-2 border-[#00a896] text-[#007064] hover:bg-[#00a896] hover:text-white',
                   pinColor: 'text-[#007064]',
                   phoneColor: 'text-[#00a896]',
                   selectedBadge: 'bg-gradient-to-r from-[#007064] to-[#00a896] text-white',
                   buttonSelected: 'bg-gradient-to-r from-[#007064] to-[#00a896] text-white shadow-md shadow-[#00a896]/30 border-none',
                 }
               : {
-                  stripe: isSelected
-                    ? 'bg-gradient-to-r from-[#00486c] via-[#005a87] to-[#0284c7]'
-                    : 'bg-gradient-to-r from-[#00486c]/40 via-[#005a87]/40 to-[#0284c7]/40 group-hover:from-[#00486c] group-hover:via-[#005a87] group-hover:to-[#0284c7]',
-                  iconBg: 'bg-gradient-to-br from-[#00486c] via-[#005a87] to-[#0284c7] text-white shadow-md shadow-[#005a87]/25',
-                  badge: 'bg-sky-50 text-[#005a87] border-sky-300',
-                  buttonUnselected: 'border-2 border-[#005a87] text-[#005a87] hover:bg-gradient-to-r hover:from-[#00486c] hover:to-[#005a87] hover:text-white hover:border-transparent',
-                  selectedCard: 'border-[#005a87] ring-4 ring-[#005a87]/35 shadow-[0_24px_50px_-10px_rgba(0,90,135,0.28)] bg-gradient-to-b from-white via-sky-50/30 to-teal-50/20 -translate-y-2.5',
-                  hoverCard: 'border-slate-200/90 shadow-[0_12px_30px_-10px_rgba(15,23,42,0.08)] hover:border-[#005a87]/70 hover:shadow-[0_24px_50px_-12px_rgba(0,90,135,0.25)] hover:-translate-y-3',
+                  stripe: 'bg-gradient-to-r from-[#00486c] via-[#005a87] to-[#0284c7]',
+                  iconBg: 'bg-gradient-to-br from-[#00486c] to-[#005a87] shadow-md shadow-[#005a87]/20',
+                  badge: typeInfo.badgeClass,
+                  hoverCard: 'hover:border-[#005a87]/70 hover:shadow-xl hover:-translate-y-1',
+                  selectedCard: 'border-[#005a87] ring-4 ring-[#005a87]/25 shadow-xl bg-sky-50/20 -translate-y-1',
+                  buttonUnselected: 'border-2 border-[#005a87] text-[#005a87] hover:bg-[#005a87] hover:text-white',
                   pinColor: 'text-[#005a87]',
                   phoneColor: 'text-[#0284c7]',
                   selectedBadge: 'bg-gradient-to-r from-[#005a87] to-[#00a896] text-white',
@@ -200,7 +215,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                 className={`group relative overflow-hidden rounded-3xl border-2 transition-all duration-300 cursor-pointer bg-white text-left ${
                   isSelected ? theme.selectedCard : theme.hoverCard
                 }`}
-                onClick={() => onSelectCenter(center)}
+                onClick={() => handleCardClick(center)}
               >
                 {/* Franja superior intercalada */}
                 <div className={`h-2 w-full transition-all duration-300 ${theme.stripe}`} />
@@ -252,11 +267,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                       aria-label={`Elegir centro de salud ${center.name}`}
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (isSelected && onProceed) {
-                          onProceed()
-                        } else {
-                          onSelectCenter(center)
-                        }
+                        handleCardClick(center)
                       }}
                       className={`h-10 sm:h-11 cursor-pointer gap-2 px-4 sm:px-5 text-xs sm:text-sm font-bold rounded-xl transition-all ${
                         isSelected
@@ -264,17 +275,8 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                           : `${theme.buttonUnselected} bg-white`
                       }`}
                     >
-                      {isSelected ? (
-                        <>
-                          <span>Elegir Especialidad</span>
-                          <ChevronRight className="size-4 group-hover:translate-x-1 transition-transform" />
-                        </>
-                      ) : (
-                        <>
-                          <span>Elegir Centro</span>
-                          <ChevronRight className="size-4 group-hover:translate-x-1 transition-transform" />
-                        </>
-                      )}
+                      <span>Elegir Centro</span>
+                      <ChevronRight className="size-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </div>
                 </CardContent>
@@ -301,7 +303,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
             return (
               <div
                 key={center.id}
-                onClick={() => onSelectCenter(center)}
+                onClick={() => handleCardClick(center)}
                 className={`group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 p-5 sm:p-6 cursor-pointer bg-white ${
                   isSelected
                     ? 'border-[#005a87] ring-4 ring-[#00a896]/35 shadow-xl bg-gradient-to-r from-sky-50/50 via-teal-50/30 to-white -translate-y-1'
@@ -345,11 +347,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                       aria-label={`Elegir centro de salud ${center.name}`}
                       onClick={(event) => {
                         event.stopPropagation()
-                        if (isSelected && onProceed) {
-                          onProceed()
-                        } else {
-                          onSelectCenter(center)
-                        }
+                        handleCardClick(center)
                       }}
                       className={`h-10 px-4 sm:px-5 text-xs sm:text-sm font-bold rounded-xl transition-all ${
                         isSelected
@@ -357,7 +355,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                           : 'border-2 border-[#005a87] bg-white text-[#005a87] hover:bg-gradient-to-r hover:from-[#005a87] hover:to-[#00a896] hover:text-white hover:border-transparent'
                       }`}
                     >
-                      <span>{isSelected ? 'Elegir Especialidad' : 'Elegir Centro'}</span>
+                      <span>Elegir Centro</span>
                       <ChevronRight className="size-4 ml-1" />
                     </Button>
                   </div>
@@ -377,45 +375,81 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
         </div>
       )}
 
-      {/* Carrusel Interactivo de Obras Sociales y Prepagas (Colocado ABAJO de los centros) */}
-      <div className="pt-2">
-        <TurneroObrasSocialesCarousel />
-      </div>
+      {/* Pop-up Modal de Confirmación de Centro de Salud */}
+      {isModalOpen && modalCenter && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-2xl space-y-0 animate-in zoom-in-95 duration-200">
+            {/* Header del Pop-up con Degradado */}
+            <div className="bg-gradient-to-r from-[#005a87] via-[#0284c7] to-[#00a896] p-6 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3.5">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur-xs shadow-inner shrink-0">
+                  <Building2 className="size-6" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-teal-200 block">
+                    Centro de Salud Seleccionado
+                  </span>
+                  <h3 className="text-lg sm:text-xl font-bold font-heading text-white leading-snug">
+                    {modalCenter.name}
+                  </h3>
+                </div>
+              </div>
 
-      {/* Barra de acción inferior con degradado y alto contraste */}
-      {selectedCenter && (
-        <div className="sticky bottom-2 sm:bottom-4 z-20 mt-6 sm:mt-8 rounded-2xl sm:rounded-3xl border-2 border-teal-300/40 bg-gradient-to-r from-[#00486c] via-[#005a87] to-[#008f80] p-3.5 sm:p-5 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 text-white">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 w-full sm:w-auto">
-            {onUnselectCenter && (
-              <Button
+              <button
                 type="button"
-                variant="outline"
-                onClick={onUnselectCenter}
-                className="h-10 px-3 sm:px-3.5 rounded-xl border-white/30 text-white hover:bg-white/20 font-bold gap-1 shrink-0 cursor-pointer text-xs sm:text-sm"
-                title="Volver hacia atrás y cambiar centro"
+                onClick={() => {
+                  setIsModalOpen(false)
+                  setModalCenter(null)
+                }}
+                className="flex size-8 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 transition cursor-pointer"
               >
-                <ChevronLeft className="size-4" />
-                <span>Volver atrás</span>
-              </Button>
-            )}
-            <div className="flex size-10 sm:size-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-white text-[#005a87] font-bold shadow-md">
-              <Check className="size-5 sm:size-7 text-[#005a87]" />
+                <X className="size-4" />
+              </button>
             </div>
-            <div className="min-w-0">
-              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-teal-200">Centro Seleccionado</span>
-              <h4 className="text-sm sm:text-lg font-bold text-white truncate">{selectedCenter.name}</h4>
-              <p className="text-xs sm:text-sm text-sky-100 truncate">{selectedCenter.address}, {selectedCenter.neighborhood}</p>
+
+            {/* Cuerpo del Pop-up con Detalles */}
+            <div className="p-6 space-y-4 text-xs sm:text-sm">
+              <div className="rounded-2xl bg-sky-50/70 border border-sky-100 p-4 space-y-2.5">
+                <div className="flex items-center gap-2 text-slate-700">
+                  <MapPin className="size-4 text-[#005a87] shrink-0" />
+                  <span className="font-semibold">{modalCenter.address}, {modalCenter.neighborhood}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-700">
+                  <Phone className="size-4 text-[#00a896] shrink-0" />
+                  <span className="font-semibold">{modalCenter.phone}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-700 pt-1.5 border-t border-sky-100">
+                  <span className="text-xs font-bold text-[#005a87]">
+                    {modalCenter.specialtiesCount} Especialidades médicas habilitadas
+                  </span>
+                </div>
+              </div>
+
+              {/* Botones de acción del Pop-up */}
+              <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsModalOpen(false)
+                    setModalCenter(null)
+                  }}
+                  className="w-full sm:w-auto h-11 px-5 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold text-xs sm:text-sm cursor-pointer"
+                >
+                  Cancelar
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={handleConfirmCenter}
+                  className="w-full sm:w-auto h-11 px-6 rounded-xl bg-gradient-to-r from-[#005a87] to-[#00a896] hover:opacity-95 text-white font-bold text-xs sm:text-sm shadow-md shadow-[#005a87]/25 flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-102"
+                >
+                  <span>Siguiente: Elegir Especialidad</span>
+                  <ArrowRight className="size-4 ml-0.5" />
+                </Button>
+              </div>
             </div>
           </div>
-          <Button
-            type="button"
-            size="lg"
-            onClick={onProceed}
-            className="w-full sm:w-auto h-11 sm:h-12 px-6 sm:px-7 rounded-xl sm:rounded-2xl bg-white hover:bg-teal-50 text-[#005a87] font-extrabold text-xs sm:text-base shadow-xl gap-2 shrink-0 cursor-pointer transition-transform hover:scale-102"
-          >
-            <span>Siguiente: Elegir Especialidad</span>
-            <ChevronRight className="size-4 sm:size-5 text-[#005a87]" />
-          </Button>
         </div>
       )}
     </section>
