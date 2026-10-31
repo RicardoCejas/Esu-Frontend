@@ -8,6 +8,7 @@ import {
   X,
   LayoutGrid,
   List,
+  Check,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,6 +22,7 @@ interface Step3DoctorSelectionProps {
   selectedDoctor: MedicalDoctor | null
   onSelectDoctor: (doctor: MedicalDoctor) => void
   onBackToSpecialty: () => void
+  onProceed?: () => void
 }
 
 export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
@@ -30,6 +32,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
   selectedDoctor,
   onSelectDoctor,
   onBackToSpecialty,
+  onProceed,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'PRESENCIAL' | 'VIRTUAL'>('ALL')
@@ -47,7 +50,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
   }, [doctors, searchTerm, typeFilter])
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 pb-20 sm:pb-16">
       {/* Context Banner: Selected Specialty & Institution */}
       <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
@@ -164,9 +167,9 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
             return (
               <Card
                 key={doctor.id}
-                className={`group rounded-2xl border transition-all duration-200 hover:shadow-lg cursor-pointer bg-white text-left ${
+                className={`group rounded-2xl border-2 transition-all duration-200 hover:shadow-lg cursor-pointer bg-white text-left ${
                   isSelected
-                    ? 'border-slate-900 ring-2 ring-slate-900/15 shadow-md'
+                    ? 'border-[#005a87] ring-4 ring-[#005a87]/15 shadow-xl bg-sky-50/20'
                     : 'border-slate-200 hover:border-slate-300'
                 }`}
                 onClick={() => onSelectDoctor(doctor)}
@@ -176,7 +179,9 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3.5">
                         {/* Minimalist Corporate Avatar */}
-                        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 font-bold border border-slate-200 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                        <div className={`flex size-12 shrink-0 items-center justify-center rounded-xl font-bold border transition-colors ${
+                          isSelected ? 'bg-[#005a87] text-white border-[#005a87]' : 'bg-slate-100 text-slate-700 border-slate-200 group-hover:bg-[#005a87] group-hover:text-white'
+                        }`}>
                           {doctor.name
                             .split(' ')
                             .slice(1, 3)
@@ -184,12 +189,19 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                             .join('') || <User className="size-6" />}
                         </div>
                         <div>
-                          <h3 className="font-bold text-slate-900 text-base sm:text-lg font-heading leading-tight truncate">
+                          <h3 className="font-bold text-slate-900 text-base sm:text-lg font-heading leading-snug">
                             {doctor.name}
                           </h3>
-                          <span className="inline-block mt-1 font-mono text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                            {doctor.licenseNumber}
-                          </span>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className="font-mono text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                              {doctor.licenseNumber}
+                            </span>
+                            {isSelected && (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md bg-[#005a87] text-white">
+                                <Check className="size-3" /> Seleccionado
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -217,12 +229,21 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                       size="sm"
                       className={`h-10 cursor-pointer gap-1.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all ${
                         isSelected
-                          ? 'bg-slate-900 text-white'
+                          ? 'bg-[#005a87] text-white hover:bg-[#00486c]'
                           : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                       }`}
                     >
-                      <span>{isSelected ? 'Seleccionado' : 'Ver Horarios'}</span>
-                      <ChevronRight className="size-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                      {isSelected ? (
+                        <>
+                          <Check className="size-4" />
+                          <span>Continuar a Horarios</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Elegir Profesional</span>
+                          <ChevronRight className="size-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -241,11 +262,13 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                 key={doctor.id}
                 onClick={() => onSelectDoctor(doctor)}
                 className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 transition-colors hover:bg-slate-50/80 cursor-pointer ${
-                  isSelected ? 'bg-slate-50 ring-2 ring-slate-900' : ''
+                  isSelected ? 'bg-sky-50/40 ring-2 ring-[#005a87]' : ''
                 }`}
               >
                 <div className="flex items-center gap-4 min-w-0">
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 font-bold border border-slate-200 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                  <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl font-bold border transition-colors ${
+                    isSelected ? 'bg-[#005a87] text-white border-[#005a87]' : 'bg-slate-100 text-slate-700 border-slate-200 group-hover:bg-[#005a87] group-hover:text-white'
+                  }`}>
                     {doctor.name
                       .split(' ')
                       .slice(1, 3)
@@ -263,6 +286,11 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200">
                         {doctor.consultationType === 'PRESENCIAL' ? 'Presencial' : 'Telemedicina'}
                       </span>
+                      {isSelected && (
+                        <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md bg-[#005a87] text-white">
+                          <Check className="size-3" /> Seleccionado
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-slate-500 mt-1">
                       Atiende: {doctor.availableDays.join(', ')}
@@ -281,11 +309,11 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                     size="sm"
                     className={`h-10 px-4 text-xs sm:text-sm font-bold rounded-xl ${
                       isSelected
-                        ? 'bg-slate-900 text-white'
+                        ? 'bg-[#005a87] text-white hover:bg-[#00486c]'
                         : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    <span>{isSelected ? 'Seleccionado' : 'Elegir'}</span>
+                    <span>{isSelected ? 'Continuar' : 'Elegir'}</span>
                     <ChevronRight className="size-4 ml-1" />
                   </Button>
                 </div>
@@ -301,6 +329,49 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
           <p className="text-xs font-medium text-slate-600">
             No se registran médicos con agenda abierta para los filtros seleccionados.
           </p>
+        </div>
+      )}
+
+      {/* Persistent Bottom Action Bar for Step 3 */}
+      {selectedDoctor ? (
+        <div className="sticky bottom-2 sm:bottom-4 z-20 mt-6 sm:mt-8 rounded-2xl sm:rounded-3xl border-2 border-[#005a87] bg-white p-3.5 sm:p-5 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onBackToSpecialty}
+              className="h-10 px-3.5 rounded-xl border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold gap-1 shrink-0 cursor-pointer text-xs sm:text-sm"
+            >
+              <ChevronLeft className="size-4" />
+              <span>Volver</span>
+            </Button>
+            <div className="min-w-0 flex-1">
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#005a87]">Profesional Seleccionado</span>
+              <h4 className="text-sm sm:text-lg font-bold text-slate-900 truncate">{selectedDoctor.name}</h4>
+              <p className="text-xs sm:text-sm text-slate-500 truncate">Matrícula {selectedDoctor.licenseNumber} · {selectedSpecialty.name}</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="lg"
+            onClick={onProceed}
+            className="w-full sm:w-auto h-11 sm:h-12 px-6 rounded-xl bg-[#005a87] hover:bg-[#00486c] text-white font-bold text-xs sm:text-base shadow-md gap-2 shrink-0 cursor-pointer"
+          >
+            <span>Siguiente: Seleccionar Fecha y Horario</span>
+            <ChevronRight className="size-4 sm:size-5" />
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-6 flex justify-start">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBackToSpecialty}
+            className="h-10 px-4 rounded-xl border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold gap-1.5 cursor-pointer text-xs sm:text-sm"
+          >
+            <ChevronLeft className="size-4" />
+            <span>Volver a Especialidades</span>
+          </Button>
         </div>
       )}
     </section>

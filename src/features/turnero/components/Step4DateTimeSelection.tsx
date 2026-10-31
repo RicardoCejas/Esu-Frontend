@@ -131,9 +131,9 @@ export function Step4DateTimeSelection({
           type="button"
           onClick={onProceed}
           disabled={!selectedSlot || availabilityLoading || Boolean(availabilityError)}
-          className="h-11 px-5 cursor-pointer gap-2 bg-sky-700 text-sm sm:text-base font-bold text-white hover:bg-sky-800 rounded-xl"
+          className="h-12 px-6 cursor-pointer gap-2 bg-[#005a87] text-sm sm:text-base font-bold text-white hover:bg-[#00486c] rounded-xl shadow-md disabled:opacity-50"
         >
-          <span>Continuar a confirmación</span> <ChevronRight aria-hidden="true" className="size-4" />
+          <span>Siguiente: Datos del Paciente</span> <ChevronRight aria-hidden="true" className="size-5" />
         </Button>
       </div>
     </section>
