@@ -430,7 +430,7 @@ export const MisTurnosPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Lugar:</span>
-                <span className="font-semibold text-foreground">{selectedTurnoQr.centroSaludNombre}</span>
+                <span className="font-semibold text-foreground">{selectedTurnoQr.centroSaludNombre || 'Hospital Regional Aurelio Crespo'}{selectedTurnoQr.consultorioNumero ? ` (Consultorio ${selectedTurnoQr.consultorioNumero})` : ''}</span>
               </div>
             </div>
 

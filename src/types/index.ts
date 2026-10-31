@@ -202,6 +202,8 @@ export interface ConsultaMedica {
   pacienteNombre: string;
   profesionalId: string;
   profesionalNombre: string;
+  centroSaludId?: string | number;
+  centroSaludNombre?: string;
   fecha: string;
   motivo: string;
   diagnostico: string;
@@ -222,6 +224,10 @@ export interface RecetaDigital {
   fechaVencimiento: string;
   medicoNombre: string;
   medicoMatricula: string;
+  centroSaludEmisorId?: string | number;
+  centroSaludEmisorNombre?: string;
+  farmaciaDispensadoraNombre?: string;
+  lugarRetiroSugerido?: string;
   pacienteNombre: string;
   pacienteDni: string;
   medicamentos: Array<{
@@ -413,4 +419,44 @@ export interface RecetaValidacion {
   farmaciaDispensadora?: string;
   fechaDispensacion?: string;
   hashIntegridad?: string;
+}
+
+
+export interface MedicamentoRecetaDto {
+  id?: number | string;
+  nombreComercial?: string;
+  droga: string;
+  presentacion: string;
+  dosisIndicada: string;
+  posologia: string;
+  viaAdministracion?: string;
+  duracion?: string;
+  cantidad: string;
+}
+
+export interface RecetaDigitalDto {
+  id: number | string;
+  pacienteId: number | string;
+  pacienteNombre?: string;
+  pacienteDni?: string;
+  profesionalId: number | string;
+  profesionalNombre: string;
+  profesionalMatricula?: string;
+  fechaEmision: string;
+  fechaVencimiento: string;
+  diagnostico?: string;
+  codigoCie10?: string;
+  indicacionesGenerales?: string;
+  estadoReceta: 'PENDIENTE' | 'DISPONIBLE' | 'DISPENSADA' | 'VENCIDA' | 'ANULADA';
+  fechaDispensacion?: string;
+  matriculaFarmaciaDispensadora?: string;
+  centroSaludEmisorId?: number | string;
+  centroSaludEmisorNombre?: string;
+  farmaciaDispensadoraNombre?: string;
+  lugarRetiroSugerido?: string;
+  hashIntegridad?: string;
+  codigoQrUrl?: string;
+  motivoAnulacion?: string;
+  fechaAnulacion?: string;
+  medicamentos: MedicamentoRecetaDto[];
 }

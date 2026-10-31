@@ -11,6 +11,7 @@ import type {
   PageResponse,
   PlantillaClinica,
   RecetaValidacion,
+  RecetaDigitalDto,
 } from '@/types';
 
 export const clinicaService = {
@@ -90,6 +91,29 @@ export const clinicaService = {
       if (!termino || termino.trim().length === 0) return localCie10;
       const t = termino.toLowerCase();
       return localCie10.filter(c => c.codigo.toLowerCase().includes(t) || c.descripcion.toLowerCase().includes(t));
+    }
+  },
+
+  // Fase 3: Consulta de recetas digitales del paciente autenticado
+  async getMisRecetas(estado?: string): Promise<RecetaDigitalDto[]> {
+    try {
+      const res = await apiClient.get<RecetaDigitalDto[]>('/recetas/mis-recetas', {
+        params: estado ? { estado } : undefined,
+      });
+      return res.data;
+    } catch {
+      return [];
+    }
+  },
+
+  async getRecetasPorPaciente(pacienteId: string | number, estado?: string): Promise<RecetaDigitalDto[]> {
+    try {
+      const res = await apiClient.get<RecetaDigitalDto[]>(`/recetas/paciente/${pacienteId}`, {
+        params: estado ? { estado } : undefined,
+      });
+      return res.data;
+    } catch {
+      return [];
     }
   },
 

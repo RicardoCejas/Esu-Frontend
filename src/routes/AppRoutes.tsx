@@ -60,6 +60,9 @@ export const AppRoutes: React.FC = () => {
       <ActivityMonitor />
 
       <Routes>
+        {/* Redirección directa de Perfil para mantener Sidebar */}
+        <Route path="/perfil" element={<Navigate to="/dashboard/perfil" replace />} />
+
         {/* Rutas Públicas */}
         <Route path="/" element={<HomePage />} />
         <Route path="/agenda-medica" element={<AgendaMedicaPublicaPage />} />

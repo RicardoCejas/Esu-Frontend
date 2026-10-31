@@ -125,15 +125,15 @@ export const Sidebar: React.FC = () => {
                 to={item.path}
                 end={INDEX_PATHS.includes(item.path)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                  `flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-semibold transition-all ${
                     isActive
                       ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
                       : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                   }`
                 }
               >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="text-[13px] sm:text-sm font-semibold leading-snug">{item.title}</span>
+                <Icon className="h-4.5 w-4.5 shrink-0" />
+                <span className="text-[14px] sm:text-[14.5px] font-semibold leading-snug">{item.title}</span>
               </NavLink>
             );
           })}

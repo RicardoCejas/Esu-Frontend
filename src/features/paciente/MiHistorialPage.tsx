@@ -305,22 +305,22 @@ export const MiHistorialPage: React.FC = () => {
 
               {/* Receta Digital Asociada - Diseño Médico de Alto Contraste */}
               {consulta.receta && (
-                <div className="rounded-2xl border border-sky-200 bg-sky-50/70 p-4 sm:p-5 space-y-3.5 shadow-xs">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-200/60 pb-2.5">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-600 text-white shadow-2xs">
-                        <Pill className="h-4 w-4" />
+                <div className="rounded-2xl border border-sky-300 dark:border-sky-800 bg-sky-50/70 dark:bg-slate-900/90 p-4 sm:p-5 space-y-3.5 shadow-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-200/80 dark:border-sky-800/60 pb-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-700 text-white shadow-2xs">
+                        <Pill className="h-4.5 w-4.5" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-sm text-slate-900 font-heading">
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 font-heading">
                           Receta Electrónica Emitida
                         </h4>
-                        <span className="text-xs font-medium text-sky-800">
-                          Prescripción digital con validez oficial (Ley 27.553)
+                        <span className="text-xs font-medium text-sky-800 dark:text-sky-300">
+                          Prescripción digital oficial (Ley 27.553) • {consulta.centroSaludNombre || 'Hospital Regional Aurelio Crespo'}
                         </span>
                       </div>
                     </div>
-                    <span className="font-mono text-xs font-bold text-sky-900 bg-white border border-sky-300 px-3 py-1 rounded-lg shadow-2xs">
+                    <span className="font-mono text-xs font-bold text-sky-900 dark:text-sky-200 bg-white dark:bg-slate-800 border border-sky-300 dark:border-sky-700 px-3 py-1 rounded-lg shadow-2xs">
                       {consulta.receta.codigoQR}
                     </span>
                   </div>
@@ -329,22 +329,22 @@ export const MiHistorialPage: React.FC = () => {
                     {consulta.receta.medicamentos.map((med, idx) => (
                       <div
                         key={idx}
-                        className="rounded-xl border border-sky-200/80 bg-white p-3.5 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs"
+                        className="rounded-xl border border-sky-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs"
                       >
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-extrabold text-slate-900 text-sm sm:text-base">
+                            <span className="font-extrabold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
                               {med.nombreComercial}
                             </span>
-                            <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/70">
+                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/70 px-2 py-0.5 rounded-md border border-slate-200/70 dark:border-slate-600">
                               {med.droga} • {med.presentacion}
                             </span>
                           </div>
-                          <p className="text-xs sm:text-sm text-sky-800 font-bold mt-1">
+                          <p className="text-xs sm:text-sm text-sky-800 dark:text-sky-300 font-bold mt-1">
                             Dosis indicada: {med.dosisIndicada}
                           </p>
                         </div>
-                        <span className="text-xs font-bold text-slate-800 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 sm:text-right shrink-0">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 sm:text-right shrink-0">
                           Cantidad: {med.cantidad}
                         </span>
                       </div>
@@ -352,8 +352,8 @@ export const MiHistorialPage: React.FC = () => {
                   </div>
 
                   {consulta.receta.indicacionesGenerales && (
-                    <div className="rounded-xl bg-white border border-sky-200/70 p-3 text-xs sm:text-sm text-slate-700">
-                      <strong className="text-sky-900 font-bold">Indicaciones Médicas:</strong>{' '}
+                    <div className="rounded-xl bg-white dark:bg-slate-800 border border-sky-200/70 dark:border-slate-700 p-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                      <strong className="text-sky-900 dark:text-sky-300 font-bold">Indicaciones Médicas:</strong>{' '}
                       <span>{consulta.receta.indicacionesGenerales}</span>
                     </div>
                   )}
