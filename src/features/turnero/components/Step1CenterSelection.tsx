@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
-import { Search, MapPin, Phone, Building2, ChevronRight, X, LayoutGrid, List } from 'lucide-react'
+import { Search, MapPin, Phone, Building2, ChevronRight, ChevronLeft, X, LayoutGrid, List, Check } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { TurneroObrasSocialesCarousel } from './TurneroObrasSocialesCarousel'
 import type { HealthCenter, CenterType } from '../types'
 
 interface Step1CenterSelectionProps {
@@ -13,6 +14,8 @@ interface Step1CenterSelectionProps {
   typeFilter: CenterType | 'ALL'
   onTypeFilterChange: (type: CenterType | 'ALL') => void
   onSelectCenter: (center: HealthCenter) => void
+  onUnselectCenter?: () => void
+  onProceed?: () => void
 }
 
 const FILTER_OPTIONS: { label: string; value: CenterType | 'ALL' }[] = [
@@ -28,26 +31,26 @@ function getCenterTypeBadge(type: CenterType): { label: string; badgeClass: stri
     case 'HOSPITAL':
       return {
         label: 'Hospital Público',
-        badgeClass: 'text-sky-800 bg-sky-50 border-sky-200',
-        iconClass: 'bg-sky-50 text-sky-700 group-hover:bg-sky-700 group-hover:text-white',
+        badgeClass: 'text-[#005a87] bg-sky-50 border-sky-300 font-bold',
+        iconClass: 'bg-gradient-to-br from-[#005a87] to-[#0284c7] text-white shadow-md shadow-[#005a87]/25',
       }
     case 'CLINICA':
       return {
         label: 'Clínica Privada',
-        badgeClass: 'text-indigo-800 bg-indigo-50 border-indigo-200',
-        iconClass: 'bg-indigo-50 text-indigo-700 group-hover:bg-indigo-700 group-hover:text-white',
+        badgeClass: 'text-[#0e7490] bg-cyan-50 border-cyan-300 font-bold',
+        iconClass: 'bg-gradient-to-br from-[#005a87] to-[#00a896] text-white shadow-md shadow-[#005a87]/25',
       }
     case 'CAPS':
       return {
         label: 'Centro de Salud (CAPS)',
-        badgeClass: 'text-emerald-800 bg-emerald-50 border-emerald-200',
-        iconClass: 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-700 group-hover:text-white',
+        badgeClass: 'text-[#0d9488] bg-teal-50 border-teal-300 font-bold',
+        iconClass: 'bg-gradient-to-br from-[#008f80] to-[#14b8a6] text-white shadow-md shadow-[#008f80]/25',
       }
     case 'CONSULTORIO':
       return {
         label: 'Consultorios Externos',
-        badgeClass: 'text-amber-800 bg-amber-50 border-amber-200',
-        iconClass: 'bg-amber-50 text-amber-700 group-hover:bg-amber-700 group-hover:text-white',
+        badgeClass: 'text-[#0369a1] bg-blue-50 border-blue-300 font-bold',
+        iconClass: 'bg-gradient-to-br from-[#004f77] to-[#0284c7] text-white shadow-md shadow-[#004f77]/25',
       }
   }
 }
@@ -60,32 +63,37 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
   typeFilter,
   onTypeFilterChange,
   onSelectCenter,
+  onUnselectCenter,
+  onProceed,
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   return (
-    <section className="space-y-6">
-      {/* Controls Bar: Search, Category Chips & View Toggle */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs lg:flex-row lg:items-center lg:justify-between">
+    <section className="space-y-6 sm:space-y-8 pb-16 sm:pb-16">
+      {/* Controls Bar: Search, Category Chips & View Toggle con acentos del logo */}
+      <div className="flex flex-col gap-3.5 sm:gap-4 rounded-2xl sm:rounded-3xl border border-sky-200/90 bg-white/95 backdrop-blur-md p-4 sm:p-6 shadow-md lg:flex-row lg:items-center lg:justify-between relative overflow-hidden">
+        {/* Franja superior con degradado del logo */}
+        <div className="absolute top-0 left-0 right-0 h-1 sm:h-1.5 bg-gradient-to-r from-[#005a87] via-[#0284c7] to-[#00a896]" />
+
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 font-heading">
+          <h2 className="text-lg sm:text-2xl font-bold text-slate-900 font-heading">
             1. Seleccione el Centro de Salud o Consultorio
           </h2>
-          <p className="text-sm sm:text-base text-slate-500 mt-1">
+          <p className="text-xs sm:text-base text-slate-500 mt-0.5 sm:mt-1">
             {centers.length} {centers.length === 1 ? 'institución disponible' : 'instituciones disponibles'} en Cruz del Eje
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center flex-wrap">
+        <div className="flex flex-col gap-2.5 sm:gap-3 sm:flex-row sm:items-center flex-wrap">
           {/* Instant Search Bar */}
-          <div className="relative min-w-[260px] sm:min-w-[280px]">
+          <div className="relative w-full sm:w-auto min-w-0 sm:min-w-[280px]">
             <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
             <Input
               type="text"
               placeholder="Buscar por nombre o dirección..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="h-11 pl-10 pr-9 text-sm sm:text-base rounded-xl border-slate-200 bg-slate-50/70 focus:bg-white focus:ring-slate-900"
+              className="h-10 sm:h-11 pl-10 pr-9 text-xs sm:text-base rounded-xl border-slate-200 bg-slate-50/70 focus:bg-white focus:ring-2 focus:ring-[#005a87] focus:border-[#00a896]"
             />
             {searchTerm && (
               <button
@@ -98,8 +106,8 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
             )}
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5">
+          {/* Category Filter Pills con gradiente y contraste */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none w-full sm:w-auto">
             {FILTER_OPTIONS.map((opt) => {
               const isSelected = typeFilter === opt.value
               return (
@@ -107,9 +115,9 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                   key={opt.value}
                   type="button"
                   onClick={() => onTypeFilterChange(opt.value)}
-                  className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all ${
+                  className={`cursor-pointer shrink-0 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold transition-all ${
                     isSelected
-                      ? 'bg-slate-900 text-white shadow-2xs'
+                      ? 'bg-gradient-to-r from-[#005a87] to-[#00a896] text-white shadow-md shadow-[#005a87]/20 scale-105'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
                   }`}
                 >
@@ -145,47 +153,91 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
         </div>
       </div>
 
-      {/* Grid or List View Rendering */}
+      {/* Grid or List View Rendering con tarjetas intercaladas Azul/Turquesa */}
       {viewMode === 'grid' ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {centers.map((center) => {
+          {centers.map((center, index) => {
             const isSelected = selectedCenter?.id === center.id
+            const isTealTheme = index % 2 === 1
             const typeInfo = getCenterTypeBadge(center.type)
+
+            // Colores intercalados según la paleta del logo:
+            // Par (0, 2): Azul Institucional Marino / Océano
+            // Impar (1, 3): Turquesa Médico / Verde Esmeralda
+            const theme = isTealTheme
+              ? {
+                  stripe: isSelected
+                    ? 'bg-gradient-to-r from-[#007064] via-[#00a896] to-[#2dd4bf]'
+                    : 'bg-gradient-to-r from-[#007064]/40 via-[#00a896]/40 to-[#2dd4bf]/40 group-hover:from-[#007064] group-hover:via-[#00a896] group-hover:to-[#2dd4bf]',
+                  iconBg: 'bg-gradient-to-br from-[#007064] via-[#008f80] to-[#00a896] text-white shadow-md shadow-[#00a896]/25',
+                  badge: 'bg-teal-50 text-[#007064] border-teal-300',
+                  buttonUnselected: 'border-2 border-[#007064] text-[#007064] hover:bg-gradient-to-r hover:from-[#007064] hover:to-[#00a896] hover:text-white hover:border-transparent',
+                  selectedCard: 'border-[#007064] ring-4 ring-[#00a896]/35 shadow-[0_24px_50px_-10px_rgba(0,168,150,0.28)] bg-gradient-to-b from-white via-teal-50/30 to-sky-50/20 -translate-y-2.5',
+                  hoverCard: 'border-slate-200/90 shadow-[0_12px_30px_-10px_rgba(15,23,42,0.08)] hover:border-[#00a896]/70 hover:shadow-[0_24px_50px_-12px_rgba(0,168,150,0.25)] hover:-translate-y-3',
+                  pinColor: 'text-[#007064]',
+                  phoneColor: 'text-[#00a896]',
+                  selectedBadge: 'bg-gradient-to-r from-[#007064] to-[#00a896] text-white',
+                  buttonSelected: 'bg-gradient-to-r from-[#007064] to-[#00a896] text-white shadow-md shadow-[#00a896]/30 border-none',
+                }
+              : {
+                  stripe: isSelected
+                    ? 'bg-gradient-to-r from-[#00486c] via-[#005a87] to-[#0284c7]'
+                    : 'bg-gradient-to-r from-[#00486c]/40 via-[#005a87]/40 to-[#0284c7]/40 group-hover:from-[#00486c] group-hover:via-[#005a87] group-hover:to-[#0284c7]',
+                  iconBg: 'bg-gradient-to-br from-[#00486c] via-[#005a87] to-[#0284c7] text-white shadow-md shadow-[#005a87]/25',
+                  badge: 'bg-sky-50 text-[#005a87] border-sky-300',
+                  buttonUnselected: 'border-2 border-[#005a87] text-[#005a87] hover:bg-gradient-to-r hover:from-[#00486c] hover:to-[#005a87] hover:text-white hover:border-transparent',
+                  selectedCard: 'border-[#005a87] ring-4 ring-[#005a87]/35 shadow-[0_24px_50px_-10px_rgba(0,90,135,0.28)] bg-gradient-to-b from-white via-sky-50/30 to-teal-50/20 -translate-y-2.5',
+                  hoverCard: 'border-slate-200/90 shadow-[0_12px_30px_-10px_rgba(15,23,42,0.08)] hover:border-[#005a87]/70 hover:shadow-[0_24px_50px_-12px_rgba(0,90,135,0.25)] hover:-translate-y-3',
+                  pinColor: 'text-[#005a87]',
+                  phoneColor: 'text-[#0284c7]',
+                  selectedBadge: 'bg-gradient-to-r from-[#005a87] to-[#00a896] text-white',
+                  buttonSelected: 'bg-gradient-to-r from-[#005a87] to-[#00a896] text-white shadow-md shadow-[#005a87]/30 border-none',
+                }
 
             return (
               <Card
                 key={center.id}
-                className={`group rounded-2xl border transition-all duration-200 hover:shadow-lg cursor-pointer bg-white text-left ${
-                  isSelected
-                    ? 'border-slate-900 ring-2 ring-slate-900/15 shadow-md'
-                    : 'border-slate-200 hover:border-slate-300'
+                className={`group relative overflow-hidden rounded-3xl border-2 transition-all duration-300 cursor-pointer bg-white text-left ${
+                  isSelected ? theme.selectedCard : theme.hoverCard
                 }`}
                 onClick={() => onSelectCenter(center)}
               >
+                {/* Franja superior intercalada */}
+                <div className={`h-2 w-full transition-all duration-300 ${theme.stripe}`} />
+
                 <CardContent className="flex h-full flex-col justify-between p-6 sm:p-7 space-y-5">
                   <div className="space-y-4">
                     <div className="flex items-start gap-4">
-                      {/* Center Type Accent Icon */}
-                      <div className={`flex size-12 shrink-0 items-center justify-center rounded-xl transition-colors ${typeInfo.iconClass}`}>
-                        <Building2 className="size-6" />
+                      {/* Icono con degradado intercalado */}
+                      <div className={`flex size-14 shrink-0 items-center justify-center rounded-2xl group-hover:scale-110 group-hover:rotate-2 transition-all duration-300 ${theme.iconBg}`}>
+                        <Building2 className="size-7 text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-bold text-slate-900 text-lg sm:text-xl font-heading leading-tight truncate">
-                          {center.name}
-                        </h3>
-                        <span className={`inline-block mt-1.5 text-xs sm:text-sm font-semibold px-2.5 py-0.5 rounded-lg border ${typeInfo.badgeClass}`}>
-                          {typeInfo.label}
-                        </span>
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-bold text-slate-900 text-lg sm:text-xl font-heading leading-snug min-h-[3rem] line-clamp-2 group-hover:text-[#005a87] transition-colors">
+                            {center.name}
+                          </h3>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <span className={`inline-block text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg border ${theme.badge}`}>
+                            {typeInfo.label}
+                          </span>
+                          {isSelected && (
+                            <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg shadow-xs ${theme.selectedBadge}`}>
+                              <Check className="size-3.5" /> Seleccionado
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
                     <div className="space-y-2 text-sm sm:text-base text-slate-600 pt-3 border-t border-slate-100">
                       <div className="flex items-center gap-2.5">
-                        <MapPin className="size-4 shrink-0 text-slate-400" />
-                        <span className="truncate">{center.address}, {center.neighborhood}</span>
+                        <MapPin className={`size-4 shrink-0 ${theme.pinColor}`} />
+                        <span className="line-clamp-1">{center.address}, {center.neighborhood}</span>
                       </div>
                       <div className="flex items-center gap-2.5">
-                        <Phone className="size-4 shrink-0 text-slate-400" />
+                        <Phone className={`size-4 shrink-0 ${theme.phoneColor}`} />
                         <span>{center.phone}</span>
                       </div>
                     </div>
@@ -200,18 +252,29 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                       aria-label={`Elegir centro de salud ${center.name}`}
                       onClick={(e) => {
                         e.stopPropagation()
-                        onSelectCenter(center)
+                        if (isSelected && onProceed) {
+                          onProceed()
+                        } else {
+                          onSelectCenter(center)
+                        }
                       }}
-                      variant={isSelected ? 'default' : 'outline'}
-                      size="sm"
-                      className={`h-10 cursor-pointer gap-1.5 px-4 text-xs sm:text-sm font-bold rounded-xl transition-all ${
+                      className={`h-10 sm:h-11 cursor-pointer gap-2 px-4 sm:px-5 text-xs sm:text-sm font-bold rounded-xl transition-all ${
                         isSelected
-                          ? 'bg-slate-900 text-white'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                          ? `${theme.buttonSelected} hover:opacity-95`
+                          : `${theme.buttonUnselected} bg-white`
                       }`}
                     >
-                      <span>{isSelected ? 'Seleccionado' : 'Elegir Centro'}</span>
-                      <ChevronRight className="size-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                      {isSelected ? (
+                        <>
+                          <span>Elegir Especialidad</span>
+                          <ChevronRight className="size-4 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      ) : (
+                        <>
+                          <span>Elegir Centro</span>
+                          <ChevronRight className="size-4 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -220,60 +283,84 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
           })}
         </div>
       ) : (
-        /* List Mode: Directory Style with enlarged typography */
-        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs divide-y divide-slate-100">
-          {centers.map((center) => {
+        /* List Mode: Directory Style con intercalado */
+        <div className="flex flex-col gap-3.5">
+          {centers.map((center, index) => {
             const isSelected = selectedCenter?.id === center.id
+            const isTealTheme = index % 2 === 1
             const typeInfo = getCenterTypeBadge(center.type)
+
+            const listStripe = isTealTheme
+              ? (isSelected ? 'bg-gradient-to-b from-[#007064] to-[#00a896]' : 'bg-gradient-to-b from-[#007064]/40 to-[#00a896]/40 group-hover:from-[#007064] group-hover:to-[#00a896]')
+              : (isSelected ? 'bg-gradient-to-b from-[#00486c] to-[#005a87]' : 'bg-gradient-to-b from-[#00486c]/40 to-[#005a87]/40 group-hover:from-[#00486c] group-hover:to-[#005a87]')
+
+            const iconClass = isTealTheme
+              ? 'bg-gradient-to-br from-[#007064] to-[#00a896] text-white shadow-[#00a896]/20'
+              : 'bg-gradient-to-br from-[#00486c] to-[#005a87] text-white shadow-[#005a87]/20'
 
             return (
               <div
                 key={center.id}
                 onClick={() => onSelectCenter(center)}
-                className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 transition-colors hover:bg-slate-50/80 cursor-pointer ${
-                  isSelected ? 'bg-slate-50 ring-2 ring-slate-900' : ''
+                className={`group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 p-5 sm:p-6 cursor-pointer bg-white ${
+                  isSelected
+                    ? 'border-[#005a87] ring-4 ring-[#00a896]/35 shadow-xl bg-gradient-to-r from-sky-50/50 via-teal-50/30 to-white -translate-y-1'
+                    : 'border-slate-200/90 shadow-sm hover:border-[#00a896]/70 hover:shadow-lg hover:-translate-y-1.5'
                 }`}
               >
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl transition-colors ${typeInfo.iconClass}`}>
-                    <Building2 className="size-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="font-bold text-base sm:text-lg text-slate-900 font-heading truncate">
-                        {center.name}
-                      </span>
-                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-md border ${typeInfo.badgeClass}`}>
-                        {typeInfo.label}
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-500 truncate mt-1">
-                      {center.address} • {center.phone}
-                    </p>
-                  </div>
-                </div>
+                {/* Franja lateral intercalada */}
+                <div className={`absolute top-0 left-0 bottom-0 w-1.5 transition-all ${listStripe}`} />
 
-                <div className="flex items-center justify-between sm:justify-end gap-5 shrink-0 pl-15 sm:pl-0">
-                  <span className="text-sm sm:text-base font-semibold text-slate-700">
-                    {center.specialtiesCount} especialidades
-                  </span>
-                  <Button
-                    type="button"
-                    aria-label={`Elegir centro de salud ${center.name}`}
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      onSelectCenter(center)
-                    }}
-                    size="sm"
-                    className={`h-10 px-4 text-xs sm:text-sm font-bold rounded-xl ${
-                      isSelected
-                        ? 'bg-slate-900 text-white'
-                        : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span>{isSelected ? 'Seleccionado' : 'Elegir'}</span>
-                    <ChevronRight className="size-4 ml-1" />
-                  </Button>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pl-2">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className={`flex size-12 shrink-0 items-center justify-center rounded-xl shadow-md ${iconClass}`}>
+                      <Building2 className="size-6 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="font-bold text-base sm:text-lg text-slate-900 font-heading">
+                          {center.name}
+                        </span>
+                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-md border ${typeInfo.badgeClass}`}>
+                          {typeInfo.label}
+                        </span>
+                        {isSelected && (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md bg-gradient-to-r from-[#005a87] to-[#00a896] text-white shadow-2xs">
+                            <Check className="size-3" /> Seleccionado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-500 truncate mt-1">
+                        {center.address} • {center.phone}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-5 shrink-0 pl-14 sm:pl-0">
+                    <span className="text-sm sm:text-base font-bold text-slate-700">
+                      {center.specialtiesCount} especialidades
+                    </span>
+                    <Button
+                      type="button"
+                      aria-label={`Elegir centro de salud ${center.name}`}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        if (isSelected && onProceed) {
+                          onProceed()
+                        } else {
+                          onSelectCenter(center)
+                        }
+                      }}
+                      className={`h-10 px-4 sm:px-5 text-xs sm:text-sm font-bold rounded-xl transition-all ${
+                        isSelected
+                          ? 'bg-gradient-to-r from-[#005a87] to-[#00a896] text-white shadow-md'
+                          : 'border-2 border-[#005a87] bg-white text-[#005a87] hover:bg-gradient-to-r hover:from-[#005a87] hover:to-[#00a896] hover:text-white hover:border-transparent'
+                      }`}
+                    >
+                      <span>{isSelected ? 'Elegir Especialidad' : 'Elegir Centro'}</span>
+                      <ChevronRight className="size-4 ml-1" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             )
@@ -282,11 +369,53 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
       )}
 
       {centers.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center bg-white">
-          <Building2 className="mx-auto size-10 text-slate-300 mb-3" />
-          <p className="text-sm sm:text-base font-medium text-slate-600">
+        <div className="rounded-3xl border-2 border-dashed border-[#00a896]/30 p-12 text-center bg-white/90 shadow-sm">
+          <Building2 className="mx-auto size-12 text-[#005a87]/40 mb-3" />
+          <p className="text-base font-semibold text-slate-700">
             No se encontraron centros de salud con los filtros actuales en esta localidad.
           </p>
+        </div>
+      )}
+
+      {/* Carrusel Interactivo de Obras Sociales y Prepagas (Colocado ABAJO de los centros) */}
+      <div className="pt-2">
+        <TurneroObrasSocialesCarousel />
+      </div>
+
+      {/* Barra de acción inferior con degradado y alto contraste */}
+      {selectedCenter && (
+        <div className="sticky bottom-2 sm:bottom-4 z-20 mt-6 sm:mt-8 rounded-2xl sm:rounded-3xl border-2 border-teal-300/40 bg-gradient-to-r from-[#00486c] via-[#005a87] to-[#008f80] p-3.5 sm:p-5 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 text-white">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 w-full sm:w-auto">
+            {onUnselectCenter && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onUnselectCenter}
+                className="h-10 px-3 sm:px-3.5 rounded-xl border-white/30 text-white hover:bg-white/20 font-bold gap-1 shrink-0 cursor-pointer text-xs sm:text-sm"
+                title="Volver hacia atrás y cambiar centro"
+              >
+                <ChevronLeft className="size-4" />
+                <span>Volver atrás</span>
+              </Button>
+            )}
+            <div className="flex size-10 sm:size-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-white text-[#005a87] font-bold shadow-md">
+              <Check className="size-5 sm:size-7 text-[#005a87]" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-teal-200">Centro Seleccionado</span>
+              <h4 className="text-sm sm:text-lg font-bold text-white truncate">{selectedCenter.name}</h4>
+              <p className="text-xs sm:text-sm text-sky-100 truncate">{selectedCenter.address}, {selectedCenter.neighborhood}</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="lg"
+            onClick={onProceed}
+            className="w-full sm:w-auto h-11 sm:h-12 px-6 sm:px-7 rounded-xl sm:rounded-2xl bg-white hover:bg-teal-50 text-[#005a87] font-extrabold text-xs sm:text-base shadow-xl gap-2 shrink-0 cursor-pointer transition-transform hover:scale-102"
+          >
+            <span>Siguiente: Elegir Especialidad</span>
+            <ChevronRight className="size-4 sm:size-5 text-[#005a87]" />
+          </Button>
         </div>
       )}
     </section>
