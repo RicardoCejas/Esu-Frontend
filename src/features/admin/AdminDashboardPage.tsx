@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { turnosService } from '@/api/turnosService';
-import { pacientesService } from '@/api/pacientesService';
 import { centrosService } from '@/api/centrosService';
 import { exportarAcsv } from '@/lib/exportCsv';
-import type { Turno, User, CentroSalud } from '@/types';
+import type { Turno, CentroSalud } from '@/types';
 import {
   Building2,
   Activity,
   Stethoscope,
   TrendingUp,
-  Download,
   CalendarCheck,
   BarChart3,
   PieChart,
@@ -19,17 +17,14 @@ import { InteractiveBarChart, InteractiveDonutChart } from './components/Interac
 
 export const AdminDashboardPage: React.FC = () => {
   const [turnos, setTurnos] = useState<Turno[]>([]);
-  const [pacientes, setPacientes] = useState<User[]>([]);
   const [centros, setCentros] = useState<CentroSalud[]>([]);
 
   useEffect(() => {
     Promise.all([
       turnosService.getAll(),
-      pacientesService.getAll(),
       centrosService.getAll(),
-    ]).then(([tData, pData, cData]) => {
+    ]).then(([tData, cData]) => {
       setTurnos(tData);
-      setPacientes(pData);
       setCentros(cData);
     });
   }, []);
@@ -118,22 +113,6 @@ export const AdminDashboardPage: React.FC = () => {
     exportarAcsv(`reporte_turnos_esu_${hoyStr}`, headers, rows);
   };
 
-  // HU-56: Exportación de Padrón a CSV
-  const handleExportarPadronCSV = () => {
-    const headers = ['ID', 'Nombre', 'Apellido', 'DNI', 'Email', 'Teléfono', 'Rol'];
-    const rows = pacientes.map((p) => [
-      p.id,
-      p.nombre,
-      p.apellido,
-      p.dni,
-      p.email,
-      p.telefono || 'Sin teléfono',
-      p.rol,
-    ]);
-
-    exportarAcsv(`padron_pacientes_esu_${hoyStr}`, headers, rows);
-  };
-
   return (
     <div className="space-y-8">
       {/* Encabezado y Botones de Exportación CSV (HU-56) */}
@@ -148,13 +127,6 @@ export const AdminDashboardPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            onClick={handleExportarPadronCSV}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition shadow-xs"
-          >
-            <Download className="h-4 w-4 text-primary" />
-            <span>Exportar Padrón (CSV)</span>
-          </button>
 
           <button
             onClick={handleExportarTurnosCSV}

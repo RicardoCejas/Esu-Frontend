@@ -93,7 +93,7 @@ export const AppRoutes: React.FC = () => {
             {/* Perfil con Sidebar siempre visible a la izquierda (todos los roles) */}
             <Route path="perfil" element={<MiPerfilPage />} />
             {/* Módulo Paciente */}
-            <Route element={<RoleGuard allowedRoles={['PACIENTE', 'ADMIN']} />}>
+            <Route element={<RoleGuard allowedRoles={['PACIENTE']} />}>
               <Route path="paciente" element={<MisTurnosPage />} />
               <Route path="paciente/historial" element={<MiHistorialPage />} />
               <Route path="paciente/recetas" element={<MisRecetasPage />} />
@@ -102,7 +102,7 @@ export const AppRoutes: React.FC = () => {
             </Route>
 
             {/* Módulo Médico */}
-            <Route element={<RoleGuard allowedRoles={['MEDICO', 'ADMIN']} />}>
+            <Route element={<RoleGuard allowedRoles={['MEDICO']} />}>
               <Route path="medico" element={<AgendaMedicaPage />} />
               <Route path="medico/atencion" element={<AtencionConsultaPage />} />
             </Route>

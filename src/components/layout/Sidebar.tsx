@@ -66,7 +66,7 @@ export const Sidebar: React.FC = () => {
   const { user } = useAuth();
   const userRole = user?.rol || 'PACIENTE';
   const visibleItems = navItems.filter((item) => item.roles.includes(userRole));
-  const proximoTurno = useProximoTurno(user?.id, userRole === 'PACIENTE' || userRole === 'ADMIN');
+  const proximoTurno = useProximoTurno(user?.id, userRole === 'PACIENTE');
 
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-card">
