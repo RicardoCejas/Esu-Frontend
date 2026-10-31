@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useDemoTurnero } from './hooks/useDemoTurnero'
 import { AppHeader, SUPPORTED_CITIES, type CityOption } from '@/components/layout/AppHeader'
 import { TurneroHeader } from './components/TurneroHeader'
-import { TurneroStepper } from './components/TurneroStepper'
 import { Step1CenterSelection } from './components/Step1CenterSelection'
 import { Step2SpecialtySelection } from './components/Step2SpecialtySelection'
 import { Step3DoctorSelection } from './components/Step3DoctorSelection'
@@ -47,8 +46,12 @@ export function TurneroContainer() {
     bookingError,
     createdAppointment,
     handleSelectCenter,
+    handleUnselectCenter,
+    handleProceedToSpecialty,
     handleSelectSpecialty,
+    handleProceedToDoctor,
     handleSelectDoctor,
+    handleProceedToDateTime,
     handleSelectSlot,
     handleProceedToConfirmation,
     handleConfirmBooking,
@@ -58,7 +61,11 @@ export function TurneroContainer() {
   } = useDemoTurnero()
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white">
+    <div className="min-h-screen bg-gradient-to-b from-[#e3eff6] via-[#ebf5f7] to-[#d9edf4] text-slate-900 selection:bg-[#005a87] selection:text-white relative overflow-x-hidden">
+      {/* Luces y auras de fondo sutiles referidas a los colores azul marino y turquesa del logo */}
+      <div className="fixed top-0 left-1/4 -translate-x-1/2 -top-24 size-[650px] rounded-full bg-gradient-to-br from-[#005a87]/12 to-[#00a896]/12 blur-3xl pointer-events-none" />
+      <div className="fixed top-1/2 right-0 translate-x-1/4 size-[700px] rounded-full bg-gradient-to-bl from-[#00a896]/12 via-[#0284c7]/10 to-transparent blur-3xl pointer-events-none" />
+      <div className="fixed -bottom-24 left-1/3 size-[500px] rounded-full bg-[#005a87]/8 blur-3xl pointer-events-none" />
 
       {/* Global Application Header with Brand, City Selector and Navigation */}
       <AppHeader
@@ -72,21 +79,21 @@ export function TurneroContainer() {
         onLoginClick={() => setIsLoginModalOpen(true)}
       />
 
-      {/* Subheader with Active Context Summary */}
-      <TurneroHeader
-        selectedCenter={selectedCenter}
-        selectedSpecialty={selectedSpecialty}
-        selectedDoctor={selectedDoctor}
-        selectedDate={selectedDate}
-        selectedSlotTime={selectedSlot?.time ?? null}
-        onReset={handleResetBooking}
-      />
+      {/* Header banner shown only on Step 1 (Centros) */}
+      {currentStep === 1 && (
+        <TurneroHeader
+          selectedCenter={selectedCenter}
+          selectedSpecialty={selectedSpecialty}
+          selectedDoctor={selectedDoctor}
+          selectedDate={selectedDate}
+          selectedSlotTime={selectedSlot?.time ?? null}
+          onReset={handleResetBooking}
+        />
+      )}
 
-      {/* Compact Stepper Navigation */}
-      <TurneroStepper currentStep={currentStep} onGoToStep={handleGoToStep} />
-
-      {/* Main Content Area: max-w-7xl with fluid padding */}
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5">
+      {/* Main Content Area: Dedicated full-screen per step */}
+      <main className="w-full px-3 sm:px-8 lg:px-12 xl:px-14 py-3 sm:py-5">
+        <div key={currentStep} className="animate-in fade-in slide-in-from-right-3 duration-300">
         {currentStep === 1 && (
           <Step1CenterSelection
             centers={filteredCenters}
@@ -96,6 +103,8 @@ export function TurneroContainer() {
             typeFilter={centerTypeFilter}
             onTypeFilterChange={setCenterTypeFilter}
             onSelectCenter={handleSelectCenter}
+            onUnselectCenter={handleUnselectCenter}
+            onProceed={handleProceedToSpecialty}
           />
         )}
 
@@ -108,6 +117,7 @@ export function TurneroContainer() {
             onSearchChange={setSpecialtySearch}
             onSelectSpecialty={handleSelectSpecialty}
             onBackToCenter={() => handleGoToStep(1)}
+            onProceed={handleProceedToDoctor}
           />
         )}
 
@@ -119,6 +129,7 @@ export function TurneroContainer() {
             selectedDoctor={selectedDoctor}
             onSelectDoctor={handleSelectDoctor}
             onBackToSpecialty={() => handleGoToStep(2)}
+            onProceed={handleProceedToDateTime}
           />
         )}
 
@@ -157,6 +168,7 @@ export function TurneroContainer() {
             onBackToSlots={() => handleGoToStep(4)}
           />
         )}
+        </div>
       </main>
 
       {/* Quick Lookup Modal */}

@@ -47,20 +47,70 @@ export function useDemoTurnero() {
   const afternoonSlots = slots.filter((slot) => slot.period === 'AFTERNOON')
   const liveSelectedSlot = slots.find((slot) => slot.id === selectedSlot?.id && slot.isAvailable) ?? null
 
-  const handleSelectCenter = useCallback((center: HealthCenter) => {
+  const handleSelectCenter = useCallback((center: HealthCenter, autoAdvance: boolean = false) => {
     if (!canSelectCenter(center, MOCK_CENTERS)) return
-    setSelectedCenter(center); setSelectedSpecialty(null); setSelectedDoctor(null); setSelectedSlot(null)
-    setCreatedAppointment(null); setBookingError(null); setCurrentStep(2)
+    setSelectedCenter((prev) => {
+      if (prev?.id !== center.id) {
+        setSelectedSpecialty(null); setSelectedDoctor(null); setSelectedSlot(null)
+      }
+      return center
+    })
+    if (autoAdvance) {
+      setCreatedAppointment(null); setBookingError(null); setCurrentStep(2)
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }, [])
-  const handleSelectSpecialty = useCallback((specialty: MedicalSpecialty) => {
+
+  const handleUnselectCenter = useCallback(() => {
+    setSelectedCenter(null); setSelectedSpecialty(null); setSelectedDoctor(null); setSelectedSlot(null)
+  }, [])
+
+  const handleProceedToSpecialty = useCallback(() => {
+    if (!selectedCenter) return
+    setCreatedAppointment(null); setBookingError(null); setCurrentStep(2)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [selectedCenter])
+
+  const handleSelectSpecialty = useCallback((specialty: MedicalSpecialty, autoAdvance: boolean = false) => {
     if (!canSelectSpecialty(selectedCenter, specialty, availableSpecialties)) return
-    setSelectedSpecialty(specialty); setSelectedDoctor(null); setSelectedSlot(null)
-    setCreatedAppointment(null); setBookingError(null); setCurrentStep(3)
+    setSelectedSpecialty((prev) => {
+      if (prev?.id !== specialty.id) {
+        setSelectedDoctor(null); setSelectedSlot(null)
+      }
+      return specialty
+    })
+    if (autoAdvance) {
+      setCreatedAppointment(null); setBookingError(null); setCurrentStep(3)
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }, [selectedCenter, availableSpecialties])
-  const handleSelectDoctor = useCallback((doctor: MedicalDoctor) => {
+
+  const handleProceedToDoctor = useCallback(() => {
+    if (!selectedSpecialty) return
+    setCreatedAppointment(null); setBookingError(null); setCurrentStep(3)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [selectedSpecialty])
+
+  const handleSelectDoctor = useCallback((doctor: MedicalDoctor, autoAdvance: boolean = true) => {
     if (!canSelectDoctor(selectedCenter, selectedSpecialty, doctor, availableDoctors)) return
-    setSelectedDoctor(doctor); setSelectedSlot(null); setCreatedAppointment(null); setBookingError(null); setCurrentStep(4)
+    setSelectedDoctor((prev) => {
+      if (prev?.id !== doctor.id) {
+        setSelectedSlot(null)
+      }
+      return doctor
+    })
+    if (autoAdvance) {
+      setCreatedAppointment(null); setBookingError(null); setCurrentStep(4)
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }, [selectedCenter, selectedSpecialty, availableDoctors])
+
+  const handleProceedToDateTime = useCallback(() => {
+    if (!selectedDoctor) return
+    setCreatedAppointment(null); setBookingError(null); setCurrentStep(4)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [selectedDoctor])
+
   const handleSelectDate = useCallback((date: string) => {
     if (!canSelectDate(date)) return
     setSelectedDate(date); setSelectedSlot(null); setCreatedAppointment(null); setBookingError(null)
@@ -76,6 +126,7 @@ export function useDemoTurnero() {
       return
     }
     setBookingError(null); setCurrentStep(5)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   const handleConfirmBooking = (patient: PatientBookingForm) => {
     if (createdAppointment) return
@@ -88,6 +139,7 @@ export function useDemoTurnero() {
       const booking = demoBookingStore.book({ centerId: selectedCenter.id, specialtyId: selectedSpecialty.id,
         doctor: selectedDoctor, date: selectedDate, slotId: liveSelectedSlot.id, patient })
       setPatientForm(patient); setCreatedAppointment(booking); setBookingError(null); setBookingRevision((value) => value + 1)
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (error) {
       setBookingError(error instanceof Error ? error.message : 'No se pudo completar la demostración.')
       setBookingRevision((value) => value + 1)
@@ -97,8 +149,9 @@ export function useDemoTurnero() {
     setPatientForm((current) => ({ ...current, [field]: value }))
   }, [])
   const handleGoToStep = useCallback((step: BookingStep) => {
-    if (step < currentStep) setCurrentStep(step)
-  }, [currentStep])
+    setCurrentStep(step)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
   const handleResetBooking = useCallback(() => {
     setSelectedCenter(null); setSelectedSpecialty(null); setSelectedDoctor(null); setSelectedSlot(null)
     setSelectedDate(formatLocalDate(new Date())); setPatientForm(INITIAL_PATIENT_FORM)
@@ -111,6 +164,9 @@ export function useDemoTurnero() {
     selectedSlot: createdAppointment ? selectedSlot : liveSelectedSlot, morningSlots, afternoonSlots,
     availabilityLoading: false, availabilityError: null, availabilityCanRetry: false, retryAvailability: () => {},
     patientForm, bookingError, isBooking: false, createdAppointment,
-    handleSelectCenter, handleSelectSpecialty, handleSelectDoctor, handleSelectSlot,
+    handleSelectCenter, handleUnselectCenter, handleProceedToSpecialty,
+    handleSelectSpecialty, handleProceedToDoctor,
+    handleSelectDoctor, handleProceedToDateTime,
+    handleSelectSlot,
     handleProceedToConfirmation, handleConfirmBooking, handlePatientFormChange, handleGoToStep, handleResetBooking }
 }
