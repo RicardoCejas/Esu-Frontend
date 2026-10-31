@@ -27,16 +27,45 @@ export const turnosService = {
     }
   },
 
-  async getByProfesional(profesionalId: string, fecha?: string): Promise<Turno[]> {
+  async getByProfesional(
+    profesionalId: string,
+    params?: { fecha?: string; centroSaludId?: string } | string
+  ): Promise<Turno[]> {
+    const queryParams: Record<string, string> = {};
+    if (typeof params === 'string') {
+      queryParams.fecha = params;
+    } else if (params) {
+      if (params.fecha) queryParams.fecha = params.fecha;
+      if (params.centroSaludId && params.centroSaludId !== 'TODOS') queryParams.centroSaludId = params.centroSaludId;
+    }
+
     try {
-      const response = await apiClient.get<Turno[]>(`/turnos/profesional/${profesionalId}`, {
-        params: { fecha },
+      const response = await apiClient.get<Turno[]>('/turnos/profesional/' + profesionalId, {
+        params: queryParams,
       });
       return response.data;
     } catch {
-      return turnosState.filter(
-        (t) => t.profesionalId === profesionalId && (!fecha || t.fecha === fecha)
-      );
+      return turnosState.filter((t) => {
+        const matchesProf = t.profesionalId === profesionalId;
+        const matchesFecha = !queryParams.fecha || t.fecha === queryParams.fecha;
+        const matchesCentro = !queryParams.centroSaludId || t.centroSaludId === queryParams.centroSaludId;
+        return matchesProf && matchesFecha && matchesCentro;
+      });
+    }
+  },
+
+  async getMiAgenda(params?: { fecha?: string; centroSaludId?: string }): Promise<Turno[]> {
+    const queryParams: Record<string, string> = {};
+    if (params) {
+      if (params.fecha) queryParams.fecha = params.fecha;
+      if (params.centroSaludId && params.centroSaludId !== 'TODOS') queryParams.centroSaludId = params.centroSaludId;
+    }
+
+    try {
+      const response = await apiClient.get<Turno[]>('/turnos/mi-agenda', { params: queryParams });
+      return response.data;
+    } catch {
+      return this.getByProfesional('p1', params);
     }
   },
 

@@ -372,9 +372,12 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
                             {d.intervaloMinutos} min
                           </span>
                         </div>
-                        <p className="text-[11px] text-muted-foreground truncate max-w-[240px]">
-                          {d.centroSaludNombre || getNombreCentro(d.centroSaludId)}
-                        </p>
+                        <div className="flex items-center gap-1.5 pt-0.5">
+                          <Building2 className="h-3 w-3 text-sky-600 shrink-0" />
+                          <span className="text-[11px] font-bold text-sky-900 dark:text-sky-300 truncate max-w-[240px]">
+                            {d.centroSaludNombre || getNombreCentro(d.centroSaludId)}
+                          </span>
+                        </div>
                       </div>
 
                       <button
