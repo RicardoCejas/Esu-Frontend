@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { Search, MapPin, Phone, Building2, ChevronRight, ChevronLeft, X, LayoutGrid, List, Check } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TurneroObrasSocialesCarousel } from './TurneroObrasSocialesCarousel'
@@ -69,17 +68,17 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   return (
-    <section className="space-y-6 sm:space-y-8 pb-16 sm:pb-16">
+    <section className="space-y-4 sm:space-y-6 pb-12 sm:pb-16">
       {/* Controls Bar: Search, Category Chips & View Toggle con acentos del logo */}
-      <div className="flex flex-col gap-3.5 sm:gap-4 rounded-2xl sm:rounded-3xl border border-sky-200/90 bg-white/95 backdrop-blur-md p-4 sm:p-6 shadow-md lg:flex-row lg:items-center lg:justify-between relative overflow-hidden">
+      <div className="flex flex-col gap-3 sm:gap-3.5 rounded-2xl border border-sky-200/90 bg-white/95 backdrop-blur-md p-3.5 sm:p-4.5 shadow-sm lg:flex-row lg:items-center lg:justify-between relative overflow-hidden">
         {/* Franja superior con degradado del logo */}
-        <div className="absolute top-0 left-0 right-0 h-1 sm:h-1.5 bg-gradient-to-r from-[#005a87] via-[#0284c7] to-[#00a896]" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#005a87] via-[#0284c7] to-[#00a896]" />
 
         <div>
-          <h2 className="text-lg sm:text-2xl font-bold text-slate-900 font-heading">
+          <h2 className="text-base sm:text-xl font-bold text-slate-900 font-heading">
             1. Seleccione el Centro de Salud o Consultorio
           </h2>
-          <p className="text-xs sm:text-base text-slate-500 mt-0.5 sm:mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
             {centers.length} {centers.length === 1 ? 'institución disponible' : 'instituciones disponibles'} en Cruz del Eje
           </p>
         </div>
@@ -169,11 +168,11 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                   stripe: isSelected
                     ? 'bg-gradient-to-r from-[#007064] via-[#00a896] to-[#2dd4bf]'
                     : 'bg-gradient-to-r from-[#007064]/40 via-[#00a896]/40 to-[#2dd4bf]/40 group-hover:from-[#007064] group-hover:via-[#00a896] group-hover:to-[#2dd4bf]',
-                  iconBg: 'bg-gradient-to-br from-[#007064] via-[#008f80] to-[#00a896] text-white shadow-md shadow-[#00a896]/25',
+                  iconBg: 'bg-gradient-to-br from-[#007064] via-[#008f80] to-[#00a896] text-white shadow-md shadow-[#00a896]/30',
                   badge: 'bg-teal-50 text-[#007064] border-teal-300',
                   buttonUnselected: 'border-2 border-[#007064] text-[#007064] hover:bg-gradient-to-r hover:from-[#007064] hover:to-[#00a896] hover:text-white hover:border-transparent',
-                  selectedCard: 'border-[#007064] ring-4 ring-[#00a896]/35 shadow-[0_24px_50px_-10px_rgba(0,168,150,0.28)] bg-gradient-to-b from-white via-teal-50/30 to-sky-50/20 -translate-y-2.5',
-                  hoverCard: 'border-slate-200/90 shadow-[0_12px_30px_-10px_rgba(15,23,42,0.08)] hover:border-[#00a896]/70 hover:shadow-[0_24px_50px_-12px_rgba(0,168,150,0.25)] hover:-translate-y-3',
+                  selectedCard: 'border-[#007064] ring-4 ring-[#00a896]/35 shadow-[0_20px_40px_-8px_rgba(0,168,150,0.35)] bg-gradient-to-b from-white via-teal-50/40 to-sky-50/20 -translate-y-2.5',
+                  hoverCard: 'border-slate-200/90 shadow-[0_10px_25px_-5px_rgba(0,168,150,0.12)] hover:border-[#00a896]/80 hover:shadow-[0_22px_45px_-8px_rgba(0,168,150,0.28)] hover:-translate-y-2.5 hover:scale-[1.015]',
                   pinColor: 'text-[#007064]',
                   phoneColor: 'text-[#00a896]',
                   selectedBadge: 'bg-gradient-to-r from-[#007064] to-[#00a896] text-white',
@@ -183,72 +182,89 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                   stripe: isSelected
                     ? 'bg-gradient-to-r from-[#00486c] via-[#005a87] to-[#0284c7]'
                     : 'bg-gradient-to-r from-[#00486c]/40 via-[#005a87]/40 to-[#0284c7]/40 group-hover:from-[#00486c] group-hover:via-[#005a87] group-hover:to-[#0284c7]',
-                  iconBg: 'bg-gradient-to-br from-[#00486c] via-[#005a87] to-[#0284c7] text-white shadow-md shadow-[#005a87]/25',
+                  iconBg: 'bg-gradient-to-br from-[#00486c] via-[#005a87] to-[#0284c7] text-white shadow-md shadow-[#005a87]/30',
                   badge: 'bg-sky-50 text-[#005a87] border-sky-300',
                   buttonUnselected: 'border-2 border-[#005a87] text-[#005a87] hover:bg-gradient-to-r hover:from-[#00486c] hover:to-[#005a87] hover:text-white hover:border-transparent',
-                  selectedCard: 'border-[#005a87] ring-4 ring-[#005a87]/35 shadow-[0_24px_50px_-10px_rgba(0,90,135,0.28)] bg-gradient-to-b from-white via-sky-50/30 to-teal-50/20 -translate-y-2.5',
-                  hoverCard: 'border-slate-200/90 shadow-[0_12px_30px_-10px_rgba(15,23,42,0.08)] hover:border-[#005a87]/70 hover:shadow-[0_24px_50px_-12px_rgba(0,90,135,0.25)] hover:-translate-y-3',
+                  selectedCard: 'border-[#005a87] ring-4 ring-[#005a87]/35 shadow-[0_20px_40px_-8px_rgba(0,90,135,0.35)] bg-gradient-to-b from-white via-sky-50/40 to-teal-50/20 -translate-y-2.5',
+                  hoverCard: 'border-slate-200/90 shadow-[0_10px_25px_-5px_rgba(0,90,135,0.12)] hover:border-[#005a87]/80 hover:shadow-[0_22px_45px_-8px_rgba(0,90,135,0.28)] hover:-translate-y-2.5 hover:scale-[1.015]',
                   pinColor: 'text-[#005a87]',
                   phoneColor: 'text-[#0284c7]',
                   selectedBadge: 'bg-gradient-to-r from-[#005a87] to-[#00a896] text-white',
                   buttonSelected: 'bg-gradient-to-r from-[#005a87] to-[#00a896] text-white shadow-md shadow-[#005a87]/30 border-none',
                 }
 
+            // Animación de flotación suave y desfasada para dar sensación viva
+            const floatAnimClass = index === 0 ? 'animate-float-1' : index === 1 ? 'animate-float-2' : 'animate-float-3'
+
             return (
-              <Card
+              <div
                 key={center.id}
-                className={`group relative overflow-hidden rounded-3xl border-2 transition-all duration-300 cursor-pointer bg-white text-left ${
+                className={`group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 cursor-pointer bg-white text-left ${floatAnimClass} ${
                   isSelected ? theme.selectedCard : theme.hoverCard
                 }`}
                 onClick={() => onSelectCenter(center)}
               >
-                {/* Franja superior intercalada */}
-                <div className={`h-2 w-full transition-all duration-300 ${theme.stripe}`} />
+                {/* Franja superior viva intercalada */}
+                <div className={`h-1.5 w-full transition-all duration-300 ${theme.stripe}`} />
 
-                <CardContent className="flex h-full flex-col justify-between p-6 sm:p-7 space-y-5">
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-4">
-                      {/* Icono con degradado intercalado */}
-                      <div className={`flex size-14 shrink-0 items-center justify-center rounded-2xl group-hover:scale-110 group-hover:rotate-2 transition-all duration-300 ${theme.iconBg}`}>
-                        <Building2 className="size-7 text-white" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-bold text-slate-900 text-lg sm:text-xl font-heading leading-snug min-h-[3rem] line-clamp-2 group-hover:text-[#005a87] transition-colors">
-                            {center.name}
-                          </h3>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                          <span className={`inline-block text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg border ${theme.badge}`}>
-                            {typeInfo.label}
-                          </span>
-                          {isSelected && (
-                            <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg shadow-xs ${theme.selectedBadge}`}>
-                              <Check className="size-3.5" /> Seleccionado
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                {/* Shimmer / Reflejo de luz en hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+
+                <div className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3 relative z-10">
+                  {/* Fila 1: Icono + Nombre + Badges */}
+                  <div className="flex items-start gap-3">
+                    <div className={`flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:-rotate-3 group-hover:shadow-md transition-all duration-300 ${theme.iconBg}`}>
+                      <Building2 className="size-5 sm:size-6 text-white" />
                     </div>
 
-                    <div className="space-y-2 text-sm sm:text-base text-slate-600 pt-3 border-t border-slate-100">
-                      <div className="flex items-center gap-2.5">
-                        <MapPin className={`size-4 shrink-0 ${theme.pinColor}`} />
-                        <span className="line-clamp-1">{center.address}, {center.neighborhood}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-1.5">
+                        <h3
+                          className="font-bold text-slate-900 text-sm sm:text-base font-heading leading-snug line-clamp-1 group-hover:text-[#005a87] transition-colors"
+                          title={center.name}
+                        >
+                          {center.name}
+                        </h3>
                       </div>
-                      <div className="flex items-center gap-2.5">
-                        <Phone className={`size-4 shrink-0 ${theme.phoneColor}`} />
-                        <span>{center.phone}</span>
+
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border ${theme.badge}`}>
+                          {typeInfo.label}
+                        </span>
+                        {isSelected && (
+                          <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md shadow-2xs ${theme.selectedBadge}`}>
+                            <Check className="size-3" /> Seleccionado
+                          </span>
+                        )}
+                        {center.type === 'HOSPITAL' && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> Guardia 24h
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-                    <span className="text-sm sm:text-base font-bold text-slate-700">
+                  {/* Fila 2: Dirección y Teléfono en formato horizontal compacto */}
+                  <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100 gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0 truncate">
+                      <MapPin className={`size-3.5 shrink-0 ${theme.pinColor}`} />
+                      <span className="truncate">{center.address}, {center.neighborhood}</span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 text-slate-400">
+                      <Phone className={`size-3 shrink-0 ${theme.phoneColor}`} />
+                      <span className="text-[11px]">{center.phone.replace('03549 ', '')}</span>
+                    </div>
+                  </div>
+
+                  {/* Fila 3: Especialidades y Botón Elegir Centro con Chevron deslizante */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <span className="text-xs sm:text-sm font-bold text-slate-700">
                       {center.specialtiesCount} especialidades
                     </span>
                     <Button
                       type="button"
+                      size="sm"
                       aria-label={`Elegir centro de salud ${center.name}`}
                       onClick={(e) => {
                         e.stopPropagation()
@@ -258,7 +274,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                           onSelectCenter(center)
                         }
                       }}
-                      className={`h-10 sm:h-11 cursor-pointer gap-2 px-4 sm:px-5 text-xs sm:text-sm font-bold rounded-xl transition-all ${
+                      className={`h-8 sm:h-9 cursor-pointer gap-1.5 px-3 sm:px-4 text-xs font-bold rounded-xl transition-all ${
                         isSelected
                           ? `${theme.buttonSelected} hover:opacity-95`
                           : `${theme.buttonUnselected} bg-white`
@@ -267,18 +283,18 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                       {isSelected ? (
                         <>
                           <span>Elegir Especialidad</span>
-                          <ChevronRight className="size-4 group-hover:translate-x-1 transition-transform" />
+                          <ChevronRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
                         </>
                       ) : (
                         <>
                           <span>Elegir Centro</span>
-                          <ChevronRight className="size-4 group-hover:translate-x-1 transition-transform" />
+                          <ChevronRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
                         </>
                       )}
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )
           })}
         </div>
@@ -302,14 +318,17 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
               <div
                 key={center.id}
                 onClick={() => onSelectCenter(center)}
-                className={`group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 p-5 sm:p-6 cursor-pointer bg-white ${
+                className={`group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 p-4 sm:p-5 cursor-pointer bg-white ${
                   isSelected
-                    ? 'border-[#005a87] ring-4 ring-[#00a896]/35 shadow-xl bg-gradient-to-r from-sky-50/50 via-teal-50/30 to-white -translate-y-1'
-                    : 'border-slate-200/90 shadow-sm hover:border-[#00a896]/70 hover:shadow-lg hover:-translate-y-1.5'
+                    ? 'border-[#005a87] ring-4 ring-[#00a896]/35 shadow-[0_20px_40px_-8px_rgba(0,90,135,0.35)] bg-gradient-to-r from-sky-50/50 via-teal-50/30 to-white -translate-y-2'
+                    : 'border-slate-200/90 shadow-[0_10px_25px_-5px_rgba(0,90,135,0.1)] hover:border-[#00a896]/80 hover:shadow-[0_22px_40px_-8px_rgba(0,168,150,0.25)] hover:-translate-y-2 hover:scale-[1.01]'
                 }`}
               >
                 {/* Franja lateral intercalada */}
                 <div className={`absolute top-0 left-0 bottom-0 w-1.5 transition-all ${listStripe}`} />
+
+                {/* Shimmer / Reflejo de luz en hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pl-2">
                   <div className="flex items-center gap-4 min-w-0">

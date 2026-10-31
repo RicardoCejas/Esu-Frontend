@@ -22,23 +22,23 @@ export const TurneroHeader: React.FC<TurneroHeaderProps> = ({
   const hasActiveSelection = Boolean(selectedCenter || selectedSpecialty || selectedDoctor)
 
   return (
-    <div className="pt-3 sm:pt-6 pb-1 sm:pb-2">
-      <div className="w-full px-3 sm:px-8 lg:px-12 xl:px-14">
-        <div className="rounded-2xl sm:rounded-3xl border border-teal-300/40 bg-gradient-to-r from-[#00486c] via-[#005a87] to-[#008f80] p-4 sm:p-6 lg:p-8 text-white shadow-xl relative overflow-hidden">
+    <div className="pt-2 sm:pt-4 pb-1 sm:pb-2">
+      <div className="w-full max-w-5xl xl:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-2xl sm:rounded-3xl border border-teal-300/40 bg-gradient-to-r from-[#00486c] via-[#005a87] to-[#008f80] py-4 px-5 sm:py-5 sm:px-7 text-white shadow-lg relative overflow-hidden">
           {/* Auras decorativas que reflejan los tonos del logo */}
-          <div className="absolute -right-12 -bottom-12 size-64 rounded-full bg-white/5 blur-2xl pointer-events-none" />
-          <div className="absolute right-1/4 -top-12 size-56 rounded-full bg-[#14b8a6]/25 blur-2xl pointer-events-none" />
+          <div className="absolute -right-12 -bottom-12 size-56 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+          <div className="absolute right-1/4 -top-12 size-48 rounded-full bg-[#14b8a6]/25 blur-2xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 px-2.5 sm:px-3.5 py-0.5 sm:py-1 text-[11px] sm:text-sm font-semibold text-white mb-1.5 sm:mb-2.5 shadow-xs">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 px-2.5 sm:px-3 py-0.5 text-[11px] sm:text-xs font-semibold text-white mb-1.5 shadow-xs">
                 <span className="size-2 rounded-full bg-[#2dd4bf] animate-pulse" />
                 <span>Padrón Unificado • Cruz del Eje</span>
               </div>
-              <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight font-heading text-white drop-shadow-xs">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight font-heading text-white drop-shadow-xs">
                 Reserva de Turnos Médicos Online
               </h1>
-              <p className="text-xs sm:text-base text-sky-100 mt-1 max-w-2xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-sky-100 mt-0.5 max-w-2xl leading-relaxed">
                 Hospitales, clínicas y centros del sistema unificado de salud de Cruz del Eje.
               </p>
             </div>

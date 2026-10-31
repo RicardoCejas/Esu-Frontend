@@ -88,3 +88,26 @@ html.text-scale-xlarge {
   animation-play-state: paused;
 }
 
+@keyframes subtle-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-float-1 {
+  animation: subtle-float 5s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: subtle-float 5s ease-in-out infinite;
+  animation-delay: 1.6s;
+}
+
+.animate-float-3 {
+  animation: subtle-float 5s ease-in-out infinite;
+  animation-delay: 3.2s;
+}
+

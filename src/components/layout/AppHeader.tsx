@@ -35,7 +35,7 @@ export function AppHeader({
 
   return (
     <header className="sticky top-0 z-40 border-b border-sky-200/70 bg-[#edf5fa]/95 backdrop-blur supports-[backdrop-filter]:bg-[#edf5fa]/80 text-slate-900 shadow-xs">
-      <div className="w-full flex h-16 items-center justify-between px-3 sm:px-8 lg:px-12 xl:px-14">
+      <div className="w-full max-w-5xl xl:max-w-6xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left: Brand + Geographic Location Selector */}
         <div className="flex items-center gap-3 sm:gap-6">
           <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition shrink-0">

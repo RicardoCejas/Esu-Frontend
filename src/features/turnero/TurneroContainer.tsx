@@ -91,8 +91,8 @@ export function TurneroContainer() {
         />
       )}
 
-      {/* Main Content Area: Dedicated full-screen per step */}
-      <main className="w-full px-3 sm:px-8 lg:px-12 xl:px-14 py-3 sm:py-5">
+      {/* Main Content Area: Centered, cohesive width without stretching */}
+      <main className="w-full max-w-5xl xl:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-5">
         <div key={currentStep} className="animate-in fade-in slide-in-from-right-3 duration-300">
         {currentStep === 1 && (
           <Step1CenterSelection
