@@ -338,12 +338,12 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
           <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
             <Button
               type="button"
-              variant="outline"
               onClick={onBackToSpecialty}
-              className="h-10 px-3.5 rounded-xl border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold gap-1 shrink-0 cursor-pointer text-xs sm:text-sm"
+              className="h-11 px-4 sm:px-5 rounded-xl bg-white hover:bg-slate-100 text-[#005a87] border-2 border-[#005a87] font-extrabold gap-1.5 shrink-0 cursor-pointer text-xs sm:text-sm shadow-xs transition-all hover:scale-102"
+              title="Volver hacia atrás y cambiar especialidad"
             >
-              <ChevronLeft className="size-4" />
-              <span>Volver</span>
+              <ChevronLeft className="size-4.5 text-[#005a87]" />
+              <span>Volver atrás</span>
             </Button>
             <div className="min-w-0 flex-1">
               <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#005a87]">Profesional Seleccionado</span>
@@ -365,11 +365,10 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
         <div className="mt-6 flex justify-start">
           <Button
             type="button"
-            variant="outline"
             onClick={onBackToSpecialty}
-            className="h-10 px-4 rounded-xl border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold gap-1.5 cursor-pointer text-xs sm:text-sm"
+            className="h-11 px-5 rounded-xl bg-white border-2 border-[#005a87] text-[#005a87] hover:bg-[#005a87] hover:text-white font-extrabold gap-2 shadow-xs cursor-pointer text-xs sm:text-sm transition-all hover:scale-102"
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft className="size-4.5" />
             <span>Volver a Especialidades</span>
           </Button>
         </div>

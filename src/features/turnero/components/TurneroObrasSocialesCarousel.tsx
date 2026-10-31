@@ -143,49 +143,51 @@ export const TurneroObrasSocialesCarousel: React.FC = () => {
   const displayItems = [...OBRAS_CON_LOGOS, ...OBRAS_CON_LOGOS]
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl border-2 border-teal-300/40 bg-gradient-to-r from-[#005a87]/15 via-[#0284c7]/10 to-[#00a896]/15 p-3.5 sm:p-5 shadow-md space-y-3 relative overflow-hidden backdrop-blur-sm">
-      {/* Línea superior con gradiente del logo */}
-      <div className="absolute top-0 left-0 right-0 h-1 sm:h-1.5 bg-gradient-to-r from-[#005a87] via-[#0284c7] to-[#00a896]" />
+    <div className="rounded-2xl sm:rounded-3xl border-2 border-sky-200/90 bg-white/95 backdrop-blur-md p-4 sm:p-5.5 shadow-md space-y-3.5 relative overflow-hidden">
+      {/* Franja superior con degradado institucional Cruz del Eje */}
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#00486c] via-[#005a87] to-[#00a896]" />
 
-      {/* Header con Título, Insignia y Flechas de Control */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-0.5">
+      {/* Header con Título, Insignia y Flechas de Control con Alto Contraste */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
         <div>
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#005a87] to-[#00a896] px-3 py-0.5 text-[11px] sm:text-xs font-bold text-white mb-1 shadow-xs">
-            <Shield className="size-3 sm:size-3.5 text-white" />
-            <span>Coberturas y Convenios Activos</span>
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#005a87] to-[#00a896] px-3 py-1 text-[11px] sm:text-xs font-bold text-white mb-1.5 shadow-xs">
+            <Shield className="size-3.5 text-white" />
+            <span>Coberturas y Convenios Aceptados</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 font-heading">
+          <h3 className="text-base sm:text-xl font-extrabold text-slate-900 font-heading">
             Obras Sociales y Prepagas Aceptadas en Cruz del Eje
           </h3>
-          <p className="text-xs sm:text-sm text-slate-600 mt-0.5 hidden sm:block">
+          <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
             Atención pública gratuita y convenios con las principales obras sociales provinciales y nacionales.
           </p>
         </div>
 
-        {/* Flechas de desplazamiento manual */}
+        {/* Flechas de desplazamiento manual con alto contraste institucional */}
         <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
           <button
             type="button"
             onClick={() => handleScroll('left')}
             aria-label="Desplazar obras sociales a la izquierda"
-            className="flex size-9 items-center justify-center rounded-xl border border-sky-200 bg-white hover:bg-sky-50 text-slate-700 hover:text-[#005a87] transition cursor-pointer shadow-xs"
+            className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-gradient-to-r from-[#00486c] to-[#005a87] text-white hover:opacity-95 transition cursor-pointer shadow-sm hover:scale-105 active:scale-95"
+            title="Desplazar a la izquierda"
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft className="size-5" />
           </button>
           <button
             type="button"
             onClick={() => handleScroll('right')}
             aria-label="Desplazar obras sociales a la derecha"
-            className="flex size-9 items-center justify-center rounded-xl border border-sky-200 bg-white hover:bg-sky-50 text-slate-700 hover:text-[#005a87] transition cursor-pointer shadow-xs"
+            className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-gradient-to-r from-[#005a87] to-[#00a896] text-white hover:opacity-95 transition cursor-pointer shadow-sm hover:scale-105 active:scale-95"
+            title="Desplazar a la derecha"
           >
-            <ChevronRight className="size-4" />
+            <ChevronRight className="size-5" />
           </button>
         </div>
       </div>
 
       {/* Riel interactivo con efecto marquesina continuo y pausa al pasar el mouse */}
       <div
-        className="relative overflow-hidden rounded-2xl py-1"
+        className="relative overflow-hidden rounded-2xl py-1 bg-gradient-to-r from-slate-50 via-sky-50/40 to-slate-50 p-2 border border-slate-200/70"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={() => setIsPaused(true)}
@@ -193,7 +195,7 @@ export const TurneroObrasSocialesCarousel: React.FC = () => {
       >
         <div
           ref={scrollContainerRef}
-          className="flex gap-4 overflow-x-auto scrollbar-none py-2 scroll-smooth"
+          className="flex gap-4 overflow-x-auto scrollbar-none py-1 scroll-smooth"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           <div
@@ -208,13 +210,13 @@ export const TurneroObrasSocialesCarousel: React.FC = () => {
               <div
                 key={`${os.id}-${idx}`}
                 onClick={() => setSelectedOS(os)}
-                className="w-48 sm:w-56 h-28 shrink-0 rounded-2xl border-2 border-slate-200/90 bg-white p-3.5 shadow-sm hover:shadow-xl hover:border-[#00a896] hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between items-center text-center cursor-pointer select-none group relative overflow-hidden"
+                className="w-48 sm:w-56 h-28 shrink-0 rounded-2xl border-2 border-slate-200/90 bg-white p-3 shadow-xs hover:shadow-xl hover:border-[#00a896] hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between items-center text-center cursor-pointer select-none group relative overflow-hidden"
               >
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#005a87] via-[#0284c7] to-[#00a896] opacity-0 group-hover:opacity-100 transition-opacity" />
                 {/* Tipo de Cobertura */}
                 <div className="w-full flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  <span className="truncate max-w-[130px]">{os.tipo}</span>
-                  <span className="flex size-2 rounded-full bg-emerald-500 ring-2 ring-emerald-100" />
+                  <span className="truncate max-w-[130px] font-bold text-[#005a87] bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100">{os.tipo}</span>
+                  <span className="flex size-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 animate-pulse" />
                 </div>
 
                 {/* Logo Oficial de la Obra Social */}
@@ -222,7 +224,7 @@ export const TurneroObrasSocialesCarousel: React.FC = () => {
                   <img
                     src={os.logo}
                     alt={os.sigla}
-                    className="max-h-10 max-w-[140px] w-auto object-contain transition-transform duration-300 group-hover:scale-110 filter drop-shadow-2xs"
+                    className="max-h-10 max-w-[140px] w-auto object-contain transition-transform duration-300 group-hover:scale-110 filter drop-shadow-xs"
                     loading="lazy"
                   />
                 </div>
@@ -230,10 +232,10 @@ export const TurneroObrasSocialesCarousel: React.FC = () => {
                 {/* Pie con indicador de Convenio Activo */}
                 <div className="w-full pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-[#005a87]">
                   <span className="flex items-center gap-1">
-                    <CheckCircle2 className="size-3 text-emerald-600 shrink-0" />
-                    <span className="text-[10px] text-slate-600 font-semibold">Convenio Activo</span>
+                    <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                    <span className="text-[10px] text-slate-700 font-bold">Convenio Activo</span>
                   </span>
-                  <span className="text-[10px] text-[#005a87] font-bold group-hover:underline">Requisitos →</span>
+                  <span className="text-[10px] text-[#005a87] font-extrabold group-hover:underline">Requisitos →</span>
                 </div>
               </div>
             ))}

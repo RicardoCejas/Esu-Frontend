@@ -408,12 +408,11 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
             {onUnselectCenter && (
               <Button
                 type="button"
-                variant="outline"
                 onClick={onUnselectCenter}
-                className="h-10 px-3 sm:px-3.5 rounded-xl border-white/30 text-white hover:bg-white/20 font-bold gap-1 shrink-0 cursor-pointer text-xs sm:text-sm"
-                title="Volver hacia atrás y cambiar centro"
+                className="h-11 px-4 sm:px-5 rounded-xl bg-white hover:bg-slate-100 text-[#00486c] font-extrabold gap-1.5 shrink-0 cursor-pointer text-xs sm:text-sm shadow-md border-2 border-white transition-all hover:scale-102"
+                title="Volver hacia atrás y cambiar centro de salud"
               >
-                <ChevronLeft className="size-4" />
+                <ChevronLeft className="size-4.5 text-[#00486c]" />
                 <span>Volver atrás</span>
               </Button>
             )}

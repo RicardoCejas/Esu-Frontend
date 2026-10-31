@@ -1,5 +1,6 @@
 import React from 'react'
-import { Building2, Stethoscope, User, Calendar, RotateCcw } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Building2, Stethoscope, User, Calendar, RotateCcw, ChevronLeft } from 'lucide-react'
 import type { HealthCenter, MedicalSpecialty, MedicalDoctor } from '../types'
 
 interface TurneroHeaderProps {
@@ -31,9 +32,19 @@ export const TurneroHeader: React.FC<TurneroHeaderProps> = ({
 
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 px-2.5 sm:px-3 py-0.5 text-[11px] sm:text-xs font-semibold text-white mb-1.5 shadow-xs">
-                <span className="size-2 rounded-full bg-[#2dd4bf] animate-pulse" />
-                <span>Padrón Unificado • Cruz del Eje</span>
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <Link
+                  to="/"
+                  className="inline-flex items-center gap-1 rounded-full bg-white text-[#00486c] hover:bg-slate-100 px-3 py-0.5 text-[11px] sm:text-xs font-extrabold shadow-sm border border-white transition-all hover:scale-102 cursor-pointer"
+                  title="Volver a la página principal del Portal"
+                >
+                  <ChevronLeft className="size-3.5 text-[#00486c]" />
+                  <span>Volver al Inicio</span>
+                </Link>
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 px-2.5 sm:px-3 py-0.5 text-[11px] sm:text-xs font-semibold text-white shadow-xs">
+                  <span className="size-2 rounded-full bg-[#2dd4bf] animate-pulse" />
+                  <span>Padrón Unificado • Cruz del Eje</span>
+                </div>
               </div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight font-heading text-white drop-shadow-xs">
                 Reserva de Turnos Médicos Online

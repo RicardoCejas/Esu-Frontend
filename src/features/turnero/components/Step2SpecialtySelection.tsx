@@ -708,12 +708,12 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
           <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
             <Button
               type="button"
-              variant="outline"
               onClick={onBackToCenter}
-              className="h-10 px-3.5 rounded-xl border-white/30 text-white hover:bg-white/20 font-bold gap-1 shrink-0 cursor-pointer text-xs sm:text-sm"
+              className="h-11 px-4 sm:px-5 rounded-xl bg-white hover:bg-slate-100 text-[#00486c] font-extrabold gap-1.5 shrink-0 cursor-pointer text-xs sm:text-sm shadow-md border-2 border-white transition-all hover:scale-102"
+              title="Volver hacia atrás y cambiar centro de salud"
             >
-              <ChevronLeft className="size-4" />
-              <span>Volver</span>
+              <ChevronLeft className="size-4.5 text-[#00486c]" />
+              <span>Volver atrás</span>
             </Button>
             <div className="min-w-0 flex-1">
               <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-teal-200">Especialidad Seleccionada</span>
@@ -735,11 +735,10 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
         <div className="mt-6 flex justify-start">
           <Button
             type="button"
-            variant="outline"
             onClick={onBackToCenter}
-            className="h-10 px-4 rounded-xl border-2 border-[#005a87] text-[#005a87] hover:bg-[#005a87] hover:text-white font-bold gap-1.5 cursor-pointer text-xs sm:text-sm"
+            className="h-11 px-5 rounded-xl bg-white border-2 border-[#005a87] text-[#005a87] hover:bg-[#005a87] hover:text-white font-extrabold gap-2 shadow-sm cursor-pointer text-xs sm:text-sm transition-all hover:scale-102"
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft className="size-4.5" />
             <span>Volver a Centros de Salud</span>
           </Button>
         </div>
