@@ -15,11 +15,30 @@ import {
   XCircle,
   AlertCircle,
 } from 'lucide-react';
+import type { UserRole } from '@/types';
 import { GoogleAuthButton } from './components/GoogleAuthButton';
 
 export const RegisterPage: React.FC = () => {
   const { register, login } = useAuth();
   const navigate = useNavigate();
+
+  const redirectByRole = (rol: UserRole) => {
+    switch (rol) {
+      case 'MEDICO':
+        navigate('/dashboard/medico');
+        break;
+      case 'RECEPCIONISTA':
+        navigate('/dashboard/recepcion');
+        break;
+      case 'ADMIN':
+        navigate('/dashboard/admin');
+        break;
+      case 'PACIENTE':
+      default:
+        navigate('/dashboard/paciente');
+        break;
+    }
+  };
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -378,7 +397,7 @@ export const RegisterPage: React.FC = () => {
 
             <GoogleAuthButton
               mode="signup"
-              onSuccess={() => navigate('/dashboard/paciente')}
+              onSuccess={(user) => redirectByRole(user.rol)}
               onError={(msg) => setError(msg)}
             />
           </form>

@@ -27,6 +27,7 @@ export const LoginPage: React.FC = () => {
   const [rememberLogin, setRememberLogin] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedDevRole, setSelectedDevRole] = useState<UserRole>('ADMIN');
 
   // Cargar usuario recordado
   useEffect(() => {
@@ -218,6 +219,35 @@ export const LoginPage: React.FC = () => {
               </label>
             </div>
 
+            {/* Selector interactivo para testing de roles con dev@esu.gob.ar */}
+            {emailOrDni.trim().toLowerCase() === 'dev@esu.gob.ar' && (
+              <div className="rounded-xl border border-sky-300 bg-sky-50/90 p-3 space-y-2">
+                <div className="flex items-center justify-between text-[11px] font-bold text-sky-900">
+                  <span>Modo Desarrollador Activo</span>
+                  <span className="text-sky-600 font-mono">dev@esu.gob.ar</span>
+                </div>
+                <p className="text-[10px] text-slate-600 leading-tight">
+                  Seleccione el rol del sistema a probar:
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
+                  {(['ADMIN', 'MEDICO', 'RECEPCIONISTA', 'PACIENTE'] as UserRole[]).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setSelectedDevRole(r)}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer text-center ${
+                        selectedDevRole === r
+                          ? 'bg-sky-700 text-white shadow-xs'
+                          : 'bg-white border border-sky-200 text-slate-700 hover:bg-sky-100'
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isSubmitting}
@@ -237,7 +267,7 @@ export const LoginPage: React.FC = () => {
             </div>
 
             <GoogleAuthButton
-              onSuccess={() => redirectByRole('PACIENTE')}
+              onSuccess={(user) => redirectByRole(user.rol)}
               onError={(msg) => setError(msg)}
             />
           </form>

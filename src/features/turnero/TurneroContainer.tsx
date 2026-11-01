@@ -1,5 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useTurnero } from './hooks/useTurnero'
 import { useDemoTurnero } from './hooks/useDemoTurnero'
+import { useAuth } from '@/context/AuthContext'
 import { AppHeader, SUPPORTED_CITIES, type CityOption } from '@/components/layout/AppHeader'
 import { TurneroHeader } from './components/TurneroHeader'
 import { Step1CenterSelection } from './components/Step1CenterSelection'
@@ -10,12 +13,22 @@ import { Step5PatientConfirmation } from './components/Step5PatientConfirmation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Search } from 'lucide-react'
+import { Search, LogIn, AlertTriangle } from 'lucide-react'
 import { turnosService } from '@/api/turnosService'
 import type { Turno } from '@/types'
 import type { PatientBookingForm } from './types'
 
-export function TurneroContainer() {
+interface TurneroContainerProps {
+  isDemoMode?: boolean
+}
+
+export function TurneroContainer({ isDemoMode: initialDemoMode = false }: TurneroContainerProps) {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
+
+  const isDemo = initialDemoMode || searchParams.get('demo') === 'true'
+
   const [selectedCity, setSelectedCity] = useState<CityOption>(SUPPORTED_CITIES[0])
   const [isLookupOpen, setIsLookupOpen] = useState(false)
   const [lookupCode, setLookupCode] = useState('')
@@ -25,6 +38,11 @@ export function TurneroContainer() {
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
   const [bookingErrorMsg, setBookingErrorMsg] = useState<string | null>(null)
   const [persistedAppointment, setPersistedAppointment] = useState<Turno | null>(null)
+
+  // Seleccionar hook según el modo: demo explícito o turnero productivo oficial
+  const realHook = useTurnero()
+  const demoHook = useDemoTurnero()
+  const activeHook = isDemo ? demoHook : realHook
 
   const {
     currentStep,
@@ -62,7 +80,17 @@ export function TurneroContainer() {
     handlePatientFormChange,
     handleGoToStep,
     handleResetBooking: resetBaseBooking,
-  } = useDemoTurnero()
+  } = activeHook
+
+  // Pre-poblar datos de paciente autenticado si existen
+  useEffect(() => {
+    if (user && !patientForm.dni) {
+      if (user.dni) handlePatientFormChange('dni', user.dni)
+      if (user.nombre) handlePatientFormChange('firstName', user.nombre)
+      if (user.apellido) handlePatientFormChange('lastName', user.apellido)
+      if (user.email) handlePatientFormChange('email', user.email)
+    }
+  }, [user, patientForm.dni, handlePatientFormChange])
 
   const handleResetBooking = () => {
     setPersistedAppointment(null)
@@ -76,6 +104,10 @@ export function TurneroContainer() {
     setBookingErrorMsg(null)
 
     try {
+      const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `turnero-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+
       const nuevoTurno = await turnosService.reservarTurnoPublico({
         centroSaludId: selectedCenter.id,
         profesionalId: selectedDoctor.id,
@@ -89,6 +121,7 @@ export function TurneroContainer() {
         obraSocial: form.healthInsurance,
         numeroAfiliado: form.affiliateNumber || undefined,
         motivoConsulta: form.notes || undefined,
+        idempotencyKey,
       })
 
       setPersistedAppointment(nuevoTurno)
@@ -118,8 +151,18 @@ export function TurneroContainer() {
     }
   }
 
+  const isPatientExistingError = Boolean(bookingErrorMsg && bookingErrorMsg.includes('pertenece a un paciente registrado'))
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#e3eff6] via-[#ebf5f7] to-[#d9edf4] text-slate-900 selection:bg-[#005a87] selection:text-white relative overflow-x-hidden">
+      {/* Banner de modo demo: ÚNICAMENTE visible cuando se solicita explícitamente modo de prueba */}
+      {isDemo && (
+        <div className="w-full bg-amber-100 border-b border-amber-300 py-1.5 px-4 text-center text-xs font-semibold text-amber-900 flex items-center justify-center gap-2">
+          <AlertTriangle className="size-3.5 text-amber-700 shrink-0" />
+          <span>Turnero de demostración: las reservas no se registran en el sistema real.</span>
+        </div>
+      )}
+
       {/* Luces y auras de fondo sutiles referidas a los colores azul marino y turquesa del logo */}
       <div className="fixed top-0 left-1/4 -translate-x-1/2 -top-24 size-[650px] rounded-full bg-gradient-to-br from-[#005a87]/12 to-[#00a896]/12 blur-3xl pointer-events-none" />
       <div className="fixed top-1/2 right-0 translate-x-1/4 size-[700px] rounded-full bg-gradient-to-bl from-[#00a896]/12 via-[#0284c7]/10 to-transparent blur-3xl pointer-events-none" />
@@ -211,20 +254,41 @@ export function TurneroContainer() {
           )}
 
           {currentStep === 5 && selectedCenter && selectedSpecialty && selectedDoctor && selectedSlot && (
-            <Step5PatientConfirmation
-              selectedCenter={selectedCenter}
-              selectedSpecialty={selectedSpecialty}
-              selectedDoctor={selectedDoctor}
-              selectedDate={selectedDate}
-              selectedSlot={selectedSlot}
-              patientForm={patientForm}
-              bookingError={bookingErrorMsg || bookingError}
-              isSubmitting={isSubmittingBooking}
-              createdAppointment={persistedAppointment}
-              onConfirm={handleConfirmRealBooking}
-              onFormChange={handlePatientFormChange}
-              onBackToSlots={() => handleGoToStep(4)}
-            />
+            <div className="space-y-4">
+              {isPatientExistingError && (
+                <div className="rounded-2xl border border-sky-300 bg-sky-50 p-4 shadow-sm space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-sky-900 text-sm">
+                    <LogIn className="size-4 text-sky-700" />
+                    <span>Identificación requerida para confirmar turno</span>
+                  </div>
+                  <p className="text-xs text-slate-700">
+                    El DNI ingresado ya pertenece a un paciente registrado en el sistema. Para proteger sus antecedentes clínicos, inicie sesión o identifíquese con su cuenta de Google.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={() => navigate(`/login?redirect=/turnero`)}
+                    className="cursor-pointer bg-sky-700 text-xs font-bold text-white hover:bg-sky-800"
+                  >
+                    Iniciar Sesión con mi Cuenta
+                  </Button>
+                </div>
+              )}
+
+              <Step5PatientConfirmation
+                selectedCenter={selectedCenter}
+                selectedSpecialty={selectedSpecialty}
+                selectedDoctor={selectedDoctor}
+                selectedDate={selectedDate}
+                selectedSlot={selectedSlot}
+                patientForm={patientForm}
+                bookingError={bookingErrorMsg || bookingError}
+                isSubmitting={isSubmittingBooking}
+                createdAppointment={persistedAppointment}
+                onConfirm={handleConfirmRealBooking}
+                onFormChange={handlePatientFormChange}
+                onBackToSlots={() => handleGoToStep(4)}
+              />
+            </div>
           )}
         </div>
       </main>
@@ -259,14 +323,13 @@ export function TurneroContainer() {
                 {lookupMessage}
               </div>
             )}
-
             <div className="flex justify-end gap-2 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsLookupOpen(false)}
-                className="h-7 text-xs"
+                className="h-7 text-xs cursor-pointer"
               >
                 Cerrar
               </Button>
@@ -277,22 +340,22 @@ export function TurneroContainer() {
                 className="h-7 cursor-pointer gap-1.5 bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800"
               >
                 <Search className="size-3.5" />
-                <span>Buscar</span>
+                <span>Consultar</span>
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Accessible Login Portal Dialog */}
+      {/* Login Navigation Modal */}
       <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
-        <DialogContent className="max-w-sm p-5 text-center">
+        <DialogContent className="max-w-sm p-5">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-slate-900">
-              Portal Asistencial ESU
+              Portal del Paciente y Profesionales
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Acceso seguro para profesionales de la salud, secretaría asistencial y pacientes.
+              Acceda con sus credenciales oficiales para gestionar sus citas y recetas.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2 text-xs text-slate-600">
@@ -303,7 +366,7 @@ export function TurneroContainer() {
               type="button"
               onClick={() => {
                 setIsLoginModalOpen(false)
-                window.location.href = '/login'
+                navigate('/login')
               }}
               className="w-full bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800 cursor-pointer"
             >
