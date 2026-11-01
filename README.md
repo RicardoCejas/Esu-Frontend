@@ -1,100 +1,192 @@
-# Ecosistema de Salud Unificado (ESU)
-> Plataforma integral B2B2C para la modernización y centralización de servicios de salud en Cruz del Eje.
+# Ecosistema de Salud Unificado (ESU) - Frontend
+> Aplicación web SPA (Single Page Application) moderna, reactiva y accesible para la digitalización integral de servicios de salud en Cruz del Eje.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Estado-En_desarrollo-orange" alt="Estado">
-  <img src="https://img.shields.io/badge/Backend-Java_--_Spring_Boot-green" alt="Backend">
-  <img src="https://img.shields.io/badge/Frontend-HTML_--_CSS_--_JS_--_React-blue" alt="Frontend">
-  <img src="https://img.shields.io/badge/Database-MySQL-gray" alt="Database">
+  <img src="https://img.shields.io/badge/Estado-Operativo_/_Fase_3_Completa-success?style=for-the-badge" alt="Estado">
+  <img src="https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React">
+  <img src="https://img.shields.io/badge/TypeScript-6.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Vite-8.3-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind">
+  <img src="https://img.shields.io/badge/TanStack_Query-v5-FF4154?style=for-the-badge&logo=react-query&logoColor=white" alt="React Query">
 </p>
 
 ---
 
 ## Tabla de Contenidos
-1. [Visión General](#visión-general)
-2. [Arquitectura y Tecnologías](#arquitectura-y-tecnologías)
-3. [Perfiles y Funcionalidades](#perfiles-y-funcionalidades)
-4. [Flujo de Funcionamiento](#flujo-de-funcionamiento)
-5. [Gestión de Proyecto (PMI)](#gestión-de-proyecto-pmi)
-6. [Roadmap de Desarrollo](#roadmap-de-desarrollo)
-7. [Instalación y Configuración](#instalación-y-configuración)
-8. [Equipo de Desarrollo](#equipo-de-desarrollo)
+1. [Visión General del Frontend](#visión-general-del-frontend)
+2. [Stack Tecnológico](#stack-tecnológico)
+3. [Estructura del Proyecto](#estructura-del-proyecto)
+4. [Módulos y Vistas por Rol](#módulos-y-vistas-por-rol)
+5. [Seguridad y Control de Sesión](#seguridad-y-control-de-sesión)
+6. [Instalación y Ejecución Local](#instalación-y-ejecución-local)
+7. [Scripts Disponibles](#scripts-disponibles)
+8. [Variables de Entorno](#variables-de-entorno)
+9. [Equipo de Desarrollo y Enlaces](#equipo-de-desarrollo)
 
 ---
 
-## Visión General
-El **Ecosistema de Salud Unificado (ESU)** nace para resolver la fragmentación de los servicios médicos en Cruz del Eje. El proyecto reemplaza procesos manuales por un sistema digital interoperable que centraliza la gestión de turnos, historias clínicas y comunicación entre pacientes y profesionales.
+## Visión General del Frontend
 
-* **Propósito:** Facilitar el acceso a la salud y mejorar la organización sistémica.
-* **Impacto:** Reducción del ausentismo mediante listas de espera inteligentes y recordatorios automáticos.
+El cliente web de **ESU** es una aplicación reactiva desarrollada con **React 19** y **TypeScript**, diseñada para brindar una experiencia de usuario fluida, rápida y accesible tanto a pacientes como al personal de salud y administrativo de Cruz del Eje.
+
+### Aspectos Destacados:
+* **Turnero Asistido (Wizard):** Reserva de turnos guiada por pasos interactivos con validación de disponibilidad en tiempo real.
+* **Modo Demostración / Offline:** Permite probar el flujo completo de reserva y navegación sin requerir una conexión activa al backend.
+* **Directorio Médico con Mapa Interactivo:** Búsqueda geolocalizada de centros de salud y consultorios con renderizado cartográfico mediante **MapLibre GL**.
+* **Gestión Hospitalaria Visual:** Panel Kanban de salas de espera para recepción y pantalla pública de llamados (Tótem / Smart TV).
+* **Validación de Recetas QR:** Portal especializado para farmacias que permite validar prescripciones médicas escaneando códigos QR o ingresando tokens criptográficos.
 
 ---
 
-## Arquitectura y Tecnologías
-El sistema está desarrollado bajo una arquitectura cliente-servidor robusta, priorizando la modularidad, la seguridad de los datos médicos y la escalabilidad del sistema:
+## Stack Tecnológico
 
-| Capa | Tecnología | Función |
+| Herramienta / Librería | Versión | Propósito en el Proyecto |
 | :--- | :--- | :--- |
-| **Frontend** | HTML5 + CSS3 + JavaScript (React) | Interfaz de usuario estructurada, adaptativa y reactiva. |
-| **Backend** | Java + Spring Boot | Motor de la API REST, lógica de negocio y control de accesos. |
-| **Base de Datos** | MySQL | Persistencia de datos mediante un modelo relacional sólido. |
-| **Persistencia / ORM** | JPA + Hibernate | Mapeo de entidades orientadas a objetos y gestión de consultas. |
-| **Seguridad** | Spring Security / Filtros de Servidor | Autenticación, control de sesiones y restricción de accesos por Roles (Paciente/Médico). |
+| **React** | `19.x` | Biblioteca base para la construcción de interfaces declarativas. |
+| **TypeScript** | `6.x` | Tipado estricto de componentes, esquemas de datos y APIs. |
+| **Vite** | `8.x` | Bundler y servidor de desarrollo ultra-rápido con HMR. |
+| **Tailwind CSS** | `v4` | Motor de estilos utilitarios modernos y diseño responsivo. |
+| **React Router** | `v7` | Enrutamiento declarativo con rutas anidadas y guardias (`AuthGuard`, `RoleGuard`). |
+| **TanStack React Query** | `v5` | Gestión de estado asíncrono, almacenamiento en caché e invalidación reactiva. |
+| **React Hook Form + Zod** | `7.x` / `3.x` | Manejo de formularios performantes y validación estricta de esquemas en cliente. |
+| **MapLibre GL** | `6.x` | Renderizado cartográfico vectorial de centros asistenciales. |
+| **Lucide React** | `1.x` | Iconografía accesible y consistente en toda la plataforma. |
+| **Axios** | `1.x` | Cliente HTTP con interceptores para inyección automática de tokens JWT y manejo de errores. |
 
 ---
 
-## Perfiles y Funcionalidades
+## Estructura del Proyecto
+
+El código fuente sigue una arquitectura orientada a características (**Feature-Driven Architecture**):
+
+```text
+Frontend/
+├── public/                    # Activos estáticos, iconos, logos y workers de mapas
+│   ├── centros/               # Imágenes de centros asistenciales
+│   ├── especialidades/        # Ilustraciones por especialidad médica
+│   └── maplibre-gl-worker.js  # Worker para aceleración de mapas
+├── src/
+│   ├── api/                   # Clientes Axios y configuración de peticiones
+│   ├── components/            # Componentes reutilizables:
+│   │   ├── auth/              # ActivityMonitor (inactividad) y guardias
+│   │   ├── layout/            # DashboardLayout, Sidebar, Navbar
+│   │   ├── notifications/     # Toast notifications y alertas
+│   │   └── ui/                # Botones, modales, cards, inputs
+│   ├── context/               # Contextos globales (AuthContext, Theme)
+│   ├── features/              # Módulos organizados por dominio:
+│   │   ├── admin/             # Dashboards, auditoría, gestión de sedes y especialidades
+│   │   ├── agenda/            # Agenda médica pública y privada
+│   │   ├── auth/              # Login, registro, recuperación y verificación de email
+│   │   ├── farmacia/          # Validador y dispensador de recetas digitales por QR
+│   │   ├── home/              # Landing page principal
+│   │   ├── medico/            # Consulta médica, evolución clínica, adendas y CIE-10
+│   │   ├── paciente/          # Portal del paciente, turnos, HCU y recetas
+│   │   ├── perfil/            # Gestión de perfil de usuario
+│   │   ├── profesionales/     # Directorio y mapa geolocalizado
+│   │   ├── recepcion/         # Check-in, salas de espera Kanban y pantalla TV
+│   │   └── turnero/           # Asistente por pasos de reserva de turnos
+│   ├── hooks/                 # Custom hooks reutilizables y consultas React Query
+│   ├── routes/                # Definición de rutas (`AppRoutes`, `AuthGuard`, `RoleGuard`)
+│   ├── schemas/               # Esquemas de validación Zod
+│   ├── types/                 # Definiciones de tipos e interfaces TypeScript
+│   ├── App.tsx                # Raíz de la aplicación
+│   └── main.tsx               # Punto de entrada de Vite
+├── tests/                     # Suites de pruebas funcionales y de validación
+├── package.json               # Dependencias y scripts de ejecución
+└── vite.config.ts             # Configuración de compilación Vite y plugins
+```
+
+---
+
+## Módulos y Vistas por Rol
 
 ### 1. Paciente
-* **Búsqueda Inteligente:** Filtros geolocalizados por especialidad, profesional y obra social.
-* **Gestión de Turnos:** Reserva, cancelación y reprogramación en tiempo real.
-* **Historia Clínica Única (HCU):** Acceso a una línea de tiempo unificada de antecedentes y estudios médicos.
+* **Reserva de Turnos (`/turnero`):** Wizard interactivo para seleccionar especialidad, profesional, centro, fecha y horario.
+* **Mis Turnos (`/dashboard/mis-turnos`):** Visualización de turnos programados, historial y opciones para cancelar o reprogramar.
+* **Mi Historial Clínico (`/dashboard/mi-historial`):** Acceso a evoluciones médicas pasadas y registros de atención.
+* **Mis Recetas (`/dashboard/mis-recetas`):** Acceso y descarga de recetas digitales con código QR.
+* **Centros de Salud (`/dashboard/centros-salud`):** Mapa interactivo de centros médicos cercanos.
 
-### 2. Profesional y Centros de Salud
-* **Agenda Médica:** Sincronización automática y bloqueo de horarios.
-* **Receta Electrónica:** Emisión de recetas con firma digital y código QR único.
-* **Métricas de Gestión:** Dashboards con tasas de ausentismo y volumen de pacientes.
+### 2. Profesional Médico
+* **Agenda Médica (`/dashboard/medico/agenda`):** Vista de calendario con turnos diarios y herramientas para bloquear franjas horarias.
+* **Atención y Consulta (`/dashboard/medico/atencion`):** Espacio de trabajo médico para registrar la evolución del paciente, seleccionar diagnósticos **CIE-10**, emitir recetas digitales firmadas y generar solicitudes de estudios.
+* **Adendas Médicas:** Sistema de agregados a historias clínicas conforme a la **Ley Nacional 26.529** de inmutabilidad de registros.
 
-### 3. Administrador
-* **Auditoría:** Supervisión global del sistema y resolución de problemas técnicos.
-* **Control de Datos:** Gestión de usuarios y mantenimiento preventivo de la plataforma.
+### 3. Recepción y Admisión
+* **Check-in y Admisión (`/dashboard/recepcion`):** Marcación de arribo de pacientes y asignación de consultorio.
+* **Padrón de Pacientes (`/dashboard/recepcion/padron`):** Registro y búsqueda ágil de pacientes por DNI.
+* **Salas de Espera Kanban (`/dashboard/recepcion/salas-espera`):** Tablero dinámico con estados: *En Espera*, *En Consulta*, *Finalizado*.
+* **Pantalla Pública TV / Tótem (`/pantalla-turnos`):** Vista de alto contraste diseñada para pantallas de sala de espera que anuncia el llamado sonoro/visual del paciente.
 
----
+### 4. Farmacia
+* **Validador de Receta Digital (`/farmacia/validar-receta`):** Escaneo de código QR o ingreso manual de código para verificar autenticidad, vigencia y asentar la dispensa del medicamento.
 
-## Flujo de Funcionamiento
-1. **Interacción:** El usuario realiza una acción en la interfaz web Frontend (React).
-2. **Procesamiento:** La solicitud viaja al Backend (Java + Spring Boot) para la validación de reglas de negocio a través de controladores y endpoints de la API REST.
-3. **Persistencia:** Se consulta o actualiza la base de datos MySQL local mediante la capa relacional controlada de forma segura por JPA e Hibernate.
-4. **Respuesta:** El servidor devuelve la información procesada en formato JSON/Objetos y la interfaz visual se actualiza de manera reactiva en el navegador sin recargar la página.
-
----
-
-## Gestión de Proyecto (PMI)
-Este proyecto se rige por los estándares del **PMI (Project Management Institute)** para asegurar la entrega en tiempo y forma.
-
-* **Control de Versiones:** Uso de GitFlow con ramas separadas para funciones (features), desarrollo y producción.
-* **Documentación:** Todo el ciclo de vida está registrado en el Plan de Gestión de Proyecto, incluyendo la matriz de responsabilidades y el registro de riesgos.
-* **Interoperabilidad:** Implementación mandatoria de encriptación de punta a punta para la protección de datos sensibles.
+### 5. Administración
+* **Métricas y Ausentismo (`/dashboard/admin/metricas`):** Gráficos y analíticas de ocupación, cancelaciones y ausencias.
+* **Gestión Integral (`/dashboard/admin/usuarios`, `/dashboard/admin/sedes`, `/dashboard/admin/especialidades`):** Altas, bajas y modificaciones de la infraestructura del sistema.
 
 ---
 
-## Roadmap de Desarrollo
+## Seguridad y Control de Sesión
 
-### Fase 1: Infraestructura y Persistencia (Entrega del Backend Inicial)
-- [ ] Inicialización del entorno Spring Boot (Java 17) y ordenamiento de paquetes físicos en el IDE.
-- [ ] Modelado de entidades del ecosistema (`Usuario`, `Paciente`, `Medico`, `Turno`) con anotaciones relacionales JPA.
-- [ ] Configuración del motor de persistencia física e Hibernate sobre el esquema MySQL local.
-- [ ] Implementación de interfaces de repositorios (`JpaRepository`) para control estricto de transacciones de salud.
+* **Rutas Protegidas (`AuthGuard`):** Bloqueo automático de acceso a rutas privadas para usuarios no autenticados, redirigiendo a `/login`.
+* **Control de Accesos por Rol (`RoleGuard`):** Restricción estricta de navegación según el rol del usuario autenticado (`PACIENTE`, `MEDICO`, `RECEPCIONISTA`, `FARMACIA`, `ADMIN`).
+* **Monitor Global de Actividad (`ActivityMonitor`):** Cierre de sesión forzoso y advertencia visual tras periodos prolongados de inactividad, evitando accesos indebidos en terminales hospitalarias.
+* **Sanitización de Datos:** Validación de todos los datos de entrada en formularios mediante esquemas de **Zod**.
 
-### Fase 2: Motor de Servicios y Lógica de Negocio
-- [ ] Desarrollo de la capa de servicios y controladores REST para la exposición de endpoints del sistema.
-- [ ] Implementación de reglas de control de acceso y seguridad perimetral mediante Spring Security.
-- [ ] Módulo inicial de Historia Clínica Única (HCU) y sincronización de agendas profesionales.
+---
 
-### Fase 3: Ecosistema Completo e Interfaz Web
-- [ ] Acoplamiento de la interfaz gráfica adaptativa consumiendo la API REST (HTML5, CSS3, JavaScript, React).
-- [ ] Receta electrónica interoperable con firma digital y codificación única por código QR.
-- [ ] Integración de un directorio geolocalizado de cartilla médica para los habitantes de Cruz del Eje.
+## Instalación y Ejecución Local
+
+### Prerrequisitos
+* **Node.js** (v18.0.0 o superior)
+* Gestor de paquetes **npm** (v9 o superior)
+
+### Pasos de Instalación
+1. Clonar el repositorio:
+   ```bash
+   git clone https://github.com/RicardoCejas/Esu-Frontend.git
+   cd Esu-Frontend
+   ```
+
+2. Instalar dependencias del proyecto:
+   ```bash
+   npm install
+   ```
+
+3. Iniciar el servidor de desarrollo:
+   ```bash
+   npm run dev
+   ```
+   La aplicación se iniciará en `http://localhost:5173`.
+
+---
+
+## Scripts Disponibles
+
+En el directorio del proyecto puedes ejecutar:
+
+| Comando | Acción |
+| :--- | :--- |
+| `npm run dev` | Inicia el servidor de desarrollo local con recarga en caliente (HMR). |
+| `npm run build` | Compila TypeScript y empaqueta la aplicación para producción en `dist/`. |
+| `npm run preview` | Previsualiza localmente el build de producción. |
+| `npm run lint` | Ejecuta ESLint para analizar errores de estilo y buenas prácticas. |
+| `npm test` | Ejecuta las pruebas automatizadas del frontend. |
+
+---
+
+## Variables de Entorno
+
+Puedes crear un archivo `.env` en la raíz del frontend para configurar la conexión con la API:
+
+```env
+# URL base de la API REST del Backend (Spring Boot)
+VITE_API_URL=http://localhost:8080/api
+
+# Modo por defecto (opcional)
+VITE_ENABLE_DEV_TOOLS=true
+```
 
 ---
 
@@ -107,8 +199,7 @@ Este proyecto se rige por los estándares del **PMI (Project Management Institut
 
 ---
 
-### 🔗 Recursos del Proyecto
-
-* **Repositorio de Código:** [GitHub - Vértice del Olivo](https://github.com/RicardoCejas/Esu)
-* **Gestión de Proyectos (PMI):** [Documento PMI del Proyecto](https://docs.google.com/document/d/1EIj0QAYjqWMrMraBL_VO3G_roSU5otVp/edit#heading=h.zbyebere09e)
-* **Documentación Técnica:** [Carpeta de Gestión ESU en Google Drive](https://drive.google.com/drive/folders/1Fkj_hzJDNtrR1ZQJit4Ro4zfghxreBYk)
+### Enlaces Relacionados
+* **Repositorio del Backend:** [GitHub - Esu-Backend](https://github.com/RicardoCejas/Esu-Backend)
+* **Gestión del Proyecto (PMI):** [Plan de Proyecto y Acta de Constitución](https://docs.google.com/document/d/1EIj0QAYjqWMrMraBL_VO3G_roSU5otVp/edit#heading=h.zbyebere09e)
+* **Documentación Técnica:** [Carpeta Oficial ESU en Google Drive](https://drive.google.com/drive/folders/1Fkj_hzJDNtrR1ZQJit4Ro4zfghxreBYk)
