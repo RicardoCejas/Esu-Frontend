@@ -92,9 +92,7 @@ export const clinicaService = {
       const res = await apiClient.get<ResumenClinico>(API_ENDPOINTS.pacientes.resumenClinico(numId));
       return res.data;
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo obtener el resumen clínico del paciente.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el resumen clínico del paciente.'), { cause: err });
     }
   },
 
@@ -111,9 +109,7 @@ export const clinicaService = {
       await apiClient.post(API_ENDPOINTS.historiasClinicas.borrador, payload);
       return true;
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo sincronizar el borrador de la consulta en el servidor.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo sincronizar el borrador de la consulta en el servidor.'), { cause: err });
     }
   },
 
@@ -125,7 +121,7 @@ export const clinicaService = {
       });
       return Array.isArray(res.data) ? res.data : [];
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo consultar el catálogo CIE-10.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo consultar el catálogo CIE-10.'), { cause: err });
     }
   },
 
@@ -137,7 +133,7 @@ export const clinicaService = {
       });
       return Array.isArray(res.data) ? res.data : [];
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener sus recetas digitales.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener sus recetas digitales.'), { cause: err });
     }
   },
 
@@ -152,9 +148,7 @@ export const clinicaService = {
       });
       return Array.isArray(res.data) ? res.data : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudieron obtener las recetas digitales del paciente.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener las recetas digitales del paciente.'), { cause: err });
     }
   },
 
@@ -174,7 +168,7 @@ export const clinicaService = {
       );
       return res.data;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'La prescripción no superó la validación médica.'));
+      throw new Error(extractApiErrorMessage(err, 'La prescripción no superó la validación médica.'), { cause: err });
     }
   },
 
@@ -191,9 +185,7 @@ export const clinicaService = {
       );
       return res.data;
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo finalizar ni firmar electrónicamente la consulta.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo finalizar ni firmar electrónicamente la consulta.'), { cause: err });
     }
   },
 
@@ -214,7 +206,7 @@ export const clinicaService = {
       );
       return res.data;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar la adenda médica.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar la adenda médica.'), { cause: err });
     }
   },
 
@@ -227,9 +219,7 @@ export const clinicaService = {
       );
       return Array.isArray(res.data) ? res.data : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo obtener la línea de tiempo clínica del paciente.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener la línea de tiempo clínica del paciente.'), { cause: err });
     }
   },
 
@@ -242,7 +232,7 @@ export const clinicaService = {
       });
       return res.data;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo descargar el PDF de la receta.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo descargar el PDF de la receta.'), { cause: err });
     }
   },
 
@@ -255,7 +245,7 @@ export const clinicaService = {
       });
       return res.data;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo descargar el PDF de la evolución.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo descargar el PDF de la evolución.'), { cause: err });
     }
   },
 
@@ -267,9 +257,7 @@ export const clinicaService = {
       );
       return res.data;
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo verificar la autenticidad del documento.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo verificar la autenticidad del documento.'), { cause: err });
     }
   },
 
@@ -282,9 +270,7 @@ export const clinicaService = {
       const res = await apiClient.get<AlergiaPaciente[]>(API_ENDPOINTS.pacientes.alergias(numId));
       return Array.isArray(res.data) ? res.data : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudieron obtener las alergias registradas del paciente.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener las alergias registradas del paciente.'), { cause: err });
     }
   },
 
@@ -297,7 +283,7 @@ export const clinicaService = {
       );
       return res.data;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar la alergia del paciente.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar la alergia del paciente.'), { cause: err });
     }
   },
 
@@ -305,7 +291,7 @@ export const clinicaService = {
     try {
       await apiClient.delete(API_ENDPOINTS.pacientes.alergiaById(alergiaId));
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar la alergia registrada.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar la alergia registrada.'), { cause: err });
     }
   },
 
@@ -319,7 +305,7 @@ export const clinicaService = {
       });
       return res.data;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo cargar el estudio médico adjunto.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo cargar el estudio médico adjunto.'), { cause: err });
     }
   },
 
@@ -329,9 +315,7 @@ export const clinicaService = {
       const res = await apiClient.get<EstudioAdjunto[]>(API_ENDPOINTS.estudios.byPaciente(numId));
       return Array.isArray(res.data) ? res.data : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudieron obtener los estudios adjuntos del paciente.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los estudios adjuntos del paciente.'), { cause: err });
     }
   },
 
@@ -351,9 +335,7 @@ export const clinicaService = {
       );
       return res.data;
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo firmar ni registrar el consentimiento informado.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo firmar ni registrar el consentimiento informado.'), { cause: err });
     }
   },
 
@@ -367,9 +349,7 @@ export const clinicaService = {
       );
       return Array.isArray(res.data) ? res.data : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudieron obtener los consentimientos informados.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los consentimientos informados.'), { cause: err });
     }
   },
 
@@ -388,9 +368,7 @@ export const clinicaService = {
       );
       return res.data;
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo consultar el historial clínico parametrizado.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo consultar el historial clínico parametrizado.'), { cause: err });
     }
   },
 
@@ -402,12 +380,10 @@ export const clinicaService = {
       );
       return normalizeRecetaValidacion(res.data, codigoOQr);
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(
+      throw new Error(extractApiErrorMessage(
           err,
           'No se encontró ninguna receta médica válida con el código o QR ingresado.'
-        )
-      );
+        ), { cause: err });
     }
   },
 
@@ -433,7 +409,7 @@ export const clinicaService = {
         receta: recetaActualizada,
       };
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo dispensar la receta médica.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo dispensar la receta médica.'), { cause: err });
     }
   },
 
@@ -448,9 +424,7 @@ export const clinicaService = {
       );
       return Array.isArray(res.data) ? res.data.map(normalizePlantilla) : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudieron obtener las plantillas de evolución médica.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener las plantillas de evolución médica.'), { cause: err });
     }
   },
 
@@ -473,9 +447,7 @@ export const clinicaService = {
       );
       return normalizePlantilla(res.data);
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo guardar la plantilla clínica personalizada.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo guardar la plantilla clínica personalizada.'), { cause: err });
     }
   },
 };

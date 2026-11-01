@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { turnosService } from '@/api/turnosService';
 import { centrosService } from '@/api/centrosService';
@@ -28,11 +28,23 @@ export const SalasEsperaKanbanPage: React.FC = () => {
   const hoyStr = getFechaLocalHoy();
 
   const cargarDatos = () => {
-    Promise.all([turnosService.getAll(), centrosService.getAll()]).then(([t, c]) => {
-      setTurnos(t);
-      setCentros(c);
-      setLoading(false);
-    });
+    setLoading(true);
+    Promise.all([
+      turnosService.getAll().catch(() => []),
+      centrosService.getAll().catch(() => [])
+    ])
+      .then(([t, c]) => {
+        setTurnos(t || []);
+        setCentros(c || []);
+      })
+      .catch((err) => {
+        console.error('Error al cargar datos del tablero:', err);
+        setTurnos([]);
+        setCentros([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   useEffect(() => {

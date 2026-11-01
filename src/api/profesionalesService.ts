@@ -107,7 +107,7 @@ export const profesionalesService = {
       const res = await apiClient.get<Record<string, unknown>[]>(API_ENDPOINTS.profesionales.base);
       return Array.isArray(res.data) ? res.data.map(normalizeProfesional) : [];
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los profesionales médicos.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los profesionales médicos.'), { cause: err });
     }
   },
 
@@ -117,7 +117,7 @@ export const profesionalesService = {
       const res = await apiClient.get<Record<string, unknown>>(API_ENDPOINTS.profesionales.byId(numId));
       return res.data ? normalizeProfesional(res.data) : undefined;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el profesional solicitado.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el profesional solicitado.'), { cause: err });
     }
   },
 
@@ -126,7 +126,7 @@ export const profesionalesService = {
       const res = await apiClient.get<Record<string, unknown>[]>(API_ENDPOINTS.especialidades.base);
       return Array.isArray(res.data) ? res.data.map(normalizeEspecialidad) : [];
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener las especialidades médicas.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener las especialidades médicas.'), { cause: err });
     }
   },
 
@@ -138,9 +138,7 @@ export const profesionalesService = {
       );
       return Array.isArray(res.data) ? res.data.map(normalizeProfesional) : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudieron obtener los profesionales del centro de salud.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los profesionales del centro de salud.'), { cause: err });
     }
   },
 
@@ -152,9 +150,7 @@ export const profesionalesService = {
       );
       return Array.isArray(res.data) ? res.data.map(normalizeProfesional) : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudieron obtener los profesionales de la especialidad.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los profesionales de la especialidad.'), { cause: err });
     }
   },
 
@@ -174,7 +170,7 @@ export const profesionalesService = {
       const res = await apiClient.post<Record<string, unknown>>(API_ENDPOINTS.profesionales.base, payload);
       return normalizeProfesional(res.data);
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar el profesional médico.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar el profesional médico.'), { cause: err });
     }
   },
 
@@ -186,7 +182,7 @@ export const profesionalesService = {
       });
       return normalizeEspecialidad(res.data);
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo crear la especialidad médica.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo crear la especialidad médica.'), { cause: err });
     }
   },
 
@@ -199,7 +195,7 @@ export const profesionalesService = {
       });
       return normalizeEspecialidad(res.data);
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar la especialidad médica.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar la especialidad médica.'), { cause: err });
     }
   },
 
@@ -209,7 +205,7 @@ export const profesionalesService = {
       await apiClient.delete(API_ENDPOINTS.especialidades.byId(numId));
       return true;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar la especialidad médica.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar la especialidad médica.'), { cause: err });
     }
   },
 
@@ -234,7 +230,7 @@ export const profesionalesService = {
       );
       return normalizeProfesional(res.data);
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar el profesional médico.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar el profesional médico.'), { cause: err });
     }
   },
 
@@ -245,7 +241,7 @@ export const profesionalesService = {
       await apiClient.post(API_ENDPOINTS.profesionales.vincularCentro(numProfId, numCentroId));
       return true;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo vincular al profesional al centro.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo vincular al profesional al centro.'), { cause: err });
     }
   },
 
@@ -256,7 +252,7 @@ export const profesionalesService = {
       await apiClient.delete(API_ENDPOINTS.profesionales.vincularCentro(numProfId, numCentroId));
       return true;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo desvincular al profesional del centro.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo desvincular al profesional del centro.'), { cause: err });
     }
   },
 
@@ -268,7 +264,7 @@ export const profesionalesService = {
       );
       return Array.isArray(res.data) ? res.data.map(normalizeDisponibilidad) : [];
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener la disponibilidad del profesional.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener la disponibilidad del profesional.'), { cause: err });
     }
   },
 
@@ -296,7 +292,7 @@ export const profesionalesService = {
       );
       return normalizeDisponibilidad(res.data);
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo guardar la configuración de disponibilidad.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo guardar la configuración de disponibilidad.'), { cause: err });
     }
   },
 
@@ -310,7 +306,7 @@ export const profesionalesService = {
       await apiClient.delete(API_ENDPOINTS.disponibilidades.byId(numId));
       return true;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar la franja de disponibilidad.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar la franja de disponibilidad.'), { cause: err });
     }
   },
 
@@ -322,7 +318,7 @@ export const profesionalesService = {
       );
       return Array.isArray(res.data) ? res.data.map(normalizeBloqueo) : [];
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudieron consultar los bloqueos de agenda.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron consultar los bloqueos de agenda.'), { cause: err });
     }
   },
 
@@ -345,7 +341,7 @@ export const profesionalesService = {
       );
       return normalizeBloqueo(res.data);
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar el bloqueo de agenda.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar el bloqueo de agenda.'), { cause: err });
     }
   },
 
@@ -355,7 +351,7 @@ export const profesionalesService = {
       await apiClient.delete(API_ENDPOINTS.bloqueosAgenda.byId(numId));
       return true;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar el bloqueo de agenda.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar el bloqueo de agenda.'), { cause: err });
     }
   },
 };

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+﻿import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, UserRole } from '@/types';
 import { authService, type LoginCredentials, type AuthResponse } from '@/api/authService';
 import { tokenStorage } from '@/api/tokenStorage';
@@ -12,7 +12,7 @@ interface AuthContextType {
   loginWithGoogle: (idToken: string) => Promise<AuthResponse>;
   register: (userData: Omit<User, 'id'> & { password?: string }) => Promise<void>;
   logout: () => Promise<void>;
-  switchRole: (newRole: UserRole) => void;
+  switchRole: (newRole: UserRole) => Promise<void>;
   updateUser: (updatedData: Partial<User>) => void;
 }
 
@@ -117,12 +117,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Función utilitaria para cambiar de rol únicamente en entorno de desarrollo local
-  const switchRole = (newRole: UserRole) => {
+  const switchRole = async (newRole: UserRole) => {
     if (!import.meta.env.DEV) {
       console.warn('El cambio de rol de prueba está restringido a entornos de desarrollo.');
       return;
     }
-    authService.devSwitchRole(newRole);
+    await authService.devSwitchRole(newRole);
     if (user) {
       const updated: User = { ...user, rol: newRole };
       setUser(updated);

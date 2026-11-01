@@ -54,7 +54,7 @@ export const pacientesService = {
       const res = await apiClient.get<Record<string, unknown>[]>(API_ENDPOINTS.pacientes.base);
       return Array.isArray(res.data) ? res.data.map(normalizePaciente) : [];
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el padrón de pacientes.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el padrón de pacientes.'), { cause: err });
     }
   },
 
@@ -67,7 +67,7 @@ export const pacientesService = {
       if (status === 404) {
         return undefined;
       }
-      throw new Error(extractApiErrorMessage(err, 'Error al buscar paciente por DNI.'));
+      throw new Error(extractApiErrorMessage(err, 'Error al buscar paciente por DNI.'), { cause: err });
     }
   },
 
@@ -79,9 +79,7 @@ export const pacientesService = {
       );
       return Array.isArray(res.data) ? res.data.map(normalizeConsulta) : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo obtener la historia clínica del paciente.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener la historia clínica del paciente.'), { cause: err });
     }
   },
 
@@ -99,9 +97,7 @@ export const pacientesService = {
       );
       return normalizeConsulta(res.data);
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo registrar la consulta en la historia clínica.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar la consulta en la historia clínica.'), { cause: err });
     }
   },
 
@@ -120,7 +116,7 @@ export const pacientesService = {
       const res = await apiClient.post<Record<string, unknown>>(API_ENDPOINTS.pacientes.base, payload);
       return normalizePaciente(res.data);
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo dar de alta al paciente.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo dar de alta al paciente.'), { cause: err });
     }
   },
 
@@ -136,9 +132,7 @@ export const pacientesService = {
       );
       return normalizePaciente(res.data);
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudieron actualizar los datos de contacto del paciente.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron actualizar los datos de contacto del paciente.'), { cause: err });
     }
   },
 };

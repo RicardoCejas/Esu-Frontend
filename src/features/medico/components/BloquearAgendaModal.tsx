@@ -117,8 +117,8 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
 
       if (onBloqueoCreado) onBloqueoCreado();
       onClose();
-    } catch (err: any) {
-      error(err.message || 'Error al registrar el bloqueo de agenda.');
+    } catch (err: unknown) {
+      error((err instanceof Error ? err.message : null) || 'Error al registrar el bloqueo de agenda.');
     } finally {
       setGuardando(false);
     }

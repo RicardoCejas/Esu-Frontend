@@ -39,7 +39,7 @@ export function DemoStep5PatientConfirmation({
     handleSubmit,
     formState: { errors },
   } = useForm<PatientBookingForm>({
-    resolver: zodResolver(patientBookingSchema) as any,
+    resolver: zodResolver(patientBookingSchema) as unknown as import("react-hook-form").Resolver<PatientBookingForm>,
     defaultValues: {
       ...patientForm,
       affiliateNumber: '',

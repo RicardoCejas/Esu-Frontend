@@ -64,8 +64,8 @@ export const CriticalAlertBanner: React.FC<CriticalAlertBannerProps> = ({
       setModalAbierto(false);
       await cargarAlergias();
       if (onAlergiaAdded) onAlergiaAdded();
-    } catch (err: any) {
-      setErrorMsg(err.response?.data?.detail || 'No se pudo registrar la alerta médica.');
+    } catch (err: unknown) {
+      setErrorMsg((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || (err instanceof Error ? err.message : 'No se pudo registrar la alerta médica.'));
     } finally {
       setGuardando(false);
     }

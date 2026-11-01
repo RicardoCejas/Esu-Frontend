@@ -61,7 +61,7 @@ export const centrosService = {
       const res = await apiClient.get<BackendCentroSaludDto[]>(API_ENDPOINTS.centrosSalud.base);
       return Array.isArray(res.data) ? res.data.map(normalizeCentro) : [];
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los centros de salud.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los centros de salud.'), { cause: err });
     }
   },
 
@@ -74,7 +74,7 @@ export const centrosService = {
       const res = await apiClient.get<BackendCentroSaludDto>(API_ENDPOINTS.centrosSalud.byId(id));
       return res.data ? normalizeCentro(res.data) : undefined;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el centro de salud solicitado.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el centro de salud solicitado.'), { cause: err });
     }
   },
 
@@ -83,7 +83,7 @@ export const centrosService = {
       const res = await apiClient.post<BackendCentroSaludDto>(API_ENDPOINTS.centrosSalud.base, data);
       return normalizeCentro(res.data);
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo crear el centro de salud.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo crear el centro de salud.'), { cause: err });
     }
   },
 
@@ -96,7 +96,7 @@ export const centrosService = {
       const res = await apiClient.put<BackendCentroSaludDto>(API_ENDPOINTS.centrosSalud.byId(id), data);
       return res.data ? normalizeCentro(res.data) : null;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar el centro de salud.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar el centro de salud.'), { cause: err });
     }
   },
 
@@ -105,7 +105,7 @@ export const centrosService = {
       await apiClient.delete(API_ENDPOINTS.centrosSalud.byId(id));
       return true;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar el centro de salud.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar el centro de salud.'), { cause: err });
     }
   },
 
@@ -120,7 +120,7 @@ export const centrosService = {
       });
       return Array.isArray(res.data) ? res.data.map(normalizeConsultorio) : [];
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los consultorios físicos.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los consultorios físicos.'), { cause: err });
     }
   },
 
@@ -139,7 +139,7 @@ export const centrosService = {
       );
       return normalizeConsultorio(res.data);
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar el consultorio físico.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar el consultorio físico.'), { cause: err });
     }
   },
 
@@ -148,7 +148,7 @@ export const centrosService = {
       await apiClient.delete(API_ENDPOINTS.centrosSalud.consultorioById(id));
       return true;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar el consultorio físico.'));
+      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar el consultorio físico.'), { cause: err });
     }
   },
 };

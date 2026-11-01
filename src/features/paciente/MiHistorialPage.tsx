@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { pacientesService } from '@/api/pacientesService';
 import type { ConsultaMedica } from '@/types';
@@ -37,10 +37,18 @@ export const MiHistorialPage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      pacientesService.getHistoriaClinica(user.id).then((data) => {
-        setConsultas(data);
-        setLoading(false);
-      });
+      setLoading(true);
+      pacientesService.getHistoriaClinica(user.id)
+        .then((data) => {
+          setConsultas(data || []);
+        })
+        .catch((err) => {
+          console.error('Error al cargar historia clínica:', err);
+          setConsultas([]);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   }, [user]);
 

@@ -255,9 +255,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
     }
   }
 
-  const modalIcon = modalSpecialty ? getSpecialtyIcon(modalSpecialty.name) : Stethoscope
-  const ModalIconComponent = modalIcon
-  const modalDisplayName = modalSpecialty ? getDisplaySpecialtyName(modalSpecialty.name) : ''
+      const modalDisplayName = modalSpecialty ? getDisplaySpecialtyName(modalSpecialty.name) : ''
 
   return (
     <section className="space-y-4 sm:space-y-6 pb-12 sm:pb-16">
@@ -472,7 +470,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
               {/* Encabezado del Pop-up con ícono prominente */}
               <div className="flex items-start gap-4">
                 <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#005a87] to-[#0284c7] text-white shadow-lg shadow-[#005a87]/25">
-                  <ModalIconComponent className="size-7 stroke-[1.8]" />
+                  {React.createElement(modalSpecialty ? getSpecialtyIcon(modalSpecialty.name) : Stethoscope, { className: 'size-7 stroke-[1.8]' })}
                 </div>
                 <div className="min-w-0 flex-1 pt-0.5">
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#005a87] bg-sky-50 px-2.5 py-0.5 rounded-md border border-sky-200/60">
