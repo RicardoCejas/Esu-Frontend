@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { turnosService } from '@/api/turnosService';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import type { Turno } from '@/types';
-import { Search, Calendar, Clock, RotateCcw, XCircle, X } from 'lucide-react';
+import { Search, Calendar, Clock, RotateCcw, XCircle, X, AlertCircle, RefreshCw } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 export const GestionTurnosAdminPage: React.FC = () => {
+  const { success, error: toastError } = useToast();
   const [turnos, setTurnos] = useState<Turno[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<string>('TODOS');
   const [fechaDesde, setFechaDesde] = useState('');
@@ -15,35 +21,67 @@ export const GestionTurnosAdminPage: React.FC = () => {
   const [nuevaFecha, setNuevaFecha] = useState('');
   const [nuevaHora, setNuevaHora] = useState('');
   const [turnoACancelar, setTurnoACancelar] = useState<Turno | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const cargarTurnos = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const data = await turnosService.getAll();
+      setTurnos(data);
+    } catch (err) {
+      setLoadError(extractApiErrorMessage(err, 'No se pudieron cargar los turnos del sistema.'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    turnosService.getAll().then(setTurnos);
-  }, []);
+    cargarTurnos();
+  }, [cargarTurnos]);
 
   const handleConfirmarCancelacion = async () => {
     if (!turnoACancelar) return;
-    await turnosService.cancelarTurno(turnoACancelar.id);
-    setTurnos((prev) =>
-      prev.map((t) => (t.id === turnoACancelar.id ? { ...t, estado: 'CANCELADO' } : t))
-    );
-    setTurnoACancelar(null);
+    setIsProcessing(true);
+    try {
+      await turnosService.cancelarTurno(turnoACancelar.id);
+      setTurnos((prev) =>
+        prev.map((t) => (t.id === turnoACancelar.id ? { ...t, estado: 'CANCELADO' } : t))
+      );
+      success('Turno cancelado exitosamente.');
+      setTurnoACancelar(null);
+    } catch (err) {
+      toastError(extractApiErrorMessage(err, 'No se pudo cancelar el turno.'));
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // HU-27: Reagendamiento de cita
-  const handleConfirmarReagendamiento = (e: React.FormEvent) => {
+  const handleConfirmarReagendamiento = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!turnoAReagendar || !nuevaFecha || !nuevaHora) return;
 
-    setTurnos((prev) =>
-      prev.map((t) =>
-        t.id === turnoAReagendar.id
-          ? { ...t, fecha: nuevaFecha, hora: nuevaHora, estado: 'CONFIRMADO' }
-          : t
-      )
-    );
-    setTurnoAReagendar(null);
-    setNuevaFecha('');
-    setNuevaHora('');
+    setIsProcessing(true);
+    try {
+      const nuevaFechaHoraIso = `${nuevaFecha}T${nuevaHora}:00`;
+      await turnosService.reprogramarTurno(turnoAReagendar.id, nuevaFechaHoraIso);
+      setTurnos((prev) =>
+        prev.map((t) =>
+          t.id === turnoAReagendar.id
+            ? { ...t, fecha: nuevaFecha, hora: nuevaHora, estado: 'CONFIRMADO' }
+            : t
+        )
+      );
+      success('Turno reprogramado exitosamente.');
+      setTurnoAReagendar(null);
+      setNuevaFecha('');
+      setNuevaHora('');
+    } catch (err) {
+      toastError(extractApiErrorMessage(err, 'No se pudo reprogramar el turno.'));
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // HU-29: Filtro Avanzado de Turnos por Estado, Rango de Fecha y Buscador
@@ -72,6 +110,23 @@ export const GestionTurnosAdminPage: React.FC = () => {
           Supervisión global, reprogramación (reagendamiento) y cancelaciones administrativas.
         </p>
       </div>
+
+      {loadError && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={cargarTurnos}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800 transition cursor-pointer"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      )}
 
       {/* HU-29: Panel de Filtros Avanzados (Texto + Estado + Rango de Fechas) */}
       <div className="rounded-2xl border border-border bg-card p-4 shadow-xs space-y-3">
@@ -161,7 +216,13 @@ export const GestionTurnosAdminPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
-              {turnosFiltrados.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                    Cargando turnos...
+                  </td>
+                </tr>
+              ) : turnosFiltrados.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-muted-foreground">
                     No se encontraron turnos con los criterios de filtro especificados.
@@ -204,12 +265,13 @@ export const GestionTurnosAdminPage: React.FC = () => {
                         {t.estado !== 'CANCELADO' && t.estado !== 'COMPLETADO' && (
                           <button
                             type="button"
+                            disabled={isProcessing}
                             onClick={() => {
                               setTurnoAReagendar(t);
                               setNuevaFecha(t.fecha);
                               setNuevaHora(t.hora);
                             }}
-                            className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2.5 py-1 text-foreground hover:bg-accent transition cursor-pointer"
+                            className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2.5 py-1 text-foreground hover:bg-accent transition cursor-pointer disabled:opacity-50"
                             title="Reagendar turno"
                           >
                             <RotateCcw className="h-3.5 w-3.5 text-primary" />
@@ -221,8 +283,9 @@ export const GestionTurnosAdminPage: React.FC = () => {
                         {t.estado !== 'CANCELADO' && (
                           <button
                             type="button"
+                            disabled={isProcessing}
                             onClick={() => setTurnoACancelar(t)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1 text-rose-700 font-semibold hover:bg-rose-700 hover:text-white dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-200 transition cursor-pointer"
+                            className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1 text-rose-700 font-semibold hover:bg-rose-700 hover:text-white dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-200 transition cursor-pointer disabled:opacity-50"
                             title="Cancelar cita"
                           >
                             <XCircle className="h-3.5 w-3.5" />
@@ -309,16 +372,18 @@ export const GestionTurnosAdminPage: React.FC = () => {
               <div className="flex gap-3 pt-3">
                 <button
                   type="button"
+                  disabled={isProcessing}
                   onClick={() => setTurnoAReagendar(null)}
-                  className="flex-1 rounded-xl border border-input py-2.5 font-semibold hover:bg-accent transition cursor-pointer"
+                  className="flex-1 rounded-xl border border-input py-2.5 font-semibold hover:bg-accent transition cursor-pointer disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 rounded-xl bg-primary py-2.5 font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-sm cursor-pointer"
+                  disabled={isProcessing}
+                  className="flex-1 rounded-xl bg-primary py-2.5 font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-sm cursor-pointer disabled:opacity-50"
                 >
-                  Confirmar Reprogramación
+                  {isProcessing ? 'Guardando...' : 'Confirmar Reprogramación'}
                 </button>
               </div>
             </form>
@@ -354,17 +419,19 @@ export const GestionTurnosAdminPage: React.FC = () => {
             <div className="flex gap-2.5 pt-2">
               <button
                 type="button"
+                disabled={isProcessing}
                 onClick={() => setTurnoACancelar(null)}
-                className="flex-1 rounded-lg border border-input bg-background py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
+                className="flex-1 rounded-lg border border-input bg-background py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer disabled:opacity-50"
               >
                 Volver
               </button>
               <button
                 type="button"
+                disabled={isProcessing}
                 onClick={handleConfirmarCancelacion}
-                className="flex-1 rounded-lg bg-rose-700 py-2 text-xs font-bold text-white hover:bg-rose-800 transition cursor-pointer shadow-sm"
+                className="flex-1 rounded-lg bg-rose-700 py-2 text-xs font-bold text-white hover:bg-rose-800 transition cursor-pointer shadow-sm disabled:opacity-50"
               >
-                Confirmar Cancelación
+                {isProcessing ? 'Cancelando...' : 'Confirmar Cancelación'}
               </button>
             </div>
           </div>

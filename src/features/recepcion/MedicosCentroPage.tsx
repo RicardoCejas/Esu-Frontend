@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { profesionalesService } from '@/api/profesionalesService';
-import { MOCK_PROFESIONALES } from '@/api/mockData';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import type { Profesional, Especialidad } from '@/types';
 import {
   Stethoscope,
@@ -19,6 +19,8 @@ import {
   Save,
   ShieldCheck,
   ChevronRight,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 
@@ -29,6 +31,7 @@ export const MedicosCentroPage: React.FC = () => {
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
 
   // Modal de edición / ficha
@@ -43,30 +46,38 @@ export const MedicosCentroPage: React.FC = () => {
   const [editDias, setEditDias] = useState<string[]>([]);
   const [editDuracion, setEditDuracion] = useState(20);
 
-  const centroId = user?.centroSaludId || 'c1';
-  const centroNombre = user?.centroSaludNombre || 'Hospital Regional Aurelio Crespo';
+  const centroId = user?.centroSaludId ? String(user.centroSaludId) : '1';
+  const centroNombre = user?.centroSaludNombre || 'Centro de Salud Cruz del Eje';
 
   const DIAS_DISPONIBLES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-  const cargarDatos = async () => {
+  const cargarDatos = useCallback(async () => {
     setLoading(true);
-    const [profs, esps] = await Promise.all([
-      profesionalesService.getAll(),
-      profesionalesService.getEspecialidades(),
-    ]);
+    setLoadError(null);
+    try {
+      const [profs, esps] = await Promise.all([
+        profesionalesService.getAll(),
+        profesionalesService.getEspecialidades(),
+      ]);
 
-    const filtrados = profs.filter((p) =>
-      p.centrosSaludIds ? p.centrosSaludIds.includes(centroId) : true
-    );
+      const filtrados = profs.filter((p) =>
+        p.centrosSaludIds && p.centrosSaludIds.length > 0 ? p.centrosSaludIds.includes(centroId) : true
+      );
 
-    setProfesionales(filtrados.length > 0 ? filtrados : MOCK_PROFESIONALES);
-    setEspecialidades(esps);
-    setLoading(false);
-  };
+      setProfesionales(filtrados);
+      setEspecialidades(esps);
+    } catch (err) {
+      setLoadError(
+        extractApiErrorMessage(err, 'No se pudo cargar el plantel médico del centro.')
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [centroId]);
 
   useEffect(() => {
     cargarDatos();
-  }, [centroId]);
+  }, [cargarDatos]);
 
   const handleAbrirFicha = (med: Profesional) => {
     setMedicoSeleccionado(med);
@@ -111,8 +122,8 @@ export const MedicosCentroPage: React.FC = () => {
       setMedicoSeleccionado({ ...medicoSeleccionado, ...updated });
       setModoEdicion(false);
       success(`Datos del Dr. ${editNombre} ${editApellido} actualizados`);
-    } catch {
-      toastError('Error al actualizar datos del profesional');
+    } catch (err) {
+      toastError(extractApiErrorMessage(err, 'Error al actualizar datos del profesional'));
     }
   };
 
@@ -126,8 +137,8 @@ export const MedicosCentroPage: React.FC = () => {
       setProfesionales((prev) => prev.filter((p) => p.id !== med.id));
       setMedicoSeleccionado(null);
       success(`Dr. ${med.nombre} ${med.apellido} desvinculado del centro`);
-    } catch {
-      toastError('Error al desvincular al médico');
+    } catch (err) {
+      toastError(extractApiErrorMessage(err, 'Error al desvincular al médico'));
     }
   };
 
@@ -146,7 +157,7 @@ export const MedicosCentroPage: React.FC = () => {
             <span>Plantel Médico y Cuentas del Centro</span>
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Gestión de profesionales adscriptos, horarios de atención, matrículas y matrículas de <strong>{centroNombre}</strong>.
+            Gestión de profesionales adscriptos, horarios de atención y matrículas de <strong>{centroNombre}</strong>.
           </p>
         </div>
 
@@ -158,6 +169,23 @@ export const MedicosCentroPage: React.FC = () => {
           <span>+ Agregar Médico / Crear Cuenta</span>
         </Link>
       </div>
+
+      {loadError && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={cargarDatos}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800 transition cursor-pointer"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      )}
 
       {/* Banner de Sede Activa */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-sky-200 bg-sky-50/70 p-4 shadow-xs text-xs sm:text-sm">
@@ -195,7 +223,7 @@ export const MedicosCentroPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Grilla de Médicos (Clickable para entrar y editar) */}
+      {/* Grilla de Médicos */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <div className="h-48 rounded-2xl bg-muted/40 animate-pulse" />

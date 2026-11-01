@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { profesionalesService } from '@/api/profesionalesService';
-import { MOCK_ESPECIALIDADES } from '@/api/mockData';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import type { Especialidad, Profesional } from '@/types';
 import {
   Layers,
@@ -17,7 +17,9 @@ import {
   Users,
   ChevronRight,
   ShieldCheck,
-  UserPlus
+  UserPlus,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 
@@ -27,6 +29,8 @@ export const EspecialidadesCentroPage: React.FC = () => {
 
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
 
   // Estados de modales
@@ -43,21 +47,31 @@ export const EspecialidadesCentroPage: React.FC = () => {
   const [editDesc, setEditDesc] = useState('');
   const [medicoAVincular, setMedicoAVincular] = useState('');
 
-  const centroId = user?.centroSaludId || 'c1';
-  const centroNombre = user?.centroSaludNombre || 'Hospital Regional Aurelio Crespo';
+  const centroId = user?.centroSaludId ? String(user.centroSaludId) : '1';
+  const centroNombre = user?.centroSaludNombre || 'Centro de Salud Cruz del Eje';
 
-  const cargarDatos = async () => {
-    const [esps, profs] = await Promise.all([
-      profesionalesService.getEspecialidades(),
-      profesionalesService.getAll(),
-    ]);
-    setEspecialidades(esps.length > 0 ? esps : MOCK_ESPECIALIDADES);
-    setProfesionales(profs);
-  };
+  const cargarDatos = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const [esps, profs] = await Promise.all([
+        profesionalesService.getEspecialidades(),
+        profesionalesService.getAll(),
+      ]);
+      setEspecialidades(esps);
+      setProfesionales(profs);
+    } catch (err) {
+      setLoadError(
+        extractApiErrorMessage(err, 'No se pudieron cargar las especialidades del centro.')
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     cargarDatos();
-  }, [centroId]);
+  }, [cargarDatos, centroId]);
 
   // Médicos del centro asignados a una especialidad
   const getMedicosPorEspecialidad = (espId: string, espNombre: string) => {
@@ -83,8 +97,8 @@ export const EspecialidadesCentroPage: React.FC = () => {
       setNombreNueva('');
       setDescNueva('');
       setModalNuevaOpen(false);
-    } catch {
-      toastError('Error al crear la especialidad');
+    } catch (err) {
+      toastError(extractApiErrorMessage(err, 'Error al crear la especialidad'));
     }
   };
 
@@ -113,8 +127,8 @@ export const EspecialidadesCentroPage: React.FC = () => {
       setEspecialidadSeleccionada({ ...especialidadSeleccionada, ...updated });
       setModoEdicion(false);
       success(`Especialidad "${editNombre}" actualizada`);
-    } catch {
-      toastError('No se pudo actualizar la especialidad');
+    } catch (err) {
+      toastError(extractApiErrorMessage(err, 'No se pudo actualizar la especialidad'));
     }
   };
 
@@ -129,8 +143,8 @@ export const EspecialidadesCentroPage: React.FC = () => {
       setEspecialidades((prev) => prev.filter((esp) => esp.id !== id));
       setEspecialidadSeleccionada(null);
       success(`Especialidad "${nombre}" eliminada del catálogo del centro`);
-    } catch {
-      toastError('Error al eliminar la especialidad');
+    } catch (err) {
+      toastError(extractApiErrorMessage(err, 'Error al eliminar la especialidad'));
     }
   };
 
@@ -144,24 +158,32 @@ export const EspecialidadesCentroPage: React.FC = () => {
     const centrosActuales = prof.centrosSaludIds || [];
     const nuevosCentros = centrosActuales.includes(centroId) ? centrosActuales : [...centrosActuales, centroId];
 
-    await profesionalesService.updateProfesional(prof.id, {
-      especialidadId: especialidadSeleccionada.id,
-      especialidadNombre: especialidadSeleccionada.nombre,
-      centrosSaludIds: nuevosCentros,
-    });
+    try {
+      await profesionalesService.updateProfesional(prof.id, {
+        especialidadId: especialidadSeleccionada.id,
+        especialidadNombre: especialidadSeleccionada.nombre,
+        centrosSaludIds: nuevosCentros,
+      });
 
-    await cargarDatos();
-    setMedicoAVincular('');
-    success(`Dr. ${prof.nombre} ${prof.apellido} vinculado a ${especialidadSeleccionada.nombre}`);
+      await cargarDatos();
+      setMedicoAVincular('');
+      success(`Dr. ${prof.nombre} ${prof.apellido} vinculado a ${especialidadSeleccionada.nombre}`);
+    } catch (err) {
+      toastError(extractApiErrorMessage(err, 'No se pudo vincular al profesional.'));
+    }
   };
 
   // Desvincular médico de la especialidad en este centro
   const handleDesvincularMedico = async (profId: string, profNombre: string) => {
     if (!window.confirm(`¿Desvincular a ${profNombre} de esta especialidad en este centro?`)) return;
 
-    await profesionalesService.desvincularCentro(profId, centroId);
-    await cargarDatos();
-    success(`${profNombre} desvinculado de este servicio`);
+    try {
+      await profesionalesService.desvincularCentro(profId, centroId);
+      await cargarDatos();
+      success(`${profNombre} desvinculado de este servicio`);
+    } catch (err) {
+      toastError(extractApiErrorMessage(err, 'No se pudo desvincular al médico.'));
+    }
   };
 
   const filtradas = especialidades.filter(
@@ -193,6 +215,23 @@ export const EspecialidadesCentroPage: React.FC = () => {
           <span>+ Agregar Especialidad al Centro</span>
         </button>
       </div>
+
+      {loadError && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={cargarDatos}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800 transition cursor-pointer"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      )}
 
       {/* Banner de Control Institucional */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-sky-200 bg-sky-50/70 p-4 shadow-xs text-xs sm:text-sm">
@@ -230,54 +269,62 @@ export const EspecialidadesCentroPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Grilla de Especialidades (Clickables para entrar y gestionar) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filtradas.map((esp) => {
-          const medicosEsp = getMedicosPorEspecialidad(esp.id, esp.nombre);
-          return (
-            <div
-              key={esp.id}
-              onClick={() => handleAbrirDetalle(esp)}
-              className="group flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs hover:border-primary/60 hover:shadow-md transition-all cursor-pointer space-y-4"
-            >
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="p-2.5 rounded-xl bg-sky-50 text-sky-700 group-hover:bg-primary group-hover:text-white transition-colors">
-                    <Stethoscope className="h-5 w-5" />
+      {/* Grilla de Especialidades */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="h-40 rounded-2xl bg-muted/40 animate-pulse" />
+          <div className="h-40 rounded-2xl bg-muted/40 animate-pulse" />
+          <div className="h-40 rounded-2xl bg-muted/40 animate-pulse" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filtradas.map((esp) => {
+            const medicosEsp = getMedicosPorEspecialidad(esp.id, esp.nombre);
+            return (
+              <div
+                key={esp.id}
+                onClick={() => handleAbrirDetalle(esp)}
+                className="group flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs hover:border-primary/60 hover:shadow-md transition-all cursor-pointer space-y-4"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="p-2.5 rounded-xl bg-sky-50 text-sky-700 group-hover:bg-primary group-hover:text-white transition-colors">
+                      <Stethoscope className="h-5 w-5" />
+                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold">
+                      <CheckCircle2 className="h-3 w-3" /> Habilitada
+                    </span>
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold">
-                    <CheckCircle2 className="h-3 w-3" /> Habilitada
-                  </span>
+
+                  <div>
+                    <h3 className="font-bold text-base text-foreground font-heading group-hover:text-primary transition-colors">
+                      {esp.nombre}
+                    </h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
+                      {esp.descripcion || 'Atención médica y consulta clínica especializada en Cruz del Eje.'}
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <h3 className="font-bold text-base text-foreground font-heading group-hover:text-primary transition-colors">
-                    {esp.nombre}
-                  </h3>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
-                    {esp.descripcion || 'Atención médica y consulta clínica especializada en Cruz del Eje.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-border/60 text-xs flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-slate-600 font-medium">
-                  <Users className="h-3.5 w-3.5 text-sky-600" />
-                  <span>
-                    {medicosEsp.length > 0
-                      ? `${medicosEsp.length} médico${medicosEsp.length > 1 ? 's' : ''} asignado${medicosEsp.length > 1 ? 's' : ''}`
-                      : 'Sin médicos asignados'}
+                <div className="pt-3 border-t border-border/60 text-xs flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-slate-600 font-medium">
+                    <Users className="h-3.5 w-3.5 text-sky-600" />
+                    <span>
+                      {medicosEsp.length > 0
+                        ? `${medicosEsp.length} médico${medicosEsp.length > 1 ? 's' : ''} asignado${medicosEsp.length > 1 ? 's' : ''}`
+                        : 'Sin médicos asignados'}
+                    </span>
+                  </div>
+                  <span className="text-primary font-bold inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                    <span>Gestionar</span>
+                    <ChevronRight className="h-3.5 w-3.5" />
                   </span>
                 </div>
-                <span className="text-primary font-bold inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                  <span>Gestionar</span>
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </span>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* MODAL 1: Detalle, Control de Médicos y Edición de Especialidad */}
       {especialidadSeleccionada && (

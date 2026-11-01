@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MOCK_USERS, MOCK_CENTROS } from '@/api/mockData';
-import type { CentroSalud, User } from '@/types';
-import { Building2, ArrowLeft, Save, Shield } from 'lucide-react';
+import { apiClient } from '@/api/apiClient';
+import { API_ENDPOINTS, extractApiErrorMessage } from '@/api/endpoints';
+import { centrosService } from '@/api/centrosService';
+import type { CentroSalud } from '@/types';
+import { Building2, ArrowLeft, Save, Shield, AlertCircle } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 
 export const NuevoUsuarioPage: React.FC = () => {
   const navigate = useNavigate();
-  const { success } = useToast();
+  const { success, error: toastError } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     nombreCentro: '',
@@ -39,12 +42,9 @@ export const NuevoUsuarioPage: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
-      const nuevoId = `c-${Date.now()}`;
-      
-      // Registrar en MOCK_CENTROS
-      const nuevoCentro: CentroSalud = {
-        id: nuevoId,
+      await centrosService.createCentroSalud({
         nombre: formData.nombreCentro.trim(),
         tipo: formData.tipo,
         direccion: formData.direccion.trim() || 'Cruz del Eje, Córdoba',
@@ -52,28 +52,20 @@ export const NuevoUsuarioPage: React.FC = () => {
         ciudad: 'Cruz del Eje',
         horarioAtencion: formData.horarioAtencion,
         disponibleGuardia: formData.disponibleGuardia,
-      };
-      MOCK_CENTROS.push(nuevoCentro);
+      });
 
-      // Registrar cuenta institucional en MOCK_USERS
-      const nuevaCuentaUser: User = {
-        id: `u-${nuevoId}`,
-        nombre: formData.nombreCentro.trim(),
-        apellido: '(Centro de Salud)',
-        email: formData.emailInstitucional.trim().toLowerCase(),
-        dni: String(Date.now()).slice(-8),
-        telefono: formData.telefono.trim(),
+      await apiClient.post(API_ENDPOINTS.usuarios.crear, {
+        username: formData.emailInstitucional.trim().toLowerCase(),
+        password: formData.password,
         rol: 'RECEPCIONISTA',
-        centroSaludId: nuevoId,
-        centroSaludNombre: formData.nombreCentro.trim(),
-        activo: true,
-      };
-      MOCK_USERS.push(nuevaCuentaUser);
+      });
 
       success(`Cuenta creada exitosamente para ${formData.nombreCentro}`);
       navigate('/dashboard/admin/usuarios');
-    } catch {
-      navigate('/dashboard/admin/usuarios');
+    } catch (err) {
+      const msg = extractApiErrorMessage(err, 'No se pudo registrar la cuenta institucional.');
+      setSubmitError(msg);
+      toastError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -115,6 +107,13 @@ export const NuevoUsuarioPage: React.FC = () => {
           Una vez creada la cuenta, el centro de salud podrá iniciar sesión de forma autónoma para <strong>crear las cuentas de sus médicos</strong>, <strong>asignar especialidades</strong> y <strong>gestionar la recepción de turnos</strong>.
         </p>
       </div>
+
+      {submitError && (
+        <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+          <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+          <span>{submitError}</span>
+        </div>
+      )}
 
       {/* Formulario */}
       <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-4 text-xs">

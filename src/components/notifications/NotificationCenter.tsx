@@ -10,22 +10,31 @@ import {
   Info,
   Clock,
   ChevronRight,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import {
   notificacionesService,
   type NotificacionItem,
   type TipoNotificacion,
 } from '@/api/notificacionesService';
+import { extractApiErrorMessage } from '@/api/endpoints';
 
 export const NotificationCenter: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [notificaciones, setNotificaciones] = useState<NotificacionItem[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   const cargarNotificaciones = async () => {
-    const data = await notificacionesService.getAll();
-    setNotificaciones(data);
+    setLoadError(null);
+    try {
+      const data = await notificacionesService.getAll();
+      setNotificaciones(data);
+    } catch (err) {
+      setLoadError(extractApiErrorMessage(err, 'No se pudieron cargar las notificaciones.'));
+    }
   };
 
   useEffect(() => {
@@ -77,23 +86,35 @@ export const NotificationCenter: React.FC = () => {
 
   const handleMarcarLeida = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    await notificacionesService.marcarComoLeida(id);
-    setNotificaciones((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, leida: true } : n))
-    );
+    try {
+      await notificacionesService.marcarComoLeida(id);
+      setNotificaciones((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, leida: true } : n))
+      );
+    } catch (err) {
+      setLoadError(extractApiErrorMessage(err, 'No se pudo marcar la notificación como leída.'));
+    }
   };
 
   const handleMarcarTodas = async () => {
-    await notificacionesService.marcarTodasComoLeidas();
-    setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
+    try {
+      await notificacionesService.marcarTodasComoLeidas();
+      setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
+    } catch (err) {
+      setLoadError(extractApiErrorMessage(err, 'No se pudieron marcar las notificaciones como leídas.'));
+    }
   };
 
   const handleItemClick = async (notif: NotificacionItem) => {
     if (!notif.leida) {
-      await notificacionesService.marcarComoLeida(notif.id);
-      setNotificaciones((prev) =>
-        prev.map((n) => (n.id === notif.id ? { ...n, leida: true } : n))
-      );
+      try {
+        await notificacionesService.marcarComoLeida(notif.id);
+        setNotificaciones((prev) =>
+          prev.map((n) => (n.id === notif.id ? { ...n, leida: true } : n))
+        );
+      } catch {
+        // continuar navegación aunque falle actualización de estado leído
+      }
     }
     setIsOpen(false);
     if (notif.enlace) {
@@ -166,6 +187,23 @@ export const NotificationCenter: React.FC = () => {
               </button>
             )}
           </div>
+
+          {loadError && (
+            <div className="flex items-center justify-between gap-2 bg-rose-50 px-4 py-2 text-[11px] text-rose-700 border-b border-rose-100">
+              <span className="flex items-center gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                <span>{loadError}</span>
+              </span>
+              <button
+                type="button"
+                onClick={cargarNotificaciones}
+                className="inline-flex items-center gap-1 font-bold hover:underline cursor-pointer"
+              >
+                <RefreshCw className="h-3 w-3" />
+                <span>Reintentar</span>
+              </button>
+            </div>
+          )}
 
           {/* Listado con separadores suaves */}
           <div className="max-h-[340px] overflow-y-auto divide-y divide-slate-100">

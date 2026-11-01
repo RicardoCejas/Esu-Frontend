@@ -9,13 +9,15 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Optimización de caché de dependencias npm
+# Optimización de caché de dependencias npm (instalación reproducible con lockfile)
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm ci
 
 # Copiar el código fuente y compilar a HTML/CSS/JS estático
 COPY . .
-RUN npm run build
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=${VITE_API_URL}
+RUN npm run lint && npm run build
 
 # -----------------------------------------------------------------------------
 # Etapa 2: Servidor web de producción ligero (Nginx Alpine)

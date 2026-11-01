@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import { MOCK_PROFESIONALES, MOCK_ESPECIALIDADES } from './mockData';
+import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
 import type {
   Profesional,
   Especialidad,
@@ -9,445 +9,353 @@ import type {
   BloqueoRequest,
 } from '@/types';
 
-// Estado persistente local para desarrollo y pruebas
-const STORAGE_KEY_PROFESIONALES = 'esu_profesionales_list';
-const STORAGE_KEY_ESPECIALIDADES = 'esu_especialidades_list';
-const STORAGE_KEY_DISPONIBILIDADES = 'esu_disponibilidades_list';
-const STORAGE_KEY_BLOQUEOS = 'esu_bloqueos_agenda_list';
-
-const INITIAL_DISPONIBILIDADES: DisponibilidadProfesional[] = [
-  {
-    id: 'disp-1',
-    profesionalId: 'p1',
-    diaSemana: 'MONDAY',
-    horaInicio: '08:00',
-    horaFin: '13:00',
-    intervaloMinutos: 20,
-    centroSaludId: 'c1',
-    centroSaludNombre: 'Hospital Provincial Aurelio Crespo',
-    activo: true,
-  },
-  {
-    id: 'disp-2',
-    profesionalId: 'p1',
-    diaSemana: 'WEDNESDAY',
-    horaInicio: '09:00',
-    horaFin: '14:00',
-    intervaloMinutos: 20,
-    centroSaludId: 'c1',
-    centroSaludNombre: 'Hospital Provincial Aurelio Crespo',
-    activo: true,
-  },
-  {
-    id: 'disp-3',
-    profesionalId: 'p1',
-    diaSemana: 'FRIDAY',
-    horaInicio: '08:00',
-    horaFin: '12:00',
-    intervaloMinutos: 20,
-    centroSaludId: 'c2',
-    centroSaludNombre: 'Dispensario Municipal Santa Rosa',
-    activo: true,
-  },
-];
-
-const INITIAL_BLOQUEOS: BloqueoAgenda[] = [
-  {
-    id: 'blq-1',
-    profesionalId: 'p1',
-    profesionalNombre: 'Dr. Carlos Bustos',
-    fechaInicio: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
-    fechaFin: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0],
-    motivo: 'Congreso de Medicina Interna',
-    turnosAfectados: 2,
-    pacientesAfectados: [
-      {
-        turnoId: 't-blq-1',
-        pacienteNombre: 'Roberto Gómez',
-        pacienteDni: '28441992',
-        fecha: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
-        hora: '09:00',
-      },
-      {
-        turnoId: 't-blq-2',
-        pacienteNombre: 'Lucía Benítez',
-        pacienteDni: '35128994',
-        fecha: new Date(Date.now() + 86400000 * 6).toISOString().split('T')[0],
-        hora: '10:30',
-      },
-    ],
-    fechaCreacion: new Date().toISOString().split('T')[0],
-  },
-];
-
-const getInitialProfesionales = (): Profesional[] => {
-  const saved = localStorage.getItem(STORAGE_KEY_PROFESIONALES);
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-  }
-  return [...MOCK_PROFESIONALES];
+const SPANISH_TO_DAY_OF_WEEK: Record<string, string> = {
+  LUNES: 'MONDAY',
+  MARTES: 'TUESDAY',
+  MIERCOLES: 'WEDNESDAY',
+  MIÉRCOLES: 'WEDNESDAY',
+  JUEVES: 'THURSDAY',
+  VIERNES: 'FRIDAY',
+  SABADO: 'SATURDAY',
+  SÁBADO: 'SATURDAY',
+  DOMINGO: 'SUNDAY',
 };
 
-const getInitialEspecialidades = (): Especialidad[] => {
-  const saved = localStorage.getItem(STORAGE_KEY_ESPECIALIDADES);
-  if (saved) {
-    try {
-      const parsed: Especialidad[] = JSON.parse(saved);
-      return parsed.map((e) =>
-        e.nombre.toLowerCase().includes('clinica')
-          ? { ...e, nombre: 'Traumatología', descripcion: 'Diagnóstico y tratamiento de lesiones óseas, articulares y musculares.' }
-          : e
-      );
-    } catch {
-      // ignore
-    }
-  }
-  return [...MOCK_ESPECIALIDADES];
-};
+function toNumericId(raw: string | number | undefined, fallback = 1): number {
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  const digits = String(raw ?? '').replace(/\D/g, '');
+  const parsed = Number(digits);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
-const getInitialDisponibilidades = (): DisponibilidadProfesional[] => {
-  const saved = localStorage.getItem(STORAGE_KEY_DISPONIBILIDADES);
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-  }
-  return [...INITIAL_DISPONIBILIDADES];
-};
+function normalizeProfesional(d: Record<string, unknown>): Profesional {
+  const espObj = d.especialidad as { id?: number | string; nombre?: string } | undefined;
+  const espArr = Array.isArray(d.especialidades)
+    ? (d.especialidades[0] as { id?: number | string; nombre?: string } | undefined)
+    : undefined;
+  const especialidadId = String(espObj?.id ?? espArr?.id ?? d.especialidadId ?? '1');
+  const especialidadNombre = String(
+    espObj?.nombre ?? espArr?.nombre ?? d.especialidadNombre ?? 'Medicina General'
+  );
+  const rawCentros = Array.isArray(d.centrosSaludIds) ? d.centrosSaludIds : [1];
+  const centrosSaludIds = rawCentros.map((c) => String(c).replace(/^c/, ''));
 
-const getInitialBloqueos = (): BloqueoAgenda[] => {
-  const saved = localStorage.getItem(STORAGE_KEY_BLOQUEOS);
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-  }
-  return [...INITIAL_BLOQUEOS];
-};
+  return {
+    id: String(d.id),
+    nombre: String(d.nombre ?? ''),
+    apellido: String(d.apellido ?? ''),
+    matricula: String(d.matricula ?? ''),
+    especialidadId,
+    especialidadNombre,
+    centrosSaludIds: centrosSaludIds.length > 0 ? centrosSaludIds : ['1'],
+    diasAtencion: Array.isArray(d.diasAtencion)
+      ? (d.diasAtencion as string[])
+      : ['Lunes', 'Miércoles', 'Viernes'],
+    duracionTurnoMin: typeof d.duracionTurnoMin === 'number' ? d.duracionTurnoMin : 20,
+    foto: typeof d.foto === 'string' ? d.foto : undefined,
+  };
+}
 
-let profesionalesState: Profesional[] = getInitialProfesionales();
-let especialidadesState: Especialidad[] = getInitialEspecialidades();
-let disponibilidadesState: DisponibilidadProfesional[] = getInitialDisponibilidades();
-let bloqueosState: BloqueoAgenda[] = getInitialBloqueos();
+function normalizeEspecialidad(d: Record<string, unknown>): Especialidad {
+  return {
+    id: String(d.id),
+    nombre: String(d.nombre ?? ''),
+    descripcion: String(d.descripcion ?? ''),
+    icono: typeof d.icono === 'string' ? d.icono : undefined,
+  };
+}
 
-const saveState = () => {
-  localStorage.setItem(STORAGE_KEY_PROFESIONALES, JSON.stringify(profesionalesState));
-  localStorage.setItem(STORAGE_KEY_ESPECIALIDADES, JSON.stringify(especialidadesState));
-  localStorage.setItem(STORAGE_KEY_DISPONIBILIDADES, JSON.stringify(disponibilidadesState));
-  localStorage.setItem(STORAGE_KEY_BLOQUEOS, JSON.stringify(bloqueosState));
+function normalizeDisponibilidad(d: Record<string, unknown>): DisponibilidadProfesional {
+  const diaSemana = String(d.diaSemana ?? 'MONDAY');
+  return {
+    id: String(d.id),
+    profesionalId: String(d.profesionalId ?? '1'),
+    centroSaludId: String(d.centroSaludId ?? '1'),
+    diaSemana,
+    horaInicio: String(d.horaInicio ?? '08:00'),
+    horaFin: String(d.horaFin ?? '12:00'),
+    intervaloMinutos: typeof d.duracionMinutos === 'number' ? d.duracionMinutos : 20,
+    activo: d.activo !== false,
+  };
+}
+
+function normalizeBloqueo(d: Record<string, unknown>): BloqueoAgenda {
+  return {
+    id: String(d.id),
+    profesionalId: String(d.profesionalId ?? '1'),
+    fechaInicio: String(d.fechaInicio ?? ''),
+    fechaFin: String(d.fechaFin ?? ''),
+    horaInicio: typeof d.horaInicio === 'string' ? d.horaInicio : undefined,
+    horaFin: typeof d.horaFin === 'string' ? d.horaFin : undefined,
+    motivo: String(d.motivo ?? 'Bloqueo administrativo'),
+  };
+}
+
+export type CreateProfesionalPayload = Partial<Profesional> & {
+  nombre: string;
+  apellido: string;
+  matricula: string;
+  especialidadId: string;
+  email?: string;
+  password?: string;
+  telefono?: string;
 };
 
 export const profesionalesService = {
   async getAll(): Promise<Profesional[]> {
     try {
-      const res = await apiClient.get<any[]>('/profesionales');
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        return res.data.map((d: any) => ({
-          id: String(d.id),
-          nombre: d.nombre,
-          apellido: d.apellido,
-          matricula: d.matricula,
-          especialidadId: String(d.especialidad?.id || d.especialidadId || '1'),
-          especialidadNombre: d.especialidad?.nombre || d.especialidadNombre || 'Medicina General',
-          centrosSaludIds: d.centrosSaludIds || ['c1'],
-          diasAtencion: d.diasAtencion || ['Lunes', 'Miércoles', 'Viernes'],
-          duracionTurnoMin: d.duracionTurnoMin || 20,
-          foto: d.foto,
-          biografia: d.biografia,
-          idiomas: d.idiomas || ['Español'],
-          calificacion: d.calificacion || 4.9,
-          opinionesCount: d.opinionesCount || 38,
-          proximoTurnoLibre: d.proximoTurnoLibre,
-        }));
-      }
-      return [...profesionalesState];
-    } catch {
-      return [...profesionalesState];
+      const res = await apiClient.get<Record<string, unknown>[]>(API_ENDPOINTS.profesionales.base);
+      return Array.isArray(res.data) ? res.data.map(normalizeProfesional) : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los profesionales médicos.'));
     }
   },
 
   async getById(id: string): Promise<Profesional | undefined> {
     try {
-      const res = await apiClient.get<Profesional>(`/profesionales/${id}`);
-      return res.data;
-    } catch {
-      return profesionalesState.find((p) => p.id === id);
+      const numId = toNumericId(id);
+      const res = await apiClient.get<Record<string, unknown>>(API_ENDPOINTS.profesionales.byId(numId));
+      return res.data ? normalizeProfesional(res.data) : undefined;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el profesional solicitado.'));
     }
   },
 
   async getEspecialidades(): Promise<Especialidad[]> {
     try {
-      const res = await apiClient.get<any[]>('/especialidades');
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        return res.data.map((e: any) => {
-          const rawName = e.nombre || '';
-          const isClinica = rawName.toLowerCase().includes('clinica');
-          return {
-            id: String(e.id),
-            nombre: isClinica ? 'Traumatología' : rawName,
-            descripcion: isClinica
-              ? 'Diagnóstico y tratamiento de lesiones óseas, articulares y musculares.'
-              : e.descripcion || 'Atención médica especializada en Cruz del Eje.',
-          };
-        });
-      }
-      return [...especialidadesState];
-    } catch {
-      return [...especialidadesState];
+      const res = await apiClient.get<Record<string, unknown>[]>(API_ENDPOINTS.especialidades.base);
+      return Array.isArray(res.data) ? res.data.map(normalizeEspecialidad) : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener las especialidades médicas.'));
     }
   },
 
   async getByCentro(centroId: string): Promise<Profesional[]> {
     try {
-      const res = await apiClient.get<Profesional[]>(`/profesionales/centro/${centroId}`);
-      return res.data;
-    } catch {
-      return profesionalesState.filter((p) => p.centrosSaludIds.includes(centroId));
+      const numCentroId = toNumericId(centroId);
+      const res = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.profesionales.byCentro(numCentroId)
+      );
+      return Array.isArray(res.data) ? res.data.map(normalizeProfesional) : [];
+    } catch (err: unknown) {
+      throw new Error(
+        extractApiErrorMessage(err, 'No se pudieron obtener los profesionales del centro de salud.')
+      );
     }
   },
 
   async getByEspecialidad(especialidadId: string): Promise<Profesional[]> {
     try {
-      const res = await apiClient.get<Profesional[]>(`/profesionales/especialidad/${especialidadId}`);
-      return res.data;
-    } catch {
-      return profesionalesState.filter((p) => p.especialidadId === especialidadId);
+      const numEspId = toNumericId(especialidadId);
+      const res = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.profesionales.byEspecialidad(numEspId)
+      );
+      return Array.isArray(res.data) ? res.data.map(normalizeProfesional) : [];
+    } catch (err: unknown) {
+      throw new Error(
+        extractApiErrorMessage(err, 'No se pudieron obtener los profesionales de la especialidad.')
+      );
     }
   },
 
-  async createProfesional(data: Omit<Profesional, 'id'>): Promise<Profesional> {
+  async createProfesional(data: CreateProfesionalPayload): Promise<Profesional> {
     try {
-      const res = await apiClient.post<Profesional>('/profesionales', data);
-      return res.data;
-    } catch {
-      const nuevo: Profesional = {
-        ...data,
-        id: `p-${Date.now()}`,
+      const payload = {
+        nombre: data.nombre,
+        apellido: data.apellido,
+        matricula: data.matricula,
+        especialidadId: toNumericId(data.especialidadId),
+        especialidadIds: [toNumericId(data.especialidadId)],
+        centrosSaludIds: (data.centrosSaludIds || ['1']).map((c) => toNumericId(c)),
+        email: data.email,
+        password: data.password,
+        telefono: data.telefono,
       };
-      profesionalesState = [nuevo, ...profesionalesState];
-      saveState();
-      return nuevo;
+      const res = await apiClient.post<Record<string, unknown>>(API_ENDPOINTS.profesionales.base, payload);
+      return normalizeProfesional(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar el profesional médico.'));
     }
   },
 
   async createEspecialidad(data: Omit<Especialidad, 'id'>): Promise<Especialidad> {
     try {
-      const res = await apiClient.post<Especialidad>('/especialidades', data);
-      return res.data;
-    } catch {
-      const nueva: Especialidad = {
-        ...data,
-        id: `e-${Date.now()}`,
-      };
-      especialidadesState = [...especialidadesState, nueva];
-      saveState();
-      return nueva;
+      const res = await apiClient.post<Record<string, unknown>>(API_ENDPOINTS.especialidades.base, {
+        nombre: data.nombre,
+        descripcion: data.descripcion,
+      });
+      return normalizeEspecialidad(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo crear la especialidad médica.'));
     }
   },
 
   async updateEspecialidad(id: string, data: Partial<Especialidad>): Promise<Especialidad> {
     try {
-      const res = await apiClient.put<Especialidad>(`/especialidades/${id}`, data);
-      especialidadesState = especialidadesState.map((e) => (e.id === id ? { ...e, ...res.data } : e));
-      saveState();
-      return res.data;
-    } catch {
-      especialidadesState = especialidadesState.map((e) => (e.id === id ? { ...e, ...data } : e));
-      saveState();
-      const updated = especialidadesState.find((e) => e.id === id)!;
-      return updated;
+      const numId = toNumericId(id);
+      const res = await apiClient.put<Record<string, unknown>>(API_ENDPOINTS.especialidades.byId(numId), {
+        nombre: data.nombre,
+        descripcion: data.descripcion,
+      });
+      return normalizeEspecialidad(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar la especialidad médica.'));
     }
   },
 
   async deleteEspecialidad(id: string): Promise<boolean> {
     try {
-      await apiClient.delete(`/especialidades/${id}`);
-      especialidadesState = especialidadesState.filter((e) => e.id !== id);
-      saveState();
+      const numId = toNumericId(id);
+      await apiClient.delete(API_ENDPOINTS.especialidades.byId(numId));
       return true;
-    } catch {
-      especialidadesState = especialidadesState.filter((e) => e.id !== id);
-      saveState();
-      return true;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar la especialidad médica.'));
     }
   },
 
   async updateProfesional(id: string, data: Partial<Profesional>): Promise<Profesional> {
     try {
-      const res = await apiClient.put<Profesional>(`/profesionales/${id}`, data);
-      profesionalesState = profesionalesState.map((p) => (p.id === id ? { ...p, ...res.data } : p));
-      saveState();
-      return res.data;
-    } catch {
-      profesionalesState = profesionalesState.map((p) => (p.id === id ? { ...p, ...data } : p));
-      saveState();
-      const updated = profesionalesState.find((p) => p.id === id)!;
-      return updated;
+      const numId = toNumericId(id);
+      const payload: Record<string, unknown> = {};
+      if (data.nombre) payload.nombre = data.nombre;
+      if (data.apellido) payload.apellido = data.apellido;
+      if (data.matricula) payload.matricula = data.matricula;
+      if (data.especialidadId) {
+        payload.especialidadId = toNumericId(data.especialidadId);
+        payload.especialidadIds = [toNumericId(data.especialidadId)];
+      }
+      if (Array.isArray(data.centrosSaludIds)) {
+        payload.centrosSaludIds = data.centrosSaludIds.map((c) => toNumericId(c));
+      }
+
+      const res = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.profesionales.byId(numId),
+        payload
+      );
+      return normalizeProfesional(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar el profesional médico.'));
     }
   },
 
-  async deleteProfesional(id: string): Promise<boolean> {
+  async vincularCentro(profesionalId: string, centroId: string): Promise<boolean> {
     try {
-      await apiClient.delete(`/profesionales/${id}`);
-      profesionalesState = profesionalesState.filter((p) => p.id !== id);
-      saveState();
+      const numProfId = toNumericId(profesionalId);
+      const numCentroId = toNumericId(centroId);
+      await apiClient.post(API_ENDPOINTS.profesionales.vincularCentro(numProfId, numCentroId));
       return true;
-    } catch {
-      profesionalesState = profesionalesState.filter((p) => p.id !== id);
-      saveState();
-      return true;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo vincular al profesional al centro.'));
     }
   },
 
   async desvincularCentro(profesionalId: string, centroId: string): Promise<boolean> {
     try {
-      const prof = profesionalesState.find((p) => p.id === profesionalId);
-      if (prof) {
-        const centros = prof.centrosSaludIds.filter((c) => c !== centroId);
-        profesionalesState = profesionalesState.map((p) =>
-          p.id === profesionalId ? { ...p, centrosSaludIds: centros } : p
-        );
-        saveState();
-      }
+      const numProfId = toNumericId(profesionalId);
+      const numCentroId = toNumericId(centroId);
+      await apiClient.delete(API_ENDPOINTS.profesionales.vincularCentro(numProfId, numCentroId));
       return true;
-    } catch {
-      return false;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo desvincular al profesional del centro.'));
     }
   },
 
-  // HU-FE-61: Configuración de Grilla Horaria
   async getDisponibilidad(profesionalId: string): Promise<DisponibilidadProfesional[]> {
     try {
-      const res = await apiClient.get<DisponibilidadProfesional[]>(`/profesionales/${profesionalId}/disponibilidad`);
-      return res.data;
-    } catch {
-      return disponibilidadesState.filter(
-        (d) => d.profesionalId === profesionalId || profesionalId === 'all' || !profesionalId
+      const numProfId = toNumericId(profesionalId);
+      const res = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.disponibilidades.byProfesional(numProfId)
       );
+      return Array.isArray(res.data) ? res.data.map(normalizeDisponibilidad) : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener la disponibilidad del profesional.'));
     }
   },
 
-  async guardarDisponibilidad(data: DisponibilidadRequest): Promise<DisponibilidadProfesional> {
+  async configurarDisponibilidad(
+    profesionalId: string,
+    req: DisponibilidadRequest
+  ): Promise<DisponibilidadProfesional> {
     try {
-      const res = await apiClient.post<DisponibilidadProfesional>('/disponibilidades', data);
-      return res.data;
-    } catch {
-      const nueva: DisponibilidadProfesional = {
-        id: `disp-${Date.now()}`,
-        profesionalId: data.profesionalId,
-        diaSemana: data.diaSemana,
-        horaInicio: data.horaInicio,
-        horaFin: data.horaFin,
-        intervaloMinutos: Number(data.intervaloMinutos),
-        centroSaludId: data.centroSaludId,
-        centroSaludNombre: data.centroSaludId === 'c1'
-          ? 'Hospital Provincial Aurelio Crespo'
-          : data.centroSaludId === 'c2'
-          ? 'Dispensario Municipal Santa Rosa'
-          : 'Clínica Privada Cruz del Eje',
+      const numProfId = toNumericId(profesionalId);
+      const diaNormalized =
+        SPANISH_TO_DAY_OF_WEEK[req.diaSemana.toUpperCase()] || req.diaSemana.toUpperCase();
+      const payload = {
+        profesionalId: numProfId,
+        centroSaludId: toNumericId(req.centroSaludId),
+        diaSemana: diaNormalized,
+        horaInicio: req.horaInicio.length === 5 ? `${req.horaInicio}:00` : req.horaInicio,
+        horaFin: req.horaFin.length === 5 ? `${req.horaFin}:00` : req.horaFin,
+        duracionMinutos: req.intervaloMinutos,
         activo: true,
       };
-      disponibilidadesState = [nueva, ...disponibilidadesState];
-      saveState();
-      return nueva;
+
+      const res = await apiClient.post<Record<string, unknown>>(
+        API_ENDPOINTS.disponibilidades.base,
+        payload
+      );
+      return normalizeDisponibilidad(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo guardar la configuración de disponibilidad.'));
     }
   },
 
-  async eliminarDisponibilidad(id: string): Promise<boolean> {
+  async guardarDisponibilidad(req: DisponibilidadRequest): Promise<DisponibilidadProfesional> {
+    return this.configurarDisponibilidad(req.profesionalId, req);
+  },
+
+  async eliminarDisponibilidad(disponibilidadId: string): Promise<boolean> {
     try {
-      await apiClient.delete(`/disponibilidades/${id}`);
-      disponibilidadesState = disponibilidadesState.filter((d) => d.id !== id);
-      saveState();
+      const numId = toNumericId(disponibilidadId);
+      await apiClient.delete(API_ENDPOINTS.disponibilidades.byId(numId));
       return true;
-    } catch {
-      disponibilidadesState = disponibilidadesState.filter((d) => d.id !== id);
-      saveState();
-      return true;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar la franja de disponibilidad.'));
     }
   },
 
-  // HU-FE-62: Bloqueo de Agenda Médica
   async getBloqueos(profesionalId: string): Promise<BloqueoAgenda[]> {
     try {
-      const res = await apiClient.get<BloqueoAgenda[]>(`/profesionales/${profesionalId}/bloqueos`);
-      return res.data;
-    } catch {
-      return bloqueosState.filter(
-        (b) => b.profesionalId === profesionalId || profesionalId === 'all' || !profesionalId
+      const numProfId = toNumericId(profesionalId);
+      const res = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.bloqueosAgenda.byProfesional(numProfId)
       );
+      return Array.isArray(res.data) ? res.data.map(normalizeBloqueo) : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron consultar los bloqueos de agenda.'));
     }
   },
 
-  async bloquearAgenda(profesionalId: string, data: BloqueoRequest): Promise<BloqueoAgenda> {
+  async bloquearAgenda(profesionalId: string, req: BloqueoRequest & { centroSaludId?: string }): Promise<BloqueoAgenda> {
     try {
-      const res = await apiClient.post<BloqueoAgenda>(`/profesionales/${profesionalId}/bloquear-agenda`, data);
-      return res.data;
-    } catch {
-      const nuevoBloqueo: BloqueoAgenda = {
-        id: `blq-${Date.now()}`,
-        profesionalId: data.profesionalId,
-        profesionalNombre: 'Profesional de Salud',
-        fechaInicio: data.fechaInicio,
-        fechaFin: data.fechaFin,
-        horaInicio: data.horaInicio,
-        horaFin: data.horaFin,
-        motivo: data.motivo,
-        turnosAfectados: 1,
-        pacientesAfectados: [
-          {
-            turnoId: `t-afectado-${Date.now()}`,
-            pacienteNombre: 'Paciente Programado',
-            pacienteDni: '33498112',
-            fecha: data.fechaInicio,
-            hora: data.horaInicio || '10:00',
-          },
-        ],
-        fechaCreacion: new Date().toISOString().split('T')[0],
+      const numProfId = toNumericId(profesionalId);
+      const payload = {
+        profesionalId: numProfId,
+        centroSaludId: req.centroSaludId ? toNumericId(req.centroSaludId) : null,
+        fechaInicio: req.fechaInicio,
+        fechaFin: req.fechaFin,
+        horaInicio: req.horaInicio ? (req.horaInicio.length === 5 ? `${req.horaInicio}:00` : req.horaInicio) : null,
+        horaFin: req.horaFin ? (req.horaFin.length === 5 ? `${req.horaFin}:00` : req.horaFin) : null,
+        motivo: req.motivo,
       };
-      bloqueosState = [nuevoBloqueo, ...bloqueosState];
-      saveState();
-      return nuevoBloqueo;
+
+      const res = await apiClient.post<Record<string, unknown>>(
+        API_ENDPOINTS.bloqueosAgenda.base,
+        payload
+      );
+      return normalizeBloqueo(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar el bloqueo de agenda.'));
     }
   },
 
-  // HU-FE-64 & HU-BE-92: Búsqueda Optimizada de Prestadores Disponibles
-  async getBuscarDisponibles(params: {
-    especialidadId?: string;
-    centroSaludId?: string;
-    soloConDisponibilidad?: boolean;
-  }): Promise<Profesional[]> {
+  async eliminarBloqueo(bloqueoId: string): Promise<boolean> {
     try {
-      const res = await apiClient.get<any[]>('/profesionales/buscar-disponibles', { params });
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        return res.data.map((d: any) => ({
-          id: String(d.id),
-          nombre: d.nombre,
-          apellido: d.apellido,
-          matricula: d.matricula,
-          especialidadId: String(d.especialidad?.id || d.especialidadId || '1'),
-          especialidadNombre: d.especialidad?.nombre || d.especialidadNombre || 'Medicina General',
-          centrosSaludIds: d.centrosSaludIds || ['c1'],
-          diasAtencion: d.diasAtencion || ['Lunes', 'Miércoles', 'Viernes'],
-          duracionTurnoMin: d.duracionTurnoMin || 20,
-          foto: d.foto,
-          biografia: d.biografia,
-          idiomas: d.idiomas || ['Español'],
-          calificacion: d.calificacion || 4.9,
-          opinionesCount: d.opinionesCount || 38,
-          proximoTurnoLibre: d.proximoTurnoLibre || 'Mañana 08:30',
-        }));
-      }
-      return [...profesionalesState];
-    } catch {
-      return [...profesionalesState];
+      const numId = toNumericId(bloqueoId);
+      await apiClient.delete(API_ENDPOINTS.bloqueosAgenda.byId(numId));
+      return true;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar el bloqueo de agenda.'));
     }
   },
 };

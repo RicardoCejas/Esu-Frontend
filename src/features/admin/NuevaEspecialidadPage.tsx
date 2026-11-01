@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MOCK_ESPECIALIDADES } from '@/api/mockData';
-import type { Especialidad } from '@/types';
-import { Stethoscope, ArrowLeft, Save, Building2 } from 'lucide-react';
+import { profesionalesService } from '@/api/profesionalesService';
+import { extractApiErrorMessage } from '@/api/endpoints';
+import { Stethoscope, ArrowLeft, Save, Building2, AlertCircle } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 export const NuevaEspecialidadPage: React.FC = () => {
   const navigate = useNavigate();
+  const { success, error: toastError } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
@@ -17,19 +20,26 @@ export const NuevaEspecialidadPage: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nombre.trim()) return;
 
     setIsSubmitting(true);
-    const creada: Especialidad = {
-      id: `e-custom-${Date.now()}`,
-      nombre: formData.nombre.trim(),
-      descripcion: formData.descripcion.trim() || 'Atención médica especializada en Cruz del Eje.',
-    };
-
-    MOCK_ESPECIALIDADES.unshift(creada);
-    navigate('/dashboard/admin/especialidades');
+    setSubmitError(null);
+    try {
+      await profesionalesService.createEspecialidad({
+        nombre: formData.nombre.trim(),
+        descripcion: formData.descripcion.trim() || 'Atención médica especializada en Cruz del Eje.',
+      });
+      success(`Especialidad "${formData.nombre.trim()}" creada exitosamente.`);
+      navigate('/dashboard/admin/especialidades');
+    } catch (err) {
+      const msg = extractApiErrorMessage(err, 'No se pudo crear la especialidad médica.');
+      setSubmitError(msg);
+      toastError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -60,6 +70,13 @@ export const NuevaEspecialidadPage: React.FC = () => {
           <span>Efectores Sanitarios</span>
         </div>
       </div>
+
+      {submitError && (
+        <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+          <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+          <span>{submitError}</span>
+        </div>
+      )}
 
       {/* Formulario de Creación */}
       <div className="rounded-xl border border-border bg-card p-6 shadow-xs">
