@@ -7,6 +7,7 @@ import { MailCheck, RefreshCw, ArrowLeft, CheckCircle2, AlertTriangle, Loader2 }
 export const VerifyEmailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const emailParam = searchParams.get('email');
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
 
@@ -51,7 +52,7 @@ export const VerifyEmailPage: React.FC = () => {
     setIsResending(true);
     setError(null);
     try {
-      const response = await authService.resendVerificationEmail(user?.email);
+      const response = await authService.resendVerificationEmail(user?.email || emailParam || undefined);
       setFeedback(response.message);
       setCountdown(60);
       setCanResend(false);
@@ -85,7 +86,7 @@ export const VerifyEmailPage: React.FC = () => {
             <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1">
               {verifiedSuccessfully
                 ? 'Tu dirección de correo ha sido confirmada con éxito.'
-                : `Hemos enviado un enlace de confirmación a ${user?.email || 'tu casilla de correo registrada'}.`}
+                : `Hemos enviado un enlace de confirmación a ${user?.email || emailParam || 'tu casilla de correo registrada'}.`}
             </p>
           </div>
 
