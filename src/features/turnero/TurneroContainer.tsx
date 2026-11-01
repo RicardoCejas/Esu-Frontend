@@ -6,11 +6,14 @@ import { Step1CenterSelection } from './components/Step1CenterSelection'
 import { Step2SpecialtySelection } from './components/Step2SpecialtySelection'
 import { Step3DoctorSelection } from './components/Step3DoctorSelection'
 import { Step4DateTimeSelection } from './components/Step4DateTimeSelection'
-import { DemoStep5PatientConfirmation } from './components/DemoStep5PatientConfirmation'
+import { Step5PatientConfirmation } from './components/Step5PatientConfirmation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search } from 'lucide-react'
+import { turnosService } from '@/api/turnosService'
+import type { Turno } from '@/types'
+import type { PatientBookingForm } from './types'
 
 export function TurneroContainer() {
   const [selectedCity, setSelectedCity] = useState<CityOption>(SUPPORTED_CITIES[0])
@@ -18,6 +21,10 @@ export function TurneroContainer() {
   const [lookupCode, setLookupCode] = useState('')
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [lookupMessage, setLookupMessage] = useState<string | null>(null)
+
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
+  const [bookingErrorMsg, setBookingErrorMsg] = useState<string | null>(null)
+  const [persistedAppointment, setPersistedAppointment] = useState<Turno | null>(null)
 
   const {
     currentStep,
@@ -44,7 +51,6 @@ export function TurneroContainer() {
     retryAvailability,
     patientForm,
     bookingError,
-    createdAppointment,
     handleSelectCenter,
     handleProceedToSpecialty,
     handleSelectSpecialty,
@@ -53,11 +59,64 @@ export function TurneroContainer() {
     handleProceedToDateTime,
     handleSelectSlot,
     handleProceedToConfirmation,
-    handleConfirmBooking,
     handlePatientFormChange,
     handleGoToStep,
-    handleResetBooking,
+    handleResetBooking: resetBaseBooking,
   } = useDemoTurnero()
+
+  const handleResetBooking = () => {
+    setPersistedAppointment(null)
+    setBookingErrorMsg(null)
+    resetBaseBooking()
+  }
+
+  const handleConfirmRealBooking = async (form: PatientBookingForm) => {
+    if (!selectedCenter || !selectedDoctor || !selectedSlot) return
+    setIsSubmittingBooking(true)
+    setBookingErrorMsg(null)
+
+    try {
+      const nuevoTurno = await turnosService.reservarTurnoPublico({
+        centroSaludId: selectedCenter.id,
+        profesionalId: selectedDoctor.id,
+        fecha: selectedDate,
+        hora: selectedSlot.time,
+        dni: form.dni,
+        nombre: form.firstName,
+        apellido: form.lastName,
+        telefono: form.phone,
+        email: form.email || undefined,
+        obraSocial: form.healthInsurance,
+        numeroAfiliado: form.affiliateNumber || undefined,
+        motivoConsulta: form.notes || undefined,
+      })
+
+      setPersistedAppointment(nuevoTurno)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'No se pudo confirmar el turno en el sistema.'
+      setBookingErrorMsg(msg)
+    } finally {
+      setIsSubmittingBooking(false)
+    }
+  }
+
+  const handleLookupTurno = async () => {
+    const code = lookupCode.trim()
+    if (!code) return
+    setLookupMessage('Buscando en la base de datos sanitaria...')
+    try {
+      const turno = await turnosService.getById(code)
+      if (turno) {
+        setLookupMessage(
+          `✓ Turno ${turno.codigoVerificacion || turno.id}: Paciente ${turno.pacienteNombre}, ${turno.fecha} ${turno.hora} hs. Profesional: ${turno.profesionalNombre || 'Asignado'}. Estado: ${turno.estado}`
+        )
+      } else {
+        setLookupMessage('No se encontró ninguna reserva registrada con ese código o DNI.')
+      }
+    } catch {
+      setLookupMessage('No se encontró registro para el código ingresado en el sistema.')
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#e3eff6] via-[#ebf5f7] to-[#d9edf4] text-slate-900 selection:bg-[#005a87] selection:text-white relative overflow-x-hidden">
@@ -152,16 +211,17 @@ export function TurneroContainer() {
           )}
 
           {currentStep === 5 && selectedCenter && selectedSpecialty && selectedDoctor && selectedSlot && (
-            <DemoStep5PatientConfirmation
+            <Step5PatientConfirmation
               selectedCenter={selectedCenter}
               selectedSpecialty={selectedSpecialty}
               selectedDoctor={selectedDoctor}
               selectedDate={selectedDate}
               selectedSlot={selectedSlot}
               patientForm={patientForm}
-              bookingError={bookingError}
-              createdAppointment={createdAppointment}
-              onConfirm={handleConfirmBooking}
+              bookingError={bookingErrorMsg || bookingError}
+              isSubmitting={isSubmittingBooking}
+              createdAppointment={persistedAppointment}
+              onConfirm={handleConfirmRealBooking}
               onFormChange={handlePatientFormChange}
               onBackToSlots={() => handleGoToStep(4)}
             />
@@ -188,7 +248,7 @@ export function TurneroContainer() {
               </label>
               <Input
                 id="lookup-code"
-                placeholder="Ej: LUVIA-CDE-8491 o 38123456"
+                placeholder="Ej: ESU-2026-0001 o 38123456"
                 value={lookupCode}
                 onChange={(e) => setLookupCode(e.target.value)}
                 className="h-8 text-xs"
@@ -213,13 +273,7 @@ export function TurneroContainer() {
               <Button
                 type="button"
                 size="sm"
-                onClick={() => {
-                  if (lookupCode.trim()) {
-                    setLookupMessage(
-                      'La búsqueda de turnos reales no está disponible en esta demostración. El comprobante de prueba se muestra al finalizar el recorrido actual.'
-                    )
-                  }
-                }}
+                onClick={handleLookupTurno}
                 className="h-7 cursor-pointer gap-1.5 bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800"
               >
                 <Search className="size-3.5" />
@@ -243,14 +297,17 @@ export function TurneroContainer() {
           </DialogHeader>
           <div className="space-y-3 py-2 text-xs text-slate-600">
             <p className="rounded-md border border-slate-200 bg-slate-50 p-3">
-              Módulo de autenticación JWT y control de acceso RBAC disponible en la siguiente fase de integración.
+              Inicie sesión con su cuenta para acceder al historial médico, gestión de recetas y turnos.
             </p>
             <Button
               type="button"
-              onClick={() => setIsLoginModalOpen(false)}
-              className="w-full bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800"
+              onClick={() => {
+                setIsLoginModalOpen(false)
+                window.location.href = '/login'
+              }}
+              className="w-full bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800 cursor-pointer"
             >
-              Entendido
+              Ir a Iniciar Sesión
             </Button>
           </div>
         </DialogContent>

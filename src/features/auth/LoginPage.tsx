@@ -12,7 +12,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
-import { TwoFactorChallengeModal } from './TwoFactorChallengeModal';
+import { GoogleAuthButton } from './components/GoogleAuthButton';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -27,10 +27,6 @@ export const LoginPage: React.FC = () => {
   const [rememberLogin, setRememberLogin] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Estados para desafío 2FA bloqueante (HU-42)
-  const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
-  const [tempToken2FA, setTempToken2FA] = useState('');
 
   // Cargar usuario recordado
   useEffect(() => {
@@ -84,12 +80,6 @@ export const LoginPage: React.FC = () => {
         dni: emailOrDni || undefined,
         password: password || undefined,
       });
-
-      if (authResponse.requires2FA && authResponse.tempToken) {
-        setTempToken2FA(authResponse.tempToken);
-        setIs2FAModalOpen(true);
-        return;
-      }
 
       if (authResponse.user) {
         redirectByRole(authResponse.user.rol);
@@ -236,6 +226,20 @@ export const LoginPage: React.FC = () => {
               <LogIn className="h-4 w-4" />
               <span>{isSubmitting ? 'Iniciando sesión...' : 'Ingresar a la Plataforma'}</span>
             </button>
+
+            <div className="relative my-3">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase">
+                <span className="bg-white px-2 font-bold text-slate-400">O continuar con</span>
+              </div>
+            </div>
+
+            <GoogleAuthButton
+              onSuccess={() => redirectByRole('PACIENTE')}
+              onError={(msg) => setError(msg)}
+            />
           </form>
         </div>
 
@@ -249,19 +253,6 @@ export const LoginPage: React.FC = () => {
           </Link>
         </p>
       </div>
-
-      <TwoFactorChallengeModal
-        isOpen={is2FAModalOpen}
-        tempToken={tempToken2FA}
-        onSuccess={(rol) => {
-          setIs2FAModalOpen(false);
-          redirectByRole(rol);
-        }}
-        onCancel={() => {
-          setIs2FAModalOpen(false);
-          setTempToken2FA('');
-        }}
-      />
     </div>
   );
 };

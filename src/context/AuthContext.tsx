@@ -55,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (msg.type === 'LOGOUT') {
         setUser(null);
         tokenStorage.clearToken();
+        sessionStorage.removeItem('esu_session_active');
       }
     });
 
@@ -68,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const authData = await authService.login(credentials);
-      if (!authData.requires2FA && authData.user) {
+      if (authData.user) {
         setUser(authData.user);
       }
       return authData;

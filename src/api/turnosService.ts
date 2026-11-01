@@ -148,6 +148,16 @@ export function normalizeTurno(d: Record<string, unknown>): Turno {
 }
 
 export const turnosService = {
+  async getById(id: string): Promise<Turno | null> {
+    try {
+      const numId = toNumericId(id);
+      const response = await apiClient.get<Record<string, unknown>>(API_ENDPOINTS.turnos.byId(numId));
+      return response.data ? normalizeTurno(response.data) : null;
+    } catch {
+      return null;
+    }
+  },
+
   async getAll(): Promise<Turno[]> {
     try {
       const response = await apiClient.get<Record<string, unknown>[]>(
@@ -403,6 +413,47 @@ export const turnosService = {
           err,
           'No se pudo generar el turno presencial de mostrador.'
         )
+      );
+    }
+  },
+
+  // Reserva pública de turnos con persistencia directa en base de datos
+  async reservarTurnoPublico(payload: {
+    centroSaludId: number | string;
+    profesionalId: number | string;
+    fecha: string;
+    hora: string;
+    dni: string;
+    nombre: string;
+    apellido: string;
+    telefono: string;
+    email?: string;
+    obraSocial?: string;
+    numeroAfiliado?: string;
+    motivoConsulta?: string;
+  }): Promise<Turno> {
+    try {
+      const response = await apiClient.post<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.reservarPublico,
+        {
+          centroSaludId: toNumericId(payload.centroSaludId),
+          profesionalId: toNumericId(payload.profesionalId),
+          fecha: payload.fecha,
+          hora: payload.hora,
+          dni: payload.dni.replace(/\D/g, ''),
+          nombre: payload.nombre.trim(),
+          apellido: payload.apellido.trim(),
+          telefono: payload.telefono.trim(),
+          email: payload.email?.trim() || undefined,
+          obraSocial: payload.obraSocial?.trim() || undefined,
+          numeroAfiliado: payload.numeroAfiliado?.trim() || undefined,
+          motivoConsulta: payload.motivoConsulta?.trim() || undefined,
+        }
+      );
+      return normalizeTurno(response.data);
+    } catch (err: unknown) {
+      throw new Error(
+        extractApiErrorMessage(err, 'No se pudo registrar la reserva del turno.')
       );
     }
   },
