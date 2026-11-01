@@ -1,4 +1,4 @@
-import { isAxiosError } from 'axios';
+﻿import { isAxiosError } from 'axios';
 import { apiClient } from './apiClient';
 import { tokenStorage } from './tokenStorage';
 import { authBroadcast } from '@/lib/authBroadcast';
@@ -90,46 +90,27 @@ export const authService = {
       tokenStorage.setAccessToken(token);
       currentSessionUser = user;
       sessionStorage.setItem('esu_session_active', '1');
+      if (credentials.rolSimulado && (isDevCredentials || isDev)) {
+        await authService.devSwitchRole(credentials.rolSimulado);
+      }
 
       authBroadcast.postMessage({ type: 'LOGIN', userId: user.id });
       return { token, user };
     } catch (error: unknown) {
-      // Fallback seguro de desarrollo para la cuenta de pruebas solicitada
-      if (isDevCredentials) {
-        console.info('Autenticando cuenta desarrollador de pruebas (dev@esu.gob.ar)...');
-        const devUser: User = {
-          id: 'u-dev-master',
-          nombre: 'Desarrollador ESU',
-          apellido: '',
-          email: 'dev@esu.gob.ar',
-          dni: '99999999',
-          rol: credentials.rolSimulado || 'ADMIN',
-          activo: true,
-          isDeveloper: true,
-          twoFactorEnabled: false,
-          emailVerified: true,
-        };
-        const devToken = `dev-token-${Date.now()}`;
-        tokenStorage.setAccessToken(devToken);
-        currentSessionUser = devUser;
-        sessionStorage.setItem('esu_session_active', '1');
-        localStorage.setItem('esu_dev_mode', 'true');
-        authBroadcast.postMessage({ type: 'LOGIN', userId: devUser.id });
-        return { token: devToken, user: devUser };
-      }
+      
 
       if (isAxiosError<BackendAuthData>(error)) {
         if (error.response?.data?.message) {
-          throw new Error(error.response.data.message);
+          throw new Error(error.response.data.message, { cause: error });
         }
         if (error.response?.status === 401) {
-          throw new Error('Credenciales inválidas: email o contraseña incorrectos.');
+          throw new Error('Credenciales inválidas: email o contraseña incorrectos.', { cause: error });
         }
         if (error.response?.status === 423) {
-          throw new Error('La cuenta se encuentra temporalmente bloqueada por superar intentos fallidos.');
+          throw new Error('La cuenta se encuentra temporalmente bloqueada por superar intentos fallidos.', { cause: error });
         }
         if (error.response?.status === 403) {
-          throw new Error('Acceso no permitido o email no verificado.');
+          throw new Error('Acceso no permitido o email no verificado.', { cause: error });
         }
         if (error.response) {
           throw error;
@@ -180,18 +161,16 @@ export const authService = {
     } catch (error: unknown) {
       if (isAxiosError<BackendAuthData>(error)) {
         if (error.response?.data?.message) {
-          throw new Error(error.response.data.message);
+          throw new Error(error.response.data.message, { cause: error });
         }
         if (error.response?.status === 409) {
-          throw new Error(
-            'El correo ya está registrado mediante credenciales locales. Por favor inicie sesión con su contraseña tradicional.'
-          );
+          throw new Error('El correo ya está registrado mediante credenciales locales. Por favor inicie sesión con su contraseña tradicional.', { cause: error });
         }
         if (error.response?.status === 401) {
-          throw new Error('La credencial de Google no es válida o ha caducado.');
+          throw new Error('La credencial de Google no es válida o ha caducado.', { cause: error });
         }
         if (error.response?.status === 403) {
-          throw new Error('La cuenta de usuario se encuentra deshabilitada.');
+          throw new Error('La cuenta de usuario se encuentra deshabilitada.', { cause: error });
         }
         if (error.response) {
           throw error;
@@ -301,7 +280,18 @@ export const authService = {
       throw new Error('El cambio dinámico de rol no está habilitado en entornos productivos.');
     }
     try {
-      await apiClient.post(API_ENDPOINTS.auth.devSwitchRole, { role: newRole });
+      const res = await apiClient.post<BackendAuthData>(
+        API_ENDPOINTS.auth.devSwitchRole,
+        { role: newRole },
+        { headers: { 'X-Dev-Secret': 'dev-secret-esu-2026' } }
+      );
+      const newToken = res.data?.accessToken || res.data?.token;
+      if (newToken) {
+        tokenStorage.setAccessToken(newToken);
+      }
+      if (res.data?.usuarioId && currentSessionUser) {
+        currentSessionUser.id = String(res.data.usuarioId);
+      }
     } catch {
       // Permitido en local
     }

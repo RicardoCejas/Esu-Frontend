@@ -167,9 +167,7 @@ export const turnosService = {
         ? response.data.map(normalizeTurno)
         : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo obtener el listado de turnos.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el listado de turnos.'), { cause: err });
     }
   },
 
@@ -183,12 +181,10 @@ export const turnosService = {
         ? response.data.map(normalizeTurno)
         : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(
+      throw new Error(extractApiErrorMessage(
           err,
           'No se pudieron obtener los turnos del paciente.'
-        )
-      );
+        ), { cause: err });
     }
   },
 
@@ -216,12 +212,10 @@ export const turnosService = {
         ? response.data.map(normalizeTurno)
         : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(
+      throw new Error(extractApiErrorMessage(
           err,
           'No se pudo obtener la agenda de turnos del profesional.'
-        )
-      );
+        ), { cause: err });
     }
   },
 
@@ -246,9 +240,7 @@ export const turnosService = {
         ? response.data.map(normalizeTurno)
         : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo cargar su agenda médica.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo cargar su agenda médica.'), { cause: err });
     }
   },
 
@@ -263,12 +255,10 @@ export const turnosService = {
       );
       return Array.isArray(response.data) ? response.data : [];
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(
+      throw new Error(extractApiErrorMessage(
           err,
           'No se pudo consultar la disponibilidad horaria.'
-        )
-      );
+        ), { cause: err });
     }
   },
 
@@ -289,9 +279,7 @@ export const turnosService = {
       );
       return normalizeTurno(response.data);
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo confirmar el turno.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo confirmar el turno.'), { cause: err });
     }
   },
 
@@ -306,9 +294,7 @@ export const turnosService = {
       );
       return normalizeTurno(response.data);
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo reprogramar el turno.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo reprogramar el turno.'), { cause: err });
     }
   },
 
@@ -321,12 +307,10 @@ export const turnosService = {
       );
       return response.data ? normalizeTurno(response.data) : null;
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(
+      throw new Error(extractApiErrorMessage(
           err,
           'No se pudo actualizar el estado del turno.'
-        )
-      );
+        ), { cause: err });
     }
   },
 
@@ -338,12 +322,10 @@ export const turnosService = {
       );
       return response.data ? normalizeTurno(response.data) : null;
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(
+      throw new Error(extractApiErrorMessage(
           err,
           'No se pudo registrar el check-in del paciente.'
-        )
-      );
+        ), { cause: err });
     }
   },
 
@@ -373,12 +355,10 @@ export const turnosService = {
       );
       return response.data ? normalizeTurno(response.data) : null;
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(
+      throw new Error(extractApiErrorMessage(
           err,
           'No se pudo registrar el copago ni la cobertura del turno.'
-        )
-      );
+        ), { cause: err });
     }
   },
 
@@ -408,12 +388,10 @@ export const turnosService = {
       );
       return normalizeTurno(response.data);
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(
+      throw new Error(extractApiErrorMessage(
           err,
           'No se pudo generar el turno presencial de mostrador.'
-        )
-      );
+        ), { cause: err });
     }
   },
 
@@ -463,9 +441,7 @@ export const turnosService = {
       );
       return normalizeTurno(response.data);
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo registrar la reserva del turno.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar la reserva del turno.'), { cause: err });
     }
   },
 
@@ -490,9 +466,7 @@ export const turnosService = {
       );
       return normalizeTurno(response.data);
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo asignar el sobreturno.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo asignar el sobreturno.'), { cause: err });
     }
   },
 
@@ -502,9 +476,7 @@ export const turnosService = {
       await apiClient.put(API_ENDPOINTS.turnos.cancelar(numId));
       return true;
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(err, 'No se pudo cancelar el turno.')
-      );
+      throw new Error(extractApiErrorMessage(err, 'No se pudo cancelar el turno.'), { cause: err });
     }
   },
 
@@ -516,12 +488,10 @@ export const turnosService = {
       });
       return true;
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(
+      throw new Error(extractApiErrorMessage(
           err,
           'No se pudo registrar la cancelación con justificativo.'
-        )
-      );
+        ), { cause: err });
     }
   },
 
@@ -539,12 +509,10 @@ export const turnosService = {
       const normalized = response.data ? normalizeTurno(response.data) : null;
       return normalized ? { ...normalized, horaLlamado } : null;
     } catch (err: unknown) {
-      throw new Error(
-        extractApiErrorMessage(
+      throw new Error(extractApiErrorMessage(
           err,
           'No se pudo llamar al paciente a consultorio.'
-        )
-      );
+        ), { cause: err });
     }
   },
 };

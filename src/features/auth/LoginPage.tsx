@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -25,17 +25,22 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberLogin, setRememberLogin] = useState(false);
+  const googleAuthEnabled =
+    import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true' ||
+    (import.meta.env.VITE_GOOGLE_AUTH_ENABLED !== 'false' && Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID));
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedDevRole, setSelectedDevRole] = useState<UserRole>('ADMIN');
 
-  // Cargar usuario recordado
+  // Cargar usuario recordado o cuenta dev por defecto en desarrollo local
   useEffect(() => {
     try {
       const savedUser = localStorage.getItem('esu_remember_login');
       if (savedUser) {
         setEmailOrDni(savedUser);
         setRememberLogin(true);
+      } else if (import.meta.env.DEV) {
+        setEmailOrDni('dev@esu.gob.ar');
+        setPassword('Dev12345!');
       }
     } catch {
       // Ignore
@@ -219,36 +224,8 @@ export const LoginPage: React.FC = () => {
               </label>
             </div>
 
-            {/* Selector interactivo para testing de roles con dev@esu.gob.ar */}
-            {emailOrDni.trim().toLowerCase() === 'dev@esu.gob.ar' && (
-              <div className="rounded-xl border border-sky-300 bg-sky-50/90 p-3 space-y-2">
-                <div className="flex items-center justify-between text-[11px] font-bold text-sky-900">
-                  <span>Modo Desarrollador Activo</span>
-                  <span className="text-sky-600 font-mono">dev@esu.gob.ar</span>
-                </div>
-                <p className="text-[10px] text-slate-600 leading-tight">
-                  Seleccione el rol del sistema a probar:
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
-                  {(['ADMIN', 'MEDICO', 'RECEPCIONISTA', 'PACIENTE'] as UserRole[]).map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setSelectedDevRole(r)}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer text-center ${
-                        selectedDevRole === r
-                          ? 'bg-sky-700 text-white shadow-xs'
-                          : 'bg-white border border-sky-200 text-slate-700 hover:bg-sky-100'
-                      }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            <button
+                          <button
               type="submit"
               disabled={isSubmitting}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 text-sm font-bold text-white shadow-md shadow-sky-600/20 hover:bg-sky-700 transition disabled:opacity-50 cursor-pointer"
@@ -257,19 +234,23 @@ export const LoginPage: React.FC = () => {
               <span>{isSubmitting ? 'Iniciando sesión...' : 'Ingresar a la Plataforma'}</span>
             </button>
 
-            <div className="relative my-3">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200" />
-              </div>
-              <div className="relative flex justify-center text-[10px] uppercase">
-                <span className="bg-white px-2 font-bold text-slate-400">O continuar con</span>
-              </div>
-            </div>
+            {googleAuthEnabled && (
+              <>
+                <div className="relative my-3">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200" />
+                  </div>
+                  <div className="relative flex justify-center text-[10px] uppercase">
+                    <span className="bg-white px-2 font-bold text-slate-400">O continuar con</span>
+                  </div>
+                </div>
 
-            <GoogleAuthButton
-              onSuccess={(user) => redirectByRole(user.rol)}
-              onError={(msg) => setError(msg)}
-            />
+                <GoogleAuthButton
+                  onSuccess={(user) => redirectByRole(user.rol)}
+                  onError={(msg) => setError(msg)}
+                />
+              </>
+            )}
           </form>
         </div>
 

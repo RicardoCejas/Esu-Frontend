@@ -37,6 +37,14 @@ export const PharmacyValidationView: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const detenerCamara = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    setCamaraActiva(false);
+  };
+
   // Limpiar stream de la cámara al desmontar
   useEffect(() => {
     return () => {
@@ -64,14 +72,6 @@ export const PharmacyValidationView: React.FC = () => {
     }
   };
 
-  const detenerCamara = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    setCamaraActiva(false);
-  };
-
   const handleBuscar = async (codigoParaBuscar?: string) => {
     const cod = (codigoParaBuscar || codigoBuscado).trim();
     if (!cod) {
@@ -96,7 +96,7 @@ export const PharmacyValidationView: React.FC = () => {
 
       setReceta(data);
       detenerCamara();
-    } catch (err: any) {
+    } catch {
       setErrorBusqueda('No se encontró ninguna receta digital asociada al código ingresado.');
       setReceta(null);
     } finally {
@@ -121,8 +121,8 @@ export const PharmacyValidationView: React.FC = () => {
       );
       setReceta(res.receta);
       setDispensacionExitosa(res.mensaje);
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Error al procesar la dispensación.');
+    } catch (err: unknown) {
+      alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error al procesar la dispensación.');
     } finally {
       setIsDispensando(false);
     }

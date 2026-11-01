@@ -59,12 +59,6 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
   const [centroSaludId, setCentroSaludId] = useState('c1');
   const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      cargarDatos();
-    }
-  }, [isOpen, profesionalId]);
-
   const cargarDatos = async () => {
     setLoading(true);
     try {
@@ -83,6 +77,14 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      cargarDatos();
+    }
+  }, [isOpen, profesionalId]);
+
+
 
   if (!isOpen) return null;
 
@@ -143,8 +145,8 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
       setDisponibilidades((prev) => [...prev, guardada]);
       success('Grilla horaria guardada y turnero online abastecido exitosamente.');
       if (onSaved) onSaved();
-    } catch (err: any) {
-      error(err.message || 'Error al persistir la disponibilidad.');
+    } catch (err: unknown) {
+      error((err instanceof Error ? err.message : null) || 'Error al persistir la disponibilidad.');
     } finally {
       setGuardando(false);
     }

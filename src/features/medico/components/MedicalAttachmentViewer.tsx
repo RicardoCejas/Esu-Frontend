@@ -146,8 +146,8 @@ export const MedicalAttachmentViewer: React.FC<MedicalAttachmentViewerProps> = (
       if (fileInputRef.current) fileInputRef.current.value = '';
       await cargarEstudios();
       if (onEstudioSubido) onEstudioSubido();
-    } catch (err: any) {
-      setErrorCarga(err.response?.data?.detail || 'Error al comunicarse con el servidor de almacenamiento.');
+    } catch (err: unknown) {
+      setErrorCarga((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || (err instanceof Error ? err.message : 'Error al comunicarse con el servidor de almacenamiento.'));
     } finally {
       setSubiendo(false);
     }

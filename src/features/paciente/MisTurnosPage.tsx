@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { turnosService } from '@/api/turnosService';
@@ -34,10 +34,18 @@ export const MisTurnosPage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      turnosService.getByPaciente(user.id).then((data) => {
-        setTurnos(data);
-        setLoading(false);
-      });
+      setLoading(true);
+      turnosService.getByPaciente(user.id)
+        .then((data) => {
+          setTurnos(data || []);
+        })
+        .catch((err) => {
+          console.error('Error al cargar turnos del paciente:', err);
+          setTurnos([]);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   }, [user]);
 

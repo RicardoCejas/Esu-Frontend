@@ -45,7 +45,7 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
   const [isFamiliarModalOpen, setIsFamiliarModalOpen] = React.useState(false)
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<PatientBookingForm>({
-    resolver: zodResolver(patientBookingSchema) as any,
+    resolver: zodResolver(patientBookingSchema) as unknown as import("react-hook-form").Resolver<PatientBookingForm>,
     defaultValues: patientForm,
     mode: 'onBlur',
     shouldFocusError: true,
