@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50" width="160" height="50">
+    <g transform="translate(12, 11)">
+      <circle cx="14" cy="14" r="14" fill="#0284c7"/>
+      <path d="M14 6 L14 22 M6 14 L22 14" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <text x="48" y="27" font-family="Arial, sans-serif" font-weight="900" font-size="18" fill="#0369a1" letter-spacing="1">GALENO</text>
+    <text x="49" y="38" font-family="Arial, sans-serif" font-weight="600" font-size="8" fill="#64748b" letter-spacing="1">COBERTURA MÉDICA</text>
+  </svg>

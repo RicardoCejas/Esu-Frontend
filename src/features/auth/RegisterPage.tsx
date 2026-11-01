@@ -1,0 +1,415 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import {
+  UserPlus,
+  ArrowLeft,
+  Lock,
+  Mail,
+  User,
+  Phone,
+  CreditCard,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+} from 'lucide-react';
+import type { UserRole } from '@/types';
+import { GoogleAuthButton } from './components/GoogleAuthButton';
+
+export const RegisterPage: React.FC = () => {
+  const { register, login } = useAuth();
+  const navigate = useNavigate();
+
+  const redirectByRole = (rol: UserRole) => {
+    switch (rol) {
+      case 'MEDICO':
+        navigate('/dashboard/medico');
+        break;
+      case 'RECEPCIONISTA':
+        navigate('/dashboard/recepcion');
+        break;
+      case 'ADMIN':
+        navigate('/dashboard/admin');
+        break;
+      case 'PACIENTE':
+      default:
+        navigate('/dashboard/paciente');
+        break;
+    }
+  };
+
+  const [formData, setFormData] = useState({
+    nombre: '',
+    apellido: '',
+    dni: '',
+    email: '',
+    telefono: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [rememberFields, setRememberFields] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedData = localStorage.getItem('esu_remember_register');
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        setFormData((prev) => ({
+          ...prev,
+          nombre: parsed.nombre || '',
+          apellido: parsed.apellido || '',
+          dni: parsed.dni || '',
+          email: parsed.email || '',
+          telefono: parsed.telefono || '',
+        }));
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const hasMinLength = formData.password.length >= 8;
+  const hasNumber = /\d/.test(formData.password);
+  const hasUpperCase = /[A-Z]/.test(formData.password);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password);
+  const passwordsMatch = formData.password.length > 0 && formData.password === formData.confirmPassword;
+  const isPasswordValid = hasMinLength && hasNumber && hasUpperCase;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!formData.nombre.trim() || !formData.apellido.trim() || !formData.dni.trim() || !formData.email.trim()) {
+      setError('Por favor complete todos los campos obligatorios (*).');
+      return;
+    }
+
+    if (!isPasswordValid) {
+      setError('La contraseña debe tener mínimo 8 caracteres, al menos una mayúscula y un número.');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      if (rememberFields) {
+        localStorage.setItem(
+          'esu_remember_register',
+          JSON.stringify({
+            nombre: formData.nombre.trim(),
+            apellido: formData.apellido.trim(),
+            dni: formData.dni.trim(),
+            email: formData.email.trim(),
+            telefono: formData.telefono.trim(),
+          })
+        );
+      } else {
+        localStorage.removeItem('esu_remember_register');
+      }
+
+      await register({
+        nombre: formData.nombre.trim(),
+        apellido: formData.apellido.trim(),
+        dni: formData.dni.trim(),
+        email: formData.email.trim(),
+        telefono: formData.telefono.trim(),
+        password: formData.password,
+        rol: 'PACIENTE',
+        activo: true,
+      });
+
+      try {
+        await login({
+          email: formData.email.trim(),
+          password: formData.password,
+        });
+        navigate('/dashboard/paciente');
+      } catch {
+        navigate('/login?registered=true');
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al registrar el paciente.';
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="min-h-screen flex flex-col justify-center items-center bg-cover bg-center bg-no-repeat p-4 sm:p-6 relative selection:bg-sky-600 selection:text-white"
+      style={{ backgroundImage: `url('/auth-bg.webp')` }}
+    >
+      <div className="absolute inset-0 bg-slate-900/5 backdrop-blur-[0.5px] pointer-events-none" />
+
+      <div className="w-full max-w-lg space-y-3 relative z-10 py-4">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-sky-700 transition px-2 py-1 rounded-md hover:bg-white/60"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Volver al inicio</span>
+        </Link>
+
+        <div className="rounded-3xl border border-sky-100 bg-white/95 p-5 sm:p-7 shadow-2xl backdrop-blur-sm space-y-4">
+          <div className="text-center space-y-1">
+            <div className="flex justify-center">
+              <img src="/logo-icon.png" alt="Luvia Logo" className="h-12 w-12 object-contain drop-shadow-sm" />
+            </div>
+            <div>
+              <h1 className="text-xl font-extrabold tracking-tight font-heading text-slate-900">
+                Registro de Paciente
+              </h1>
+              <p className="text-[11px] text-slate-600">
+                Crea tu cuenta ciudadana para gestionar turnos y acceder a tus recetas
+              </p>
+            </div>
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 rounded-xl bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Fila 1: Nombre y Apellido */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="space-y-0.5">
+                <label className="text-[11px] font-bold text-slate-700">Nombre *</label>
+                <div className="relative">
+                  <User className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    name="nombre"
+                    placeholder="Juan"
+                    value={formData.nombre}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-0.5">
+                <label className="text-[11px] font-bold text-slate-700">Apellido *</label>
+                <div className="relative">
+                  <User className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    name="apellido"
+                    placeholder="Pérez"
+                    value={formData.apellido}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Fila 2: DNI y Teléfono */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="space-y-0.5">
+                <label className="text-[11px] font-bold text-slate-700">DNI (Sin puntos) *</label>
+                <div className="relative">
+                  <CreditCard className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    name="dni"
+                    placeholder="38123456"
+                    value={formData.dni}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-0.5">
+                <label className="text-[11px] font-bold text-slate-700">Teléfono</label>
+                <div className="relative">
+                  <Phone className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="tel"
+                    name="telefono"
+                    placeholder="3549-123456"
+                    value={formData.telefono}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Fila 3: Correo Electrónico */}
+            <div className="space-y-0.5">
+              <label className="text-[11px] font-bold text-slate-700">Correo electrónico *</label>
+              <div className="relative">
+                <Mail className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="juan.perez@email.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
+                />
+              </div>
+            </div>
+
+            {/* Fila 4: Doble Password */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="space-y-0.5">
+                <label className="text-[11px] font-bold text-slate-700">Contraseña *</label>
+                <div className="relative">
+                  <Lock className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-8 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-0.5">
+                <label className="text-[11px] font-bold text-slate-700">Confirmar *</label>
+                <div className="relative">
+                  <Lock className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-8 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Checklist de requisitos de contraseña */}
+            {formData.password.length > 0 && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] py-1 px-2 rounded-lg bg-slate-50 border border-slate-200">
+                <span className={`inline-flex items-center gap-1 ${hasMinLength ? 'text-emerald-700 font-bold' : 'text-slate-500'}`}>
+                  {hasMinLength ? <CheckCircle2 className="h-3 w-3 shrink-0" /> : <XCircle className="h-3 w-3 shrink-0" />}
+                  8+ letras
+                </span>
+
+                <span className={`inline-flex items-center gap-1 ${hasUpperCase ? 'text-emerald-700 font-bold' : 'text-slate-500'}`}>
+                  {hasUpperCase ? <CheckCircle2 className="h-3 w-3 shrink-0" /> : <XCircle className="h-3 w-3 shrink-0" />}
+                  Mayúscula
+                </span>
+
+                <span className={`inline-flex items-center gap-1 ${hasNumber ? 'text-emerald-700 font-bold' : 'text-slate-500'}`}>
+                  {hasNumber ? <CheckCircle2 className="h-3 w-3 shrink-0" /> : <XCircle className="h-3 w-3 shrink-0" />}
+                  Número
+                </span>
+
+                <span className={`inline-flex items-center gap-1 ${hasSpecialChar ? 'text-emerald-700 font-bold' : 'text-slate-400'}`}>
+                  {hasSpecialChar ? <CheckCircle2 className="h-3 w-3 shrink-0" /> : <span className="text-slate-300">•</span>}
+                  Especial (opc)
+                </span>
+
+                {formData.confirmPassword.length > 0 && (
+                  <span className={`inline-flex items-center gap-1 font-bold ${passwordsMatch ? 'text-emerald-700' : 'text-rose-600'}`}>
+                    {passwordsMatch ? <CheckCircle2 className="h-3 w-3 shrink-0" /> : <XCircle className="h-3 w-3 shrink-0" />}
+                    {passwordsMatch ? 'Coinciden' : 'No coinciden'}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Recordar campos en este equipo */}
+            <div className="flex items-center gap-2 pt-0.5">
+              <input
+                type="checkbox"
+                id="rememberFields"
+                checked={rememberFields}
+                onChange={(e) => setRememberFields(e.target.checked)}
+                className="rounded border-slate-300 text-sky-600 focus:ring-sky-600 h-3.5 w-3.5 cursor-pointer"
+              />
+              <label htmlFor="rememberFields" className="text-[11px] text-slate-600 font-medium cursor-pointer select-none">
+                Recordar mis datos en este equipo
+              </label>
+            </div>
+
+            {/* Botón Guardar */}
+            <button
+              type="submit"
+              disabled={isSubmitting || !isPasswordValid || (formData.confirmPassword.length > 0 && !passwordsMatch)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-2.5 text-xs font-bold text-white shadow-md shadow-sky-600/20 hover:bg-sky-700 transition disabled:opacity-50 cursor-pointer"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              <span>{isSubmitting ? 'Registrando paciente...' : 'Crear Cuenta de Paciente'}</span>
+            </button>
+
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase">
+                <span className="bg-white px-2 font-bold text-slate-400">O registrarse con</span>
+              </div>
+            </div>
+
+            <GoogleAuthButton
+              mode="signup"
+              onSuccess={(user) => redirectByRole(user.rol)}
+              onError={(msg) => setError(msg)}
+            />
+          </form>
+        </div>
+
+        <p className="text-center text-[11px] text-slate-600 font-medium mt-2">
+          ¿Ya tienes cuenta registrada?{' '}
+          <Link to="/login" className="font-bold text-sky-700 hover:underline">
+            Inicia sesión aquí
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+};

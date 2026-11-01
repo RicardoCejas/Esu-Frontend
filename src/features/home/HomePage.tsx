@@ -1,0 +1,462 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { PublicNavbar } from '@/components/layout/PublicNavbar';
+import { Footer } from '@/components/layout/Footer';
+import { CentrosHeroBannerSlider } from './CentrosHeroBannerSlider';
+import { QuienesSomosSection } from './QuienesSomosSection';
+import { ObrasSocialesCarousel } from './ObrasSocialesCarousel';
+import { EspecialidadesSection, getSpecialtyDesign } from './EspecialidadesSection';
+import { MapaCruzDelEje } from './MapaCruzDelEje';
+import { centrosService } from '@/api/centrosService';
+import { profesionalesService } from '@/api/profesionalesService';
+import type { CentroSalud, Especialidad, Profesional } from '@/types';
+import {
+  Calendar,
+  MapPin,
+  Phone,
+  Clock,
+  ArrowRight,
+  UserCheck,
+  Stethoscope,
+  X,
+  User,
+  Building2,
+  PlusCircle,
+  LogIn,
+  UserPlus,
+} from 'lucide-react';
+
+export const HomePage: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  const [centros, setCentros] = useState<CentroSalud[]>([]);
+  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
+  const [profesionales, setProfesionales] = useState<Profesional[]>([]);
+
+  // Modal para seleccionar entre Iniciar Sesión o Registrarse
+  const [showAuthChoiceModal, setShowAuthChoiceModal] = useState(false);
+
+  // Estado para el modal de médicos por especialidad
+  const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState<Especialidad | null>(null);
+
+  // Estado para modal de detalles de un centro de salud
+  const [centroDetalle, setCentroDetalle] = useState<CentroSalud | null>(null);
+
+  const handleConsultarTurnos = () => {
+    if (isAuthenticated && user) {
+      navigate('/dashboard/paciente');
+    } else {
+      setShowAuthChoiceModal(false); // reset
+      setShowAuthChoiceModal(true);
+    }
+  };
+
+  const recargarDatos = async () => {
+    const [c, e, p] = await Promise.all([
+      centrosService.getAll(),
+      profesionalesService.getEspecialidades(),
+      profesionalesService.getAll(),
+    ]);
+    setCentros(c);
+    setEspecialidades(e);
+    setProfesionales(p);
+  };
+
+  useEffect(() => {
+    recargarDatos();
+  }, []);
+
+  // Obtener los médicos que pertenecen a la especialidad seleccionada
+  const medicosDeEspecialidad = especialidadSeleccionada
+    ? profesionales.filter((p) => p.especialidadId === especialidadSeleccionada.id)
+    : [];
+
+  return (
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-sky-700 selection:text-white">
+      <PublicNavbar />
+
+      {/* BANNER INTERACTIVO DE FOTOS E INSTITUCIONES (POR ENCIMA DEL HERO) */}
+      <div id="centros" className="scroll-mt-16">
+        <CentrosHeroBannerSlider />
+      </div>
+
+      {/* Hero Section: Acceso Rápido con gris azulado marcado para alto contraste contra el blanco */}
+      <section className="relative overflow-hidden border-b border-[#c5d3e0] bg-[#d8e2ec] py-14 sm:py-20">
+        <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="max-w-4xl space-y-7">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#003855] font-heading leading-tight">
+              Cuidamos la salud de <span className="text-[#005a87]">Cruz del Eje</span> en un solo lugar.
+            </h1>
+
+            <p className="text-lg sm:text-2xl text-slate-700 leading-relaxed font-normal max-w-3xl">
+              El <strong>Ecosistema de Salud Unificado (Luvia)</strong> conecta hospitales, dispensarios municipales, clínicas y consultorios independientes para facilitarte el acceso a turnos, historias clínicas y recetas electrónicas.
+            </p>
+
+            {/* Acciones Rápidas */}
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <Link
+                to="/turnero"
+                className="inline-flex items-center justify-center gap-3 rounded-full bg-[#005a87] px-9 py-4 text-base sm:text-lg font-bold text-white shadow-md hover:bg-[#00486c] hover:shadow-lg transition-all cursor-pointer"
+              >
+                <Calendar className="h-5 w-5" />
+                <span>Sacar Turno Online</span>
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleConsultarTurnos}
+                className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#005a87] bg-white px-8 py-4 text-base sm:text-lg font-bold text-[#005a87] shadow-xs hover:bg-slate-50 transition cursor-pointer"
+              >
+                <UserCheck className="h-5 w-5 text-[#005a87]" />
+                <span>Consultar Mis Turnos</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* QUIÉNES SOMOS / INSTITUCIONAL ESU */}
+      <QuienesSomosSection />
+
+      {/* Obras Sociales y Prepagas Aceptadas - De punta a punta */}
+      <ObrasSocialesCarousel />
+
+      {/* Especialidades Médicas Rediseñadas (Cartilla Médica Moderna) */}
+      <EspecialidadesSection
+        especialidades={especialidades}
+        profesionales={profesionales}
+        centros={centros}
+        onSelectSpecialty={(esp) => setEspecialidadSeleccionada(esp)}
+      />
+
+      {/* MAPA SANITARIO INTERACTIVO (MAPLIBRE + OPENFREEMAP / OPENSTREETMAP) */}
+      <MapaCruzDelEje />
+
+      {/* MODAL PRINCIPAL: NÓMINA DE MÉDICOS CON GUÍA DETALLADA DE SEDES / HOSPITALES Y OPCIÓN DE AGREGAR ROL ADMIN */}
+      {especialidadSeleccionada && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-3xl rounded-3xl border border-border bg-card overflow-hidden shadow-2xl space-y-0 animate-in fade-in zoom-in duration-200">
+            {/* Header del Modal */}
+            {(() => {
+              const modalConfig = getSpecialtyDesign(especialidadSeleccionada.id, especialidadSeleccionada.nombre);
+              const ModalIcon = modalConfig.Icon;
+              return (
+                <div className="bg-sky-800 p-5 text-white flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <ModalIcon className="h-7 w-7 text-white shrink-0" />
+                    <div>
+                      <h3 className="text-lg font-bold font-heading">{especialidadSeleccionada.nombre}</h3>
+                      <p className="text-xs text-sky-100">{especialidadSeleccionada.descripcion}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setEspecialidadSeleccionada(null)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition cursor-pointer"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Sub-header con botón de Agregar Médico (Permisos RBAC: Admin / Recepción) */}
+            <div className="bg-muted/40 px-6 py-3 border-b border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5 text-sky-600" />
+                <span>
+                  <strong>{medicosDeEspecialidad.length}</strong> médicos matriculados en Cruz del Eje
+                </span>
+              </div>
+
+              {/* Botón de Agregar según Rol RBAC (Navega a página independiente) */}
+              <Link
+                to="/profesionales/nuevo"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-sky-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-sky-800 transition shadow-xs cursor-pointer self-start sm:self-auto"
+              >
+                <PlusCircle className="h-3.5 w-3.5" />
+                <span>+ Agregar Médico a esta Especialidad</span>
+              </Link>
+            </div>
+
+            {/* Contenido: Lista de Médicos con Guía de Centros de Salud */}
+            <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+              {medicosDeEspecialidad.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground space-y-3">
+                  <Stethoscope className="mx-auto h-8 w-8 text-muted-foreground" />
+                  <p>No hay médicos registrados actualmente para esta especialidad.</p>
+                  <Link
+                    to="/profesionales/nuevo"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-sky-700 px-4 py-2 text-xs font-semibold text-white hover:bg-sky-800"
+                  >
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span>Agregar el primer médico</span>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-5">
+                  {medicosDeEspecialidad.map((med) => {
+                    const centrosDelMedico = centros.filter((c) => med.centrosSaludIds.includes(c.id));
+
+                    return (
+                      <div
+                        key={med.id}
+                        className="rounded-2xl border border-border bg-card p-5 shadow-xs hover:border-sky-600/40 hover:shadow-md transition-all space-y-4"
+                      >
+                        {/* Cabecera del Médico */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground font-bold text-sm">
+                              {med.nombre.charAt(0)}{med.apellido.charAt(0)}
+                            </div>
+                            <div>
+                              <h5 className="font-bold text-base text-foreground font-heading">
+                                Dr(a). {med.nombre} {med.apellido}
+                              </h5>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="font-mono text-xs font-semibold text-white bg-sky-700 px-2 py-0.5 rounded">
+                                  {med.matricula}
+                                </span>
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Clock className="h-3 w-3 text-sky-600" />
+                                  <span>{med.diasAtencion.join(', ')}</span>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <Link
+                            to="/turnero"
+                            onClick={() => setEspecialidadSeleccionada(null)}
+                            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-sky-700 px-4 py-2 text-xs font-bold text-white hover:bg-sky-800 transition shadow-xs self-start sm:self-auto cursor-pointer"
+                          >
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>Sacar Turno con {med.nombre}</span>
+                          </Link>
+                        </div>
+
+                        {/* GUÍA DE LUGARES DONDE TRABAJA (Hospitales, Clínicas, Dispensarios) */}
+                        <div className="space-y-2">
+                          <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                            <Building2 className="h-3.5 w-3.5 text-sky-700" />
+                            <span>Sedes y Centros donde Atiende ({centrosDelMedico.length}):</span>
+                          </span>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {centrosDelMedico.map((centro) => (
+                              <div
+                                key={centro.id}
+                                className="rounded-xl border border-sky-100 bg-sky-50/50 p-3 space-y-2 hover:bg-sky-50 transition"
+                              >
+                                <div className="flex items-start justify-between gap-1">
+                                  <div>
+                                    <h6 className="font-bold text-xs text-foreground font-heading">
+                                      {centro.nombre}
+                                    </h6>
+                                    <span className="text-xs text-slate-500 font-normal">
+                                      {centro.tipo}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="text-[11px] text-muted-foreground space-y-1">
+                                  <p className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3 text-sky-600 shrink-0" />
+                                    <span className="truncate">{centro.direccion}</span>
+                                  </p>
+                                  <p className="flex items-center gap-1">
+                                    <Phone className="h-3 w-3 text-sky-600 shrink-0" />
+                                    <span>{centro.telefono}</span>
+                                  </p>
+                                </div>
+
+                                <div className="pt-1 flex items-center justify-between gap-2 border-t border-sky-200/50">
+                                  <button
+                                    onClick={() => setCentroDetalle(centro)}
+                                    className="text-[11px] font-bold text-sky-700 hover:underline cursor-pointer"
+                                  >
+                                    Ver detalles / Sede
+                                  </button>
+                                  <Link
+                                    to="/turnero"
+                                    onClick={() => setEspecialidadSeleccionada(null)}
+                                    className="text-[11px] font-bold text-sky-700 hover:text-sky-900 flex items-center gap-0.5"
+                                  >
+                                    <span>Pedir turno aquí</span>
+                                    <ArrowRight className="h-3 w-3" />
+                                  </Link>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer del Modal */}
+            <div className="bg-muted/40 p-4 border-t border-border flex justify-end">
+              <button
+                onClick={() => setEspecialidadSeleccionada(null)}
+                className="rounded-lg border border-slate-300 bg-white px-5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: DETALLES DE UN CENTRO DE SALUD / CÓMO LLEGAR */}
+      {centroDetalle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-card overflow-hidden shadow-2xl space-y-0 animate-in fade-in zoom-in duration-200">
+            <div className="bg-sky-800 p-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Building2 className="h-6 w-6 text-sky-200" />
+                <div>
+                  <h3 className="font-bold text-base font-heading">{centroDetalle.nombre}</h3>
+                  <p className="text-xs text-sky-100">
+                    {centroDetalle.tipo} • {centroDetalle.ciudad}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCentroDetalle(null)}
+                className="text-white hover:bg-white/20 rounded-full p-1 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              <div className="space-y-2 rounded-2xl bg-muted/40 p-4">
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-foreground block">Dirección:</span>
+                    <span className="text-muted-foreground">{centroDetalle.direccion}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-sky-600 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground inline mr-1">Teléfono:</span>
+                    <span className="font-mono text-sky-700 font-semibold">{centroDetalle.telefono}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-sky-600 shrink-0" />
+                  <div>
+                    <span className="font-bold text-foreground inline mr-1">Horario:</span>
+                    <span className="text-muted-foreground">{centroDetalle.horarioAtencion}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setCentroDetalle(null)}
+                  className="flex-1 rounded-lg border border-slate-300 bg-white py-2 font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Volver
+                </button>
+                <Link
+                  to="/turnero"
+                  onClick={() => {
+                    setCentroDetalle(null);
+                    setEspecialidadSeleccionada(null);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-sky-700 py-2 font-bold text-white hover:bg-sky-800 transition cursor-pointer"
+                >
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>Sacar Turno</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL IDENTIFICACIÓN PARA CONSULTAR MIS TURNOS */}
+      {showAuthChoiceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl border border-sky-100 bg-white p-6 sm:p-8 shadow-2xl space-y-6 relative animate-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setShowAuthChoiceModal(false)}
+              className="absolute top-4 right-4 h-8 w-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="text-center space-y-2">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-700">
+                <UserCheck className="h-7 w-7" />
+              </div>
+              <h3 className="text-2xl font-bold font-heading text-slate-900">
+                Consultar Mis Turnos
+              </h3>
+              <p className="text-sm text-slate-600">
+                Para consultar tus citas agendadas e historial de salud en Cruz del Eje, ingresa a tu cuenta o regístrate si es tu primera vez.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <Link
+                to="/login?redirect=/dashboard/paciente"
+                className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-[#005a87] bg-[#005a87] text-white font-bold hover:bg-[#00486c] transition shadow-md group cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <LogIn className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-base font-bold leading-tight">Iniciar Sesión</p>
+                    <p className="text-xs text-sky-100 font-normal">Ya tengo cuenta registrada</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" />
+              </Link>
+
+              <Link
+                to="/registro?redirect=/dashboard/paciente"
+                className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-bold hover:border-sky-300 transition shadow-xs group cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-sky-50 flex items-center justify-center">
+                    <UserPlus className="h-5 w-5 text-sky-700" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-base font-bold leading-tight text-slate-900">Crear Cuenta</p>
+                    <p className="text-xs text-slate-500 font-normal">Soy un nuevo paciente</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-sky-600 transform group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={() => setShowAuthChoiceModal(false)}
+                className="text-xs font-semibold text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                Continuar navegando en el portal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Footer />
+    </div>
+  );
+};

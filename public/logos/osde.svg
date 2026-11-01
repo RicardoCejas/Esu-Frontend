@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50" width="160" height="50">
+    <rect width="160" height="50" fill="transparent"/>
+    <text x="50%" y="62%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="30" fill="#003366" letter-spacing="3">OSDE</text>
+    <rect x="28" y="36" width="104" height="3.5" rx="1.75" fill="#0284c7"/>
+  </svg>

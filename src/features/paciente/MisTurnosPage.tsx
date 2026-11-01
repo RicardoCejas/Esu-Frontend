@@ -1,0 +1,480 @@
+﻿import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { turnosService } from '@/api/turnosService';
+import type { Turno } from '@/types';
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  PlusCircle,
+  QrCode,
+  XCircle,
+  CheckCircle2,
+  Download,
+  Activity,
+  CreditCard,
+  Users,
+  Info,
+  History
+} from 'lucide-react';
+import { CardSkeleton } from '@/components/ui/skeleton';
+import { CarnetDigitalModal } from './components/CarnetDigitalModal';
+import { GrupoFamiliarModal } from './components/GrupoFamiliarModal';
+
+export const MisTurnosPage: React.FC = () => {
+  const { user } = useAuth();
+  const [turnos, setTurnos] = useState<Turno[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tabActiva, setTabActiva] = useState<'proximos' | 'historial'>('proximos');
+  const [selectedTurnoQr, setSelectedTurnoQr] = useState<Turno | null>(null);
+  const [turnoACancelar, setTurnoACancelar] = useState<Turno | null>(null);
+  const [isCarnetOpen, setIsCarnetOpen] = useState(false);
+  const [isGrupoFamiliarOpen, setIsGrupoFamiliarOpen] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setLoading(true);
+      turnosService.getByPaciente(user.id)
+        .then((data) => {
+          setTurnos(data || []);
+        })
+        .catch((err) => {
+          console.error('Error al cargar turnos del paciente:', err);
+          setTurnos([]);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [user]);
+
+  // Bloqueo de scroll cuando un modal está abierto
+  useEffect(() => {
+    if (selectedTurnoQr || turnoACancelar) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedTurnoQr, turnoACancelar]);
+
+  const handleConfirmarCancelacion = async () => {
+    if (!turnoACancelar) return;
+    await turnosService.cancelarTurno(turnoACancelar.id);
+    setTurnos((prev) =>
+      prev.map((t) => (t.id === turnoACancelar.id ? { ...t, estado: 'CANCELADO' } : t))
+    );
+    setTurnoACancelar(null);
+  };
+
+  const getBadgeEstado = (estado: string) => {
+    switch (estado) {
+      case 'CONFIRMADO':
+      case 'PENDIENTE':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-700 px-2.5 py-1 text-xs font-bold text-white shadow-xs">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Confirmado
+          </span>
+        );
+      case 'EN_ESPERA':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs">
+            <Clock className="h-3.5 w-3.5" /> En Sala de Espera
+          </span>
+        );
+      case 'ATENDIENDO':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-sky-700 px-2.5 py-1 text-xs font-bold text-white shadow-xs">
+            <Activity className="h-3.5 w-3.5" /> En Consulta
+          </span>
+        );
+      case 'COMPLETADO':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-700 px-2.5 py-1 text-xs font-bold text-white shadow-xs">
+            Atendido
+          </span>
+        );
+      case 'CANCELADO':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-rose-700 px-2.5 py-1 text-xs font-bold text-white shadow-xs">
+            <XCircle className="h-3.5 w-3.5" /> Cancelado
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const proximosTurnos = turnos.filter((t) =>
+    ['CONFIRMADO', 'PENDIENTE', 'EN_ESPERA', 'ATENDIENDO'].includes(t.estado)
+  );
+  const historialTurnos = turnos.filter((t) =>
+    ['COMPLETADO', 'CANCELADO'].includes(t.estado)
+  );
+  const turnosAMostrar = tabActiva === 'proximos' ? proximosTurnos : historialTurnos;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Mis Turnos Médicos</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Consulta el estado de tus citas, descarga comprobantes con código QR o solicita nuevos turnos.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* HU-FE-65: Botón Carnet Digital */}
+          <button
+            type="button"
+            onClick={() => setIsCarnetOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-600/40 bg-sky-50 dark:bg-sky-950/40 px-3.5 py-2.5 text-xs font-bold text-sky-800 dark:text-sky-300 shadow-xs hover:bg-sky-100 dark:hover:bg-sky-900/60 transition cursor-pointer"
+          >
+            <CreditCard className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+            <span>Mi Carnet QR</span>
+          </button>
+
+          {/* HU-FE-66: Botón Grupo Familiar */}
+          <button
+            type="button"
+            onClick={() => setIsGrupoFamiliarOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs font-semibold text-foreground shadow-xs hover:bg-muted transition cursor-pointer"
+          >
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <span>Mi Familia</span>
+          </button>
+
+          {/* Botón superior: solo visible cuando existen turnos en la lista */}
+          {!loading && turnos.length > 0 && (
+            <Link
+              to="/turnero"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition"
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span>+ Solicitar Nuevo Turno</span>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* Información de preparación / Requisitos obligatorios */}
+      <div className="flex items-start gap-3 rounded-xl border border-sky-200/80 bg-sky-50/60 p-4 text-xs text-sky-950 dark:border-sky-900/60 dark:bg-sky-950/20 dark:text-sky-200 shadow-xs">
+        <Info className="h-5 w-5 text-sky-700 dark:text-sky-400 shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <p className="font-bold text-sky-900 dark:text-sky-100">
+            Documentación y preparación requerida para la atención
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Recordá presentarte en ventanilla con <strong>15 minutos de anticipación</strong> presentando tu <strong>DNI físico original</strong> y la <strong>credencial de Obra Social o constancia del Programa SUMAR</strong>. Si contás con estudios previos relacionados, llevalos impresos o en formato digital.
+          </p>
+        </div>
+      </div>
+
+      {/* Skeletons de Carga Progresiva */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
+      ) : turnos.length === 0 ? (
+        /* Estado vacío global cuando no hay ningún turno */
+        <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center space-y-4">
+          <Calendar className="mx-auto h-10 w-10 text-muted-foreground/70" />
+          <h3 className="font-bold text-base text-foreground">No tienes turnos agendados</h3>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            Puedes reservar una cita médica en cualquier centro de salud o con profesionales de Cruz del Eje.
+          </p>
+          <Link
+            to="/turnero"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-sm"
+          >
+            <PlusCircle className="h-4 w-4" />
+            <span>Sacar Turno Ahora</span>
+          </Link>
+        </div>
+      ) : (
+        /* Con turnos: Tabs / Filtros de estado */
+        <div className="space-y-5">
+          <div className="flex border-b border-border">
+            <button
+              type="button"
+              onClick={() => setTabActiva('proximos')}
+              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition cursor-pointer ${
+                tabActiva === 'proximos'
+                  ? 'border-primary text-primary font-bold'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Calendar className="h-4 w-4" />
+              <span>Próximos Turnos</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  tabActiva === 'proximos'
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {proximosTurnos.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTabActiva('historial')}
+              className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition cursor-pointer ${
+                tabActiva === 'historial'
+                  ? 'border-primary text-primary font-bold'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <History className="h-4 w-4" />
+              <span>Historial de Turnos</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  tabActiva === 'historial'
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {historialTurnos.length}
+              </span>
+            </button>
+          </div>
+
+          {/* Grilla de turnos o estado vacío de pestaña */}
+          {turnosAMostrar.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-card/60 p-8 text-center space-y-2">
+              <p className="text-sm font-semibold text-foreground">
+                {tabActiva === 'proximos'
+                  ? 'No tienes turnos próximos programados'
+                  : 'No registras turnos anteriores en tu historial'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {tabActiva === 'proximos'
+                  ? 'Puedes solicitar una nueva cita médica desde el turnero online.'
+                  : 'Los turnos atendidos o cancelados aparecerán listados aquí para tu consulta.'}
+              </p>
+              {tabActiva === 'proximos' && (
+                <div className="pt-2">
+                  <Link
+                    to="/turnero"
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-xs"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    <span>Solicitar Turno</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {turnosAMostrar.map((turno) => (
+                <div
+                  key={turno.id}
+                  className="flex flex-col justify-between rounded-xl border border-border bg-card p-5 shadow-xs hover:border-primary/40 transition-all space-y-4"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-end">
+                      {getBadgeEstado(turno.estado)}
+                    </div>
+
+                    <div>
+                      <h3 className="font-bold text-base text-foreground">{turno.profesionalNombre}</h3>
+                      <p className="text-xs font-semibold text-sky-700 dark:text-sky-400">
+                        {turno.especialidadNombre}
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs text-muted-foreground pt-1">
+                      <div className="flex items-center gap-2 font-medium text-foreground">
+                        <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="font-mono">
+                          {turno.fecha} — {turno.hora} hs
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <MapPin className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                        <span>{turno.centroSaludNombre}</span>
+                      </div>
+                      {turno.motivoConsulta && (
+                        <div className="rounded-lg bg-muted p-2.5 text-[11px] text-muted-foreground border border-border">
+                          <span className="font-semibold text-foreground">Motivo: </span>
+                          {turno.motivoConsulta}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Acciones de la Card */}
+                  <div className="flex items-center gap-2 pt-3 border-t border-border/60">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTurnoQr(turno)}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-input bg-background py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
+                    >
+                      <QrCode className="h-3.5 w-3.5 text-primary" />
+                      <span>Ver Comprobante</span>
+                    </button>
+
+                    {turno.estado !== 'CANCELADO' && turno.estado !== 'COMPLETADO' && (
+                      <button
+                        type="button"
+                        onClick={() => setTurnoACancelar(turno)}
+                        className="flex items-center justify-center rounded-lg border border-rose-200 bg-card px-3 py-2 text-rose-700 hover:border-rose-700 hover:bg-rose-700 hover:text-white transition cursor-pointer"
+                        title="Cancelar turno"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal Accesible de Confirmación para Cancelación de Turno */}
+      {turnoACancelar && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <XCircle className="h-8 w-8 shrink-0 text-rose-700" />
+              <div>
+                <h3 className="text-base font-bold text-foreground">Cancelar Turno Médico</h3>
+                <p className="text-xs text-muted-foreground">Esta acción liberará el horario de atención.</p>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-muted/50 p-3 text-xs space-y-1.5 border border-border/60">
+              <div>
+                <strong className="text-foreground">Médico:</strong> {turnoACancelar.profesionalNombre}
+              </div>
+              <div>
+                <strong className="text-foreground">Fecha y Hora:</strong> {turnoACancelar.fecha} (
+                {turnoACancelar.hora} hs)
+              </div>
+              <div>
+                <strong className="text-foreground">Centro:</strong> {turnoACancelar.centroSaludNombre}
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              ¿Estás seguro de que deseas cancelar este turno en Cruz del Eje?
+            </p>
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setTurnoACancelar(null)}
+                className="flex-1 rounded-lg border border-input bg-background py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarCancelacion}
+                className="flex-1 rounded-lg bg-rose-700 py-2 text-xs font-bold text-white hover:bg-rose-800 transition cursor-pointer shadow-sm"
+              >
+                Confirmar Cancelación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal / Card de Comprobante QR */}
+      {selectedTurnoQr && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5">
+            <div className="text-center space-y-1.5">
+              <span className="inline-block rounded-md bg-sky-700 px-3 py-0.5 text-[11px] font-bold text-white shadow-xs">
+                Comprobante Digital Oficial
+              </span>
+              <h3 className="text-lg font-bold text-foreground">Turno de Atención Médica</h3>
+              <p className="text-xs text-muted-foreground font-medium">ESU — Red Sanitaria Cruz del Eje</p>
+            </div>
+
+            {/* Código QR Ilustrativo */}
+            <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-white p-6 text-slate-900 shadow-inner">
+              <div className="flex h-36 w-36 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50">
+                <QrCode className="h-28 w-28 text-slate-800" />
+              </div>
+              <span className="mt-3 font-mono text-xs font-bold text-slate-800">
+                {selectedTurnoQr.codigoVerificacion}
+              </span>
+              <span className="text-[10px] text-slate-500 font-medium mt-0.5">
+                Presente este código al llegar a recepción
+              </span>
+            </div>
+
+            {/* Datos del Turno */}
+            <div className="rounded-xl bg-muted/40 p-4 space-y-2 text-xs border border-border/50">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Paciente:</span>
+                <span className="font-semibold text-foreground">{selectedTurnoQr.pacienteNombre}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">DNI:</span>
+                <span className="font-semibold font-mono text-foreground">{selectedTurnoQr.pacienteDni}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Profesional:</span>
+                <span className="font-semibold text-foreground">{selectedTurnoQr.profesionalNombre}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Especialidad:</span>
+                <span className="font-semibold text-foreground">{selectedTurnoQr.especialidadNombre}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Fecha y Hora:</span>
+                <span className="font-bold font-mono text-sky-700 dark:text-sky-400">
+                  {selectedTurnoQr.fecha} a las {selectedTurnoQr.hora} hs
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Lugar:</span>
+                <span className="font-semibold text-foreground">{selectedTurnoQr.centroSaludNombre || 'Hospital Regional Aurelio Crespo'}{selectedTurnoQr.consultorioNumero ? ` (Consultorio ${selectedTurnoQr.consultorioNumero})` : ''}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSelectedTurnoQr(null)}
+                className="flex-1 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold hover:bg-accent transition cursor-pointer"
+              >
+                Cerrar
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition cursor-pointer"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Imprimir / Guardar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HU-FE-65: Modal de Carnet Digital con QR */}
+      <CarnetDigitalModal
+        isOpen={isCarnetOpen}
+        onClose={() => setIsCarnetOpen(false)}
+        user={user}
+      />
+
+      {/* HU-FE-66: Modal de Grupo Familiar */}
+      <GrupoFamiliarModal
+        isOpen={isGrupoFamiliarOpen}
+        onClose={() => setIsGrupoFamiliarOpen(false)}
+      />
+    </div>
+  );
+};
