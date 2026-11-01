@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { pacientesService } from '@/api/pacientesService';
 import { AuditoriaSesionesSection } from './components/AuditoriaSesionesSection';
 import {
   User,
@@ -12,7 +13,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Save,
-  Lock,
   Ambulance,
   CreditCard,
   Calendar,
@@ -97,6 +97,44 @@ export const MiPerfilPage: React.FC = () => {
 
   const [guardando, setGuardando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
+  const [dniInput, setDniInput] = useState(user?.dni || '');
+  const [isEditingDni, setIsEditingDni] = useState(false);
+
+  useEffect(() => {
+    if (user?.dni) {
+      setDniInput(user.dni);
+    }
+  }, [user?.dni]);
+
+  const handleGuardarDni = async () => {
+    const cleanDni = dniInput.trim();
+    if (!cleanDni) {
+      toastError('El DNI no puede estar vacío.');
+      return;
+    }
+    setGuardando(true);
+    setMensajeExito(null);
+    try {
+      if (user?.id) {
+        await pacientesService.updateContacto(user.id, {
+          dni: cleanDni,
+          telefono: formData.telefonoPrincipal,
+          obraSocial: formData.obraSocial,
+          nroAfiliado: formData.nroAfiliado,
+        });
+      }
+      updateUser({ dni: cleanDni });
+      setIsEditingDni(false);
+      setMensajeExito('DNI actualizado correctamente en la base de datos sanitaria.');
+      success('DNI actualizado con éxito.');
+      setTimeout(() => setMensajeExito(null), 4000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al actualizar el DNI.';
+      toastError(msg);
+    } finally {
+      setGuardando(false);
+    }
+  };
 
   // Cargar datos guardados previamente en el equipo
   useEffect(() => {
@@ -115,12 +153,24 @@ export const MiPerfilPage: React.FC = () => {
     setFormData((prev) => ({ ...prev, [campo]: valor }));
   };
 
-  const handleGuardarCambios = (seccion: string) => {
+  const handleGuardarCambios = async (seccion: string) => {
     setGuardando(true);
     setMensajeExito(null);
 
     try {
       localStorage.setItem('esu_patient_profile_data', JSON.stringify(formData));
+      if (user?.id) {
+        try {
+          await pacientesService.updateContacto(user.id, {
+            dni: user.dni,
+            telefono: formData.telefonoPrincipal,
+            obraSocial: formData.obraSocial,
+            nroAfiliado: formData.nroAfiliado,
+          });
+        } catch (e) {
+          console.warn('Sincronización con backend:', e);
+        }
+      }
       updateUser({
         telefono: formData.telefonoPrincipal,
         obraSocial: formData.obraSocial,
@@ -242,20 +292,60 @@ export const MiPerfilPage: React.FC = () => {
             <div>
               <div className="flex items-center justify-between">
                 <label className="text-xs sm:text-sm font-bold text-slate-700">DNI / Documento de Identidad</label>
-                <span className="flex items-center gap-1 text-xs text-slate-500 font-medium">
-                  <Lock className="h-3 w-3 text-slate-500" />
-                  Protegido
-                </span>
+                {!isEditingDni ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingDni(true)}
+                    className="text-xs font-semibold text-sky-700 hover:text-sky-800 hover:underline cursor-pointer"
+                  >
+                    Modificar DNI
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDniInput(user?.dni || '');
+                      setIsEditingDni(false);
+                    }}
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                )}
               </div>
-              <input
-                type="text"
-                disabled
-                value={user?.dni || '38123456'}
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs sm:text-sm font-mono font-bold text-slate-700 cursor-not-allowed"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Para rectificar tu DNI o nombre legal, debés presentar tu DNI físico en la ventanilla de recepción del hospital o centro de salud.
-              </p>
+              <div className="mt-1 flex gap-2">
+                <input
+                  type="text"
+                  disabled={!isEditingDni}
+                  value={dniInput}
+                  onChange={(e) => setDniInput(e.target.value.replace(/\s+/g, ''))}
+                  placeholder="Ej: 38123456"
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-mono font-bold transition ${
+                    isEditingDni
+                      ? 'border-sky-500 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 cursor-default'
+                  }`}
+                />
+                {isEditingDni && (
+                  <button
+                    type="button"
+                    disabled={guardando || !dniInput.trim() || dniInput === user?.dni}
+                    onClick={handleGuardarDni}
+                    className="rounded-xl bg-sky-700 hover:bg-sky-800 disabled:opacity-50 text-white px-4 py-2 text-xs font-bold transition shrink-0 cursor-pointer"
+                  >
+                    Guardar
+                  </button>
+                )}
+              </div>
+              {dniInput?.startsWith('G-') ? (
+                <p className="text-xs text-amber-700 font-semibold mt-1">
+                  Tu cuenta se registró con Google. Reemplazá este identificador temporal por tu número real de DNI para que tu historia clínica quede registrada en la institución médica.
+                </p>
+              ) : (
+                <p className="text-xs text-slate-500 mt-1">
+                  Podés modificar tu DNI cuando lo necesites para mantener sincronizada tu historia clínica.
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">

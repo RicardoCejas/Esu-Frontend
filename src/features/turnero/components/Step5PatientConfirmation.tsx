@@ -11,6 +11,7 @@ import type { Turno } from '@/types'
 import { AVAILABLE_INSURANCES } from '../data/mockTurneroData'
 import { patientBookingSchema } from '../patientValidation'
 import { CoverageValidator } from '@/features/paciente/components/CoverageValidator'
+import { useAuth } from '@/context/AuthContext'
 import { GrupoFamiliarModal, type Familiar } from '@/features/paciente/components/GrupoFamiliarModal'
 
 interface Step5PatientConfirmationProps {
@@ -42,6 +43,7 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
   onConfirm,
   onBackToSlots,
 }) => {
+  const { user } = useAuth()
   const [isFamiliarModalOpen, setIsFamiliarModalOpen] = React.useState(false)
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<PatientBookingForm>({
@@ -198,6 +200,18 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
               </div>
             ) : (
               <>
+                {user?.dni?.startsWith('G-') && (
+                  <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs text-sky-900 flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-sky-700 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Completá tus datos para el centro médico:</span>
+                      <p className="text-slate-600 mt-0.5">
+                        Al ingresar con Google tu cuenta fue creada. Ingresá tu DNI real y teléfono para que tu historia clínica quede registrada en la institución de salud.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 font-heading">

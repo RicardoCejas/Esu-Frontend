@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { MOCK_CENTERS, MOCK_DOCTORS, MOCK_SPECIALTIES } from '../data/mockTurneroData'
 import { demoBookingStore, type DemoBooking } from '../demoBookingStore'
 import { formatLocalDate } from '../availability'
@@ -11,6 +12,7 @@ const INITIAL_PATIENT_FORM: PatientBookingForm = {
 }
 
 export function useDemoTurnero() {
+  const [searchParams] = useSearchParams()
   const [currentStep, setCurrentStep] = useState<BookingStep>(1)
   const [selectedCenter, setSelectedCenter] = useState<HealthCenter | null>(null)
   const [centerSearch, setCenterSearch] = useState('')
@@ -24,6 +26,22 @@ export function useDemoTurnero() {
   const [bookingError, setBookingError] = useState<string | null>(null)
   const [createdAppointment, setCreatedAppointment] = useState<DemoBooking | null>(null)
   const [, setBookingRevision] = useState(0)
+
+  useEffect(() => {
+    const centerId = searchParams.get('centroSaludId') || searchParams.get('centroId')
+    const profId = searchParams.get('profesionalId') || searchParams.get('doctorId')
+    if (!profId && centerId) {
+      const matchedCenter =
+        MOCK_CENTERS.find((c) => c.id === centerId || c.name.toLowerCase().includes(centerId.toLowerCase())) ||
+        (centerId.includes('crespo') ? MOCK_CENTERS.find(c => c.id.includes('crespo')) : null) ||
+        (centerId.includes('cabrera') ? MOCK_CENTERS.find(c => c.id.includes('cabrera')) : null) ||
+        (centerId.includes('diag') ? MOCK_CENTERS.find(c => c.id.includes('diag')) : null)
+      if (matchedCenter) {
+        setSelectedCenter(matchedCenter)
+        setCurrentStep(2)
+      }
+    }
+  }, [searchParams])
 
   const filteredCenters = useMemo(() => MOCK_CENTERS.filter((center) => {
     const search = centerSearch.toLocaleLowerCase()

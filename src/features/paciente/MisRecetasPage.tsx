@@ -18,9 +18,15 @@ export const MisRecetasPage: React.FC = () => {
     setErrorCarga(null);
     try {
       let data: RecetaDigitalDto[] = [];
-      data = await clinicaService.getMisRecetas();
-      if ((!data || data.length === 0) && user?.id) {
-        data = await clinicaService.getRecetasPorPaciente(user.id);
+      try {
+        data = await clinicaService.getMisRecetas();
+      } catch (err) {
+        // Fallback por pacienteId solo si falló la consulta directa por usuario
+        if (user?.id) {
+          data = await clinicaService.getRecetasPorPaciente(user.id);
+        } else {
+          throw err;
+        }
       }
       setRecetas(data || []);
     } catch (err) {

@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search, LogIn, AlertTriangle } from 'lucide-react'
 import { turnosService } from '@/api/turnosService'
+import { pacientesService } from '@/api/pacientesService'
 import type { Turno } from '@/types'
 import type { PatientBookingForm } from './types'
 
@@ -84,11 +85,14 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
 
   // Pre-poblar datos de paciente autenticado si existen
   useEffect(() => {
-    if (user && !patientForm.dni) {
-      if (user.dni) handlePatientFormChange('dni', user.dni)
-      if (user.nombre) handlePatientFormChange('firstName', user.nombre)
-      if (user.apellido) handlePatientFormChange('lastName', user.apellido)
-      if (user.email) handlePatientFormChange('email', user.email)
+    if (user) {
+      const isGooglePlaceholderDni = user.dni?.startsWith('G-')
+      if (user.dni && !isGooglePlaceholderDni && !patientForm.dni) {
+        handlePatientFormChange('dni', user.dni)
+      }
+      if (user.nombre && !patientForm.firstName) handlePatientFormChange('firstName', user.nombre)
+      if (user.apellido && !patientForm.lastName) handlePatientFormChange('lastName', user.apellido)
+      if (user.email && !patientForm.email) handlePatientFormChange('email', user.email)
     }
   }, [user, patientForm.dni, handlePatientFormChange])
 
@@ -125,6 +129,20 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
       })
 
       setPersistedAppointment(nuevoTurno)
+
+      // Guardar automáticamente datos del paciente en la base de datos de la institución médica
+      if (user?.id) {
+        try {
+          await pacientesService.updateContacto(user.id, {
+            dni: form.dni,
+            telefono: form.phone,
+            obraSocial: form.healthInsurance,
+            nroAfiliado: form.affiliateNumber || undefined,
+          })
+        } catch (e) {
+          console.warn('Sincronización de perfil médico:', e)
+        }
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'No se pudo confirmar el turno en el sistema.'
       setBookingErrorMsg(msg)
