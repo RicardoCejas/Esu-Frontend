@@ -58,6 +58,7 @@ export function useTurnero() {
 
   // Step 5: Patient Form state
   const [patientForm, setPatientForm] = useState<PatientBookingForm>(INITIAL_PATIENT_FORM)
+  const [bookingError, setBookingError] = useState<string | null>(null)
 
   // HU-FE-64: Preselección automática si el paciente ingresa desde la Ficha Pública del Profesional
   useEffect(() => {
@@ -135,29 +136,68 @@ export function useTurnero() {
   }, [])
 
   // Navigation handlers
-  const handleSelectCenter = useCallback((center: HealthCenter) => {
+  const handleSelectCenter = useCallback((center: HealthCenter, autoAdvance: boolean = true) => {
     if (!canSelectCenter(center, MOCK_CENTERS)) return
-    setSelectedCenter(center)
-    setSelectedSpecialty(null)
-    setSelectedDoctor(null)
-    setSelectedSlot(null)
-    setCurrentStep(2)
+    setSelectedCenter((prev) => {
+      if (prev?.id !== center.id) {
+        setSelectedSpecialty(null)
+        setSelectedDoctor(null)
+        setSelectedSlot(null)
+      }
+      return center
+    })
+    if (autoAdvance) {
+      setCurrentStep(2)
+      if (typeof window !== 'undefined') window.scrollTo(0, 0)
+    }
   }, [])
 
-  const handleSelectSpecialty = useCallback((specialty: MedicalSpecialty) => {
+  const handleProceedToSpecialty = useCallback(() => {
+    if (!selectedCenter) return
+    setCurrentStep(2)
+    if (typeof window !== 'undefined') window.scrollTo(0, 0)
+  }, [selectedCenter])
+
+  const handleSelectSpecialty = useCallback((specialty: MedicalSpecialty, autoAdvance: boolean = true) => {
     if (!canSelectSpecialty(selectedCenter, specialty, availableSpecialties)) return
-    setSelectedSpecialty(specialty)
-    setSelectedDoctor(null)
-    setSelectedSlot(null)
-    setCurrentStep(3)
+    setSelectedSpecialty((prev) => {
+      if (prev?.id !== specialty.id) {
+        setSelectedDoctor(null)
+        setSelectedSlot(null)
+      }
+      return specialty
+    })
+    if (autoAdvance) {
+      setCurrentStep(3)
+      if (typeof window !== 'undefined') window.scrollTo(0, 0)
+    }
   }, [selectedCenter, availableSpecialties])
 
-  const handleSelectDoctor = useCallback((doctor: MedicalDoctor) => {
+  const handleProceedToDoctor = useCallback(() => {
+    if (!selectedSpecialty) return
+    setCurrentStep(3)
+    if (typeof window !== 'undefined') window.scrollTo(0, 0)
+  }, [selectedSpecialty])
+
+  const handleSelectDoctor = useCallback((doctor: MedicalDoctor, autoAdvance: boolean = true) => {
     if (!canSelectDoctor(selectedCenter, selectedSpecialty, doctor, availableDoctors)) return
-    setSelectedDoctor(doctor)
-    setSelectedSlot(null)
-    setCurrentStep(4)
+    setSelectedDoctor((prev) => {
+      if (prev?.id !== doctor.id) {
+        setSelectedSlot(null)
+      }
+      return doctor
+    })
+    if (autoAdvance) {
+      setCurrentStep(4)
+      if (typeof window !== 'undefined') window.scrollTo(0, 0)
+    }
   }, [selectedCenter, selectedSpecialty, availableDoctors])
+
+  const handleProceedToDateTime = useCallback(() => {
+    if (!selectedDoctor) return
+    setCurrentStep(4)
+    if (typeof window !== 'undefined') window.scrollTo(0, 0)
+  }, [selectedDoctor])
 
   const handleSelectSlot = useCallback((slot: AppointmentSlot) => {
     const currentSlot = availability.slots.find((availableSlot) => availableSlot.id === slot.id)
@@ -168,6 +208,7 @@ export function useTurnero() {
   const handleProceedToConfirmation = useCallback(() => {
     if (canProceedToPatient(selectedCenter, selectedSpecialty, selectedDoctor, selectedDate, selectedSlot, availability.slots)) {
       setCurrentStep(5)
+      if (typeof window !== 'undefined') window.scrollTo(0, 0)
     }
   }, [selectedCenter, selectedSpecialty, selectedDoctor, availability.slots, selectedDate, selectedSlot])
 
@@ -176,9 +217,9 @@ export function useTurnero() {
   }, [])
 
   const handleGoToStep = useCallback((step: BookingStep) => {
-    // Only allow going back or jumping to completed steps
     if (step < currentStep) {
       setCurrentStep(step)
+      if (typeof window !== 'undefined') window.scrollTo(0, 0)
     }
   }, [currentStep])
 
@@ -187,9 +228,10 @@ export function useTurnero() {
     setSelectedSpecialty(null)
     setSelectedDoctor(null)
     setSelectedSlot(null)
-    setSelectedDate(formatLocalDate(new Date()))
     setPatientForm(INITIAL_PATIENT_FORM)
+    setBookingError(null)
     setCurrentStep(1)
+    if (typeof window !== 'undefined') window.scrollTo(0, 0)
   }, [])
 
   return {
@@ -216,9 +258,13 @@ export function useTurnero() {
     availabilityCanRetry: availability.canRetry,
     retryAvailability: availability.retry,
     patientForm,
+    bookingError,
     handleSelectCenter,
+    handleProceedToSpecialty,
     handleSelectSpecialty,
+    handleProceedToDoctor,
     handleSelectDoctor,
+    handleProceedToDateTime,
     handleSelectSlot,
     handleProceedToConfirmation,
     handlePatientFormChange,

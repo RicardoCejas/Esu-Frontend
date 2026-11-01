@@ -431,13 +431,21 @@ export const turnosService = {
     obraSocial?: string;
     numeroAfiliado?: string;
     motivoConsulta?: string;
+    idempotencyKey?: string;
   }): Promise<Turno> {
     try {
+      const formattedTime = payload.hora.trim().padStart(5, '0');
+      const timeWithSeconds = formattedTime.length === 5 ? `${formattedTime}:00` : formattedTime;
+      const fechaHoraIso = `${payload.fecha.trim()}T${timeWithSeconds}`;
+      const idempotencyKey = payload.idempotencyKey ||
+        (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `idemp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
+
       const response = await apiClient.post<Record<string, unknown>>(
         API_ENDPOINTS.turnos.reservarPublico,
         {
           centroSaludId: toNumericId(payload.centroSaludId),
           profesionalId: toNumericId(payload.profesionalId),
+          fechaHora: fechaHoraIso,
           fecha: payload.fecha,
           hora: payload.hora,
           dni: payload.dni.replace(/\D/g, ''),
@@ -446,8 +454,11 @@ export const turnosService = {
           telefono: payload.telefono.trim(),
           email: payload.email?.trim() || undefined,
           obraSocial: payload.obraSocial?.trim() || undefined,
+          nroAfiliado: payload.numeroAfiliado?.trim() || undefined,
           numeroAfiliado: payload.numeroAfiliado?.trim() || undefined,
+          motivoTurno: payload.motivoConsulta?.trim() || undefined,
           motivoConsulta: payload.motivoConsulta?.trim() || undefined,
+          idempotencyKey,
         }
       );
       return normalizeTurno(response.data);

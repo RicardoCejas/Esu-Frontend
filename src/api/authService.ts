@@ -24,6 +24,10 @@ interface BackendAuthData {
   usuarioId?: string | number;
   email?: string;
   rol?: string;
+  nombre?: string;
+  apellido?: string;
+  dni?: string;
+  emailVerificado?: boolean;
   emailVerified?: boolean;
   user?: User;
   message?: string;
@@ -72,15 +76,15 @@ export const authService = {
 
       const user: User = {
         id: String(response.data.usuarioId || Date.now()),
-        nombre: response.data.email ? response.data.email.split('@')[0] : 'Usuario',
-        apellido: '',
+        nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
+        apellido: response.data.apellido || '',
         email: response.data.email || payload.email,
-        dni: credentials.dni || '38123456',
-        rol: normalizeUserRole(response.data.rol),
+        dni: response.data.dni || cleanCredentials.dni || '',
+        rol: credentials.rolSimulado && (isDevCredentials || isDev) ? credentials.rolSimulado : normalizeUserRole(response.data.rol),
         activo: true,
         twoFactorEnabled: false,
-        emailVerified: response.data.emailVerified ?? true,
-        isDeveloper: isDev && emailLower === 'dev@esu.gob.ar',
+        emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
+        isDeveloper: (isDev || isDevCredentials) && emailLower === 'dev@esu.gob.ar',
       };
 
       tokenStorage.setAccessToken(token);
@@ -156,14 +160,14 @@ export const authService = {
 
       const user: User = {
         id: String(response.data.usuarioId || Date.now()),
-        nombre: response.data.email ? response.data.email.split('@')[0] : 'Usuario',
-        apellido: '',
+        nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
+        apellido: response.data.apellido || '',
         email: response.data.email || '',
-        dni: '38123456',
+        dni: response.data.dni || '',
         rol: normalizeUserRole(response.data.rol),
         activo: true,
         twoFactorEnabled: false,
-        emailVerified: true,
+        emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
         isDeveloper: false,
       };
 

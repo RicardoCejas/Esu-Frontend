@@ -69,6 +69,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/agenda" element={<Navigate to="/agenda-medica" replace />} />
         <Route path="/especialidades/agenda" element={<Navigate to="/agenda-medica" replace />} />
         <Route path="/turnero" element={<TurneroContainer />} />
+        <Route path="/turnero/demo" element={<TurneroContainer isDemoMode={true} />} />
         <Route path="/profesionales" element={<ProfesionalesPage />} />
         <Route path="/profesionales/nuevo" element={<NuevoProfesionalPage />} />
         <Route path="/medicos" element={<Navigate to="/profesionales" replace />} />

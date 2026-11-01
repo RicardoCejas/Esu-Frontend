@@ -9,6 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<AuthResponse>;
+  loginWithGoogle: (idToken: string) => Promise<AuthResponse>;
   register: (userData: Omit<User, 'id'> & { password?: string }) => Promise<void>;
   logout: () => Promise<void>;
   switchRole: (newRole: UserRole) => void;
@@ -78,6 +79,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithGoogle = async (idToken: string): Promise<AuthResponse> => {
+    setIsLoading(true);
+    try {
+      const authData = await authService.loginWithGoogle(idToken);
+      if (authData.user) {
+        setUser(authData.user);
+      }
+      return authData;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const register = async (userData: Omit<User, 'id'> & { password?: string }) => {
     setIsLoading(true);
     try {
@@ -123,6 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user,
         isLoading,
         login,
+        loginWithGoogle,
         register,
         logout,
         switchRole,
