@@ -3,9 +3,18 @@ import { tokenStorage } from './tokenStorage';
 import { getCsrfTokenFromCookie } from '@/lib/sanitizer';
 import { authBroadcast } from '@/lib/authBroadcast';
 
-const BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? 'http://localhost:8080/api' : '/api');
+function normalizeBaseUrl(rawUrl?: string): string {
+  if (!rawUrl || !rawUrl.trim()) {
+    return import.meta.env.DEV ? 'http://localhost:8080/api' : '/api';
+  }
+  let clean = rawUrl.trim().replace(/\/+$/, '');
+  if (clean.startsWith('http') && !clean.endsWith('/api')) {
+    clean += '/api';
+  }
+  return clean;
+}
+
+const BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_URL);
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
