@@ -15,6 +15,7 @@ import {
   XCircle,
   AlertCircle,
 } from 'lucide-react';
+import { GoogleAuthButton } from './components/GoogleAuthButton';
 
 export const RegisterPage: React.FC = () => {
   const { register, login } = useAuth();
@@ -89,16 +90,17 @@ export const RegisterPage: React.FC = () => {
     }
 
     setIsSubmitting(true);
+
     try {
       if (rememberFields) {
         localStorage.setItem(
           'esu_remember_register',
           JSON.stringify({
-            nombre: formData.nombre,
-            apellido: formData.apellido,
-            dni: formData.dni,
-            email: formData.email,
-            telefono: formData.telefono,
+            nombre: formData.nombre.trim(),
+            apellido: formData.apellido.trim(),
+            dni: formData.dni.trim(),
+            email: formData.email.trim(),
+            telefono: formData.telefono.trim(),
           })
         );
       } else {
@@ -113,27 +115,21 @@ export const RegisterPage: React.FC = () => {
         telefono: formData.telefono.trim(),
         password: formData.password,
         rol: 'PACIENTE',
+        activo: true,
       });
 
-      navigate('/verificar-email');
+      try {
+        await login({
+          email: formData.email.trim(),
+          password: formData.password,
+        });
+        navigate('/dashboard/paciente');
+      } catch {
+        navigate('/login?registered=true');
+      }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al registrar la cuenta.';
+      const message = err instanceof Error ? err.message : 'Error al registrar el paciente.';
       setError(message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleGoogleRegister = async () => {
-    setIsSubmitting(true);
-    try {
-      await login({
-        email: 'paciente.google@gmail.com',
-        rolSimulado: 'PACIENTE',
-      });
-      navigate('/dashboard/paciente');
-    } catch {
-      setError('Error al registrarse con Google.');
     } finally {
       setIsSubmitting(false);
     }
@@ -141,70 +137,43 @@ export const RegisterPage: React.FC = () => {
 
   return (
     <div
-      className="h-screen w-full flex flex-col justify-center items-center bg-cover bg-center bg-no-repeat p-2 sm:p-4 relative overflow-hidden selection:bg-sky-600 selection:text-white"
+      className="min-h-screen flex flex-col justify-center items-center bg-cover bg-center bg-no-repeat p-4 sm:p-6 relative selection:bg-sky-600 selection:text-white"
       style={{ backgroundImage: `url('/auth-bg.webp')` }}
     >
       <div className="absolute inset-0 bg-slate-900/5 backdrop-blur-[0.5px] pointer-events-none" />
 
-      <div className="w-full max-w-xl relative z-10 my-auto">
-        {/* Cabecera superior compacta */}
-        <div className="flex items-center justify-between mb-2 px-1">
-          <Link
-            to="/login"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-sky-700 transition"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Volver al inicio de sesión</span>
-          </Link>
-          <span className="text-[11px] text-slate-500 font-medium">Luvia • Cruz del Eje</span>
-        </div>
+      <div className="w-full max-w-lg space-y-3 relative z-10 py-4">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-sky-700 transition px-2 py-1 rounded-md hover:bg-white/60"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Volver al inicio</span>
+        </Link>
 
-        {/* Card compacta que no hace overflow en pantalla */}
-        <div className="rounded-2xl border border-sky-100 bg-white/95 px-5 sm:px-7 py-4 sm:py-5 shadow-2xl backdrop-blur-sm space-y-3">
-          {/* Encabezado compacto */}
-          <div className="flex items-center gap-3 pb-1 border-b border-slate-100">
-            <img src="/logo-icon.png" alt="Luvia Logo" className="h-10 w-10 object-contain drop-shadow-xs shrink-0" />
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-extrabold tracking-tight font-heading text-slate-900 leading-tight">
+        <div className="rounded-3xl border border-sky-100 bg-white/95 p-5 sm:p-7 shadow-2xl backdrop-blur-sm space-y-4">
+          <div className="text-center space-y-1">
+            <div className="flex justify-center">
+              <img src="/logo-icon.png" alt="Luvia Logo" className="h-12 w-12 object-contain drop-shadow-sm" />
+            </div>
+            <div>
+              <h1 className="text-xl font-extrabold tracking-tight font-heading text-slate-900">
                 Registro de Paciente
               </h1>
-              <p className="text-[11px] text-slate-600 truncate">
-                Crea tu cuenta para gestionar turnos y acceder a tu Historia Clínica Digital
+              <p className="text-[11px] text-slate-600">
+                Crea tu cuenta ciudadana para gestionar turnos y acceder a tus recetas
               </p>
             </div>
           </div>
 
-          {/* Botón de Google compacto */}
-          <button
-            type="button"
-            onClick={handleGoogleRegister}
-            disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 py-2 px-3 text-xs font-semibold text-slate-700 shadow-2xs transition hover:border-slate-300 cursor-pointer disabled:opacity-50"
-          >
-            <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-            </svg>
-            <span>Registrarse con Google</span>
-          </button>
-
-          <div className="relative flex items-center justify-center my-1">
-            <div className="border-t border-slate-200 w-full" />
-            <span className="bg-white px-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider relative">
-              o con tus datos
-            </span>
-          </div>
-
           {error && (
-            <div className="flex items-center gap-2 rounded-lg bg-rose-50 border border-rose-200 px-3 py-1.5 text-xs text-rose-700">
-              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <div className="flex items-center gap-2 rounded-xl bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700">
+              <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-2.5">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {/* Fila 1: Nombre y Apellido */}
             <div className="grid grid-cols-2 gap-2.5">
               <div className="space-y-0.5">
@@ -291,7 +260,7 @@ export const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Fila 4: Doble Password (Contraseña y Confirmar Contraseña lado a lado) */}
+            {/* Fila 4: Doble Password */}
             <div className="grid grid-cols-2 gap-2.5">
               <div className="space-y-0.5">
                 <label className="text-[11px] font-bold text-slate-700">Contraseña *</label>
@@ -300,7 +269,7 @@ export const RegisterPage: React.FC = () => {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name="password"
-                    placeholder="Mín. 8 caract."
+                    placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
                     required
@@ -318,13 +287,13 @@ export const RegisterPage: React.FC = () => {
               </div>
 
               <div className="space-y-0.5">
-                <label className="text-[11px] font-bold text-slate-700">Confirmar Contraseña *</label>
+                <label className="text-[11px] font-bold text-slate-700">Confirmar *</label>
                 <div className="relative">
                   <Lock className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     name="confirmPassword"
-                    placeholder="Repita contraseña"
+                    placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
@@ -342,9 +311,9 @@ export const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Checklist compacto en línea (solo visible al escribir) */}
+            {/* Checklist de requisitos de contraseña */}
             {formData.password.length > 0 && (
-              <div className="rounded-lg bg-slate-50 border border-slate-200/80 px-2.5 py-1.5 text-[10px] flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] py-1 px-2 rounded-lg bg-slate-50 border border-slate-200">
                 <span className={`inline-flex items-center gap-1 ${hasMinLength ? 'text-emerald-700 font-bold' : 'text-slate-500'}`}>
                   {hasMinLength ? <CheckCircle2 className="h-3 w-3 shrink-0" /> : <XCircle className="h-3 w-3 shrink-0" />}
                   8+ letras
@@ -397,6 +366,21 @@ export const RegisterPage: React.FC = () => {
               <UserPlus className="h-3.5 w-3.5" />
               <span>{isSubmitting ? 'Registrando paciente...' : 'Crear Cuenta de Paciente'}</span>
             </button>
+
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase">
+                <span className="bg-white px-2 font-bold text-slate-400">O registrarse con</span>
+              </div>
+            </div>
+
+            <GoogleAuthButton
+              mode="signup"
+              onSuccess={() => navigate('/dashboard/paciente')}
+              onError={(msg) => setError(msg)}
+            />
           </form>
         </div>
 

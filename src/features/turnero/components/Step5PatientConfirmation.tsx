@@ -1,12 +1,13 @@
 import React from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Building2, Stethoscope, User, Calendar, Clock, ChevronLeft, Users } from 'lucide-react'
+import { Building2, Stethoscope, User, Calendar, Clock, ChevronLeft, Users, Loader2, CheckCircle2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { HealthCenter, MedicalSpecialty, MedicalDoctor, AppointmentSlot, PatientBookingForm } from '../types'
+import type { Turno } from '@/types'
 import { AVAILABLE_INSURANCES } from '../data/mockTurneroData'
 import { patientBookingSchema } from '../patientValidation'
 import { CoverageValidator } from '@/features/paciente/components/CoverageValidator'
@@ -19,7 +20,11 @@ interface Step5PatientConfirmationProps {
   selectedDate: string
   selectedSlot: AppointmentSlot
   patientForm: PatientBookingForm
+  bookingError?: string | null
+  isSubmitting?: boolean
+  createdAppointment?: Turno | null
   onFormChange: (field: keyof PatientBookingForm, value: string) => void
+  onConfirm: (patient: PatientBookingForm) => void
   onBackToSlots: () => void
 }
 
@@ -30,12 +35,16 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
   selectedDate,
   selectedSlot,
   patientForm,
+  bookingError,
+  isSubmitting = false,
+  createdAppointment,
   onFormChange,
+  onConfirm,
   onBackToSlots,
 }) => {
   const [isFamiliarModalOpen, setIsFamiliarModalOpen] = React.useState(false)
 
-  const { register, setValue, formState: { errors } } = useForm<PatientBookingForm>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<PatientBookingForm>({
     resolver: zodResolver(patientBookingSchema) as any,
     defaultValues: patientForm,
     mode: 'onBlur',
@@ -146,158 +155,210 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
           </div>
         </Card>
 
-        {/* Patient Form */}
+        {/* Patient Form & Confirmation */}
         <Card className="rounded-2xl border-slate-200 bg-white shadow-xs lg:col-span-2">
           <CardContent className="space-y-4 p-5 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 font-heading">
-                  Datos Personales del Paciente
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Revise sus datos antes de solicitar el turno.
+            {createdAppointment ? (
+              <div role="status" className="rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 p-6 text-slate-900 space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-lg bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
+                  <CheckCircle2 className="size-4 text-emerald-700" />
+                  <span>Reserva Registrada en el Sistema de Salud</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 font-heading">
+                    Turno Confirmado con Éxito
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Su cita ha sido registrada oficialmente en la base de datos asistencial de Cruz del Eje.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-emerald-200 bg-white p-4 space-y-2 text-xs">
+                  <p>
+                    <span className="font-semibold text-slate-500">Código de Turno:</span>{' '}
+                    <span className="font-mono font-bold text-sky-800 text-sm">{createdAppointment.codigoVerificacion}</span>
+                  </p>
+                  <p>
+                    <span className="font-semibold text-slate-500">Paciente:</span>{' '}
+                    <span className="font-bold text-slate-900">{createdAppointment.pacienteNombre}</span> (DNI {createdAppointment.pacienteDni})
+                  </p>
+                  <p>
+                    <span className="font-semibold text-slate-500">Profesional:</span>{' '}
+                    <span className="font-bold text-slate-900">{selectedDoctor.name}</span> ({selectedSpecialty.name})
+                  </p>
+                  <p>
+                    <span className="font-semibold text-slate-500">Fecha y Horario:</span>{' '}
+                    <span className="font-bold text-slate-900">{selectedDate} a las {selectedSlot.time} hs</span>
+                  </p>
+                </div>
+
+                <p className="text-[11px] text-slate-500">
+                  Se ha generado el recordatorio correspondiente. Conserve su código de verificación para realizar el check-in en recepción o autogestión.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsFamiliarModalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-800 hover:bg-sky-100 transition cursor-pointer"
-              >
-                <Users className="h-3.5 w-3.5 text-sky-700" />
-                <span>¿Turno para un familiar?</span>
-              </button>
-            </div>
+            ) : (
+              <>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 font-heading">
+                      Datos Personales del Paciente
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Revise sus datos antes de solicitar el turno.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsFamiliarModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-800 hover:bg-sky-100 transition cursor-pointer"
+                  >
+                    <Users className="h-3.5 w-3.5 text-sky-700" />
+                    <span>¿Turno para un familiar?</span>
+                  </button>
+                </div>
 
-            <form noValidate onSubmit={(event) => event.preventDefault()}>
-            <div className="grid gap-3.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="patient-dni" className="text-xs font-semibold text-slate-700">DNI / Documento *</Label>
-                <Input
-                  id="patient-dni"
-                  placeholder="Ej: 38123456"
-                  required
-                  inputMode="numeric"
-                  autoComplete="off"
-                  aria-invalid={Boolean(errors.dni)}
-                  aria-describedby={errors.dni ? 'patient-dni-error' : undefined}
-                  {...fieldProps('dni')}
-                  className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
-                />
-                {errors.dni && <p id="patient-dni-error" role="alert" className="text-xs font-medium text-rose-700">{errors.dni.message}</p>}
-              </div>
+                <form noValidate onSubmit={handleSubmit(onConfirm)}>
+                  <div className="grid gap-3.5 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="patient-dni" className="text-xs font-semibold text-slate-700">DNI / Documento *</Label>
+                      <Input
+                        id="patient-dni"
+                        placeholder="Ej: 38123456"
+                        required
+                        inputMode="numeric"
+                        autoComplete="off"
+                        aria-invalid={Boolean(errors.dni)}
+                        aria-describedby={errors.dni ? 'patient-dni-error' : undefined}
+                        {...fieldProps('dni')}
+                        className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
+                      />
+                      {errors.dni && <p id="patient-dni-error" role="alert" className="text-xs font-medium text-rose-700">{errors.dni.message}</p>}
+                    </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="patient-phone" className="text-xs font-semibold text-slate-700">Teléfono de Contacto (WhatsApp) *</Label>
-                <Input
-                  id="patient-phone"
-                  placeholder="Ej: 3549 15412345"
-                  required
-                  type="tel"
-                  autoComplete="tel"
-                  aria-invalid={Boolean(errors.phone)}
-                  aria-describedby={errors.phone ? 'patient-phone-error' : undefined}
-                  {...fieldProps('phone')}
-                  className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
-                />
-                {errors.phone && <p id="patient-phone-error" role="alert" className="text-xs font-medium text-rose-700">{errors.phone.message}</p>}
-              </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="patient-phone" className="text-xs font-semibold text-slate-700">Teléfono de Contacto (WhatsApp) *</Label>
+                      <Input
+                        id="patient-phone"
+                        placeholder="Ej: 3549 15412345"
+                        required
+                        type="tel"
+                        autoComplete="tel"
+                        aria-invalid={Boolean(errors.phone)}
+                        aria-describedby={errors.phone ? 'patient-phone-error' : undefined}
+                        {...fieldProps('phone')}
+                        className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
+                      />
+                      {errors.phone && <p id="patient-phone-error" role="alert" className="text-xs font-medium text-rose-700">{errors.phone.message}</p>}
+                    </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="patient-firstname" className="text-xs font-semibold text-slate-700">Nombre(s) *</Label>
-                <Input
-                  id="patient-firstname"
-                  placeholder="Ej: Juan Carlos"
-                  required
-                  autoComplete="given-name"
-                  aria-invalid={Boolean(errors.firstName)}
-                  aria-describedby={errors.firstName ? 'patient-firstname-error' : undefined}
-                  {...fieldProps('firstName')}
-                  className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
-                />
-                {errors.firstName && <p id="patient-firstname-error" role="alert" className="text-xs font-medium text-rose-700">{errors.firstName.message}</p>}
-              </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="patient-firstname" className="text-xs font-semibold text-slate-700">Nombre(s) *</Label>
+                      <Input
+                        id="patient-firstname"
+                        placeholder="Ej: Juan Carlos"
+                        required
+                        autoComplete="given-name"
+                        aria-invalid={Boolean(errors.firstName)}
+                        aria-describedby={errors.firstName ? 'patient-firstname-error' : undefined}
+                        {...fieldProps('firstName')}
+                        className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
+                      />
+                      {errors.firstName && <p id="patient-firstname-error" role="alert" className="text-xs font-medium text-rose-700">{errors.firstName.message}</p>}
+                    </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="patient-lastname" className="text-xs font-semibold text-slate-700">Apellido(s) *</Label>
-                <Input
-                  id="patient-lastname"
-                  placeholder="Ej: Pérez"
-                  required
-                  autoComplete="family-name"
-                  aria-invalid={Boolean(errors.lastName)}
-                  aria-describedby={errors.lastName ? 'patient-lastname-error' : undefined}
-                  {...fieldProps('lastName')}
-                  className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
-                />
-                {errors.lastName && <p id="patient-lastname-error" role="alert" className="text-xs font-medium text-rose-700">{errors.lastName.message}</p>}
-              </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="patient-lastname" className="text-xs font-semibold text-slate-700">Apellido(s) *</Label>
+                      <Input
+                        id="patient-lastname"
+                        placeholder="Ej: Pérez"
+                        required
+                        autoComplete="family-name"
+                        aria-invalid={Boolean(errors.lastName)}
+                        aria-describedby={errors.lastName ? 'patient-lastname-error' : undefined}
+                        {...fieldProps('lastName')}
+                        className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
+                      />
+                      {errors.lastName && <p id="patient-lastname-error" role="alert" className="text-xs font-medium text-rose-700">{errors.lastName.message}</p>}
+                    </div>
 
-              <div className="space-y-1 sm:col-span-2">
-                <Label htmlFor="patient-email" className="text-xs font-semibold text-slate-700">Correo Electrónico (opcional)</Label>
-                <Input
-                  id="patient-email"
-                  type="email"
-                  placeholder="nombre@ejemplo.com"
-                  autoComplete="email"
-                  aria-invalid={Boolean(errors.email)}
-                  aria-describedby={errors.email ? 'patient-email-error' : undefined}
-                  {...fieldProps('email')}
-                  className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
-                />
-                {errors.email && <p id="patient-email-error" role="alert" className="text-xs font-medium text-rose-700">{errors.email.message}</p>}
-              </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label htmlFor="patient-email" className="text-xs font-semibold text-slate-700">Correo Electrónico (opcional)</Label>
+                      <Input
+                        id="patient-email"
+                        type="email"
+                        placeholder="nombre@ejemplo.com"
+                        autoComplete="email"
+                        aria-invalid={Boolean(errors.email)}
+                        aria-describedby={errors.email ? 'patient-email-error' : undefined}
+                        {...fieldProps('email')}
+                        className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
+                      />
+                      {errors.email && <p id="patient-email-error" role="alert" className="text-xs font-medium text-rose-700">{errors.email.message}</p>}
+                    </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="patient-insurance" className="text-xs font-semibold text-slate-700">Cobertura Médica / Obra Social</Label>
-                <select
-                  id="patient-insurance"
-                  required
-                  aria-invalid={Boolean(errors.healthInsurance)}
-                  aria-describedby={errors.healthInsurance ? 'patient-insurance-error' : undefined}
-                  {...fieldProps('healthInsurance')}
-                  className="w-full h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
-                >
-                  {AVAILABLE_INSURANCES.map((ins) => (
-                    <option key={ins} value={ins}>{ins}</option>
-                  ))}
-                </select>
-                {errors.healthInsurance && <p id="patient-insurance-error" role="alert" className="text-xs font-medium text-rose-700">{errors.healthInsurance.message}</p>}
-              </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="patient-insurance" className="text-xs font-semibold text-slate-700">Cobertura Médica / Obra Social</Label>
+                      <select
+                        id="patient-insurance"
+                        required
+                        aria-invalid={Boolean(errors.healthInsurance)}
+                        aria-describedby={errors.healthInsurance ? 'patient-insurance-error' : undefined}
+                        {...fieldProps('healthInsurance')}
+                        className="w-full h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
+                      >
+                        {AVAILABLE_INSURANCES.map((ins) => (
+                          <option key={ins} value={ins}>{ins}</option>
+                        ))}
+                      </select>
+                      {errors.healthInsurance && <p id="patient-insurance-error" role="alert" className="text-xs font-medium text-rose-700">{errors.healthInsurance.message}</p>}
+                    </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="patient-affiliate" className="text-xs font-semibold text-slate-700">N° de Afiliado (opcional)</Label>
-                <Input
-                  id="patient-affiliate"
-                  placeholder="Ej: 102938475-01"
-                  {...fieldProps('affiliateNumber')}
-                  className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
-                />
-              </div>
-            </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="patient-affiliate" className="text-xs font-semibold text-slate-700">N° de Afiliado (opcional)</Label>
+                      <Input
+                        id="patient-affiliate"
+                        placeholder="Ej: 102938475-01"
+                        {...fieldProps('affiliateNumber')}
+                        className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
+                      />
+                    </div>
+                  </div>
 
-            {/* HU-FE-67: Validador de Coberturas Médicas y Estado de Obra Social */}
-            <CoverageValidator
-              obraSocial={patientForm.healthInsurance}
-              nroAfiliado={patientForm.affiliateNumber}
-              className="mt-3"
-            />
+                  {/* HU-FE-67: Validador de Coberturas Médicas y Estado de Obra Social */}
+                  <CoverageValidator
+                    obraSocial={patientForm.healthInsurance}
+                    nroAfiliado={patientForm.affiliateNumber}
+                    className="mt-3"
+                  />
 
-            <p role="status" className="rounded-lg border border-amber-600 bg-white p-3 text-xs font-medium text-slate-900">
-              La reserva en línea todavía no está conectada. Sus datos no se enviarán ni se guardarán. Para solicitar el turno, comuníquese con {selectedCenter.name} al {selectedCenter.phone}.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-4">
-              <span className="text-[11px] text-slate-500">
-                * Puede revisar los datos, pero aún no confirmar la reserva en línea.
-              </span>
-              <Button
-                type="button"
-                disabled
-                className="h-10 px-6 rounded-lg bg-sky-700 font-semibold text-xs text-white hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
-              >
-                <span>Reserva en línea no disponible</span>
-              </Button>
-            </div>
-            </form>
+                  {bookingError && (
+                    <div role="alert" className="mt-3 rounded-lg border border-rose-300 bg-rose-50 p-3 text-xs font-medium text-rose-900">
+                      {bookingError}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-4 mt-4">
+                    <span className="text-[11px] text-slate-500">
+                      * Al confirmar, se reservará el turno en la agenda oficial del profesional.
+                    </span>
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="h-10 px-6 rounded-lg bg-sky-700 font-semibold text-xs text-white hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 cursor-pointer disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="size-4 animate-spin" />
+                          <span>Confirmando reserva...</span>
+                        </span>
+                      ) : (
+                        <span>Confirmar Reserva de Turno</span>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
