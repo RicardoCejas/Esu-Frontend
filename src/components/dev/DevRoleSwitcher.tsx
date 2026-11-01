@@ -8,14 +8,14 @@ export const DevRoleSwitcher: React.FC = () => {
   const { user, switchRole, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // El panel de desarrollador solo debe figurar si el usuario está activamente autenticado en la cuenta dev
+  // El panel de desarrollador solo está habilitado en entorno de desarrollo local (DEV)
   const isDev =
+    Boolean(import.meta.env.DEV) &&
     isAuthenticated &&
     !!user &&
     (user.isDeveloper === true ||
       user.email === 'dev@esu.gob.ar' ||
-      user.email?.toLowerCase().startsWith('dev@') ||
-      (localStorage.getItem('esu_dev_mode') === 'true' && user.email?.toLowerCase().includes('dev')));
+      user.email?.toLowerCase().startsWith('dev@'));
 
   if (!isDev) {
     return null;

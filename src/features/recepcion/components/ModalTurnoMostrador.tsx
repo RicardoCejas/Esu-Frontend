@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CalendarPlus, X, AlertCircle } from 'lucide-react';
 import { turnosService } from '@/api/turnosService';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import type { Turno, CentroSalud, Profesional, User } from '@/types';
 
 interface ModalTurnoMostradorProps {
@@ -21,8 +22,8 @@ export const ModalTurnoMostrador: React.FC<ModalTurnoMostradorProps> = ({
   onTurnoCreado,
 }) => {
   const [pacienteId, setPacienteId] = useState(pacientes[0]?.id || '');
-  const [centroSaludId, setCentroSaludId] = useState(centros[0]?.id || 'c1');
-  const [profesionalId, setProfesionalId] = useState(profesionales[0]?.id || 'p1');
+  const [centroSaludId, setCentroSaludId] = useState(centros[0]?.id || '1');
+  const [profesionalId, setProfesionalId] = useState(profesionales[0]?.id || '1');
   const [hora, setHora] = useState('10:00');
   const [motivoConsulta, setMotivoConsulta] = useState('Demanda espontánea en mostrador / Consulta del día');
   const [obraSocial, setObraSocial] = useState('APROSS');
@@ -37,9 +38,9 @@ export const ModalTurnoMostrador: React.FC<ModalTurnoMostradorProps> = ({
     e.preventDefault();
     setError('');
 
-    const paciente = pacientes.find((p) => p.id === pacienteId);
-    const centro = centros.find((c) => c.id === centroSaludId);
-    const profesional = profesionales.find((p) => p.id === profesionalId);
+    const paciente = pacientes.find((p) => p.id === pacienteId) || pacientes[0];
+    const centro = centros.find((c) => c.id === centroSaludId) || centros[0];
+    const profesional = profesionales.find((p) => p.id === profesionalId) || profesionales[0];
 
     if (!paciente || !centro || !profesional) {
       setError('Por favor complete todos los datos requeridos para asignar el turno.');
@@ -48,7 +49,7 @@ export const ModalTurnoMostrador: React.FC<ModalTurnoMostradorProps> = ({
 
     try {
       setIsSubmitting(true);
-      const hoy = new Date().toISOString().split('T')[0];
+      const hoy = new Date().toLocaleDateString('en-CA');
       const nuevo = await turnosService.crearTurnoMostrador({
         fecha: hoy,
         hora,
@@ -73,8 +74,8 @@ export const ModalTurnoMostrador: React.FC<ModalTurnoMostradorProps> = ({
 
       onTurnoCreado(nuevo);
       onClose();
-    } catch {
-      setError('No se pudo generar el turno de mostrador.');
+    } catch (err) {
+      setError(extractApiErrorMessage(err, 'No se pudo generar el turno de mostrador.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -95,7 +96,7 @@ export const ModalTurnoMostrador: React.FC<ModalTurnoMostradorProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -218,14 +219,14 @@ export const ModalTurnoMostrador: React.FC<ModalTurnoMostradorProps> = ({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-xl border border-border px-4 py-2 font-semibold text-muted-foreground hover:bg-muted transition"
+              className="rounded-xl border border-border px-4 py-2 font-semibold text-muted-foreground hover:bg-muted transition cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-xl bg-primary px-5 py-2 font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-xs"
+              className="rounded-xl bg-primary px-5 py-2 font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-xs cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? 'Asignando...' : 'Asignar Turno de Mostrador'}
             </button>

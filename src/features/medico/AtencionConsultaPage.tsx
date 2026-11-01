@@ -293,7 +293,7 @@ export const AtencionConsultaPage: React.FC = () => {
       };
 
       const res = await clinicaService.finalizarAtencion(turnoId || '1', payload);
-      setHashGenerado(res.hashIntegridad || '3a887b41e8c950d88251e6b83f09804b49cb3766');
+      setHashGenerado((res as any)?.hashIntegridad || '3a887b41e8c950d88251e6b83f09804b49cb3766');
 
       // Limpiar borrador local al firmar definitivamente
       localStorage.removeItem(`esu_draft_consulta_${pacienteId}`);

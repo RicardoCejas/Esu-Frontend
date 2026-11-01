@@ -3,7 +3,6 @@ import type { User, UserRole } from '@/types';
 import { authService, type LoginCredentials, type AuthResponse } from '@/api/authService';
 import { tokenStorage } from '@/api/tokenStorage';
 import { authBroadcast, type AuthBroadcastMessage } from '@/lib/authBroadcast';
-import { MOCK_USERS } from '@/api/mockData';
 
 interface AuthContextType {
   user: User | null;
@@ -30,35 +29,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const sessionActive = sessionStorage.getItem('esu_session_active');
         if (sessionActive) {
-          const isDev = localStorage.getItem('esu_dev_mode') === 'true';
-          const savedRole = (localStorage.getItem('esu_dev_active_role') as UserRole) || null;
           let refreshedUser: User | null = null;
           try {
             refreshedUser = await authService.refreshSession();
           } catch {
             // Backend offline
           }
-          if (isMounted && refreshedUser && !isDev) {
+          if (isMounted) {
             setUser(refreshedUser);
-          } else if (isMounted) {
-            let fallbackUser = authService.getCurrentUser();
-            if (isDev && savedRole) {
-              const matched = MOCK_USERS.find((u) => u.rol === savedRole);
-              if (matched) {
-                fallbackUser = { ...matched, isDeveloper: true };
-              }
-            }
-            if (!fallbackUser) {
-              fallbackUser = isDev
-                ? { ...(MOCK_USERS.find((u) => u.email === 'dev@esu.gob.ar') || MOCK_USERS[4]), isDeveloper: true }
-                : (authService.getCurrentUser() || MOCK_USERS[0]);
-            }
-            setUser(fallbackUser);
-            authService.setCurrentUser(fallbackUser);
           }
-        } else {
-          localStorage.removeItem('esu_dev_mode');
-          localStorage.removeItem('esu_dev_active_role');
         }
       } catch (err) {
         console.warn('No se pudo restaurar la sesión en memoria:', err);
@@ -74,8 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Sincronización multi-pestaña mediante BroadcastChannel (HU-44)
     const unsubscribeBroadcast = authBroadcast.subscribe((msg: AuthBroadcastMessage) => {
       if (msg.type === 'LOGOUT') {
-        localStorage.removeItem('esu_dev_mode');
-        localStorage.removeItem('esu_dev_active_role');
         setUser(null);
         tokenStorage.clearToken();
       }
@@ -111,8 +88,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = useCallback(async () => {
-    localStorage.removeItem('esu_dev_mode');
-    localStorage.removeItem('esu_dev_active_role');
     await authService.logout();
     setUser(null);
   }, []);
@@ -126,28 +101,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  // Función utilitaria para cambiar de rol en entorno de evaluación (HU-DEV)
+  // Función utilitaria para cambiar de rol únicamente en entorno de desarrollo local
   const switchRole = (newRole: UserRole) => {
-    const isDev = user?.isDeveloper || localStorage.getItem('esu_dev_mode') === 'true';
-    const baseUser = MOCK_USERS.find((u) => u.rol === newRole) || {
-      id: `u-${newRole.toLowerCase()}-demo`,
-      nombre: `Usuario ${newRole}`,
-      apellido: 'Demo',
-      email: `${newRole.toLowerCase()}@esu.salud.gob.ar`,
-      dni: '30000000',
-      rol: newRole,
-      activo: true,
-      twoFactorEnabled: false,
-      emailVerified: true,
-    };
-    const targetUser = { ...baseUser, isDeveloper: isDev };
-    tokenStorage.setAccessToken(`mock-token-${targetUser.id}`);
-    authService.setCurrentUser(targetUser);
-    setUser(targetUser);
-    sessionStorage.setItem('esu_session_active', '1');
-    localStorage.setItem('esu_dev_mode', 'true');
-    localStorage.setItem('esu_dev_active_role', newRole);
+    if (!import.meta.env.DEV) {
+      console.warn('El cambio de rol de prueba está restringido a entornos de desarrollo.');
+      return;
+    }
     authService.devSwitchRole(newRole);
+    if (user) {
+      const updated: User = { ...user, rol: newRole };
+      setUser(updated);
+      authService.setCurrentUser(updated);
+    }
   };
 
   return (

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { profesionalesService } from '@/api/profesionalesService';
 import { turnosService } from '@/api/turnosService';
 import { useToast } from '@/context/ToastContext';
+import { getFechaLocalHoy } from '@/lib/dateUtils';
 import type { Turno } from '@/types';
 import {
   X,
@@ -41,8 +42,8 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
 }) => {
   const { success, error, warning } = useToast();
   const [esDiaCompleto, setEsDiaCompleto] = useState(true);
-  const [fechaInicio, setFechaInicio] = useState(new Date().toISOString().split('T')[0]);
-  const [fechaFin, setFechaFin] = useState(new Date().toISOString().split('T')[0]);
+  const [fechaInicio, setFechaInicio] = useState(getFechaLocalHoy());
+  const [fechaFin, setFechaFin] = useState(getFechaLocalHoy());
   const [horaInicio, setHoraInicio] = useState('08:00');
   const [horaFin, setHoraFin] = useState('18:00');
   const [motivoCategoria, setMotivoCategoria] = useState(MOTIVOS_PREDEFINIDOS[0]);

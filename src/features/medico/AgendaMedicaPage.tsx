@@ -19,6 +19,7 @@ import {
 import { ConfigurarGrillaHorariaModal } from './components/ConfigurarGrillaHorariaModal';
 import { BloquearAgendaModal } from './components/BloquearAgendaModal';
 import { ModalCrearSobreturno } from './components/ModalCrearSobreturno';
+import { getFechaLocalHoy } from '@/lib/dateUtils';
 
 export const AgendaMedicaPage: React.FC = () => {
   const { user } = useAuth();
@@ -35,7 +36,7 @@ export const AgendaMedicaPage: React.FC = () => {
   const [isModalBloqueoOpen, setIsModalBloqueoOpen] = useState(false);
   const [isModalSobreturnoOpen, setIsModalSobreturnoOpen] = useState(false);
 
-  const hoyStr = new Date().toISOString().split('T')[0];
+  const hoyStr = getFechaLocalHoy();
 
   const cargarDatos = async () => {
     setLoading(true);

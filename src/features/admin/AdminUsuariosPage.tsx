@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { MOCK_USERS, MOCK_CENTROS } from '@/api/mockData';
-import type { User } from '@/types';
+import { apiClient } from '@/api/apiClient';
+import { API_ENDPOINTS, extractApiErrorMessage } from '@/api/endpoints';
+import { centrosService } from '@/api/centrosService';
+import type { CentroSalud, User, UserRole } from '@/types';
 import {
   Building2,
   PlusCircle,
@@ -10,29 +12,109 @@ import {
   Mail,
   MapPin,
   Shield,
-  AlertCircle
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
+
+interface RawUsuarioDto {
+  id: number | string;
+  username?: string;
+  email?: string;
+  rol?: string;
+  activo?: boolean;
+  fechaDeAlta?: string;
+}
 
 export const AdminUsuariosPage: React.FC = () => {
-  // El administrador gestiona exclusivamente las cuentas de los Centros de Salud
-  const [centrosUsuarios, setCentrosUsuarios] = useState<User[]>(() =>
-    MOCK_USERS.filter((u) => u.rol === 'RECEPCIONISTA').map((u) => ({
-      ...u,
-      activo: u.activo !== false,
-    }))
-  );
+  const { success, error: toastError } = useToast();
+  const [centrosUsuarios, setCentrosUsuarios] = useState<User[]>([]);
+  const [centros, setCentros] = useState<CentroSalud[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
+
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<'TODOS' | 'ACTIVO' | 'INACTIVO'>('TODOS');
-
-  // Estado para confirmación de cambio de estado activo/inactivo
   const [cuentaAToggle, setCuentaAToggle] = useState<User | null>(null);
 
-  const handleConfirmarToggle = () => {
+  const cargarDatos = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const [usuariosRes, centrosList] = await Promise.all([
+        apiClient.get<RawUsuarioDto[]>(API_ENDPOINTS.usuarios.todos),
+        centrosService.getAll(),
+      ]);
+
+      setCentros(centrosList);
+
+      const rawList = Array.isArray(usuariosRes.data) ? usuariosRes.data : [];
+      const mapped: User[] = rawList
+        .filter((u: RawUsuarioDto) => {
+          const rol = (u.rol || '').toUpperCase();
+          return rol === 'RECEPCIONISTA' || rol === 'ADMIN' || rol === 'PROFESIONAL' || rol === 'MEDICO';
+        })
+        .map((u: RawUsuarioDto, idx: number) => {
+          const email = u.email || u.username || '';
+          const matchedCentro = centrosList[idx % Math.max(centrosList.length, 1)];
+          const rolUpper = (u.rol || 'RECEPCIONISTA').toUpperCase();
+          const rol: UserRole = rolUpper === 'MEDICO' || rolUpper === 'PROFESIONAL'
+            ? 'MEDICO'
+            : rolUpper === 'ADMIN'
+            ? 'ADMIN'
+            : 'RECEPCIONISTA';
+
+          return {
+            id: String(u.id),
+            nombre: email.split('@')[0] || 'Usuario Institucional',
+            apellido: rol,
+            email,
+            dni: String(u.id),
+            telefono: matchedCentro?.telefono || '03549-422001',
+            rol,
+            centroSaludId: matchedCentro?.id,
+            centroSaludNombre: matchedCentro?.nombre || email.split('@')[0],
+            activo: u.activo !== false,
+          };
+        });
+
+      setCentrosUsuarios(mapped);
+    } catch (err) {
+      setLoadError(
+        extractApiErrorMessage(err, 'No se pudieron cargar las cuentas institucionales desde el servidor.')
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    cargarDatos();
+  }, [cargarDatos]);
+
+  const handleConfirmarToggle = async () => {
     if (!cuentaAToggle) return;
-    setCentrosUsuarios((prev) =>
-      prev.map((u) => (u.id === cuentaAToggle.id ? { ...u, activo: !u.activo } : u))
-    );
-    setCuentaAToggle(null);
+    const nuevoEstado = !(cuentaAToggle.activo !== false);
+    setIsUpdating(true);
+    try {
+      await apiClient.patch(API_ENDPOINTS.usuarios.cambiarEstado(cuentaAToggle.id), null, {
+        params: { activo: nuevoEstado },
+      });
+      setCentrosUsuarios((prev) =>
+        prev.map((u) => (u.id === cuentaAToggle.id ? { ...u, activo: nuevoEstado } : u))
+      );
+      success(
+        nuevoEstado
+          ? `Cuenta ${cuentaAToggle.email} reactivada correctamente.`
+          : `Cuenta ${cuentaAToggle.email} desactivada correctamente.`
+      );
+      setCuentaAToggle(null);
+    } catch (err) {
+      toastError(extractApiErrorMessage(err, 'No se pudo actualizar el estado de la cuenta.'));
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const cuentasFiltradas = centrosUsuarios.filter((u) => {
@@ -59,7 +141,7 @@ export const AdminUsuariosPage: React.FC = () => {
             <span>Cuentas de Centros de Salud</span>
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            El administrador gestiona y crea exclusivamente las cuentas institucionales de los centros de salud de la red.
+            El administrador gestiona y crea las cuentas institucionales de los centros de salud de la red.
           </p>
         </div>
 
@@ -84,6 +166,23 @@ export const AdminUsuariosPage: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {loadError && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={cargarDatos}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800 transition cursor-pointer"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      )}
 
       {/* Barra de Filtros y Búsqueda */}
       <div className="rounded-2xl border border-border bg-card p-4 shadow-xs space-y-3">
@@ -120,81 +219,83 @@ export const AdminUsuariosPage: React.FC = () => {
           </div>
 
           <span className="text-[11px] text-muted-foreground font-medium">
-            {cuentasFiltradas.length} cuentas institucionales registradas
+            {isLoading ? 'Cargando cuentas...' : `${cuentasFiltradas.length} cuentas institucionales registradas`}
           </span>
         </div>
       </div>
 
       {/* Grid de Cuentas de Centros de Salud */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {cuentasFiltradas.map((cuenta) => {
-          const centroInfo = MOCK_CENTROS.find((c) => c.id === cuenta.centroSaludId);
-          return (
-            <div
-              key={cuenta.id}
-              className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs hover:border-primary/40 transition-all space-y-4"
-            >
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2.5 rounded-xl bg-sky-50 text-sky-700 border border-sky-100">
-                      <Building2 className="h-5 w-5" />
+      {!isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {cuentasFiltradas.map((cuenta) => {
+            const centroInfo = centros.find((c) => c.id === cuenta.centroSaludId);
+            return (
+              <div
+                key={cuenta.id}
+                className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs hover:border-primary/40 transition-all space-y-4"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2.5 rounded-xl bg-sky-50 text-sky-700 border border-sky-100">
+                        <Building2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-foreground leading-snug">
+                          {cuenta.centroSaludNombre || cuenta.nombre}
+                        </h3>
+                        <span className="inline-block mt-0.5 rounded-md bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                          {centroInfo?.tipo || cuenta.rol}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-foreground leading-snug">
-                        {cuenta.centroSaludNombre || cuenta.nombre}
-                      </h3>
-                      <span className="inline-block mt-0.5 rounded-md bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                        {centroInfo?.tipo || 'INSTITUCIÓN SANITARIA'}
-                      </span>
-                    </div>
+
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                        cuenta.activo !== false
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-rose-100 text-rose-800'
+                      }`}
+                    >
+                      {cuenta.activo !== false ? 'Activa' : 'Inactiva'}
+                    </span>
                   </div>
 
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                  <div className="space-y-1.5 text-xs text-muted-foreground pt-1 border-t border-border/50">
+                    <p className="flex items-center gap-2">
+                      <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span className="truncate font-mono">{cuenta.email}</span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span>{cuenta.telefono || centroInfo?.telefono || '03549-422001'}</span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span className="truncate">{centroInfo?.direccion || 'Cruz del Eje, Córdoba'}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Botones de Acción */}
+                <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCuentaAToggle(cuenta)}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition cursor-pointer border ${
                       cuenta.activo !== false
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-rose-100 text-rose-800'
+                        ? 'border-rose-200 text-rose-700 hover:bg-rose-50'
+                        : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
                     }`}
                   >
-                    {cuenta.activo !== false ? 'Activa' : 'Inactiva'}
-                  </span>
-                </div>
-
-                <div className="space-y-1.5 text-xs text-muted-foreground pt-1 border-t border-border/50">
-                  <p className="flex items-center gap-2">
-                    <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span className="truncate font-mono">{cuenta.email}</span>
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Phone className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span>{cuenta.telefono || centroInfo?.telefono || '03549-422001'}</span>
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span className="truncate">{centroInfo?.direccion || 'Cruz del Eje, Córdoba'}</span>
-                  </p>
+                    {cuenta.activo !== false ? 'Desactivar Cuenta' : 'Activar Cuenta'}
+                  </button>
                 </div>
               </div>
-
-              {/* Botones de Acción */}
-              <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCuentaAToggle(cuenta)}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition cursor-pointer border ${
-                    cuenta.activo !== false
-                      ? 'border-rose-200 text-rose-700 hover:bg-rose-50'
-                      : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
-                  }`}
-                >
-                  {cuenta.activo !== false ? 'Desactivar Cuenta' : 'Activar Cuenta'}
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Modal de Confirmación Toggle */}
       {cuentaAToggle && (
@@ -221,19 +322,21 @@ export const AdminUsuariosPage: React.FC = () => {
             <div className="flex gap-2.5 pt-2">
               <button
                 type="button"
+                disabled={isUpdating}
                 onClick={() => setCuentaAToggle(null)}
-                className="flex-1 rounded-xl border border-input py-2 text-xs font-semibold hover:bg-accent transition"
+                className="flex-1 rounded-xl border border-input py-2 text-xs font-semibold hover:bg-accent transition disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 type="button"
+                disabled={isUpdating}
                 onClick={handleConfirmarToggle}
-                className={`flex-1 rounded-xl py-2 text-xs font-bold text-white transition ${
+                className={`flex-1 rounded-xl py-2 text-xs font-bold text-white transition disabled:opacity-50 ${
                   cuentaAToggle.activo !== false ? 'bg-rose-700 hover:bg-rose-800' : 'bg-emerald-700 hover:bg-emerald-800'
                 }`}
               >
-                Confirmar
+                {isUpdating ? 'Guardando...' : 'Confirmar'}
               </button>
             </div>
           </div>

@@ -14,6 +14,7 @@ import {
   Plus
 } from 'lucide-react';
 import { ModalCrearSobreturno } from '@/features/medico/components/ModalCrearSobreturno';
+import { getFechaLocalHoy } from '@/lib/dateUtils';
 
 export const SalasEsperaKanbanPage: React.FC = () => {
   const [turnos, setTurnos] = useState<Turno[]>([]);
@@ -24,7 +25,7 @@ export const SalasEsperaKanbanPage: React.FC = () => {
   const [consultorioSeleccionado, setConsultorioSeleccionado] = useState<string>('102');
   const [isModalSobreturnoOpen, setIsModalSobreturnoOpen] = useState(false);
 
-  const hoyStr = new Date().toISOString().split('T')[0];
+  const hoyStr = getFechaLocalHoy();
 
   const cargarDatos = () => {
     Promise.all([turnosService.getAll(), centrosService.getAll()]).then(([t, c]) => {

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { ModalAltaRapidaPaciente } from './components/ModalAltaRapidaPaciente';
 import { ModalVerificarCoberturaCopago } from './components/ModalVerificarCoberturaCopago';
+import { getFechaLocalHoy } from '@/lib/dateUtils';
 import { ModalTurnoMostrador } from './components/ModalTurnoMostrador';
 import { ModalCancelarMostrador } from './components/ModalCancelarMostrador';
 
@@ -88,7 +89,7 @@ export const RecepcionPage: React.FC = () => {
   }, [turnos]);
 
   // Filtrado reactivo con Debounce 300ms y filtros de sede/profesional/consultorio
-  const hoyStr = new Date().toISOString().split('T')[0];
+  const hoyStr = getFechaLocalHoy();
   const turnosHoy = useMemo(() => {
     return turnos.filter((t) => t.fecha === hoyStr);
   }, [turnos, hoyStr]);
