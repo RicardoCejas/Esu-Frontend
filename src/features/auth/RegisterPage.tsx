@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { GoogleAuthButton } from './components/GoogleAuthButton';
+import { extractApiErrorMessage } from '@/api/endpoints';
 
 export const RegisterPage: React.FC = () => {
   const { register, login } = useAuth();
@@ -147,7 +148,7 @@ export const RegisterPage: React.FC = () => {
         navigate('/login?registered=true');
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al registrar el paciente.';
+      const message = extractApiErrorMessage(err, 'Error al registrar el paciente.');
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -186,9 +187,19 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
+            <div className="flex items-start gap-2 rounded-xl bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span>{error}</span>
+                {error.toLowerCase().includes('registrado') && (
+                  <p className="mt-0.5 font-medium">
+                    ¿Ya tienes una cuenta?{' '}
+                    <Link to="/login" className="font-semibold text-rose-800 underline hover:text-rose-950">
+                      Inicia sesión aquí
+                    </Link>
+                  </p>
+                )}
+              </div>
             </div>
           )}
 

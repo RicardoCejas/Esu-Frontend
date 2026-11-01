@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { GoogleAuthButton } from './components/GoogleAuthButton';
+import { extractApiErrorMessage } from '@/api/endpoints';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -100,7 +101,7 @@ export const LoginPage: React.FC = () => {
         redirectByRole(authResponse.user.rol);
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al iniciar sesión. Verifique sus credenciales.';
+      const message = extractApiErrorMessage(err, 'Error al iniciar sesión. Verifique sus credenciales.');
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -165,9 +166,22 @@ export const LoginPage: React.FC = () => {
           )}
 
           {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700">
-              <ShieldAlert className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
+            <div className="flex items-start gap-2 rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700">
+              <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span>{error}</span>
+                {error.toLowerCase().includes('confirmar su direcci') && (
+                  <p className="mt-1 font-medium">
+                    ¿No recibiste el correo?{' '}
+                    <Link
+                      to={`/verificar-email?email=${encodeURIComponent(emailOrDni.trim())}`}
+                      className="font-semibold text-rose-800 underline hover:text-rose-950"
+                    >
+                      Reenviar correo de verificación
+                    </Link>
+                  </p>
+                )}
+              </div>
             </div>
           )}
 

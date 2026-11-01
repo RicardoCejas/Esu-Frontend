@@ -1,9 +1,9 @@
-﻿import { isAxiosError } from 'axios';
+import { isAxiosError } from 'axios';
 import { apiClient } from './apiClient';
 import { tokenStorage } from './tokenStorage';
 import { authBroadcast } from '@/lib/authBroadcast';
 import { sanitizeFormData } from '@/lib/sanitizer';
-import { API_ENDPOINTS } from './endpoints';
+import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
 import type { User, UserRole } from '@/types';
 
 export interface LoginCredentials {
@@ -100,6 +100,10 @@ export const authService = {
       
 
       if (isAxiosError<BackendAuthData>(error)) {
+        const extracted = extractApiErrorMessage(error);
+        if (extracted && extracted !== 'Error de comunicación con el servidor.') {
+          throw new Error(extracted, { cause: error });
+        }
         if (error.response?.data?.message) {
           throw new Error(error.response.data.message, { cause: error });
         }
@@ -193,23 +197,27 @@ export const authService = {
       password: cleanData.password || '',
     };
 
-    const response = await apiClient.post<BackendAuthData>(API_ENDPOINTS.auth.register, payload);
+    try {
+      const response = await apiClient.post<BackendAuthData>(API_ENDPOINTS.auth.register, payload);
 
-    const user: User = {
-      id: String(response.data.usuarioId || Date.now()),
-      nombre: cleanData.nombre,
-      apellido: cleanData.apellido,
-      email,
-      dni: cleanData.dni,
-      rol: 'PACIENTE',
-      activo: true,
-      emailVerified: false,
-    };
+      const user: User = {
+        id: String(response.data.usuarioId || Date.now()),
+        nombre: cleanData.nombre,
+        apellido: cleanData.apellido,
+        email,
+        dni: cleanData.dni,
+        rol: 'PACIENTE',
+        activo: true,
+        emailVerified: false,
+      };
 
-    return {
-      token: response.data.accessToken || '',
-      user,
-    };
+      return {
+        token: response.data.accessToken || '',
+        user,
+      };
+    } catch (error: unknown) {
+      throw new Error(extractApiErrorMessage(error, 'Error al registrar el paciente.'), { cause: error });
+    }
   },
 
   /**
