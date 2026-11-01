@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 export const CentrosSaludPacientePage: React.FC = () => {
   const centros = [
     {
-      id: 'c1',
+      id: 'cde-hosp-crespo',
       nombre: 'Hospital Provincial Dr. Aurelio Crespo',
       tipo: 'Hospital Público Provincial de Agudos (Cabecera)',
       direccion: 'Av. Juan Domingo Perón 450, Cruz del Eje',
@@ -15,7 +15,7 @@ export const CentrosSaludPacientePage: React.FC = () => {
       badge: 'Hospital Cabecera Regional',
     },
     {
-      id: 'c2',
+      id: 'cde-clin-cabrera',
       nombre: 'Clínica Médica Cabrera',
       tipo: 'Clínica Privada con Convenio de Obras Sociales',
       direccion: 'Av. Eva Perón 642, Cruz del Eje',
@@ -25,7 +25,7 @@ export const CentrosSaludPacientePage: React.FC = () => {
       badge: 'Atención Obras Sociales',
     },
     {
-      id: 'c3',
+      id: 'cde-centro-diag',
       nombre: 'Centro de Diagnóstico Cruz del Eje',
       tipo: 'Centro de Diagnóstico de Alta Complejidad e Imágenes',
       direccion: 'Sarmiento 340, Cruz del Eje',
@@ -97,7 +97,7 @@ export const CentrosSaludPacientePage: React.FC = () => {
             </div>
 
             <Link
-              to="/turnero"
+              to={`/turnero?centroSaludId=${centro.id}`}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white py-2.5 text-xs font-bold transition shadow-xs"
             >
               <span>Solicitar Turno en este Centro</span>

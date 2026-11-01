@@ -122,9 +122,16 @@ export const pacientesService = {
 
   async updateContacto(
     pacienteId: string | number,
-    data: { telefono: string; email?: string }
+    data: { telefono?: string; email?: string; obraSocial?: string; nroAfiliado?: string; dni?: string }
   ): Promise<User> {
     try {
+      // 1. Intentar actualizar por endpoint de perfil autenticado
+      try {
+        const resPerfil = await apiClient.put<Record<string, unknown>>('/pacientes/mi-perfil', data);
+        if (resPerfil.data) return normalizePaciente(resPerfil.data);
+      } catch {
+        // Fallback a endpoint con ID numérico
+      }
       const numId = toNumericId(pacienteId);
       const res = await apiClient.put<Record<string, unknown>>(
         API_ENDPOINTS.pacientes.contacto(numId),
@@ -132,7 +139,7 @@ export const pacientesService = {
       );
       return normalizePaciente(res.data);
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudieron actualizar los datos de contacto del paciente.'), { cause: err });
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron actualizar los datos del paciente.'), { cause: err });
     }
   },
 };

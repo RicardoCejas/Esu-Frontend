@@ -88,6 +88,17 @@ export function useTurnero() {
         setSelectedDoctor(matchedDoctor)
         setCurrentStep(4) // Avanza directo a selección de fecha y hora
       }
+    } else if (centerId) {
+      const matchedCenter =
+        MOCK_CENTERS.find((c) => c.id === centerId || c.name.toLowerCase().includes(centerId.toLowerCase())) ||
+        (centerId.includes('crespo') ? MOCK_CENTERS.find(c => c.id.includes('crespo')) : null) ||
+        (centerId.includes('cabrera') ? MOCK_CENTERS.find(c => c.id.includes('cabrera')) : null) ||
+        (centerId.includes('diag') ? MOCK_CENTERS.find(c => c.id.includes('diag')) : null)
+
+      if (matchedCenter) {
+        setSelectedCenter(matchedCenter)
+        setCurrentStep(2) // Avanza directo a selección de especialidad sin re-elegir centro
+      }
     }
   }, [searchParams])
 

@@ -31,16 +31,21 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Cargar usuario recordado o cuenta dev por defecto en desarrollo local
+  // Cargar usuario y contraseña recordados o cuenta dev por defecto en desarrollo local
   useEffect(() => {
     try {
       const savedUser = localStorage.getItem('esu_remember_login');
+      const savedPass = localStorage.getItem('esu_remember_password');
       if (savedUser) {
         setEmailOrDni(savedUser);
+        if (savedPass) {
+          setPassword(savedPass);
+        }
         setRememberLogin(true);
       } else if (import.meta.env.DEV) {
         setEmailOrDni('dev@esu.gob.ar');
         setPassword('Dev12345!');
+        setRememberLogin(true);
       }
     } catch {
       // Ignore
@@ -77,8 +82,12 @@ export const LoginPage: React.FC = () => {
     try {
       if (rememberLogin) {
         localStorage.setItem('esu_remember_login', emailOrDni.trim());
+        if (password) {
+          localStorage.setItem('esu_remember_password', password);
+        }
       } else {
         localStorage.removeItem('esu_remember_login');
+        localStorage.removeItem('esu_remember_password');
       }
 
       const authResponse = await login({
@@ -220,7 +229,7 @@ export const LoginPage: React.FC = () => {
                 className="rounded border-slate-300 text-sky-600 focus:ring-sky-600 h-4 w-4 cursor-pointer"
               />
               <label htmlFor="rememberLogin" className="text-xs text-slate-600 font-medium cursor-pointer select-none">
-                Recordar mi usuario en este equipo
+                Recordar mi usuario y contraseña en este equipo
               </label>
             </div>
 
