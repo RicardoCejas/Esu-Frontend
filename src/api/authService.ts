@@ -94,6 +94,21 @@ export const authService = {
         await authService.devSwitchRole(credentials.rolSimulado);
       }
 
+      if (user.rol === 'PACIENTE') {
+        try {
+          const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
+          if (perfilRes.data?.id) {
+            user.id = String(perfilRes.data.id);
+            if (perfilRes.data.dni) user.dni = perfilRes.data.dni;
+            if (perfilRes.data.nombre) user.nombre = perfilRes.data.nombre;
+            if (perfilRes.data.apellido) user.apellido = perfilRes.data.apellido;
+            currentSessionUser = user;
+          }
+        } catch {
+          // Mantener usuarioId como fallback
+        }
+      }
+
       authBroadcast.postMessage({ type: 'LOGIN', userId: user.id });
       return { token, user };
     } catch (error: unknown) {
@@ -159,6 +174,21 @@ export const authService = {
       tokenStorage.setAccessToken(token);
       currentSessionUser = user;
       sessionStorage.setItem('esu_session_active', '1');
+
+      if (user.rol === 'PACIENTE') {
+        try {
+          const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
+          if (perfilRes.data?.id) {
+            user.id = String(perfilRes.data.id);
+            if (perfilRes.data.dni) user.dni = perfilRes.data.dni;
+            if (perfilRes.data.nombre) user.nombre = perfilRes.data.nombre;
+            if (perfilRes.data.apellido) user.apellido = perfilRes.data.apellido;
+            currentSessionUser = user;
+          }
+        } catch {
+          // Mantener usuarioId como fallback
+        }
+      }
 
       authBroadcast.postMessage({ type: 'LOGIN', userId: user.id });
       return { token, user };
@@ -265,13 +295,33 @@ export const authService = {
         API_ENDPOINTS.auth.me
       );
       if (res.data) {
+        const userRol = normalizeUserRole(res.data.rol);
+        let targetId = String(res.data.id);
+        let dni = String(res.data.id);
+        let nombre = res.data.email ? res.data.email.split('@')[0] : 'Usuario';
+        let apellido = '';
+
+        if (userRol === 'PACIENTE') {
+          try {
+            const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
+            if (perfilRes.data?.id) {
+              targetId = String(perfilRes.data.id);
+              if (perfilRes.data.dni) dni = perfilRes.data.dni;
+              if (perfilRes.data.nombre) nombre = perfilRes.data.nombre;
+              if (perfilRes.data.apellido) apellido = perfilRes.data.apellido;
+            }
+          } catch {
+            // Fallback
+          }
+        }
+
         const refreshedUser: User = {
-          id: String(res.data.id),
-          nombre: res.data.email ? res.data.email.split('@')[0] : 'Usuario',
-          apellido: '',
+          id: targetId,
+          nombre,
+          apellido,
           email: res.data.email,
-          dni: String(res.data.id),
-          rol: normalizeUserRole(res.data.rol),
+          dni,
+          rol: userRol,
           activo: res.data.activo !== false,
           emailVerified: res.data.verificado !== false,
         };
