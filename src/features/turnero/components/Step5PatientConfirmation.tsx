@@ -6,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { HealthCenter, MedicalSpecialty, MedicalDoctor, AppointmentSlot, PatientBookingForm } from '../types'
+import type { HealthCenter, MedicalSpecialty, MedicalDoctor, AppointmentSlot, PatientBookingForm, DiagnosticStudy, TipoAtencionTurno } from '../types'
+import { FlaskConical } from 'lucide-react'
 import type { Turno } from '@/types'
 import { AVAILABLE_INSURANCES } from '../data/mockTurneroData'
 import { patientBookingSchema } from '../patientValidation'
@@ -15,9 +16,11 @@ import { useAuth } from '@/context/AuthContext'
 import { GrupoFamiliarModal, type Familiar } from '@/features/paciente/components/GrupoFamiliarModal'
 
 interface Step5PatientConfirmationProps {
+  selectedStudy?: DiagnosticStudy | null;
+  tipoAtencion?: TipoAtencionTurno;
   selectedCenter: HealthCenter
-  selectedSpecialty: MedicalSpecialty
-  selectedDoctor: MedicalDoctor
+  selectedSpecialty?: MedicalSpecialty | null
+  selectedDoctor?: MedicalDoctor | null
   selectedDate: string
   selectedSlot: AppointmentSlot
   patientForm: PatientBookingForm
@@ -33,6 +36,8 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
   selectedCenter,
   selectedSpecialty,
   selectedDoctor,
+  selectedStudy,
+  tipoAtencion = 'CONSULTA',
   selectedDate,
   selectedSlot,
   patientForm,
@@ -109,26 +114,54 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 border-t border-slate-100 pt-3">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
-                  <Stethoscope className="size-4" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Especialidad</p>
-                  <p className="font-bold text-slate-900">{selectedSpecialty.name}</p>
-                </div>
-              </div>
+              {tipoAtencion === 'ESTUDIO' ? (
+                <>
+                  <div className="flex items-start gap-3 border-t border-slate-100 pt-3">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-[#00a896]">
+                      <FlaskConical className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Estudio / Práctica</p>
+                      <p className="font-bold text-slate-900">{selectedStudy?.name || 'Estudio Diagnóstico'}</p>
+                      <p className="text-slate-500 text-[11px]">{selectedStudy?.description || 'Práctica diagnóstica'}</p>
+                    </div>
+                  </div>
 
-              <div className="flex items-start gap-3 border-t border-slate-100 pt-3">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
-                  <User className="size-4" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Profesional</p>
-                  <p className="font-bold text-slate-900">{selectedDoctor.name}</p>
-                  <p className="text-slate-600 font-mono text-[11px]">{selectedDoctor.licenseNumber}</p>
-                </div>
-              </div>
+                  <div className="flex items-start gap-3 border-t border-slate-100 pt-3">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                      <User className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Atención</p>
+                      <p className="font-bold text-slate-900">Servicio Diagnóstico Centralizado</p>
+                      <p className="text-slate-600 font-mono text-[11px]">Asignado por equipamiento y orden de llegada</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-start gap-3 border-t border-slate-100 pt-3">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                      <Stethoscope className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Especialidad</p>
+                      <p className="font-bold text-slate-900">{selectedSpecialty?.name || 'Especialidad'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 border-t border-slate-100 pt-3">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                      <User className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Profesional</p>
+                      <p className="font-bold text-slate-900">{selectedDoctor?.name || 'Profesional'}</p>
+                      <p className="text-slate-600 font-mono text-[11px]">{selectedDoctor?.licenseNumber || ''}</p>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
                 <div className="flex items-center gap-2 font-semibold text-slate-900">
@@ -186,7 +219,7 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                   </p>
                   <p>
                     <span className="font-semibold text-slate-500">Profesional:</span>{' '}
-                    <span className="font-bold text-slate-900">{selectedDoctor.name}</span> ({selectedSpecialty.name})
+                    <span className="font-bold text-slate-900">{tipoAtencion === 'ESTUDIO' ? (selectedStudy?.name || 'Servicio Diagnóstico') : (selectedDoctor?.name || 'Profesional')}</span> {tipoAtencion === 'CONSULTA' && selectedSpecialty ? `(${selectedSpecialty.name})` : ''}
                   </p>
                   <p>
                     <span className="font-semibold text-slate-500">Fecha y Horario:</span>{' '}

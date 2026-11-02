@@ -15,11 +15,14 @@ import {
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import type { HealthCenter, MedicalSpecialty, MedicalDoctor } from '../types'
+import type { HealthCenter, MedicalSpecialty, MedicalDoctor, DiagnosticStudy, TipoAtencionTurno } from '../types'
+import { FlaskConical } from 'lucide-react'
 
 interface Step3DoctorSelectionProps {
   selectedCenter: HealthCenter
-  selectedSpecialty: MedicalSpecialty
+  selectedSpecialty?: MedicalSpecialty | null
+  selectedStudy?: DiagnosticStudy | null
+  tipoAtencion?: TipoAtencionTurno
   doctors: MedicalDoctor[]
   selectedDoctor: MedicalDoctor | null
   onSelectDoctor: (doctor: MedicalDoctor) => void
@@ -94,6 +97,8 @@ const DoctorMaleIcon: React.FC<{ className?: string }> = ({ className }) => (
 export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
   selectedCenter,
   selectedSpecialty,
+  selectedStudy,
+  tipoAtencion = 'CONSULTA',
   doctors,
   selectedDoctor,
   onSelectDoctor,
@@ -139,6 +144,48 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
 
   const modalIsFemale = modalDoctor ? isFemaleDoctor(modalDoctor.name) : false
 
+  if (tipoAtencion === 'ESTUDIO') {
+    return (
+      <section className="space-y-4 sm:space-y-6 pb-12 sm:pb-16">
+        <div className="rounded-3xl border-2 border-teal-200 bg-white p-8 text-center space-y-4 shadow-sm max-w-xl mx-auto">
+          <div className="flex size-16 items-center justify-center rounded-2xl bg-teal-50 text-[#00a896] mx-auto border border-teal-200">
+            <FlaskConical className="size-8" />
+          </div>
+          <div className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
+              Estudio Seleccionado: {selectedStudy?.name || 'Práctica Diagnóstica'}
+            </span>
+            <h3 className="text-xl font-bold text-slate-900 font-heading">
+              Servicio Diagnóstico Centralizado
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600">
+              Este estudio se coordina directamente por equipamiento en {selectedCenter.name}. No requiere selección de médico de consultorio.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row justify-center gap-3 pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onBackToSpecialty}
+              className="h-11 text-xs sm:text-sm font-semibold cursor-pointer"
+            >
+              <ChevronLeft className="size-4 mr-1" />
+              Cambiar Estudio
+            </Button>
+            <Button
+              type="button"
+              onClick={onProceed}
+              className="h-11 px-6 text-xs sm:text-sm font-bold bg-gradient-to-r from-[#005a87] to-[#00a896] hover:opacity-95 text-white cursor-pointer"
+            >
+              <span>Elegir Fecha y Horario</span>
+              <ChevronRight className="size-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="space-y-4 sm:space-y-6 pb-12 sm:pb-16">
       {/* 1. Context Banner: Especialidad e Institución seleccionadas */}
@@ -154,7 +201,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
               Especialidad e Institución
             </span>
             <h3 className="text-base sm:text-lg font-bold text-slate-900 font-heading truncate">
-              {selectedSpecialty.name}
+              {selectedSpecialty?.name || ''}
             </h3>
             <span className="text-xs sm:text-sm text-slate-500 truncate block">
               {selectedCenter.name} • {selectedCenter.address}
@@ -256,7 +303,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                       {doctor.name}
                     </h3>
                     <span className="text-xs text-slate-500 line-clamp-1 mt-0.5">
-                      {selectedSpecialty.name}
+                      {selectedSpecialty?.name || ''}
                     </span>
                   </div>
 
@@ -359,7 +406,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                     {modalDoctor.name}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                    {selectedSpecialty.name}
+                    {selectedSpecialty?.name || ''}
                   </p>
                 </div>
               </div>

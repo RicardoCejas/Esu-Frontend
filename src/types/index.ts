@@ -32,6 +32,10 @@ export interface CentroSalud {
   ciudad: string;
   horarioAtencion: string;
   disponibleGuardia: boolean;
+  activo?: boolean;
+  permiteConsultas?: boolean;
+  permiteEstudios?: boolean;
+  estudiosDisponibles?: string[];
 }
 
 export interface Especialidad {
@@ -182,6 +186,9 @@ export interface Turno {
   // HU-FE-63: Sobreturnos
   esSobreturno?: boolean;
   motivoSobreturno?: string;
+  tipoAtencion?: 'CONSULTA' | 'ESTUDIO' | string;
+  servicio?: string;
+  especialidadId?: string | number;
 }
 
 export interface SobreturnoRequest {

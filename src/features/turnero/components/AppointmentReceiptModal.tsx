@@ -60,8 +60,8 @@ COBERTURA: ${appointment.patient.healthInsurance || 'Particular'}
 
 CENTRO DE SALUD: ${appointment.center.name}
 DIRECCIÓN: ${appointment.center.address}
-PROFESIONAL: ${appointment.doctor.name}
-ESPECIALIDAD: ${appointment.specialty.name}
+PROFESIONAL: ${appointment.doctor?.name || 'Servicio Diagnóstico Centralizado'}
+ESPECIALIDAD: ${appointment.specialty?.name || appointment.servicio || 'Estudio Diagnóstico'}
 
 FECHA: ${appointment.date}
 HORA: ${appointment.slot.time} hs
@@ -92,7 +92,7 @@ Guardia Hospital Aurelio Crespo: 107 / (03549) 422111
       `🏥 *Turno Confirmado en ESU Cruz del Eje*\n\n` +
       `📅 *Fecha:* ${appointment.date}\n` +
       `⏰ *Hora:* ${appointment.slot.time} hs\n` +
-      `👨‍⚕️ *Médico:* ${appointment.doctor.name} (${appointment.specialty.name})\n` +
+      `👨‍⚕️ *Atención:* ${appointment.doctor ? `${appointment.doctor.name} (${appointment.specialty?.name || ''})` : (appointment.servicio || 'Servicio Diagnóstico')}\n` +
       `🏢 *Lugar:* ${appointment.center.name} (${appointment.center.address})\n` +
       `🎫 *Código:* ${appointment.bookingCode}\n\n` +
       `_Presente el código en recepción al llegar._`
@@ -165,7 +165,7 @@ Guardia Hospital Aurelio Crespo: 107 / (03549) 422111
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-sky-600 shrink-0" />
               <span className="font-semibold text-foreground">
-                {appointment.doctor.name} <span className="text-sky-700 font-normal">({appointment.specialty.name})</span>
+                {appointment.doctor?.name || appointment.servicio || 'Servicio Diagnóstico'} {appointment.specialty ? <span className="text-sky-700 font-normal">({appointment.specialty.name})</span> : null}
               </span>
             </div>
 

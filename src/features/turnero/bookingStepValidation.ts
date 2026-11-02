@@ -57,13 +57,20 @@ export function canSelectDate(date: string, now = new Date()): boolean {
 
 export function canProceedToPatient(
   center: CenterSelection,
-  specialty: SpecialtySelection,
-  doctor: DoctorSelection,
+  specialty: SpecialtySelection | null,
+  doctor: DoctorSelection | null,
   date: string,
   slot: SlotSelection,
   availableSlots: AppointmentSlot[],
   now = new Date(),
+  isStudy = false,
 ): boolean {
+  if (isStudy) {
+    if (!center?.id || !date || !slot?.id) return false
+    const currentSlot = availableSlots.find((candidate) => candidate.id === slot?.id)
+    return Boolean(currentSlot && isBookableSlot(currentSlot, date, now))
+  }
+
   if (!bookingStepSchemas.slot.safeParse({
     centerId: center?.id,
     specialtyId: specialty?.id,
