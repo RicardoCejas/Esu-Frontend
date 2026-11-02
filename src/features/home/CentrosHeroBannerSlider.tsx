@@ -31,7 +31,7 @@ export const BANNER_SLIDES: BannerSlide[] = [
     subtitle: 'Hospital público cabecera regional con internación, terapia intensiva y atención médica ambulatoria integral.',
     buttonText: 'Guardia y Turnos',
     buttonLink: '/turnero',
-    bgImage: '/centros/hospital_aurelio_crespo.jpg',
+    bgImage: '/centros/hospital_aurelio_crespo.webp',
     detalles: {
       nombreCompleto: 'Hospital Provincial Dr. Aurelio Crespo',
       tipo: 'Hospital Público Provincial de Agudos',
@@ -69,7 +69,7 @@ export const BANNER_SLIDES: BannerSlide[] = [
     subtitle: 'En Clínica Cabrera trabajamos con Obras Sociales. La mejor calidad de salud te la ofrecemos nosotros.',
     buttonText: 'Obras Sociales y Turnos',
     buttonLink: '/turnero',
-    bgImage: '/centros/clinica_cabrera.jpg',
+    bgImage: '/centros/clinica_cabrera.webp',
     detalles: {
       nombreCompleto: 'Clínica Cabrera - Cruz del Eje',
       tipo: 'Clínica Médica y Atención con Obras Sociales',
@@ -87,7 +87,7 @@ export const BANNER_SLIDES: BannerSlide[] = [
     titleSecondary: 'CRUZ DEL EJE',
     subtitle: 'El centro de diagnóstico con la mejor tecnología de toda la región norte de la Pcia. de Córdoba.',
     buttonText: 'Más Información',
-    bgImage: '/centros/centro_diagnostico_v2.jpg',
+    bgImage: '/centros/centro_diagnostico_v2.webp',
     detalles: {
       nombreCompleto: 'Centro de Diagnóstico por Imágenes Cruz del Eje',
       tipo: 'Diagnóstico de Alta Complejidad',
@@ -151,9 +151,15 @@ export const CentrosHeroBannerSlider: React.FC = () => {
       {/* Contenedor del Slide Activo con Transición Suave */}
       <div className="relative min-h-[380px] sm:min-h-[440px] md:min-h-[480px] w-full flex items-center">
         {/* Foto de Fondo con Nitidez Total */}
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-all duration-700"
-          style={{ backgroundImage: `url(${slide.bgImage})` }}
+        <img
+          src={slide.bgImage}
+          alt={`${slide.titlePrimary} ${slide.titleSecondary}`}
+          width="1440"
+          height="480"
+          fetchPriority={currentSlide === 0 ? "high" : "auto"}
+          loading={currentSlide === 0 ? "eager" : "lazy"}
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 pointer-events-none"
         />
 
         {/* Overlay Oscuro Sutil Elegante (Idéntico a la imagen de referencia para que la foto y las letras se aprecien al 100%) */}
@@ -162,7 +168,7 @@ export const CentrosHeroBannerSlider: React.FC = () => {
         {/* Flechas de Navegación Lateral Minimalistas (Idénticas a la imagen de referencia) */}
         <button
           onClick={handlePrev}
-          className="absolute left-3 sm:left-6 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center text-white/70 hover:text-white hover:scale-110 transition cursor-pointer"
+          className="absolute left-3 sm:left-6 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center text-white/70 hover:text-white hover:scale-110 transition cursor-pointer"
           aria-label="Anterior"
         >
           <ChevronLeft className="h-8 w-8 sm:h-10 sm:w-10 stroke-[1.5]" />
@@ -170,7 +176,7 @@ export const CentrosHeroBannerSlider: React.FC = () => {
 
         <button
           onClick={handleNext}
-          className="absolute right-3 sm:right-6 z-20 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center text-white/70 hover:text-white hover:scale-110 transition cursor-pointer"
+          className="absolute right-3 sm:right-6 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center text-white/70 hover:text-white hover:scale-110 transition cursor-pointer"
           aria-label="Siguiente"
         >
           <ChevronRight className="h-8 w-8 sm:h-10 sm:w-10 stroke-[1.5]" />
@@ -239,6 +245,9 @@ export const CentrosHeroBannerSlider: React.FC = () => {
               <img
                 src={modalSlide.bgImage}
                 alt={modalSlide.detalles.nombreCompleto}
+                width="600"
+                height="176"
+                loading="lazy"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-end p-5 text-white">
@@ -253,6 +262,7 @@ export const CentrosHeroBannerSlider: React.FC = () => {
               </div>
               <button
                 onClick={() => setModalSlide(null)}
+                aria-label="Cerrar modal"
                 className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/90 transition cursor-pointer"
               >
                 <X className="h-4 w-4" />
