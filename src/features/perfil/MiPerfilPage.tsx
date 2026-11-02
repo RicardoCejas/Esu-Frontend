@@ -4,6 +4,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { pacientesService } from '@/api/pacientesService';
 import { AuditoriaSesionesSection } from './components/AuditoriaSesionesSection';
+import { CambiarPasswordSection } from './components/CambiarPasswordSection';
+import { ValidacionDniModal } from '@/components/auth/ValidacionDniModal';
+import { esPacienteDniVerificado } from '@/lib/identityValidation';
 import {
   User,
   Phone,
@@ -12,6 +15,7 @@ import {
   HeartPulse,
   AlertCircle,
   CheckCircle2,
+  ShieldAlert,
   Save,
   Ambulance,
   CreditCard,
@@ -99,6 +103,7 @@ export const MiPerfilPage: React.FC = () => {
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
   const [dniInput, setDniInput] = useState(user?.dni || '');
   const [isEditingDni, setIsEditingDni] = useState(false);
+  const [mostrarModalValidacionDni, setMostrarModalValidacionDni] = useState(false);
 
   useEffect(() => {
     if (user?.dni) {
@@ -291,7 +296,24 @@ export const MiPerfilPage: React.FC = () => {
           <div className="space-y-3 text-xs">
             <div>
               <div className="flex items-center justify-between">
-                <label className="text-xs sm:text-sm font-bold text-slate-700">DNI / Documento de Identidad</label>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs sm:text-sm font-bold text-slate-700">DNI / Documento de Identidad</label>
+                  {user?.rol === 'PACIENTE' && (
+                    esPacienteDniVerificado(user) ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100/90 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                        <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Identidad Validada
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setMostrarModalValidacionDni(true)}
+                        className="inline-flex items-center gap-1 rounded-full bg-amber-100 hover:bg-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800 transition cursor-pointer"
+                      >
+                        <ShieldAlert className="h-3 w-3 text-amber-700" /> Validar con Trámite
+                      </button>
+                    )
+                  )}
+                </div>
                 {!isEditingDni ? (
                   <button
                     type="button"
@@ -769,6 +791,9 @@ export const MiPerfilPage: React.FC = () => {
         </section>
       </div>
 
+      {/* Cambio de Contraseña y Seguridad de Cuenta */}
+      <CambiarPasswordSection />
+
       {/* HU-72: Auditoría de Seguridad y Sesiones Activas */}
       <AuditoriaSesionesSection />
 
@@ -868,6 +893,12 @@ export const MiPerfilPage: React.FC = () => {
           </div>
         </div>
       )}
+      <ValidacionDniModal
+        isOpen={mostrarModalValidacionDni}
+        onClose={() => setMostrarModalValidacionDni(false)}
+        onSuccess={() => setMostrarModalValidacionDni(false)}
+        isMandatory={false}
+      />
     </div>
   );
 };

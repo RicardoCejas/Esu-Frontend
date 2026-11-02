@@ -19,6 +19,8 @@ export interface User {
   twoFactorEnabled?: boolean; // HU-42
   emailVerified?: boolean; // HU-43
   isDeveloper?: boolean;
+  fechaNacimiento?: string;
+  dniVerificado?: boolean;
 }
 
 export interface CentroSalud {
