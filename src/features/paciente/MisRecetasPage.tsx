@@ -101,7 +101,7 @@ export const MisRecetasPage: React.FC = () => {
         <div className="space-y-1">
           <p className="font-bold text-sm">¿Cómo retirar tus medicamentos en farmacia?</p>
           <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs sm:text-sm">
-            Presentá el código QR en la farmacia del Hospital Regional Aurelio Crespo o en tu dispensario barrial asignado junto con tu DNI físico. Las recetas cuentan con firma digital homologada bajo la Ley 27.553.
+            Presentá el código QR en la farmacia del Hospital Provincial Dr. Aurelio Crespo o en tu dispensario barrial asignado junto con tu DNI físico. Las recetas cuentan con firma digital homologada bajo la Ley 27.553.
           </p>
         </div>
       </div>
@@ -305,7 +305,7 @@ export const MisRecetasPage: React.FC = () => {
                     </span>
                     <span className="flex items-center gap-1.5 text-xs">
                       <Building2 className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
-                      <span className="font-semibold text-foreground">Emisor:</span> {receta.centroSaludEmisorNombre || 'Hospital Regional Aurelio Crespo'}
+                      <span className="font-semibold text-foreground">Emisor:</span> {receta.centroSaludEmisorNombre || 'Hospital Provincial Dr. Aurelio Crespo'}
                     </span>
                   </div>
 
@@ -329,7 +329,7 @@ export const MisRecetasPage: React.FC = () => {
                       <Clock className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
                       <span>
                         <strong className="font-semibold">Lugar sugerido de retiro:</strong>{' '}
-                        {receta.lugarRetiroSugerido || 'Farmacia Hospital Regional Aurelio Crespo o Dispensario Barrial'}
+                        {receta.lugarRetiroSugerido || 'Farmacia Hospital Provincial Dr. Aurelio Crespo o Dispensario Barrial'}
                       </span>
                     </div>
                   )}
@@ -366,7 +366,7 @@ export const MisRecetasPage: React.FC = () => {
 
             <div className="space-y-1 text-xs text-muted-foreground">
               <p className="font-semibold text-foreground">
-                {selectedRecetaQr.centroSaludEmisorNombre || 'Hospital Regional Aurelio Crespo'}
+                {selectedRecetaQr.centroSaludEmisorNombre || 'Hospital Provincial Dr. Aurelio Crespo'}
               </p>
               <p>
                 Presentá este código QR en la farmacia para validar e ingresar la entrega oficial bajo la Ley 27.553.

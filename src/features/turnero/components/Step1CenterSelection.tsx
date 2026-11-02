@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
-import { Search, MapPin, Phone, Building2, ChevronRight, X, LayoutGrid, List, Check, ArrowRight } from 'lucide-react'
+import { Search, MapPin, Phone, Building2, ChevronRight, X, LayoutGrid, List, Check, ArrowRight, Stethoscope, FlaskConical } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import type { HealthCenter, CenterType } from '../types'
+import type { HealthCenter, CenterType, TipoAtencionTurno } from '../types'
 
 interface Step1CenterSelectionProps {
   centers: HealthCenter[]
@@ -12,7 +12,8 @@ interface Step1CenterSelectionProps {
   onSearchChange: (value: string) => void
   typeFilter: CenterType | 'ALL'
   onTypeFilterChange: (type: CenterType | 'ALL') => void
-  onSelectCenter: (center: HealthCenter) => void
+  onSelectCenter: (center: HealthCenter, autoAdvance?: boolean, preferredCategory?: TipoAtencionTurno) => void
+  tipoAtencion?: TipoAtencionTurno
   onProceed?: () => void
 }
 
@@ -62,29 +63,30 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
   onTypeFilterChange,
   onSelectCenter,
   onProceed,
+  tipoAtencion,
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [modalCenter, setModalCenter] = useState<HealthCenter | null>(null)
+  const [modalCategory, setModalCategory] = useState<TipoAtencionTurno>(tipoAtencion || 'CONSULTA')
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const handleCardClick = (center: HealthCenter) => {
-    if (selectedCenter?.id === center.id) {
-      onSelectCenter(center)
-      if (onProceed) {
-        onProceed()
-      }
-      return
-    }
     setModalCenter(center)
+    if (!center.permiteConsultas && center.permiteEstudios) {
+      setModalCategory('ESTUDIO')
+    } else {
+      setModalCategory('CONSULTA')
+    }
     setIsModalOpen(true)
   }
 
-  const handleConfirmCenter = () => {
+  const handleConfirmCenter = (cat?: TipoAtencionTurno) => {
     if (!modalCenter) return
     const centerToProceed = modalCenter
+    const finalCategory = cat || modalCategory
     setIsModalOpen(false)
     setModalCenter(null)
-    onSelectCenter(centerToProceed)
+    onSelectCenter(centerToProceed, true, finalCategory)
     if (onProceed) {
       onProceed()
     }
@@ -407,9 +409,9 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
               </button>
             </div>
 
-            {/* Cuerpo del Pop-up con Detalles */}
+            {/* Cuerpo del Pop-up con Selección de Categoría */}
             <div className="p-6 space-y-4 text-xs sm:text-sm">
-              <div className="rounded-2xl bg-sky-50/70 border border-sky-100 p-4 space-y-2.5">
+              <div className="rounded-2xl bg-sky-50/70 border border-sky-100 p-4 space-y-2">
                 <div className="flex items-center gap-2 text-slate-700">
                   <MapPin className="size-4 text-[#005a87] shrink-0" />
                   <span className="font-semibold">{modalCenter.address}, {modalCenter.neighborhood}</span>
@@ -418,11 +420,91 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                   <Phone className="size-4 text-[#00a896] shrink-0" />
                   <span className="font-semibold">{modalCenter.phone}</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-700 pt-1.5 border-t border-sky-100">
-                  <span className="text-xs font-bold text-[#005a87]">
-                    {modalCenter.specialtiesCount} Especialidades médicas habilitadas
-                  </span>
-                </div>
+              </div>
+
+              {/* Opciones según lo que ofrece el centro */}
+              <div className="space-y-2.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
+                  Seleccioná el tipo de atención que necesitás:
+                </span>
+
+                {modalCenter.permiteConsultas && modalCenter.permiteEstudios && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setModalCategory('CONSULTA')}
+                      className={`p-4 rounded-2xl border-2 text-left transition cursor-pointer flex flex-col justify-between gap-2 ${
+                        modalCategory === 'CONSULTA'
+                          ? 'border-[#005a87] bg-sky-50/80 shadow-md ring-2 ring-[#005a87]/20'
+                          : 'border-slate-200 hover:border-sky-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex size-9 items-center justify-center rounded-xl bg-[#005a87] text-white">
+                          <Stethoscope className="size-5" />
+                        </div>
+                        <span className="font-bold text-slate-900 text-sm">Consultas con Profesionales</span>
+                      </div>
+                      <p className="text-xs text-slate-600">
+                        Atención médica ambulatoria por especialidad y médicos de consultorio.
+                      </p>
+                      {modalCategory === 'CONSULTA' && (
+                        <span className="text-[11px] font-bold text-[#005a87] flex items-center gap-1">
+                          <Check className="size-3.5" /> Seleccionado
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setModalCategory('ESTUDIO')}
+                      className={`p-4 rounded-2xl border-2 text-left transition cursor-pointer flex flex-col justify-between gap-2 ${
+                        modalCategory === 'ESTUDIO'
+                          ? 'border-[#00a896] bg-teal-50/80 shadow-md ring-2 ring-[#00a896]/20'
+                          : 'border-slate-200 hover:border-teal-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex size-9 items-center justify-center rounded-xl bg-[#00a896] text-white">
+                          <FlaskConical className="size-5" />
+                        </div>
+                        <span className="font-bold text-slate-900 text-sm">Estudios y Prácticas</span>
+                      </div>
+                      <p className="text-xs text-slate-600">
+                        Laboratorio de análisis clínicos, radiografías y ecografías disponibles.
+                      </p>
+                      {modalCategory === 'ESTUDIO' && (
+                        <span className="text-[11px] font-bold text-[#00a896] flex items-center gap-1">
+                          <Check className="size-3.5" /> Seleccionado
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {modalCenter.permiteConsultas && !modalCenter.permiteEstudios && (
+                  <div className="p-4 rounded-2xl border-2 border-[#005a87] bg-sky-50/70 space-y-1.5">
+                    <div className="flex items-center gap-2 text-[#005a87] font-bold text-sm">
+                      <Stethoscope className="size-4" />
+                      <span>Solo Consultas con Profesionales</span>
+                    </div>
+                    <p className="text-xs text-slate-600">
+                      Este sanatorio ofrece exclusivamente atención médica ambulatoria en consultorios. No ofrece servicios de laboratorio, radiografía ni ecografías.
+                    </p>
+                  </div>
+                )}
+
+                {!modalCenter.permiteConsultas && modalCenter.permiteEstudios && (
+                  <div className="p-4 rounded-2xl border-2 border-[#00a896] bg-teal-50/70 space-y-1.5">
+                    <div className="flex items-center gap-2 text-[#00a896] font-bold text-sm">
+                      <FlaskConical className="size-4" />
+                      <span>Solo Estudios y Prácticas Diagnósticas</span>
+                    </div>
+                    <p className="text-xs text-slate-600">
+                      Centro especializado en diagnóstico y prácticas médicas. No ofrece consultas médicas ambulatorias ni médicos de consultorio.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Botones de acción del Pop-up */}
@@ -441,10 +523,14 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
 
                 <Button
                   type="button"
-                  onClick={handleConfirmCenter}
+                  onClick={() => handleConfirmCenter()}
                   className="w-full sm:w-auto h-11 px-6 rounded-xl bg-gradient-to-r from-[#005a87] to-[#00a896] hover:opacity-95 text-white font-bold text-xs sm:text-sm shadow-md shadow-[#005a87]/25 flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-102"
                 >
-                  <span>Siguiente: Elegir Especialidad</span>
+                  <span>
+                    {modalCategory === 'ESTUDIO'
+                      ? 'Siguiente: Elegir Estudio / Práctica'
+                      : 'Siguiente: Elegir Especialidad'}
+                  </span>
                   <ArrowRight className="size-4 ml-0.5" />
                 </Button>
               </div>

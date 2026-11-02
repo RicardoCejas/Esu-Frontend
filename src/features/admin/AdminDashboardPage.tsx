@@ -231,7 +231,7 @@ export const AdminDashboardPage: React.FC = () => {
               className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="TODOS">Todos los Centros (Red Cruz del Eje)</option>
-              {centros.map((c) => (
+              {centros.filter((c) => c.activo !== false).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nombre}
                 </option>

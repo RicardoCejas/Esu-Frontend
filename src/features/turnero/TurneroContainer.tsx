@@ -48,6 +48,10 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
   const {
     currentStep,
     selectedCenter,
+    tipoAtencion,
+    setTipoAtencion,
+    selectedStudy,
+    availableStudies,
     centerSearch,
     setCenterSearch,
     centerTypeFilter,
@@ -73,6 +77,7 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
     handleSelectCenter,
     handleProceedToSpecialty,
     handleSelectSpecialty,
+    handleSelectStudy,
     handleProceedToDoctor,
     handleSelectDoctor,
     handleProceedToDateTime,
@@ -217,11 +222,12 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
             <Step1CenterSelection
               centers={filteredCenters}
               selectedCenter={selectedCenter}
+              tipoAtencion={tipoAtencion}
               searchTerm={centerSearch}
               onSearchChange={setCenterSearch}
               typeFilter={centerTypeFilter}
               onTypeFilterChange={setCenterTypeFilter}
-              onSelectCenter={(center) => handleSelectCenter(center, true)}
+              onSelectCenter={(center, auto, pref) => handleSelectCenter(center, auto, pref)}
               onProceed={handleProceedToSpecialty}
             />
           )}
@@ -229,20 +235,27 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
           {currentStep === 2 && selectedCenter && (
             <Step2SpecialtySelection
               selectedCenter={selectedCenter}
+              tipoAtencion={tipoAtencion}
               specialties={availableSpecialties}
               selectedSpecialty={selectedSpecialty}
+              studies={availableStudies}
+              selectedStudy={selectedStudy}
               searchTerm={specialtySearch}
               onSearchChange={setSpecialtySearch}
               onSelectSpecialty={handleSelectSpecialty}
+              onSelectStudy={handleSelectStudy}
+              onChangeCategory={setTipoAtencion}
               onBackToCenter={() => handleGoToStep(1)}
               onProceed={handleProceedToDoctor}
             />
           )}
 
-          {currentStep === 3 && selectedCenter && selectedSpecialty && (
+          {currentStep === 3 && selectedCenter && (selectedSpecialty || tipoAtencion === 'ESTUDIO') && (
             <Step3DoctorSelection
               selectedCenter={selectedCenter}
               selectedSpecialty={selectedSpecialty}
+              selectedStudy={selectedStudy}
+              tipoAtencion={tipoAtencion}
               doctors={availableDoctors}
               selectedDoctor={selectedDoctor}
               onSelectDoctor={handleSelectDoctor}
@@ -251,10 +264,12 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
             />
           )}
 
-          {currentStep === 4 && selectedDoctor && selectedSpecialty && (
+          {currentStep === 4 && ((tipoAtencion === 'ESTUDIO' && selectedStudy) || (selectedDoctor && selectedSpecialty)) && (
             <Step4DateTimeSelection
               selectedDoctor={selectedDoctor}
               selectedSpecialty={selectedSpecialty}
+              selectedStudy={selectedStudy}
+              tipoAtencion={tipoAtencion}
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
               morningSlots={morningSlots}
@@ -267,11 +282,11 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
               bookingError={bookingError}
               onRetryAvailability={retryAvailability}
               onProceed={handleProceedToConfirmation}
-              onBackToDoctor={() => handleGoToStep(3)}
+              onBackToDoctor={() => handleGoToStep(tipoAtencion === 'ESTUDIO' ? 2 : 3)}
             />
           )}
 
-          {currentStep === 5 && selectedCenter && selectedSpecialty && selectedDoctor && selectedSlot && (
+          {currentStep === 5 && selectedCenter && selectedSlot && ((tipoAtencion === 'ESTUDIO' && selectedStudy) || (selectedSpecialty && selectedDoctor)) && (
             <div className="space-y-4">
               {isPatientExistingError && (
                 <div className="rounded-2xl border border-sky-300 bg-sky-50 p-4 shadow-sm space-y-2">

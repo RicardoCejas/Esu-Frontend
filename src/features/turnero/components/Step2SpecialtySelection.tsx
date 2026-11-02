@@ -33,15 +33,20 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import type { HealthCenter, MedicalSpecialty } from '../types'
+import type { HealthCenter, MedicalSpecialty, DiagnosticStudy, TipoAtencionTurno } from '../types'
 
 interface Step2SpecialtySelectionProps {
   selectedCenter: HealthCenter
+  tipoAtencion?: TipoAtencionTurno
   specialties: MedicalSpecialty[]
   selectedSpecialty: MedicalSpecialty | null
+  studies?: DiagnosticStudy[]
+  selectedStudy?: DiagnosticStudy | null
   searchTerm: string
   onSearchChange: (value: string) => void
   onSelectSpecialty: (specialty: MedicalSpecialty) => void
+  onSelectStudy?: (study: DiagnosticStudy) => void
+  onChangeCategory?: (category: TipoAtencionTurno) => void
   onBackToCenter: () => void
   onProceed?: () => void
 }
@@ -183,20 +188,36 @@ const FRECUENTES_KEYWORDS = [
 
 export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = ({
   selectedCenter,
+  tipoAtencion = 'CONSULTA',
   specialties,
   selectedSpecialty,
+  studies = [],
+  selectedStudy,
   searchTerm,
   onSearchChange,
   onSelectSpecialty,
+  onSelectStudy,
+  onChangeCategory,
   onBackToCenter,
   onProceed,
 }) => {
   const [filterMode, setFilterMode] = useState<'TODAS' | 'FRECUENTES'>('TODAS')
   const [sortAlphabetical, setSortAlphabetical] = useState<boolean>(false)
   const [modalSpecialty, setModalSpecialty] = useState<MedicalSpecialty | null>(null)
+  const [modalStudy, setModalStudy] = useState<DiagnosticStudy | null>(null)
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 
   // Filtrado y ordenamiento dinámico
+  const filteredStudies = useMemo(() => {
+    if (!studies) return []
+    let list = [...studies]
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase().trim()
+      list = list.filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q))
+    }
+    return list
+  }, [studies, searchTerm])
+
   const filteredSpecialties = useMemo(() => {
     let list = [...specialties]
 
@@ -241,6 +262,12 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
   }, [isModalOpen])
 
   // Al hacer clic en una especialidad: se selecciona y abre el Pop-Up interactivo
+  const handleStudyCardClick = (study: DiagnosticStudy) => {
+    onSelectStudy?.(study)
+    setModalStudy(study)
+    setIsModalOpen(true)
+  }
+
   const handleCardClick = (specialty: MedicalSpecialty) => {
     onSelectSpecialty(specialty)
     setModalSpecialty(specialty)
@@ -250,6 +277,9 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
   // Confirmar desde el Pop-up y avanzar a la selección de turnos / médicos
   const handleConfirmModal = () => {
     setIsModalOpen(false)
+    if (modalStudy && onSelectStudy) {
+      onSelectStudy(modalStudy)
+    }
     if (onProceed) {
       onProceed()
     }
@@ -296,16 +326,52 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
       <div className="flex flex-col gap-4 rounded-2xl sm:rounded-3xl border border-sky-100 bg-white/95 backdrop-blur-md p-4 sm:p-5 shadow-xs lg:flex-row lg:items-center lg:justify-between relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#005a87] via-[#0284c7] to-[#00a896]" />
 
-        {/* Título y contador con acento azul vertical */}
-        <div className="flex items-start gap-3">
-          <div className="w-1.5 h-10 sm:h-11 bg-[#005a87] rounded-full shrink-0 mt-0.5" />
-          <div>
-            <h2 className="text-lg sm:text-2xl font-bold text-slate-900 font-heading leading-tight">
-              2. Seleccione la Especialidad Médica
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
-              Mostrando {filteredSpecialties.length} de {specialties.length} especialidades habilitadas
-            </p>
+        {/* Título y selector de categoría */}
+        <div className="space-y-3">
+          {/* Selector de categoría si el centro ofrece ambas */}
+          {selectedCenter.permiteConsultas && selectedCenter.permiteEstudios && onChangeCategory && (
+            <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
+              <button
+                type="button"
+                onClick={() => onChangeCategory('CONSULTA')}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  tipoAtencion === 'CONSULTA'
+                    ? 'bg-[#005a87] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Stethoscope className="size-3.5" />
+                <span>Consultas con Profesionales</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onChangeCategory('ESTUDIO')}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  tipoAtencion === 'ESTUDIO'
+                    ? 'bg-[#00a896] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <FlaskConical className="size-3.5" />
+                <span>Estudios y Prácticas</span>
+              </button>
+            </div>
+          )}
+
+          <div className="flex items-start gap-3">
+            <div className={`w-1.5 h-10 sm:h-11 rounded-full shrink-0 mt-0.5 ${tipoAtencion === 'ESTUDIO' ? 'bg-[#00a896]' : 'bg-[#005a87]'}`} />
+            <div>
+              <h2 className="text-lg sm:text-2xl font-bold text-slate-900 font-heading leading-tight">
+                {tipoAtencion === 'ESTUDIO'
+                  ? '2. Seleccione el Estudio o Práctica Diagnóstica'
+                  : '2. Seleccione la Especialidad Médica'}
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
+                {tipoAtencion === 'ESTUDIO'
+                  ? `Mostrando ${filteredStudies.length} de ${studies.length} estudios habilitados en este centro`
+                  : `Mostrando ${filteredSpecialties.length} de ${specialties.length} especialidades habilitadas`}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -382,7 +448,58 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
 
       {/* 3. Cuadrícula en GRUPOS DE 4 COLUMNAS (1 col móvil, 2 en tablet, 4 en desktop) */}
       {/* Scroll fluido y continuo: bajan naturalmente con el scroll de la página */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+      {tipoAtencion === 'ESTUDIO' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+          {filteredStudies.map((study) => {
+            const isSelected = selectedStudy?.id === study.id;
+            return (
+              <div
+                key={study.id}
+                onClick={() => handleStudyCardClick(study)}
+                className={`rounded-2xl border-2 p-5 transition-all cursor-pointer flex flex-col justify-between gap-4 bg-white shadow-xs hover:shadow-md ${
+                  isSelected
+                    ? 'border-[#00a896] ring-2 ring-[#00a896]/20 bg-teal-50/20'
+                    : 'border-slate-200 hover:border-[#00a896]'
+                }`}
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex size-12 items-center justify-center rounded-xl bg-teal-50 border border-teal-200 text-[#00a896]">
+                      <FlaskConical className="size-6" />
+                    </div>
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
+                      {study.category}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 font-heading">
+                      {study.name}
+                    </h3>
+                    <p className="text-xs text-slate-600 mt-1">
+                      {study.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                  <span className="text-xs font-semibold text-teal-700">
+                    Servicio institucional
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-9 px-4 text-xs font-bold rounded-lg bg-[#00a896] hover:bg-[#008f80] text-white cursor-pointer"
+                  >
+                    <span>Elegir Estudio</span>
+                    <ChevronRight className="size-3.5 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {filteredSpecialties.map((specialty) => {
           const isSelected = selectedSpecialty?.id === specialty.id
           const displayName = getDisplaySpecialtyName(specialty.name)
@@ -420,6 +537,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
           )
         })}
       </div>
+      )}
 
       {/* Estado vacío cuando no hay resultados de búsqueda */}
       {filteredSpecialties.length === 0 && (
@@ -447,7 +565,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
       )}
 
       {/* 4. Pop-up Modal Elaborado para Confirmar y Avanzar a Sacar Turnos */}
-      {isModalOpen && modalSpecialty && (
+      {isModalOpen && (modalSpecialty || modalStudy) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div
             className="w-full max-w-lg rounded-3xl border border-sky-100 bg-white shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200 text-left"
@@ -477,10 +595,10 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
                     <Sparkles className="size-3" /> Especialidad Seleccionada
                   </span>
                   <h3 className="text-xl font-bold text-slate-900 font-heading mt-1">
-                    {modalDisplayName}
+                    {modalStudy ? modalStudy.name : modalDisplayName}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
-                    {modalSpecialty.description}
+                    {modalStudy ? modalStudy.description : modalSpecialty?.description}
                   </p>
                 </div>
               </div>
@@ -498,7 +616,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
                 <div className="flex items-center gap-2.5 text-slate-600 pt-2 border-t border-sky-100/70">
                   <UserCheck className="size-4 text-emerald-600 shrink-0" />
                   <span>
-                    <strong>{modalSpecialty.totalDoctors} profesionales</strong> disponibles para esta especialidad
+                    {modalStudy ? <strong>Servicio diagnóstico institucional habilitado</strong> : <><strong>{modalSpecialty?.totalDoctors || 0} profesionales</strong> disponibles para esta especialidad</>}
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5 text-slate-500">

@@ -121,10 +121,15 @@ export const MisTurnosPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Mis Turnos Médicos</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Mis Turnos Médicos y Estudios</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Consulta el estado de tus citas, descarga comprobantes con código QR o solicita nuevos turnos.
+            Consulta tus consultas médicas y turnos de estudios diagnósticos en los centros de salud de Cruz del Eje.
           </p>
+          <div className="mt-2 inline-flex items-center gap-2 rounded-lg bg-muted/60 px-2.5 py-1 text-[11px] text-muted-foreground border border-border/60">
+            <span className="font-semibold text-foreground">Centro habitual / de referencia:</span>
+            <span>{user?.centroSaludNombre || 'Hospital Provincial Dr. Aurelio Crespo'}</span>
+            <span className="text-[10px] text-muted-foreground/80">(cabecera asignada; la atención física se realiza en el centro específico indicado en cada turno)</span>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
@@ -278,15 +283,37 @@ export const MisTurnosPage: React.FC = () => {
                   className="flex flex-col justify-between rounded-xl border border-border bg-card p-5 shadow-xs hover:border-primary/40 transition-all space-y-4"
                 >
                   <div className="space-y-3">
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-between gap-2">
+                      {turno.tipoAtencion === 'ESTUDIO' ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 px-2 py-0.5 text-[11px] font-bold border border-purple-200 dark:border-purple-800">
+                          Estudio Diagnóstico
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 px-2 py-0.5 text-[11px] font-bold border border-sky-200 dark:border-sky-800">
+                          Consulta Médica
+                        </span>
+                      )}
                       {getBadgeEstado(turno.estado)}
                     </div>
 
                     <div>
-                      <h3 className="font-bold text-base text-foreground">{turno.profesionalNombre}</h3>
-                      <p className="text-xs font-semibold text-sky-700 dark:text-sky-400">
-                        {turno.especialidadNombre}
-                      </p>
+                      {turno.tipoAtencion === 'ESTUDIO' ? (
+                        <>
+                          <h3 className="font-bold text-base text-foreground">
+                            {turno.servicio || turno.especialidadNombre || 'Estudio / Práctica Diagnóstica'}
+                          </h3>
+                          <p className="text-xs font-semibold text-purple-700 dark:text-purple-400">
+                            Servicio de Diagnóstico • {turno.profesionalNombre || 'Equipo Centralizado'}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <h3 className="font-bold text-base text-foreground">{turno.profesionalNombre || 'Profesional Asignado'}</h3>
+                          <p className="text-xs font-semibold text-sky-700 dark:text-sky-400">
+                            {turno.especialidadNombre || 'Consulta General'}
+                          </p>
+                        </>
+                      )}
                     </div>
 
                     <div className="space-y-1.5 text-xs text-muted-foreground pt-1">
@@ -298,7 +325,14 @@ export const MisTurnosPage: React.FC = () => {
                       </div>
                       <div className="flex items-start gap-2">
                         <MapPin className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                        <span>{turno.centroSaludNombre}</span>
+                        <div>
+                          <span className="font-semibold text-foreground">{turno.centroSaludNombre || 'Centro de Salud'}</span>
+                          {turno.consultorioNumero && (
+                            <span className="text-muted-foreground block text-[11px]">
+                              Sede / Consultorio: {turno.consultorioNumero}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {turno.motivoConsulta && (
                         <div className="rounded-lg bg-muted p-2.5 text-[11px] text-muted-foreground border border-border">
