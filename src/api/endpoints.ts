@@ -180,6 +180,9 @@ export function extractApiErrorMessage(
     }
 
     if (typeof maybeAxios.message === 'string' && maybeAxios.message.trim()) {
+      if (maybeAxios.message.toLowerCase().includes('timeout')) {
+        return 'El servidor está tardando en responder. Por favor reintente en unos instantes.';
+      }
       return maybeAxios.message.trim();
     }
   }
