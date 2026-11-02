@@ -164,6 +164,10 @@ export const authService = {
       return { token, user };
     } catch (error: unknown) {
       if (isAxiosError<BackendAuthData>(error)) {
+        const extracted = extractApiErrorMessage(error);
+        if (extracted && extracted !== 'Error de comunicación con el servidor.') {
+          throw new Error(extracted, { cause: error });
+        }
         if (error.response?.data?.message) {
           throw new Error(error.response.data.message, { cause: error });
         }
