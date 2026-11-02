@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import type { User } from '@/types';
 import { Loader2, Sparkles, X, Mail, AlertCircle } from 'lucide-react';
@@ -32,6 +32,7 @@ declare global {
               text?: 'signin_with' | 'signup_with' | 'continue_with';
               shape?: 'rectangular' | 'pill' | 'circle';
               width?: number | string;
+              logo_alignment?: 'left' | 'center';
             }
           ) => void;
         };
@@ -51,32 +52,10 @@ export const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showDevModal, setShowDevModal] = useState(false);
   const [devEmail, setDevEmail] = useState('paciente.nuevo@gmail.com');
+  const googleBtnContainerRef = useRef<HTMLDivElement>(null);
 
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
   const isDev = Boolean(import.meta.env.DEV);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.google?.accounts?.id) {
-      return;
-    }
-
-    if (!clientId) {
-      return;
-    }
-
-    const existingScript = document.getElementById('google-gsi-client');
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.id = 'google-gsi-client';
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      script.onerror = () => {
-        console.warn('No se pudo cargar la librería de Google Identity Services.');
-      };
-      document.head.appendChild(script);
-    }
-  }, [clientId]);
 
   const handleCredentialResponse = async (response: { credential: string }) => {
     if (!response.credential) {
@@ -96,59 +75,47 @@ export const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
     }
   };
 
-  const handleButtonClick = () => {
-    if (isLoading || disabled) return;
+  useEffect(() => {
+    if (!clientId) return;
 
-    // Si no está configurado el Client ID pero estamos en desarrollo local, abrimos el simulador
-    if (!clientId) {
-      if (isDev) {
-        setShowDevModal(true);
-        return;
+    const renderGoogleButton = () => {
+      if (!window.google?.accounts?.id || !googleBtnContainerRef.current) return;
+      try {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleCredentialResponse,
+        });
+
+        googleBtnContainerRef.current.innerHTML = '';
+        window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: mode === 'signup' ? 'signup_with' : 'signin_with',
+          shape: 'rectangular',
+          width: googleBtnContainerRef.current.parentElement?.clientWidth || 320,
+          logo_alignment: 'left',
+        });
+      } catch (err) {
+        console.warn('Error al inicializar el botón de Google:', err);
       }
-      onError?.(
-        'La autenticación con Google requiere configurar VITE_GOOGLE_CLIENT_ID en las variables de entorno.'
-      );
-      return;
-    }
+    };
 
-    if (!window.google?.accounts?.id) {
-      onError?.('El servicio de Google aún se está cargando. Por favor reintente en unos instantes.');
-      return;
+    if (window.google?.accounts?.id) {
+      renderGoogleButton();
+    } else {
+      let script = document.getElementById('google-gsi-client') as HTMLScriptElement | null;
+      if (!script) {
+        script = document.createElement('script');
+        script.id = 'google-gsi-client';
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      }
+      script.addEventListener('load', renderGoogleButton);
     }
-
-    try {
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: handleCredentialResponse,
-        cancel_on_tap_outside: true,
-      });
-
-      window.google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          const tempContainer = document.createElement('div');
-          tempContainer.style.display = 'none';
-          document.body.appendChild(tempContainer);
-          window.google?.accounts?.id?.renderButton(tempContainer, {
-            type: 'standard',
-            theme: 'outline',
-            size: 'large',
-          });
-          const buttonElement = tempContainer.querySelector('div[role=button]') as HTMLElement;
-          if (buttonElement) {
-            buttonElement.click();
-          }
-          setTimeout(() => {
-            if (document.body.contains(tempContainer)) {
-              document.body.removeChild(tempContainer);
-            }
-          }, 1000);
-        }
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al inicializar Google Sign-In.';
-      onError?.(message);
-    }
-  };
+  }, [clientId, mode]);
 
   const handleSimularLoginGoogle = (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,15 +128,24 @@ export const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={handleButtonClick}
-        disabled={disabled || isLoading}
-        className={`w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 transition text-xs font-bold text-slate-700 shadow-xs disabled:opacity-50 cursor-pointer ${className}`}
-      >
-        {isLoading ? (
+      {isLoading ? (
+        <div className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
           <Loader2 className="h-4 w-4 animate-spin text-sky-600" />
-        ) : (
+          <span>Autenticando con Google...</span>
+        </div>
+      ) : !clientId ? (
+        <button
+          type="button"
+          onClick={() => {
+            if (isDev) {
+              setShowDevModal(true);
+            } else {
+              onError?.('La autenticación con Google requiere configurar VITE_GOOGLE_CLIENT_ID en las variables de entorno.');
+            }
+          }}
+          disabled={disabled || isLoading}
+          className={`w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 transition text-xs font-bold text-slate-700 shadow-xs disabled:opacity-50 cursor-pointer ${className}`}
+        >
           <svg className="h-4 w-4" viewBox="0 0 24 24">
             <path
               fill="#4285F4"
@@ -188,15 +164,18 @@ export const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
             />
           </svg>
-        )}
-        <span>
-          {isLoading
-            ? 'Conectando con Google...'
-            : mode === 'signup'
-            ? 'Registrarse con Google'
-            : 'Continuar con Google'}
-        </span>
-      </button>
+          <span>
+            {mode === 'signup' ? 'Registrarse con Google' : 'Continuar con Google'}
+          </span>
+        </button>
+      ) : (
+        <div className="w-full flex justify-center overflow-hidden rounded-xl">
+          <div
+            ref={googleBtnContainerRef}
+            className="w-full flex justify-center [&>div]:!w-full [&_iframe]:!w-full [&_iframe]:!min-w-full"
+          />
+        </div>
+      )}
 
       {/* Modal interactivo de Google Sign-In para desarrollo local */}
       {showDevModal && (
