@@ -230,7 +230,7 @@ export const Footer: React.FC = () => {
           {/* Columna 1: Identidad, Misión y Redes con Colores Originales (lg:col-span-4) */}
           <div className="space-y-4 lg:col-span-4">
             <div className="flex items-center gap-3">
-              <img src="/logo-icon.png" alt="Luvia Logo" className="h-9 w-9 object-contain" />
+              <img src="/logo-icon.png" alt="Luvia Logo" width="36" height="36" className="h-9 w-9 object-contain" />
               <div>
                 <span className="font-extrabold text-xl tracking-tight text-white font-heading">
                   Luvia <span className="text-sky-400">Cruz del Eje</span>
