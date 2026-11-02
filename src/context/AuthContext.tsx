@@ -20,7 +20,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    try {
+      return Boolean(sessionStorage.getItem('esu_session_active'));
+    } catch {
+      return false;
+    }
+  });
 
   // Inicialización de sesión segura en memoria (HU-41)
   useEffect(() => {
