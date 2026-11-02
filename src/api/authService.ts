@@ -229,6 +229,8 @@ export const authService = {
     const payload = {
       email,
       password: cleanData.password || '',
+      nombre: cleanData.nombre || '',
+      apellido: cleanData.apellido || '',
     };
 
     try {
@@ -392,6 +394,24 @@ export const authService = {
       newPassword: cleanPassword,
     });
     return true;
+  },
+
+  /**
+   * Cambio de contraseña para usuarios autenticados
+   */
+  async cambiarPassword(passwordActual: string, nuevaPassword: string): Promise<{ success: boolean; message: string }> {
+    const cleanActual = sanitizeFormData(passwordActual);
+    const cleanNueva = sanitizeFormData(nuevaPassword);
+
+    const response = await apiClient.post<{ mensaje?: string }>(API_ENDPOINTS.auth.cambiarPassword, {
+      passwordActual: cleanActual,
+      nuevaPassword: cleanNueva,
+    });
+
+    return {
+      success: true,
+      message: response.data?.mensaje || 'Contraseña actualizada exitosamente.',
+    };
   },
 
   /**
