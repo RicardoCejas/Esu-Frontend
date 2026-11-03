@@ -7,9 +7,46 @@ import {
   type CreatedTurnoResponse,
 } from './turnoCreation';
 
+const CENTER_SLUG_MAP: Record<string, number> = {
+  'cde-hosp-crespo': 1,
+  'cde-clin-cabrera': 2,
+  'cde-centro-diag': 3,
+  'cde-sanat-isabel': 5,
+};
+
+const DOCTOR_SLUG_MAP: Record<string, number> = {
+  'doc-fernandez': 1,
+  'doc-martinez': 2,
+  'doc-castro': 3,
+  'doc-gomez': 4,
+  'doc-alvarez': 5,
+  'doc-rossi': 6,
+  'doc-lucero': 7,
+  'doc-benitez': 8,
+  'doc-acosta': 9,
+  'doc-torres': 10,
+  'doc-molina': 11,
+  'doc-navarro': 12,
+  'doc-morales': 13,
+  'doc-suarez': 14,
+  'doc-peralta': 15,
+  'doc-dominguez': 16,
+  'doc-vargas': 17,
+  'doc-ibarra': 18,
+  'doc-sanchez': 19,
+  'doc-romero': 20,
+  'doc-paredes': 21,
+  'doc-correa': 22,
+  'doc-ramos': 23,
+  'doc-albarracin': 24,
+};
+
 function toNumericId(raw: string | number | undefined, fallback = 1): number {
   if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
-  const digits = String(raw ?? '').replace(/\D/g, '');
+  const str = String(raw ?? '').trim();
+  if (CENTER_SLUG_MAP[str]) return CENTER_SLUG_MAP[str];
+  if (DOCTOR_SLUG_MAP[str]) return DOCTOR_SLUG_MAP[str];
+  const digits = str.replace(/\D/g, '');
   const parsed = Number(digits);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
@@ -17,7 +54,10 @@ function toNumericId(raw: string | number | undefined, fallback = 1): number {
 function toOptionalNumericId(raw: string | number | undefined | null): number | undefined {
   if (raw === undefined || raw === null || raw === '') return undefined;
   if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
-  const digits = String(raw).replace(/\D/g, '');
+  const str = String(raw).trim();
+  if (DOCTOR_SLUG_MAP[str]) return DOCTOR_SLUG_MAP[str];
+  if (CENTER_SLUG_MAP[str]) return CENTER_SLUG_MAP[str];
+  const digits = str.replace(/\D/g, '');
   const parsed = Number(digits);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }

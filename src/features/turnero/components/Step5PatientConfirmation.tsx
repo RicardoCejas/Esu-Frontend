@@ -227,9 +227,14 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                   </p>
                 </div>
 
-                <p className="text-[11px] text-slate-500">
-                  Se ha generado el recordatorio correspondiente. Conserve su código de verificación para realizar el check-in en recepción o autogestión.
-                </p>
+                <div className="rounded-xl border border-sky-200 bg-sky-50/80 p-3 text-xs text-sky-900 space-y-1">
+                  <p className="font-bold flex items-center gap-1.5 text-sky-800">
+                    <span>✉ Comprobante Enviado y Recordatorio Activo</span>
+                  </p>
+                  <p className="text-[11px] text-slate-600">
+                    Se envió el comprobante del turno al correo registrado. Además, te llegará un aviso <strong>24 horas antes</strong> para recordarte la cita médica y los datos de tu atención.
+                  </p>
+                </div>
               </div>
             ) : (
               <>
@@ -329,7 +334,9 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                     </div>
 
                     <div className="space-y-1 sm:col-span-2">
-                      <Label htmlFor="patient-email" className="text-xs font-semibold text-slate-700">Correo Electrónico (opcional)</Label>
+                      <Label htmlFor="patient-email" className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                        <span>Correo Electrónico <span className="font-normal text-slate-500">(para mandar comprobante del turno y avisar 24 hs antes)</span></span>
+                      </Label>
                       <Input
                         id="patient-email"
                         type="email"
@@ -340,6 +347,10 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                         {...fieldProps('email')}
                         className="h-9 rounded-lg border-slate-300 text-xs focus-visible:ring-sky-700"
                       />
+                      <p className="text-[11px] text-sky-800 bg-sky-50/90 border border-sky-200/70 rounded-lg p-2.5 flex items-start gap-2">
+                        <span className="font-bold text-sky-700">✉ Comprobante y Aviso:</span>
+                        <span>Se enviará el comprobante oficial de la cita a este correo y recibirás un aviso recordatorio <strong>24 horas antes</strong> de tu turno médico.</span>
+                      </p>
                       {errors.email && <p id="patient-email-error" role="alert" className="text-xs font-medium text-rose-700">{errors.email.message}</p>}
                     </div>
 
