@@ -8,7 +8,6 @@ import {
   Mail,
   User,
   Phone,
-  CreditCard,
   Eye,
   EyeOff,
   CheckCircle2,
@@ -44,7 +43,6 @@ export const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
-    dni: '',
     email: '',
     telefono: '',
     password: '',
@@ -66,7 +64,6 @@ export const RegisterPage: React.FC = () => {
           ...prev,
           nombre: parsed.nombre || '',
           apellido: parsed.apellido || '',
-          dni: parsed.dni || '',
           email: parsed.email || '',
           telefono: parsed.telefono || '',
         }));
@@ -94,7 +91,7 @@ export const RegisterPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (!formData.nombre.trim() || !formData.apellido.trim() || !formData.dni.trim() || !formData.email.trim()) {
+    if (!formData.nombre.trim() || !formData.apellido.trim() || !formData.email.trim()) {
       setError('Por favor complete todos los campos obligatorios (*).');
       return;
     }
@@ -118,7 +115,6 @@ export const RegisterPage: React.FC = () => {
           JSON.stringify({
             nombre: formData.nombre.trim(),
             apellido: formData.apellido.trim(),
-            dni: formData.dni.trim(),
             email: formData.email.trim(),
             telefono: formData.telefono.trim(),
           })
@@ -130,7 +126,7 @@ export const RegisterPage: React.FC = () => {
       await register({
         nombre: formData.nombre.trim(),
         apellido: formData.apellido.trim(),
-        dni: formData.dni.trim(),
+        dni: '',
         email: formData.email.trim(),
         telefono: formData.telefono.trim(),
         password: formData.password,
@@ -162,7 +158,7 @@ export const RegisterPage: React.FC = () => {
     >
       <div className="absolute inset-0 bg-slate-900/5 backdrop-blur-[0.5px] pointer-events-none" />
 
-      <div className="w-full max-w-lg space-y-3 relative z-10 py-4">
+      <main id="main-content" className="w-full max-w-lg space-y-3 relative z-10 py-4">
         <Link
           to="/"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-sky-700 transition px-2 py-1 rounded-md hover:bg-white/60"
@@ -174,7 +170,7 @@ export const RegisterPage: React.FC = () => {
         <div className="rounded-3xl border border-sky-100 bg-white/95 p-5 sm:p-7 shadow-2xl backdrop-blur-sm space-y-4">
           <div className="text-center space-y-1">
             <div className="flex justify-center">
-              <img src="/logo-icon.png" alt="Luvia Logo" className="h-12 w-12 object-contain drop-shadow-sm" />
+              <img src="/logo-icon.png" alt="Luvia Logo" width="48" height="48" className="h-12 w-12 object-contain drop-shadow-sm" />
             </div>
             <div>
               <h1 className="text-xl font-extrabold tracking-tight font-heading text-slate-900">
@@ -239,37 +235,19 @@ export const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Fila 2: DNI y Teléfono */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="space-y-0.5">
-                <label className="text-[11px] font-bold text-slate-700">DNI (Sin puntos) *</label>
-                <div className="relative">
-                  <CreditCard className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
-                  <input
-                    type="text"
-                    name="dni"
-                    placeholder="38123456"
-                    value={formData.dni}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-0.5">
-                <label className="text-[11px] font-bold text-slate-700">Teléfono</label>
-                <div className="relative">
-                  <Phone className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
-                  <input
-                    type="tel"
-                    name="telefono"
-                    placeholder="3549-123456"
-                    value={formData.telefono}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
-                  />
-                </div>
+            {/* Fila 2: Teléfono */}
+            <div className="space-y-0.5">
+              <label className="text-[11px] font-bold text-slate-700">Teléfono (Opcional)</label>
+              <div className="relative">
+                <Phone className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="tel"
+                  name="telefono"
+                  placeholder="Ej: 3549-123456"
+                  value={formData.telefono}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
+                />
               </div>
             </div>
 
@@ -308,8 +286,8 @@ export const RegisterPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                    tabIndex={-1}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    className="absolute right-2.5 top-2 text-slate-500 hover:text-slate-700 transition cursor-pointer p-0.5"
                   >
                     {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                   </button>
@@ -332,8 +310,8 @@ export const RegisterPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                    tabIndex={-1}
+                    aria-label={showConfirmPassword ? 'Ocultar confirmación' : 'Mostrar confirmación'}
+                    className="absolute right-2.5 top-2 text-slate-500 hover:text-slate-700 transition cursor-pointer p-0.5"
                   >
                     {showConfirmPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                   </button>
@@ -420,7 +398,7 @@ export const RegisterPage: React.FC = () => {
             Inicia sesión aquí
           </Link>
         </p>
-      </div>
+      </main>
     </div>
   );
 };

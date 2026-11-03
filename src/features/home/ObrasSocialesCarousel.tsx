@@ -230,6 +230,8 @@ export const ObrasSocialesCarousel: React.FC = () => {
                   <img
                     src={os.logo}
                     alt={os.sigla}
+                    width="145"
+                    height="40"
                     className="max-h-10 max-w-[145px] w-auto object-contain transition-transform duration-300 group-hover:scale-110 filter drop-shadow-2xs"
                     loading="lazy"
                   />
@@ -260,6 +262,8 @@ export const ObrasSocialesCarousel: React.FC = () => {
                   <img
                     src={selectedOS.logo}
                     alt={selectedOS.sigla}
+                    width="56"
+                    height="40"
                     className="max-h-10 w-auto object-contain"
                   />
                 </div>

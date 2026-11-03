@@ -14,6 +14,14 @@ function toNumericId(raw: string | number | undefined, fallback = 1): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function toOptionalNumericId(raw: string | number | undefined | null): number | undefined {
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  const digits = String(raw).replace(/\D/g, '');
+  const parsed = Number(digits);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
 function normalizeEstado(raw: unknown): EstadoTurno {
   const s = String(raw ?? 'PENDIENTE').trim().toUpperCase();
   if (s === 'ATENDIDO' || s === 'FINALIZADO' || s === 'COMPLETADO') return 'COMPLETADO';
@@ -144,6 +152,15 @@ export function normalizeTurno(d: Record<string, unknown>): Turno {
     esSobreturno: Boolean(d.esSobreturno),
     motivoSobreturno:
       typeof d.motivoSobreturno === 'string' ? d.motivoSobreturno : undefined,
+    tipoAtencion:
+      typeof d.tipoAtencion === 'string'
+        ? d.tipoAtencion
+        : (prof || d.profesionalId ? 'CONSULTA' : 'ESTUDIO'),
+    servicio: typeof d.servicio === 'string' ? d.servicio : undefined,
+    especialidadId:
+      d.especialidadId !== undefined && d.especialidadId !== null
+        ? String(d.especialidadId)
+        : undefined,
   };
 }
 
@@ -398,7 +415,10 @@ export const turnosService = {
   // Reserva pública de turnos con persistencia directa en base de datos
   async reservarTurnoPublico(payload: {
     centroSaludId: number | string;
-    profesionalId: number | string;
+    profesionalId?: number | string | null;
+    tipoAtencion?: 'CONSULTA' | 'ESTUDIO' | string;
+    servicio?: string;
+    especialidadId?: number | string | null;
     fecha: string;
     hora: string;
     dni: string;
@@ -422,7 +442,10 @@ export const turnosService = {
         API_ENDPOINTS.turnos.reservarPublico,
         {
           centroSaludId: toNumericId(payload.centroSaludId),
-          profesionalId: toNumericId(payload.profesionalId),
+          profesionalId: toOptionalNumericId(payload.profesionalId),
+          tipoAtencion: payload.tipoAtencion || (payload.profesionalId ? 'CONSULTA' : 'ESTUDIO'),
+          servicio: payload.servicio?.trim() || undefined,
+          especialidadId: toOptionalNumericId(payload.especialidadId),
           fechaHora: fechaHoraIso,
           fecha: payload.fecha,
           hora: payload.hora,

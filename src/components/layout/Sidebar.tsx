@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   Calendar,
   Clock,
+  Lock,
   FileText,
   Users,
   Building2,
@@ -22,6 +23,7 @@ import {
 import type { UserRole } from '@/types';
 import { useProximoTurno } from '@/hooks/useProximoTurno';
 import { ROLE_LABELS } from '@/lib/roles';
+import { esPacienteDniVerificado, esRutaProtegidaDni } from '@/lib/identityValidation';
 
 interface NavItem {
   title: string;
@@ -134,6 +136,9 @@ export const Sidebar: React.FC = () => {
               >
                 <Icon className="h-4.5 w-4.5 shrink-0" />
                 <span className="text-[14px] sm:text-[14.5px] font-semibold leading-snug">{item.title}</span>
+                {userRole === 'PACIENTE' && esRutaProtegidaDni(item.path) && !esPacienteDniVerificado(user) && (
+                  <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0 ml-auto" />
+                )}
               </NavLink>
             );
           })}

@@ -7,7 +7,7 @@ import { CentrosHeroBannerSlider } from './CentrosHeroBannerSlider';
 import { QuienesSomosSection } from './QuienesSomosSection';
 import { ObrasSocialesCarousel } from './ObrasSocialesCarousel';
 import { EspecialidadesSection, getSpecialtyDesign } from './EspecialidadesSection';
-import { MapaCruzDelEje } from './MapaCruzDelEje';
+const MapaCruzDelEje = React.lazy(() => import('./MapaCruzDelEje').then((m) => ({ default: m.MapaCruzDelEje })));
 import { centrosService } from '@/api/centrosService';
 import { profesionalesService } from '@/api/profesionalesService';
 import type { CentroSalud, Especialidad, Profesional } from '@/types';
@@ -53,14 +53,18 @@ export const HomePage: React.FC = () => {
   };
 
   const recargarDatos = async () => {
-    const [c, e, p] = await Promise.all([
-      centrosService.getAll(),
-      profesionalesService.getEspecialidades(),
-      profesionalesService.getAll(),
-    ]);
-    setCentros(c);
-    setEspecialidades(e);
-    setProfesionales(p);
+    try {
+      const [c, e, p] = await Promise.all([
+        centrosService.getAll(),
+        profesionalesService.getEspecialidades(),
+        profesionalesService.getAll(),
+      ]);
+      setCentros(c || []);
+      setEspecialidades(e || []);
+      setProfesionales(p || []);
+    } catch {
+      // Silenciar timeout si el backend está en reposo (evita error no capturado en consola)
+    }
   };
 
   useEffect(() => {
@@ -75,6 +79,8 @@ export const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-sky-700 selection:text-white">
       <PublicNavbar />
+
+      <main id="main-content" className="flex-1">
 
       {/* BANNER INTERACTIVO DE FOTOS E INSTITUCIONES (POR ENCIMA DEL HERO) */}
       <div id="centros" className="scroll-mt-16">
@@ -132,7 +138,9 @@ export const HomePage: React.FC = () => {
       />
 
       {/* MAPA SANITARIO INTERACTIVO (MAPLIBRE + OPENFREEMAP / OPENSTREETMAP) */}
-      <MapaCruzDelEje />
+      <React.Suspense fallback={<div className="h-[460px] w-full bg-slate-100 flex items-center justify-center text-slate-400 font-medium">Cargando mapa interactivo...</div>}>
+        <MapaCruzDelEje />
+      </React.Suspense>
 
       {/* MODAL PRINCIPAL: NÓMINA DE MÉDICOS CON GUÍA DETALLADA DE SEDES / HOSPITALES Y OPCIÓN DE AGREGAR ROL ADMIN */}
       {especialidadSeleccionada && (
@@ -455,6 +463,8 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      </main>
 
       <Footer />
     </div>

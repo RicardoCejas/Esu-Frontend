@@ -66,7 +66,7 @@ export const PublicNavbar: React.FC = () => {
       <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Brand / Logo */}
         <Link to="/" className="flex items-center gap-2.5 transition hover:opacity-90">
-          <img src="/logo-icon.png" alt="Luvia Logo" className="h-10 w-10 object-contain drop-shadow-xs" />
+          <img src="/logo-icon.png" alt="Luvia Logo" width="40" height="40" className="h-10 w-10 object-contain drop-shadow-xs" />
           <div className="flex flex-col">
             <span className="text-xl font-extrabold tracking-tight text-slate-900 font-heading leading-tight">
               Luvia <span className="text-xs font-bold text-sky-600">Cruz del Eje</span>
@@ -86,8 +86,8 @@ export const PublicNavbar: React.FC = () => {
                 key={link.path}
                 href={link.path}
                 onClick={(e) => handleNavClick(e, link.path)}
-                className={`transition-colors hover:text-sky-600 cursor-pointer ${
-                  isActive ? 'text-sky-700 font-bold border-b-2 border-sky-600 pb-0.5' : ''
+                className={`py-2 transition-colors hover:text-sky-600 cursor-pointer ${
+                  isActive ? 'text-sky-700 font-bold border-b-2 border-sky-600' : ''
                 }`}
               >
                 {link.name}
@@ -119,7 +119,8 @@ export const PublicNavbar: React.FC = () => {
               <button
                 onClick={handleLogout}
                 title="Cerrar Sesión"
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-500 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 transition cursor-pointer"
+                aria-label="Cerrar Sesión"
+                className="flex min-h-[40px] min-w-[40px] h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-600 hover:bg-rose-50 hover:text-rose-800 hover:border-rose-300 transition cursor-pointer"
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -127,7 +128,7 @@ export const PublicNavbar: React.FC = () => {
           ) : (
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-sky-800 transition cursor-pointer"
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg bg-sky-700 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-sky-800 transition cursor-pointer"
             >
               <LogIn className="h-4 w-4" />
               <span>Ingresar</span>

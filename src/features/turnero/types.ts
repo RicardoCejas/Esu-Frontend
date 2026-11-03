@@ -1,5 +1,15 @@
 export type CenterType = 'HOSPITAL' | 'CLINICA' | 'CAPS' | 'CONSULTORIO'
 
+export type TipoAtencionTurno = 'CONSULTA' | 'ESTUDIO'
+
+export interface DiagnosticStudy {
+  id: string
+  name: string
+  description: string
+  iconName: string
+  category: 'LABORATORIO' | 'IMAGENES' | 'ECOGRAFIA' | 'GENERAL'
+}
+
 export interface HealthCenter {
   id: string
   name: string
@@ -10,6 +20,9 @@ export interface HealthCenter {
   phone: string
   specialtiesCount: number
   availableSpecialtyIds: string[]
+  permiteConsultas?: boolean
+  permiteEstudios?: boolean
+  estudiosDisponibles?: string[]
 }
 
 export interface MedicalSpecialty {
@@ -52,8 +65,11 @@ export interface PatientBookingForm {
 export interface ConfirmedAppointment {
   bookingCode: string
   center: HealthCenter
-  specialty: MedicalSpecialty
-  doctor: MedicalDoctor
+  specialty?: MedicalSpecialty
+  doctor?: MedicalDoctor
+  study?: DiagnosticStudy | string
+  tipoAtencion?: TipoAtencionTurno
+  servicio?: string
   date: string
   slot: AppointmentSlot
   patient: PatientBookingForm

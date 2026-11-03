@@ -20,6 +20,10 @@ interface BackendCentroSaludDto {
   ciudad?: string;
   horarioAtencion?: string;
   disponibleGuardia?: boolean;
+  activo?: boolean;
+  permiteConsultas?: boolean;
+  permiteEstudios?: boolean;
+  estudiosDisponibles?: string[];
 }
 
 interface BackendConsultorioDto {
@@ -41,6 +45,10 @@ function normalizeCentro(dto: BackendCentroSaludDto): CentroSalud {
     ciudad: dto.ciudad || 'Cruz del Eje, Córdoba',
     horarioAtencion: dto.horarioAtencion || '08:00 a 20:00 hs',
     disponibleGuardia: Boolean(dto.disponibleGuardia),
+    activo: dto.activo !== false,
+    permiteConsultas: dto.permiteConsultas !== false,
+    permiteEstudios: Boolean(dto.permiteEstudios),
+    estudiosDisponibles: Array.isArray(dto.estudiosDisponibles) ? dto.estudiosDisponibles : [],
   };
 }
 

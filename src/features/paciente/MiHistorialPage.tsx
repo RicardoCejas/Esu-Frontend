@@ -184,7 +184,7 @@ export const MiHistorialPage: React.FC = () => {
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold font-heading">SISTEMA PÚBLICO Y PRIVADO DE SALUD UNIFICADA</h2>
-            <p className="text-xs text-slate-600">Hospital Provincial Aurelio Crespo • Cruz del Eje, Córdoba</p>
+            <p className="text-xs text-slate-600">Hospital Provincial Dr. Aurelio Crespo • Cruz del Eje, Córdoba</p>
           </div>
           <div className="text-right text-xs">
             <p><strong>Paciente:</strong> {user?.nombre} {user?.apellido}</p>
@@ -236,10 +236,16 @@ export const MiHistorialPage: React.FC = () => {
                     <h3 className="font-bold text-base text-foreground">
                       {highlightMatches(consulta.profesionalNombre, busqueda)}
                     </h3>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                      <Calendar className="h-3.5 w-3.5 text-primary" />
-                      <span>Atención realizada el {consulta.fecha}</span>
-                    </p>
+                    <div className="space-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                      <p className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-primary" />
+                        <span>Atención realizada el: <strong className="text-foreground">{consulta.fecha}</strong></span>
+                      </p>
+                      <p className="flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-sky-500 shrink-0" />
+                        <span>Centro de atención: <strong className="text-foreground">{consulta.centroSaludNombre || 'Hospital Provincial Dr. Aurelio Crespo'}</strong></span>
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -324,7 +330,7 @@ export const MiHistorialPage: React.FC = () => {
                           Receta Electrónica Emitida
                         </h4>
                         <span className="text-xs font-medium text-sky-800 dark:text-sky-300">
-                          Prescripción digital oficial (Ley 27.553) • {consulta.centroSaludNombre || 'Hospital Regional Aurelio Crespo'}
+                          Prescripción digital oficial (Ley 27.553) • {consulta.centroSaludNombre || 'Hospital Provincial Dr. Aurelio Crespo'}
                         </span>
                       </div>
                     </div>

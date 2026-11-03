@@ -12,6 +12,7 @@ export const API_ENDPOINTS = {
     logout: '/auth/logout',
     forgotPassword: '/auth/forgot-password',
     resetPassword: '/auth/reset-password',
+    cambiarPassword: '/auth/cambiar-password',
     verifyEmail: '/auth/verify-email',
     resendVerification: '/auth/verify-email/resend',
     devSwitchRole: '/auth/dev-switch-role',

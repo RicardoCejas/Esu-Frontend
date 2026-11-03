@@ -122,7 +122,7 @@ export const pacientesService = {
 
   async updateContacto(
     pacienteId: string | number,
-    data: { telefono?: string; email?: string; obraSocial?: string; nroAfiliado?: string; dni?: string }
+    data: { telefono?: string; email?: string; obraSocial?: string; nroAfiliado?: string; dni?: string; fechaNacimiento?: string; nroTramite?: string; nombre?: string; apellido?: string }
   ): Promise<User> {
     try {
       // 1. Intentar actualizar por endpoint de perfil autenticado

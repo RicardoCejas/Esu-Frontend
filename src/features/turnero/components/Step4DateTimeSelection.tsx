@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import {
   ChevronLeft,
   Clock,
@@ -12,12 +12,15 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AvailabilitySlotList } from './AvailabilitySlotList'
-import { formatLocalDate } from '../availability'
-import type { MedicalDoctor, MedicalSpecialty, AppointmentSlot } from '../types'
+import type { MedicalDoctor, MedicalSpecialty, AppointmentSlot, DiagnosticStudy, TipoAtencionTurno } from '../types'
+import { FlaskConical } from 'lucide-react'
+import { CalendarPickerModal } from './CalendarPickerModal'
 
 interface Step4DateTimeSelectionProps {
-  selectedDoctor: MedicalDoctor
-  selectedSpecialty: MedicalSpecialty
+  selectedDoctor?: MedicalDoctor | null
+  selectedSpecialty?: MedicalSpecialty | null
+  selectedStudy?: DiagnosticStudy | null
+  tipoAtencion?: TipoAtencionTurno
   selectedDate: string
   onSelectDate: (date: string) => void
   morningSlots: AppointmentSlot[]
@@ -112,6 +115,8 @@ function formatSpanishDateDisplay(dateStr: string): string {
 export function Step4DateTimeSelection({
   selectedDoctor,
   selectedSpecialty,
+  selectedStudy,
+  tipoAtencion = 'CONSULTA',
   selectedDate,
   onSelectDate,
   morningSlots,
@@ -127,14 +132,14 @@ export function Step4DateTimeSelection({
   onBackToDoctor,
 }: Step4DateTimeSelectionProps) {
   const hasSlots = morningSlots.length + afternoonSlots.length > 0
-  const dateInputRef = useRef<HTMLInputElement>(null)
   const [confirmSlot, setConfirmSlot] = useState<AppointmentSlot | null>(null)
   const [isSlotModalOpen, setIsSlotModalOpen] = useState(false)
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
 
   // Próximas fechas donde ÚNICAMENTE atiende el doctor seleccionado
   const upcomingDates = useMemo(() => {
-    return getUpcomingDates(selectedDoctor.availableDays)
-  }, [selectedDoctor.availableDays])
+    return getUpcomingDates((selectedDoctor?.availableDays || ['Lunes', 'Miércoles', 'Viernes']))
+  }, [(selectedDoctor?.availableDays || ['Lunes', 'Miércoles', 'Viernes'])])
 
   // Si la fecha actual no es un día de atención del doctor, seleccionar automáticamente la primera fecha disponible
   useEffect(() => {
@@ -143,17 +148,7 @@ export function Step4DateTimeSelection({
     }
   }, [upcomingDates, selectedDate, onSelectDate])
 
-  // Abrir el selector nativo fácilmente al hacer clic en el botón de calendario completo
-  const handleOpenCalendarPicker = () => {
-    if (dateInputRef.current) {
-      if ('showPicker' in dateInputRef.current && typeof dateInputRef.current.showPicker === 'function') {
-        dateInputRef.current.showPicker()
-      } else {
-        dateInputRef.current.focus()
-        dateInputRef.current.click()
-      }
-    }
-  }
+
 
   // Al hacer clic en un horario libre: abre el Pop-up de confirmación de fecha y horario
   const handleSlotClick = (slot: AppointmentSlot) => {
@@ -179,17 +174,17 @@ export function Step4DateTimeSelection({
 
         <div className="flex items-center gap-3.5 sm:gap-4">
           <div className="flex size-11 sm:size-13 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-[#00a896] text-white shadow-md shadow-[#00a896]/25">
-            <Stethoscope className="size-6 text-white" />
+            {tipoAtencion === 'ESTUDIO' ? <FlaskConical className="size-6 text-white" /> : <Stethoscope className="size-6 text-white" />}
           </div>
           <div className="min-w-0">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#005a87]">
               Profesional Seleccionado
             </span>
             <h3 className="text-base sm:text-lg font-bold text-slate-900 font-heading truncate">
-              {selectedDoctor.name}
+              {tipoAtencion === 'ESTUDIO' ? (selectedStudy?.name || 'Estudio Diagnóstico') : (selectedDoctor?.name || 'Profesional')}
             </h3>
             <span className="text-xs sm:text-sm text-slate-500 truncate block">
-              {selectedSpecialty.name} • Consulta Presencial
+              {(selectedSpecialty?.name || '')} • Consulta Presencial
             </span>
           </div>
         </div>
@@ -218,27 +213,17 @@ export function Step4DateTimeSelection({
                 4. Seleccione Fecha y Horario
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
-                Días de atención confirmados para {selectedDoctor.name}. Tocá para ver horarios disponibles.
+                {tipoAtencion === 'ESTUDIO' ? 'Días hábiles para prácticas diagnósticas. Tocá para ver horarios disponibles.' : `Días de atención confirmados para ${selectedDoctor?.name || 'el profesional'}. Tocá para ver horarios disponibles.`}
               </p>
             </div>
           </div>
 
           {/* Botón interactivo para elegir otra fecha en calendario completo */}
-          <div className="relative">
-            <input
-              ref={dateInputRef}
-              type="date"
-              min={formatLocalDate(new Date())}
-              value={selectedDate}
-              onChange={(e) => onSelectDate(e.target.value)}
-              className="absolute inset-0 opacity-0 pointer-events-none w-full h-full"
-              tabIndex={-1}
-              aria-label="Seleccionar fecha"
-            />
+          <div>
             <Button
               type="button"
               variant="outline"
-              onClick={handleOpenCalendarPicker}
+              onClick={() => setIsCalendarModalOpen(true)}
               className="h-10 px-4 rounded-xl border border-sky-200 bg-sky-50/70 text-[#005a87] hover:bg-[#005a87] hover:text-white font-semibold text-xs sm:text-sm gap-2 transition-all cursor-pointer shadow-2xs"
             >
               <CalendarDays className="size-4" />
@@ -325,7 +310,7 @@ export function Step4DateTimeSelection({
             </span>
           </div>
           <span className="text-[11px] font-medium text-slate-500">
-            Días de atención: {selectedDoctor.availableDays.join(', ')}
+            Días de atención: {(selectedDoctor?.availableDays || ['Lunes', 'Miércoles', 'Viernes']).join(', ')}
           </span>
         </div>
       </div>
@@ -419,9 +404,9 @@ export function Step4DateTimeSelection({
                 <div className="flex items-start gap-3 text-slate-800">
                   <Stethoscope className="size-5 text-[#005a87] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-bold text-base text-slate-900">{selectedDoctor.name}</h4>
+                    <h4 className="font-bold text-base text-slate-900">{tipoAtencion === 'ESTUDIO' ? (selectedStudy?.name || 'Estudio Diagnóstico') : (selectedDoctor?.name || 'Profesional')}</h4>
                     <p className="text-xs text-slate-600 font-medium">
-                      {selectedSpecialty.name} • Consulta Presencial
+                      {(selectedSpecialty?.name || '')} • Consulta Presencial
                     </p>
                   </div>
                 </div>
@@ -472,6 +457,16 @@ export function Step4DateTimeSelection({
           </div>
         </div>
       )}
+          {/* Modal Interactivo de Calendario Completo */}
+      <CalendarPickerModal
+        isOpen={isCalendarModalOpen}
+        onClose={() => setIsCalendarModalOpen(false)}
+        selectedDate={selectedDate}
+        onSelectDate={onSelectDate}
+        availableDays={tipoAtencion === 'ESTUDIO' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] : (selectedDoctor?.availableDays || ['Lunes', 'Miércoles', 'Viernes'])}
+        doctorOrServiceName={tipoAtencion === 'ESTUDIO' ? (selectedStudy?.name || 'Servicio de Diagnóstico') : (selectedDoctor?.name || 'Profesional')}
+        tipoAtencion={tipoAtencion}
+      />
     </section>
   )
 }

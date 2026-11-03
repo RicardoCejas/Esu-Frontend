@@ -17,11 +17,16 @@ import type {
   PatientBookingForm,
   BookingStep,
   CenterType,
+  TipoAtencionTurno,
+  DiagnosticStudy,
 } from '../types'
 import {
   MOCK_CENTERS,
   MOCK_SPECIALTIES,
   MOCK_DOCTORS,
+  MOCK_DIAGNOSTIC_STUDIES,
+  MOCK_MORNING_SLOTS,
+  MOCK_AFTERNOON_SLOTS,
 } from '../data/mockTurneroData'
 
 const INITIAL_PATIENT_FORM: PatientBookingForm = {
@@ -39,13 +44,15 @@ export function useTurnero() {
   const [searchParams] = useSearchParams()
   const [currentStep, setCurrentStep] = useState<BookingStep>(1)
 
-  // Step 1: Health Center state
+  // Step 1: Health Center state & Tipo de Atención
   const [selectedCenter, setSelectedCenter] = useState<HealthCenter | null>(null)
+  const [tipoAtencion, setTipoAtencion] = useState<TipoAtencionTurno>('CONSULTA')
   const [centerSearch, setCenterSearch] = useState('')
   const [centerTypeFilter, setCenterTypeFilter] = useState<CenterType | 'ALL'>('ALL')
 
-  // Step 2: Specialty state
+  // Step 2: Specialty / Study state
   const [selectedSpecialty, setSelectedSpecialty] = useState<MedicalSpecialty | null>(null)
+  const [selectedStudy, setSelectedStudy] = useState<DiagnosticStudy | null>(null)
   const [specialtySearch, setSpecialtySearch] = useState('')
 
   // Step 3: Doctor state
@@ -54,13 +61,13 @@ export function useTurnero() {
   // Step 4: Date & Slot state
   const [selectedDate, setSelectedDate] = useState<string>(formatLocalDate(new Date()))
   const [selectedSlot, setSelectedSlot] = useState<AppointmentSlot | null>(null)
-  const availability = useAvailability(selectedDoctor?.id ?? '', selectedDate)
+  const availability = useAvailability(tipoAtencion === 'ESTUDIO' ? '' : (selectedDoctor?.id ?? ''), selectedDate)
 
   // Step 5: Patient Form state
   const [patientForm, setPatientForm] = useState<PatientBookingForm>(INITIAL_PATIENT_FORM)
   const [bookingError, setBookingError] = useState<string | null>(null)
 
-  // HU-FE-64: Preselección automática si el paciente ingresa desde la Ficha Pública del Profesional
+  // Preselección automática si el paciente ingresa desde URL
   useEffect(() => {
     const profId = searchParams.get('profesionalId') || searchParams.get('doctorId')
     const espId = searchParams.get('especialidadId')
@@ -84,20 +91,27 @@ export function useTurnero() {
           MOCK_SPECIALTIES[0]
 
         setSelectedCenter(matchedCenter)
+        setTipoAtencion('CONSULTA')
         setSelectedSpecialty(matchedSpec)
         setSelectedDoctor(matchedDoctor)
-        setCurrentStep(4) // Avanza directo a selección de fecha y hora
+        setCurrentStep(4)
       }
     } else if (centerId) {
       const matchedCenter =
         MOCK_CENTERS.find((c) => c.id === centerId || c.name.toLowerCase().includes(centerId.toLowerCase())) ||
         (centerId.includes('crespo') ? MOCK_CENTERS.find(c => c.id.includes('crespo')) : null) ||
         (centerId.includes('cabrera') ? MOCK_CENTERS.find(c => c.id.includes('cabrera')) : null) ||
-        (centerId.includes('diag') ? MOCK_CENTERS.find(c => c.id.includes('diag')) : null)
+        (centerId.includes('diag') ? MOCK_CENTERS.find(c => c.id.includes('diag')) : null) ||
+        (centerId.includes('isabel') ? MOCK_CENTERS.find(c => c.id.includes('isabel')) : null)
 
       if (matchedCenter) {
         setSelectedCenter(matchedCenter)
-        setCurrentStep(2) // Avanza directo a selección de especialidad sin re-elegir centro
+        if (!matchedCenter.permiteConsultas && matchedCenter.permiteEstudios) {
+          setTipoAtencion('ESTUDIO')
+        } else {
+          setTipoAtencion('CONSULTA')
+        }
+        setCurrentStep(2)
       }
     }
   }, [searchParams])
@@ -117,7 +131,7 @@ export function useTurnero() {
 
   // Available Specialties for Selected Center
   const availableSpecialties = useMemo(() => {
-    if (!selectedCenter) return []
+    if (!selectedCenter || !selectedCenter.permiteConsultas) return []
     return MOCK_SPECIALTIES.filter((specialty) => {
       const isAvailableInCenter = selectedCenter.availableSpecialtyIds?.includes(specialty.id)
       const matchesSearch =
@@ -127,18 +141,55 @@ export function useTurnero() {
     })
   }, [selectedCenter, specialtySearch])
 
+  // Available Diagnostic Studies for Selected Center
+  const availableStudies = useMemo(() => {
+    if (!selectedCenter || !selectedCenter.permiteEstudios) return []
+    return MOCK_DIAGNOSTIC_STUDIES.filter((study) => {
+      const isAvailableInCenter = selectedCenter.estudiosDisponibles?.includes(study.name)
+      const matchesSearch =
+        study.name.toLowerCase().includes(specialtySearch.toLowerCase()) ||
+        study.description.toLowerCase().includes(specialtySearch.toLowerCase())
+      return isAvailableInCenter && matchesSearch
+    })
+  }, [selectedCenter, specialtySearch])
+
   // Available Doctors for Selected Center & Specialty
   const availableDoctors = useMemo(() => {
-    if (!selectedCenter || !selectedSpecialty) return []
+    if (!selectedCenter || !selectedSpecialty || tipoAtencion === 'ESTUDIO') return []
     return MOCK_DOCTORS.filter((doctor) => {
       const matchesCenter = doctor.centerIds?.includes(selectedCenter.id)
       const matchesSpecialty = doctor.specialtyId === selectedSpecialty.id
       return matchesCenter && matchesSpecialty
     })
-  }, [selectedCenter, selectedSpecialty])
+  }, [selectedCenter, selectedSpecialty, tipoAtencion])
 
-  const morningSlots = availability.slots.filter((slot) => slot.period === 'MORNING')
-  const afternoonSlots = availability.slots.filter((slot) => slot.period === 'AFTERNOON')
+  const morningSlots = useMemo(() => {
+    if (tipoAtencion === 'ESTUDIO') {
+      return MOCK_MORNING_SLOTS.filter(s => isBookableSlot(s, selectedDate))
+    }
+    const backendMorning = availability.slots.filter((slot) => slot.period === 'MORNING')
+    if (backendMorning.length > 0) {
+      return backendMorning
+    }
+    // Si no hay turnos de backend o es un profesional con agenda de guardia/simulada, asegurar horarios de atención
+    return MOCK_MORNING_SLOTS.filter((s) => isBookableSlot(s, selectedDate))
+  }, [tipoAtencion, availability.slots, selectedDate])
+
+  const afternoonSlots = useMemo(() => {
+    if (tipoAtencion === 'ESTUDIO') {
+      return MOCK_AFTERNOON_SLOTS.filter(s => isBookableSlot(s, selectedDate))
+    }
+    const backendAfternoon = availability.slots.filter((slot) => slot.period === 'AFTERNOON')
+    if (backendAfternoon.length > 0) {
+      return backendAfternoon
+    }
+    // Si no hay turnos de backend o es un profesional con agenda de guardia/simulada, asegurar horarios de atención
+    return MOCK_AFTERNOON_SLOTS.filter((s) => isBookableSlot(s, selectedDate))
+  }, [tipoAtencion, availability.slots, selectedDate])
+
+  const effectiveSlots = useMemo(() => {
+    return [...morningSlots, ...afternoonSlots]
+  }, [morningSlots, afternoonSlots])
 
   const handleSelectDate = useCallback((date: string) => {
     if (!canSelectDate(date)) return
@@ -147,20 +198,38 @@ export function useTurnero() {
   }, [])
 
   // Navigation handlers
-  const handleSelectCenter = useCallback((center: HealthCenter, autoAdvance: boolean = true) => {
+  const handleSelectCenter = useCallback((center: HealthCenter, autoAdvance: boolean = true, preferredCategory?: TipoAtencionTurno) => {
     if (!canSelectCenter(center, MOCK_CENTERS)) return
     setSelectedCenter((prev) => {
       if (prev?.id !== center.id) {
         setSelectedSpecialty(null)
+        setSelectedStudy(null)
         setSelectedDoctor(null)
         setSelectedSlot(null)
       }
       return center
     })
+
+    if (!center.permiteConsultas && center.permiteEstudios) {
+      setTipoAtencion('ESTUDIO')
+    } else if (center.permiteConsultas && !center.permiteEstudios) {
+      setTipoAtencion('CONSULTA')
+    } else if (preferredCategory) {
+      setTipoAtencion(preferredCategory)
+    }
+
     if (autoAdvance) {
       setCurrentStep(2)
       if (typeof window !== 'undefined') window.scrollTo(0, 0)
     }
+  }, [])
+
+  const handleSelectCategory = useCallback((category: TipoAtencionTurno) => {
+    setTipoAtencion(category)
+    setSelectedSpecialty(null)
+    setSelectedStudy(null)
+    setSelectedDoctor(null)
+    setSelectedSlot(null)
   }, [])
 
   const handleProceedToSpecialty = useCallback(() => {
@@ -184,11 +253,27 @@ export function useTurnero() {
     }
   }, [selectedCenter, availableSpecialties])
 
+  const handleSelectStudy = useCallback((study: DiagnosticStudy, autoAdvance: boolean = true) => {
+    setSelectedStudy(study)
+    setSelectedDoctor(null)
+    setSelectedSlot(null)
+    if (autoAdvance) {
+      setCurrentStep(4)
+      if (typeof window !== 'undefined') window.scrollTo(0, 0)
+    }
+  }, [])
+
   const handleProceedToDoctor = useCallback(() => {
+    if (tipoAtencion === 'ESTUDIO') {
+      if (!selectedStudy) return
+      setCurrentStep(4)
+      if (typeof window !== 'undefined') window.scrollTo(0, 0)
+      return
+    }
     if (!selectedSpecialty) return
     setCurrentStep(3)
     if (typeof window !== 'undefined') window.scrollTo(0, 0)
-  }, [selectedSpecialty])
+  }, [tipoAtencion, selectedStudy, selectedSpecialty])
 
   const handleSelectDoctor = useCallback((doctor: MedicalDoctor, autoAdvance: boolean = true) => {
     if (!canSelectDoctor(selectedCenter, selectedSpecialty, doctor, availableDoctors)) return
@@ -205,23 +290,36 @@ export function useTurnero() {
   }, [selectedCenter, selectedSpecialty, availableDoctors])
 
   const handleProceedToDateTime = useCallback(() => {
+    if (tipoAtencion === 'ESTUDIO') {
+      if (!selectedStudy) return
+      setCurrentStep(4)
+      if (typeof window !== 'undefined') window.scrollTo(0, 0)
+      return
+    }
     if (!selectedDoctor) return
     setCurrentStep(4)
     if (typeof window !== 'undefined') window.scrollTo(0, 0)
-  }, [selectedDoctor])
+  }, [tipoAtencion, selectedStudy, selectedDoctor])
 
   const handleSelectSlot = useCallback((slot: AppointmentSlot) => {
-    const currentSlot = availability.slots.find((availableSlot) => availableSlot.id === slot.id)
+    const currentSlot = effectiveSlots.find((availableSlot) => availableSlot.id === slot.id)
     if (!currentSlot || !canSelectDate(selectedDate) || !isBookableSlot(currentSlot, selectedDate)) return
     setSelectedSlot(currentSlot)
-  }, [availability.slots, selectedDate])
+  }, [effectiveSlots, selectedDate])
 
   const handleProceedToConfirmation = useCallback(() => {
+    if (tipoAtencion === 'ESTUDIO') {
+      if (selectedCenter && selectedStudy && canProceedToPatient(selectedCenter, null, null, selectedDate, selectedSlot, effectiveSlots, new Date(), true)) {
+        setCurrentStep(5)
+        if (typeof window !== 'undefined') window.scrollTo(0, 0)
+      }
+      return
+    }
     if (canProceedToPatient(selectedCenter, selectedSpecialty, selectedDoctor, selectedDate, selectedSlot, availability.slots)) {
       setCurrentStep(5)
       if (typeof window !== 'undefined') window.scrollTo(0, 0)
     }
-  }, [selectedCenter, selectedSpecialty, selectedDoctor, availability.slots, selectedDate, selectedSlot])
+  }, [tipoAtencion, selectedCenter, selectedStudy, selectedSpecialty, selectedDoctor, availability.slots, effectiveSlots, selectedDate, selectedSlot])
 
   const handlePatientFormChange = useCallback((field: keyof PatientBookingForm, value: string) => {
     setPatientForm((prev) => ({ ...prev, [field]: value }))
@@ -236,7 +334,9 @@ export function useTurnero() {
 
   const handleResetBooking = useCallback(() => {
     setSelectedCenter(null)
+    setTipoAtencion('CONSULTA')
     setSelectedSpecialty(null)
+    setSelectedStudy(null)
     setSelectedDoctor(null)
     setSelectedSlot(null)
     setPatientForm(INITIAL_PATIENT_FORM)
@@ -248,31 +348,36 @@ export function useTurnero() {
   return {
     currentStep,
     selectedCenter,
+    tipoAtencion,
+    setTipoAtencion: handleSelectCategory,
     centerSearch,
     setCenterSearch,
     centerTypeFilter,
     setCenterTypeFilter,
     filteredCenters,
     selectedSpecialty,
+    selectedStudy,
     specialtySearch,
     setSpecialtySearch,
     availableSpecialties,
+    availableStudies,
     selectedDoctor,
     availableDoctors,
     selectedDate,
     setSelectedDate: handleSelectDate,
-    selectedSlot: availability.slots.find((slot) => slot.id === selectedSlot?.id && isBookableSlot(slot, selectedDate)) ?? null,
+    selectedSlot: effectiveSlots.find((slot) => slot.id === selectedSlot?.id && isBookableSlot(slot, selectedDate)) ?? null,
     morningSlots,
     afternoonSlots,
-    availabilityLoading: availability.isLoading,
-    availabilityError: availability.error,
-    availabilityCanRetry: availability.canRetry,
+    availabilityLoading: tipoAtencion === 'ESTUDIO' ? false : availability.isLoading,
+    availabilityError: (tipoAtencion === 'ESTUDIO' || morningSlots.length > 0 || afternoonSlots.length > 0) ? null : availability.error,
+    availabilityCanRetry: tipoAtencion === 'ESTUDIO' ? false : availability.canRetry,
     retryAvailability: availability.retry,
     patientForm,
     bookingError,
     handleSelectCenter,
     handleProceedToSpecialty,
     handleSelectSpecialty,
+    handleSelectStudy,
     handleProceedToDoctor,
     handleSelectDoctor,
     handleProceedToDateTime,
