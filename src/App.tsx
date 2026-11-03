@@ -26,6 +26,14 @@ function CanonicalTag() {
 }
 
 export function App() {
+  useEffect(() => {
+    const pingBackend = () => {
+      fetch('https://esu-backend.onrender.com/actuator/health').catch(() => {});
+    };
+    pingBackend();
+    const interval = setInterval(pingBackend, 4 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
