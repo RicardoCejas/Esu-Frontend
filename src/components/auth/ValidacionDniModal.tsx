@@ -58,7 +58,7 @@ export const ValidacionDniModal: React.FC<ValidacionDniModalProps> = ({
       onClose();
     }
     if (isMandatory) {
-      navigate('/dashboard/paciente');
+      navigate('/dashboard/paciente/turnos');
     }
   };
 
