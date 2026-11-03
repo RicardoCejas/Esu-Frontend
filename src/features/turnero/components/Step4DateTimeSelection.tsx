@@ -32,7 +32,7 @@ interface Step4DateTimeSelectionProps {
   availabilityCanRetry: boolean
   bookingError?: string | null
   onRetryAvailability: () => void
-  onProceed: () => void
+  onProceed: (slotOverride?: AppointmentSlot) => void
   onBackToDoctor: () => void
 }
 
@@ -158,12 +158,15 @@ export function Step4DateTimeSelection({
   }
 
   const handleConfirmAndProceed = () => {
-    if (confirmSlot) {
-      onSelectSlot(confirmSlot)
+    const slotToConfirm = confirmSlot || selectedSlot
+    if (slotToConfirm) {
+      onSelectSlot(slotToConfirm)
+      onProceed(slotToConfirm)
+    } else {
+      onProceed()
     }
     setIsSlotModalOpen(false)
     setConfirmSlot(null)
-    onProceed()
   }
 
   return (

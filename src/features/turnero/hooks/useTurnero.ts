@@ -307,19 +307,28 @@ export function useTurnero() {
     setSelectedSlot(currentSlot)
   }, [effectiveSlots, selectedDate])
 
-  const handleProceedToConfirmation = useCallback(() => {
+  const handleProceedToConfirmation = useCallback((slotOverride?: AppointmentSlot) => {
+    const slotToUse = slotOverride || selectedSlot
+    if (slotToUse && slotToUse.id !== selectedSlot?.id) {
+      setSelectedSlot(slotToUse)
+    }
+
     if (tipoAtencion === 'ESTUDIO') {
-      if (selectedCenter && selectedStudy && canProceedToPatient(selectedCenter, null, null, selectedDate, selectedSlot, effectiveSlots, new Date(), true)) {
+      if (selectedCenter && selectedStudy && slotToUse && (canProceedToPatient(selectedCenter, null, null, selectedDate, slotToUse, effectiveSlots, new Date(), true) || canSelectDate(selectedDate))) {
         setCurrentStep(5)
         if (typeof window !== 'undefined') window.scrollTo(0, 0)
       }
       return
     }
-    if (canProceedToPatient(selectedCenter, selectedSpecialty, selectedDoctor, selectedDate, selectedSlot, availability.slots)) {
+
+    const canProceed = Boolean(slotToUse && canProceedToPatient(selectedCenter, selectedSpecialty, selectedDoctor, selectedDate, slotToUse, effectiveSlots))
+    const canFallbackProceed = Boolean(slotToUse && selectedCenter && selectedSpecialty && selectedDoctor && canSelectDate(selectedDate))
+
+    if (canProceed || canFallbackProceed) {
       setCurrentStep(5)
       if (typeof window !== 'undefined') window.scrollTo(0, 0)
     }
-  }, [tipoAtencion, selectedCenter, selectedStudy, selectedSpecialty, selectedDoctor, availability.slots, effectiveSlots, selectedDate, selectedSlot])
+  }, [tipoAtencion, selectedCenter, selectedStudy, selectedSpecialty, selectedDoctor, effectiveSlots, selectedDate, selectedSlot])
 
   const handlePatientFormChange = useCallback((field: keyof PatientBookingForm, value: string) => {
     setPatientForm((prev) => ({ ...prev, [field]: value }))
