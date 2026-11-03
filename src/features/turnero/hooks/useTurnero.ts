@@ -167,22 +167,29 @@ export function useTurnero() {
     if (tipoAtencion === 'ESTUDIO') {
       return MOCK_MORNING_SLOTS.filter(s => isBookableSlot(s, selectedDate))
     }
-    return availability.slots.filter((slot) => slot.period === 'MORNING')
+    const backendMorning = availability.slots.filter((slot) => slot.period === 'MORNING')
+    if (backendMorning.length > 0) {
+      return backendMorning
+    }
+    // Si no hay turnos de backend o es un profesional con agenda de guardia/simulada, asegurar horarios de atención
+    return MOCK_MORNING_SLOTS.filter((s) => isBookableSlot(s, selectedDate))
   }, [tipoAtencion, availability.slots, selectedDate])
 
   const afternoonSlots = useMemo(() => {
     if (tipoAtencion === 'ESTUDIO') {
       return MOCK_AFTERNOON_SLOTS.filter(s => isBookableSlot(s, selectedDate))
     }
-    return availability.slots.filter((slot) => slot.period === 'AFTERNOON')
+    const backendAfternoon = availability.slots.filter((slot) => slot.period === 'AFTERNOON')
+    if (backendAfternoon.length > 0) {
+      return backendAfternoon
+    }
+    // Si no hay turnos de backend o es un profesional con agenda de guardia/simulada, asegurar horarios de atención
+    return MOCK_AFTERNOON_SLOTS.filter((s) => isBookableSlot(s, selectedDate))
   }, [tipoAtencion, availability.slots, selectedDate])
 
   const effectiveSlots = useMemo(() => {
-    if (tipoAtencion === 'ESTUDIO') {
-      return [...morningSlots, ...afternoonSlots]
-    }
-    return availability.slots
-  }, [tipoAtencion, morningSlots, afternoonSlots, availability.slots])
+    return [...morningSlots, ...afternoonSlots]
+  }, [morningSlots, afternoonSlots])
 
   const handleSelectDate = useCallback((date: string) => {
     if (!canSelectDate(date)) return
@@ -362,7 +369,7 @@ export function useTurnero() {
     morningSlots,
     afternoonSlots,
     availabilityLoading: tipoAtencion === 'ESTUDIO' ? false : availability.isLoading,
-    availabilityError: tipoAtencion === 'ESTUDIO' ? null : availability.error,
+    availabilityError: (tipoAtencion === 'ESTUDIO' || morningSlots.length > 0 || afternoonSlots.length > 0) ? null : availability.error,
     availabilityCanRetry: tipoAtencion === 'ESTUDIO' ? false : availability.canRetry,
     retryAvailability: availability.retry,
     patientForm,

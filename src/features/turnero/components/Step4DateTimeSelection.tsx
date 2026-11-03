@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import {
   ChevronLeft,
   Clock,
@@ -12,9 +12,9 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AvailabilitySlotList } from './AvailabilitySlotList'
-import { formatLocalDate } from '../availability'
 import type { MedicalDoctor, MedicalSpecialty, AppointmentSlot, DiagnosticStudy, TipoAtencionTurno } from '../types'
 import { FlaskConical } from 'lucide-react'
+import { CalendarPickerModal } from './CalendarPickerModal'
 
 interface Step4DateTimeSelectionProps {
   selectedDoctor?: MedicalDoctor | null
@@ -132,9 +132,9 @@ export function Step4DateTimeSelection({
   onBackToDoctor,
 }: Step4DateTimeSelectionProps) {
   const hasSlots = morningSlots.length + afternoonSlots.length > 0
-  const dateInputRef = useRef<HTMLInputElement>(null)
   const [confirmSlot, setConfirmSlot] = useState<AppointmentSlot | null>(null)
   const [isSlotModalOpen, setIsSlotModalOpen] = useState(false)
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
 
   // Próximas fechas donde ÚNICAMENTE atiende el doctor seleccionado
   const upcomingDates = useMemo(() => {
@@ -148,17 +148,7 @@ export function Step4DateTimeSelection({
     }
   }, [upcomingDates, selectedDate, onSelectDate])
 
-  // Abrir el selector nativo fácilmente al hacer clic en el botón de calendario completo
-  const handleOpenCalendarPicker = () => {
-    if (dateInputRef.current) {
-      if ('showPicker' in dateInputRef.current && typeof dateInputRef.current.showPicker === 'function') {
-        dateInputRef.current.showPicker()
-      } else {
-        dateInputRef.current.focus()
-        dateInputRef.current.click()
-      }
-    }
-  }
+
 
   // Al hacer clic en un horario libre: abre el Pop-up de confirmación de fecha y horario
   const handleSlotClick = (slot: AppointmentSlot) => {
@@ -229,21 +219,11 @@ export function Step4DateTimeSelection({
           </div>
 
           {/* Botón interactivo para elegir otra fecha en calendario completo */}
-          <div className="relative">
-            <input
-              ref={dateInputRef}
-              type="date"
-              min={formatLocalDate(new Date())}
-              value={selectedDate}
-              onChange={(e) => onSelectDate(e.target.value)}
-              className="absolute inset-0 opacity-0 pointer-events-none w-full h-full"
-              tabIndex={-1}
-              aria-label="Seleccionar fecha"
-            />
+          <div>
             <Button
               type="button"
               variant="outline"
-              onClick={handleOpenCalendarPicker}
+              onClick={() => setIsCalendarModalOpen(true)}
               className="h-10 px-4 rounded-xl border border-sky-200 bg-sky-50/70 text-[#005a87] hover:bg-[#005a87] hover:text-white font-semibold text-xs sm:text-sm gap-2 transition-all cursor-pointer shadow-2xs"
             >
               <CalendarDays className="size-4" />
@@ -477,6 +457,16 @@ export function Step4DateTimeSelection({
           </div>
         </div>
       )}
+          {/* Modal Interactivo de Calendario Completo */}
+      <CalendarPickerModal
+        isOpen={isCalendarModalOpen}
+        onClose={() => setIsCalendarModalOpen(false)}
+        selectedDate={selectedDate}
+        onSelectDate={onSelectDate}
+        availableDays={tipoAtencion === 'ESTUDIO' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] : (selectedDoctor?.availableDays || ['Lunes', 'Miércoles', 'Viernes'])}
+        doctorOrServiceName={tipoAtencion === 'ESTUDIO' ? (selectedStudy?.name || 'Servicio de Diagnóstico') : (selectedDoctor?.name || 'Profesional')}
+        tipoAtencion={tipoAtencion}
+      />
     </section>
   )
 }
