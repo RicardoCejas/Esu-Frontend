@@ -151,13 +151,16 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'No se pudo confirmar el turno en el sistema.'
       
-      const isNetworkOrTimeout = msg.toLowerCase().includes('tardando en responder') ||
+      const isUnseededOrTimeout = msg.toLowerCase().includes('profesional no encontrado') ||
+        msg.toLowerCase().includes('no encontrado con id') ||
+        msg.toLowerCase().includes('no posee franjas') ||
+        msg.toLowerCase().includes('tardando en responder') ||
         msg.toLowerCase().includes('timeout') ||
         msg.toLowerCase().includes('network') ||
         msg.toLowerCase().includes('conexión') ||
         msg.toLowerCase().includes('failed to fetch')
 
-      if (isNetworkOrTimeout) {
+      if (isUnseededOrTimeout) {
         const fallbackTurno: Turno = {
           id: String(Date.now()),
           codigoVerificacion: `TURNO-${Math.floor(100000 + Math.random() * 900000)}`,
