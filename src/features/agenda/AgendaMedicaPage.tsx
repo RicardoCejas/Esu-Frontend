@@ -85,7 +85,7 @@ export const AgendaMedicaPublicaPage: React.FC = () => {
       try {
         // Timeout de seguridad de 3.5s para garantizar respuesta rápida y evitar spinner indefinido
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('TIMEOUT_AGENDA')), 3500)
+          setTimeout(() => reject(new Error('TIMEOUT_AGENDA')), 2000)
         );
 
         const fetchPromise = Promise.all([
