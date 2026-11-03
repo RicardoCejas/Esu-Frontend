@@ -19,7 +19,7 @@ import { GoogleAuthButton } from './components/GoogleAuthButton';
 import { extractApiErrorMessage } from '@/api/endpoints';
 
 export const RegisterPage: React.FC = () => {
-  const { register, login } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const redirectByRole = (rol: UserRole) => {
@@ -134,15 +134,8 @@ export const RegisterPage: React.FC = () => {
         activo: true,
       });
 
-      try {
-        await login({
-          email: formData.email.trim(),
-          password: formData.password,
-        });
-        navigate('/dashboard/paciente');
-      } catch {
-        navigate('/login?registered=true');
-      }
+      // Ingreso directo inmediato sin requerir confirmación por email
+      navigate('/dashboard/paciente');
     } catch (err: unknown) {
       const message = extractApiErrorMessage(err, 'Error al registrar el paciente.');
       setError(message);

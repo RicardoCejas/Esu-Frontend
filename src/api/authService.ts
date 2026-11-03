@@ -236,6 +236,8 @@ export const authService = {
     try {
       const response = await apiClient.post<BackendAuthData>(API_ENDPOINTS.auth.register, payload);
 
+      const token = response.data.accessToken || response.data.token || '';
+
       const user: User = {
         id: String(response.data.usuarioId || Date.now()),
         nombre: cleanData.nombre,
@@ -244,11 +246,17 @@ export const authService = {
         dni: cleanData.dni,
         rol: 'PACIENTE',
         activo: true,
-        emailVerified: false,
+        emailVerified: true,
       };
 
+      if (token) {
+        tokenStorage.setAccessToken(token);
+        currentSessionUser = user;
+        sessionStorage.setItem('esu_session_active', '1');
+      }
+
       return {
-        token: response.data.accessToken || '',
+        token,
         user,
       };
     } catch (error: unknown) {
