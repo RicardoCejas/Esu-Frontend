@@ -21,6 +21,7 @@ import {
 import { CardSkeleton } from '@/components/ui/skeleton';
 import { CarnetDigitalModal } from './components/CarnetDigitalModal';
 import { GrupoFamiliarModal } from './components/GrupoFamiliarModal';
+import { ScannableQrCode } from '@/components/common/ScannableQrCode';
 
 export const MisTurnosPage: React.FC = () => {
   const { user } = useAuth();
@@ -433,16 +434,24 @@ export const MisTurnosPage: React.FC = () => {
               <p className="text-xs text-muted-foreground font-medium">ESU — Red Sanitaria Cruz del Eje</p>
             </div>
 
-            {/* Código QR Ilustrativo */}
+            {/* Código QR Escaneable */}
             <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-white p-6 text-slate-900 shadow-inner">
-              <div className="flex h-36 w-36 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50">
-                <QrCode className="h-28 w-28 text-slate-800" />
+              <div className="flex h-36 w-36 items-center justify-center rounded-lg border border-slate-200 bg-white p-1">
+                <ScannableQrCode
+                  value={
+                    typeof window !== 'undefined'
+                      ? `${window.location.origin}/dashboard/paciente?turnoVerif=${encodeURIComponent(selectedTurnoQr.codigoVerificacion)}&paciente=${encodeURIComponent(selectedTurnoQr.pacienteNombre)}`
+                      : `https://esuluvia.vercel.app/turnero?verif=${encodeURIComponent(selectedTurnoQr.codigoVerificacion)}`
+                  }
+                  size={132}
+                  alt={`QR Comprobante Turno ${selectedTurnoQr.codigoVerificacion}`}
+                />
               </div>
               <span className="mt-3 font-mono text-xs font-bold text-slate-800">
                 {selectedTurnoQr.codigoVerificacion}
               </span>
-              <span className="text-[10px] text-slate-500 font-medium mt-0.5">
-                Presente este código al llegar a recepción
+              <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full mt-1 border border-emerald-200">
+                Escaneable desde celular en recepción
               </span>
             </div>
 

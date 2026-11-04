@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { DevRoleSwitcher } from '@/components/dev/DevRoleSwitcher';
 import { useAuth } from '@/context/AuthContext';
-import { Building2, ShieldAlert, Lock } from 'lucide-react';
+import { Building2, ShieldAlert, Lock, ArrowLeft } from 'lucide-react';
 import { ValidacionDniModal } from '@/components/auth/ValidacionDniModal';
 import { esPacienteDniVerificado, esRutaProtegidaDni } from '@/lib/identityValidation';
 
 export const DashboardLayout: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [modalDniAbierto, setModalDniAbierto] = useState(false);
 
@@ -71,14 +72,24 @@ export const DashboardLayout: React.FC = () => {
                   debes validar tu DNI, fecha de nacimiento y los últimos 4 números de trámite antes de acceder
                   a esta sección.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setModalDniAbierto(true)}
-                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white px-5 py-2.5 text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition cursor-pointer"
-                >
-                  <Lock className="h-4 w-4" />
-                  <span>Validar Identidad para Desbloquear</span>
-                </button>
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/dashboard/paciente')}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-xs transition cursor-pointer"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>Volver al Portal</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalDniAbierto(true)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white px-5 py-2.5 text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition cursor-pointer"
+                  >
+                    <Lock className="h-4 w-4" />
+                    <span>Validar Identidad para Desbloquear</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <Outlet />

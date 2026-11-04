@@ -7,10 +7,10 @@ import {
   ShieldCheck,
   Droplet,
   AlertTriangle,
-  QrCode,
   Building2,
   CheckCircle2,
 } from 'lucide-react';
+import { ScannableQrCode } from '@/components/common/ScannableQrCode';
 import type { User } from '@/types';
 
 interface CarnetDigitalModalProps {
@@ -153,11 +153,22 @@ export const CarnetDigitalModal: React.FC<CarnetDigitalModalProps> = ({
 
               {/* QR Institucional de Admisión */}
               <div className="sm:col-span-4 flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-sky-100 shadow-xs">
-                <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-slate-50 border border-slate-200">
-                  <QrCode className="h-20 w-20 text-slate-900" />
+                <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-white border border-slate-200 overflow-hidden p-1 shadow-2xs">
+                  <ScannableQrCode
+                    value={
+                      typeof window !== 'undefined'
+                        ? `${window.location.origin}/dashboard/paciente?credencial=true&dni=${encodeURIComponent(dni)}&nombre=${encodeURIComponent(pacienteNombre)}&estado=HABILITADO`
+                        : `https://esuluvia.vercel.app/dashboard/paciente?dni=${encodeURIComponent(dni)}`
+                    }
+                    size={88}
+                    alt={`Código QR de Admisión para ${pacienteNombre}`}
+                  />
                 </div>
                 <span className="mt-1.5 font-mono text-[9px] font-bold text-slate-700 tracking-wider">
                   SCAN ADMISIÓN
+                </span>
+                <span className="text-[8px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded-full mt-0.5 border border-emerald-200">
+                  Escaneable con Celular
                 </span>
               </div>
             </div>
