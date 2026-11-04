@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Download, Calendar, Building2, User, AlertCircle, Info, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
+import { generarInformeEstudioPdf } from '@/lib/generarInformeEstudioPdf';
 
 interface EstudioItem {
   id: string;
@@ -16,6 +18,8 @@ interface EstudioItem {
 
 export const MisEstudiosPage: React.FC = () => {
   const { user } = useAuth();
+  const { success, error: toastError } = useToast();
+  const [descargandoId, setDescargandoId] = useState<string | null>(null);
   const [cargando] = useState<boolean>(false);
   const [error] = useState<string | null>(null);
 
@@ -66,8 +70,37 @@ export const MisEstudiosPage: React.FC = () => {
     },
   ];
 
-  const handleDescargar = (nombre: string) => {
-    alert(`Descargando informe oficial en PDF: ${nombre}`);
+  const handleDescargar = async (estudio: EstudioItem) => {
+    try {
+      setDescargandoId(estudio.id);
+      const nombreCompleto = user
+        ? `${user.nombre || ''} ${user.apellido || ''}`.trim() || 'Paciente Luvia'
+        : 'Paciente Luvia';
+
+      await generarInformeEstudioPdf(
+        {
+          id: estudio.id,
+          tipoEstudio: estudio.tipoEstudio,
+          nombre: estudio.nombre,
+          fecha: estudio.fecha,
+          centroSalud: estudio.centroSalud,
+          medicoSolicitante: estudio.medicoSolicitante,
+          estado: estudio.estado,
+        },
+        {
+          nombreCompleto,
+          dni: user?.dni || 'Sin DNI',
+          obraSocial: user?.obraSocial || 'Cobertura Pública',
+          nroAfiliado: user?.nroAfiliado,
+        }
+      );
+      success(`Informe PDF descargado: ${estudio.nombre}`);
+    } catch (err) {
+      console.error('Error al generar el PDF del estudio:', err);
+      toastError('No se pudo generar el archivo PDF del estudio.');
+    } finally {
+      setDescargandoId(null);
+    }
   };
 
   return (
@@ -166,11 +199,21 @@ export const MisEstudiosPage: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => handleDescargar(est.nombre)}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 py-2.5 text-xs font-bold transition cursor-pointer"
+                onClick={() => handleDescargar(est)}
+                disabled={descargandoId === est.id}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 py-2.5 text-xs font-bold transition cursor-pointer disabled:opacity-60"
               >
-                <Download className="h-4 w-4" />
-                <span>Descargar Informe PDF</span>
+                {descargandoId === est.id ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+                    <span>Generando PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    <span>Descargar Informe PDF</span>
+                  </>
+                )}
               </button>
             </div>
           ))}

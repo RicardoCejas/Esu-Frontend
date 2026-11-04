@@ -16,6 +16,7 @@
     "axios": "^1.20.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
+    "jspdf": "^4.2.1",
     "maplibre-gl": "^6.16.0",
     "pdfkit": "^0.20.2",
     "qrcode": "^1.5.4",
