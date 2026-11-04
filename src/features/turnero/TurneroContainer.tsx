@@ -11,9 +11,8 @@ import { Step3DoctorSelection } from './components/Step3DoctorSelection'
 import { Step4DateTimeSelection } from './components/Step4DateTimeSelection'
 import { Step5PatientConfirmation } from './components/Step5PatientConfirmation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Search, LogIn, AlertTriangle } from 'lucide-react'
+import { LogIn, AlertTriangle } from 'lucide-react'
 import { turnosService } from '@/api/turnosService'
 import { pacientesService } from '@/api/pacientesService'
 import type { Turno } from '@/types'
@@ -31,10 +30,7 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
   const isDemo = initialDemoMode || searchParams.get('demo') === 'true'
 
   const [selectedCity, setSelectedCity] = useState<CityOption>(SUPPORTED_CITIES[0])
-  const [isLookupOpen, setIsLookupOpen] = useState(false)
-  const [lookupCode, setLookupCode] = useState('')
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
-  const [lookupMessage, setLookupMessage] = useState<string | null>(null)
 
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
   const [bookingErrorMsg, setBookingErrorMsg] = useState<string | null>(null)
@@ -222,24 +218,6 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
     }
   }
 
-  const handleLookupTurno = async () => {
-    const code = lookupCode.trim()
-    if (!code) return
-    setLookupMessage('Buscando en la base de datos sanitaria...')
-    try {
-      const turno = await turnosService.getById(code)
-      if (turno) {
-        setLookupMessage(
-          `✓ Turno ${turno.codigoVerificacion || turno.id}: Paciente ${turno.pacienteNombre}, ${turno.fecha} ${turno.hora} hs. Profesional: ${turno.profesionalNombre || 'Asignado'}. Estado: ${turno.estado}`
-        )
-      } else {
-        setLookupMessage('No se encontró ninguna reserva registrada con ese código o DNI.')
-      }
-    } catch {
-      setLookupMessage('No se encontró registro para el código ingresado en el sistema.')
-    }
-  }
-
   const isPatientExistingError = Boolean(bookingErrorMsg && bookingErrorMsg.includes('pertenece a un paciente registrado'))
 
   return (
@@ -262,10 +240,6 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
         selectedCity={selectedCity}
         onCityChange={setSelectedCity}
         onNewBooking={handleResetBooking}
-        onLookupBooking={() => {
-          setLookupMessage(null)
-          setIsLookupOpen(true)
-        }}
         onLoginClick={() => setIsLoginModalOpen(true)}
       />
 
@@ -394,59 +368,6 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
         </div>
       </main>
 
-      {/* Quick Lookup Modal */}
-      <Dialog open={isLookupOpen} onOpenChange={setIsLookupOpen}>
-        <DialogContent className="max-w-md p-5">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold text-slate-900">
-              Consultar o Gestionar Turno Existente
-            </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">
-              Ingrese su DNI o código alfanumérico para revisar estado, reagendar o cancelar.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 pt-2">
-            <div className="space-y-1">
-              <label htmlFor="lookup-code" className="text-xs font-medium text-slate-700">
-                Código de Turno o DNI del Paciente
-              </label>
-              <Input
-                id="lookup-code"
-                placeholder="Ej: ESU-2026-0001 o 38123456"
-                value={lookupCode}
-                onChange={(e) => setLookupCode(e.target.value)}
-                className="h-8 text-xs"
-              />
-            </div>
-            {lookupMessage && (
-              <div className="rounded-md border border-sky-200 bg-sky-50 p-2.5 text-xs text-sky-800">
-                {lookupMessage}
-              </div>
-            )}
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsLookupOpen(false)}
-                className="h-7 text-xs cursor-pointer"
-              >
-                Cerrar
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleLookupTurno}
-                className="h-7 cursor-pointer gap-1.5 bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800"
-              >
-                <Search className="size-3.5" />
-                <span>Consultar</span>
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Login Navigation Modal */}
       <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
