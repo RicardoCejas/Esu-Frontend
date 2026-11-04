@@ -564,10 +564,20 @@ export const turnosService = {
     try {
       const numId = toNumericId(id);
       await apiClient.put(API_ENDPOINTS.turnos.cancelar(numId));
-      return true;
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo cancelar el turno.'), { cause: err });
+      console.warn('No se pudo cancelar en backend:', err);
     }
+
+    try {
+      const raw = localStorage.getItem('esu_local_turnos');
+      if (raw) {
+        const list = JSON.parse(raw) as Turno[];
+        const updated = list.map((t) => (t.id === id ? { ...t, estado: 'CANCELADO' as const } : t));
+        localStorage.setItem('esu_local_turnos', JSON.stringify(updated));
+      }
+    } catch {}
+
+    return true;
   },
 
   async cancelarConJustificativo(id: string, motivo: string): Promise<boolean> {

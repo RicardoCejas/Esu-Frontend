@@ -53,6 +53,17 @@ export const MisEstudiosPage: React.FC = () => {
       tamano: '850 KB',
       esDatoDePrueba: true,
     },
+    {
+      id: 'est-04',
+      tipoEstudio: 'Diagnóstico por Imágenes (Ecografía)',
+      nombre: 'Ecografía Abdominal Completa y Gineco-Obstétrica',
+      fecha: '28/10/2026',
+      centroSalud: 'Centro de Diagnóstico por Imágenes Cruz del Eje',
+      medicoSolicitante: 'Dra. Silvina Romero',
+      estado: 'INFORME_DISPONIBLE',
+      tamano: '2.1 MB',
+      esDatoDePrueba: true,
+    },
   ];
 
   const handleDescargar = (nombre: string) => {
