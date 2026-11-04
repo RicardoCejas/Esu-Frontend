@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, PlusCircle, Search, LogIn, ChevronDown } from 'lucide-react'
+import { MapPin, PlusCircle, LogIn, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export interface CityOption {
@@ -21,7 +21,7 @@ interface AppHeaderProps {
   selectedCity: CityOption
   onCityChange: (city: CityOption) => void
   onNewBooking: () => void
-  onLookupBooking: () => void
+  onLookupBooking?: () => void
   onLoginClick?: () => void
 }
 
@@ -29,7 +29,7 @@ export function AppHeader({
   selectedCity,
   onCityChange,
   onNewBooking,
-  onLookupBooking,
+
 }: AppHeaderProps) {
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false)
 
@@ -113,17 +113,6 @@ export function AppHeader({
           >
             <PlusCircle className="size-3.5 text-sky-600" />
             <span>Nuevo Turno</span>
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onLookupBooking}
-            className="cursor-pointer gap-1.5 text-xs font-semibold text-slate-700 border-sky-200 bg-white hover:bg-sky-50 hover:text-sky-800 rounded-full shadow-xs"
-          >
-            <Search className="size-3.5 text-slate-500" />
-            <span className="hidden md:inline">Consultar Cita</span>
           </Button>
 
           <Link
