@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { turnosService } from '@/api/turnosService';
 import { centrosService } from '@/api/centrosService';
 import { soundNotification } from '@/lib/soundNotification';
+import { getFechaLocalHoy } from '@/lib/dateUtils';
 import type { Turno, CentroSalud } from '@/types';
 import {
   Volume2,
@@ -41,7 +42,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const hoyStr = new Date().toISOString().split('T')[0];
+  const hoyStr = getFechaLocalHoy();
 
   // Turnos del día filtrados por sede
   const turnosHoy = useMemo(() => {

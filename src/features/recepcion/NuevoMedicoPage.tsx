@@ -2,20 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { profesionalesService } from '@/api/profesionalesService';
-import { MOCK_PROFESIONALES, MOCK_USERS } from '@/api/mockData';
-import type { Especialidad, Profesional, User } from '@/types';
-import { Stethoscope, ArrowLeft, Save, Building2, Shield } from 'lucide-react';
+import { extractApiErrorMessage } from '@/api/endpoints';
+import type { Especialidad } from '@/types';
+import { Stethoscope, ArrowLeft, Save, Building2, Shield, AlertCircle } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 
 export const NuevoMedicoPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { success } = useToast();
+  const { success, error: toastError } = useToast();
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const centroId = user?.centroSaludId || 'c1';
-  const centroNombre = user?.centroSaludNombre || 'Hospital Regional Aurelio Crespo';
+  const centroId = user?.centroSaludId ? String(user.centroSaludId) : '1';
+  const centroNombre = user?.centroSaludNombre || 'Centro de Salud Cruz del Eje';
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -37,6 +38,8 @@ export const NuevoMedicoPage: React.FC = () => {
       if (data.length > 0) {
         setFormData((prev) => ({ ...prev, especialidadId: data[0].id }));
       }
+    }).catch((err) => {
+      setSubmitError(extractApiErrorMessage(err, 'No se pudo cargar la lista de especialidades.'));
     });
   }, []);
 
@@ -62,46 +65,30 @@ export const NuevoMedicoPage: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
-      const especialidadSel = especialidades.find((e) => e.id === formData.especialidadId);
-      const espNombre = especialidadSel ? especialidadSel.nombre : 'Medicina General';
-      const nuevoId = `p-${Date.now()}`;
+      const centroIdNum = Number(centroId);
+      const centrosIds = Number.isFinite(centroIdNum) && centroIdNum > 0 ? [centroId] : [];
 
-      // Registrar profesional médico en el centro
-      const nuevoProfesional: Profesional = {
-        id: nuevoId,
+      await profesionalesService.createProfesional({
         nombre: formData.nombre.trim(),
         apellido: formData.apellido.trim(),
         matricula: formData.matricula.trim(),
         especialidadId: formData.especialidadId,
-        especialidadNombre: espNombre,
-        centrosSaludIds: [centroId],
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password || undefined,
+        telefono: formData.telefono.trim(),
+        centrosSaludIds: centrosIds,
         diasAtencion: formData.diasAtencion,
         duracionTurnoMin: Number(formData.duracionTurnoMin),
-      };
-      MOCK_PROFESIONALES.push(nuevoProfesional);
-
-      // Crear cuenta institucional de médico en MOCK_USERS
-      const nuevoUsuarioMedico: User = {
-        id: `u-${nuevoId}`,
-        nombre: `Dr. ${formData.nombre.trim()}`,
-        apellido: formData.apellido.trim(),
-        email: formData.email.trim().toLowerCase(),
-        dni: String(Date.now()).slice(-8),
-        telefono: formData.telefono.trim() || '3549-400000',
-        rol: 'MEDICO',
-        matricula: formData.matricula.trim(),
-        especialidad: espNombre,
-        centroSaludId: centroId,
-        centroSaludNombre: centroNombre,
-        activo: true,
-      };
-      MOCK_USERS.push(nuevoUsuarioMedico);
+      });
 
       success(`Dr. ${formData.nombre} ${formData.apellido} registrado exitosamente en ${centroNombre}`);
       navigate('/dashboard/recepcion/medicos');
-    } catch {
-      navigate('/dashboard/recepcion/medicos');
+    } catch (err) {
+      const msg = extractApiErrorMessage(err, 'No se pudo registrar al profesional médico.');
+      setSubmitError(msg);
+      toastError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -135,6 +122,13 @@ export const NuevoMedicoPage: React.FC = () => {
           <span className="truncate max-w-[140px] sm:max-w-none">{centroNombre}</span>
         </div>
       </div>
+
+      {submitError && (
+        <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+          <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+          <span>{submitError}</span>
+        </div>
+      )}
 
       {/* Formulario */}
       <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-4 text-xs">

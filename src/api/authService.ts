@@ -3,7 +3,7 @@ import { apiClient } from './apiClient';
 import { tokenStorage } from './tokenStorage';
 import { authBroadcast } from '@/lib/authBroadcast';
 import { sanitizeFormData } from '@/lib/sanitizer';
-import { MOCK_USERS } from './mockData';
+import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
 import type { User, UserRole } from '@/types';
 
 export interface LoginCredentials {
@@ -16,14 +16,6 @@ export interface LoginCredentials {
 export interface AuthResponse {
   token: string;
   user: User;
-  requires2FA?: boolean;
-  tempToken?: string;
-}
-
-export interface TwoFactorSetupData {
-  secret: string;
-  qrCodeUrl: string;
-  backupCodes: string[];
 }
 
 interface BackendAuthData {
@@ -32,10 +24,11 @@ interface BackendAuthData {
   usuarioId?: string | number;
   email?: string;
   rol?: string;
-  twoFactorEnabled?: boolean;
+  nombre?: string;
+  apellido?: string;
+  dni?: string;
+  emailVerificado?: boolean;
   emailVerified?: boolean;
-  requires2FA?: boolean;
-  tempToken?: string;
   user?: User;
   message?: string;
 }
@@ -43,254 +36,249 @@ interface BackendAuthData {
 // Almacenamiento seguro en memoria del perfil de usuario actual
 let currentSessionUser: User | null = null;
 
+function normalizeUserRole(rawRole?: string): UserRole {
+  const upper = (rawRole || 'PACIENTE').toUpperCase();
+  if (upper === 'MEDICO' || upper === 'PROFESIONAL') return 'MEDICO';
+  if (upper === 'RECEPCIONISTA') return 'RECEPCIONISTA';
+  if (upper === 'ADMIN') return 'ADMIN';
+  return 'PACIENTE';
+}
+
 export const authService = {
   /**
    * Inicio de sesión seguro: almacena token en memoria volátil (HU-41)
    * Sanitiza entradas contra XSS (HU-44)
-   * Soporta desafío 2FA bloqueante si el usuario tiene doble factor activo (HU-42)
+   * En producción requiere autenticación real contra el backend.
+   * En desarrollo permite cuenta de prueba dev@esu.gob.ar.
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const cleanCredentials = sanitizeFormData(credentials);
     const emailLower = (cleanCredentials.email || cleanCredentials.dni || '').trim().toLowerCase();
-    const isDevEmail = emailLower === 'dev@esu.gob.ar';
+    const isDev = import.meta.env.DEV;
+    const isDevCredentials = emailLower === 'dev@esu.gob.ar' && cleanCredentials.password === 'Dev12345!';
 
-    if (isDevEmail) {
-      localStorage.setItem('esu_dev_mode', 'true');
+    if (!cleanCredentials.password) {
+      throw new Error('Debe ingresar su contraseña.');
     }
 
     try {
       const payload = {
         email: cleanCredentials.email || (cleanCredentials.dni ? `${cleanCredentials.dni}@esu.com` : ''),
-        password: cleanCredentials.password || 'password123',
+        password: cleanCredentials.password,
       };
 
-      const response = await apiClient.post<BackendAuthData>('/auth/login', payload);
+      const response = await apiClient.post<BackendAuthData>(API_ENDPOINTS.auth.login, payload);
 
-      // Si el servidor exige desafío 2FA bloqueante (HU-42)
-      if (response.data.requires2FA) {
-        return {
-          token: '',
-          user: response.data.user || ({} as User),
-          requires2FA: true,
-          tempToken: response.data.tempToken || `temp-${Date.now()}`,
-        };
+      const token = response.data.accessToken || response.data.token;
+      if (!token) {
+        throw new Error('El servidor no retornó un token de acceso válido.');
       }
 
-      const token = response.data.accessToken || response.data.token || `token-${Date.now()}`;
       const user: User = {
         id: String(response.data.usuarioId || Date.now()),
-        nombre: isDevEmail ? 'Desarrollador ESU' : (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
-        apellido: '',
+        nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
+        apellido: response.data.apellido || '',
         email: response.data.email || payload.email,
-        dni: credentials.dni || (isDevEmail ? '99999999' : '38123456'),
-        rol: (response.data.rol as UserRole) || credentials.rolSimulado || (isDevEmail ? 'ADMIN' : 'PACIENTE'),
+        dni: response.data.dni || cleanCredentials.dni || '',
+        rol: credentials.rolSimulado && (isDevCredentials || isDev) ? credentials.rolSimulado : normalizeUserRole(response.data.rol),
         activo: true,
-        twoFactorEnabled: response.data.twoFactorEnabled ?? false,
-        emailVerified: response.data.emailVerified ?? true,
-        isDeveloper: isDevEmail,
+        twoFactorEnabled: false,
+        emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
+        isDeveloper: (isDev || isDevCredentials) && emailLower === 'dev@esu.gob.ar',
       };
 
-      // Guardar token ÚNICAMENTE en memoria volátil (HU-41)
       tokenStorage.setAccessToken(token);
       currentSessionUser = user;
       sessionStorage.setItem('esu_session_active', '1');
+      if (credentials.rolSimulado && (isDevCredentials || isDev)) {
+        await authService.devSwitchRole(credentials.rolSimulado);
+      }
+
+      if (user.rol === 'PACIENTE') {
+        try {
+          const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
+          if (perfilRes.data?.id) {
+            user.id = String(perfilRes.data.id);
+            if (perfilRes.data.dni) user.dni = perfilRes.data.dni;
+            if (perfilRes.data.nombre) user.nombre = perfilRes.data.nombre;
+            if (perfilRes.data.apellido) user.apellido = perfilRes.data.apellido;
+            currentSessionUser = user;
+          }
+        } catch {
+          // Mantener usuarioId como fallback
+        }
+      }
 
       authBroadcast.postMessage({ type: 'LOGIN', userId: user.id });
       return { token, user };
     } catch (error: unknown) {
-      // Si es la cuenta desarrollador y el backend no responde o devuelve 401, autenticar directamente
-      if (isDevEmail) {
-        console.info('Autenticando cuenta desarrollador multi-rol...');
-        const devUser: User = {
-          id: 'u-dev-master',
-          nombre: 'Desarrollador ESU',
-          apellido: '',
-          email: 'dev@esu.gob.ar',
-          dni: '99999999',
-          rol: 'ADMIN',
-          activo: true,
-          isDeveloper: true,
-          twoFactorEnabled: false,
-          emailVerified: true,
-        };
-        const devToken = `dev-token-${Date.now()}`;
-        tokenStorage.setAccessToken(devToken);
-        currentSessionUser = devUser;
-        sessionStorage.setItem('esu_session_active', '1');
-        localStorage.setItem('esu_dev_mode', 'true');
-        authBroadcast.postMessage({ type: 'LOGIN', userId: devUser.id });
-        return { token: devToken, user: devUser };
-      }
+      
 
       if (isAxiosError<BackendAuthData>(error)) {
+        const extracted = extractApiErrorMessage(error);
+        if (extracted && extracted !== 'Error de comunicación con el servidor.') {
+          throw new Error(extracted, { cause: error });
+        }
         if (error.response?.data?.message) {
-          throw new Error(error.response.data.message);
+          throw new Error(error.response.data.message, { cause: error });
         }
         if (error.response?.status === 401) {
-          throw new Error('Credenciales inválidas: email o contraseña incorrectos.');
+          throw new Error('Credenciales inválidas: email o contraseña incorrectos.', { cause: error });
         }
-
-        // Si hay una respuesta de error pero no es 401 ni tiene mensaje, relanzar
+        if (error.response?.status === 423) {
+          throw new Error('La cuenta se encuentra temporalmente bloqueada por superar intentos fallidos.', { cause: error });
+        }
+        if (error.response?.status === 403) {
+          throw new Error('Acceso no permitido o email no verificado.', { cause: error });
+        }
         if (error.response) {
           throw error;
         }
       }
 
-      // Simulación offline/mock robusta si el backend no responde
-      const input = (credentials.email || credentials.dni || '').trim().toLowerCase();
-      let matchedUser = MOCK_USERS.find(
-        (u) =>
-          u.email.toLowerCase() === input ||
-          u.dni === input ||
-          (credentials.rolSimulado && u.rol === credentials.rolSimulado)
-      );
-
-      if (!matchedUser) {
-        matchedUser = {
-          id: `u-${Date.now()}`,
-          nombre: input.includes('@') ? input.split('@')[0] : 'Usuario',
-          apellido: '',
-          email: input.includes('@') ? input : `${input}@email.com`,
-          dni: input.includes('@') ? '38123456' : input,
-          rol: credentials.rolSimulado || 'PACIENTE',
-          activo: true,
-          twoFactorEnabled: false,
-          emailVerified: true,
-        };
-      }
-
-      // Si el usuario mock tiene 2FA configurado previamente
-      const saved2FA = localStorage.getItem(`esu_2fa_enabled_${matchedUser.id}`);
-      if (saved2FA === 'true') {
-        return {
-          token: '',
-          user: { ...matchedUser, twoFactorEnabled: true },
-          requires2FA: true,
-          tempToken: `temp-token-${matchedUser.id}`,
-        };
-      }
-
-      const token = `mock-jwt-token-for-${matchedUser.id}-${Date.now()}`;
-      tokenStorage.setAccessToken(token);
-      currentSessionUser = {
-        ...matchedUser,
-        twoFactorEnabled: saved2FA === 'true',
-        emailVerified: true,
-      };
-      sessionStorage.setItem('esu_session_active', '1');
-
-      return { token, user: currentSessionUser };
+      throw error instanceof Error ? error : new Error('Error al conectar con el servicio de autenticación.');
     }
   },
 
   /**
-   * Registro de nuevo paciente (HU-43)
+   * Inicio de sesión y registro federado con Google OAuth2 / OpenID Connect
    */
-  async register(userData: Omit<User, 'id'> & { password?: string }): Promise<AuthResponse> {
-    const cleanData = sanitizeFormData(userData);
-
-    const payload = {
-      email: cleanData.email,
-      password: cleanData.password || 'password123',
-      rol: cleanData.rol || 'PACIENTE',
-    };
+  async loginWithGoogle(idToken: string): Promise<AuthResponse> {
+    if (!idToken || !idToken.trim()) {
+      throw new Error('El token de autenticación de Google es obligatorio.');
+    }
 
     try {
-      const response = await apiClient.post<BackendAuthData>('/auth/registro', payload);
-      const token = response.data.accessToken || response.data.token || `token-${Date.now()}`;
+      const response = await apiClient.post<BackendAuthData>(API_ENDPOINTS.auth.google, {
+        idToken: idToken.trim(),
+      });
+
+      const token = response.data.accessToken || response.data.token;
+      if (!token) {
+        throw new Error('El servidor no retornó un token de acceso válido.');
+      }
+
       const user: User = {
         id: String(response.data.usuarioId || Date.now()),
-        nombre: userData.nombre,
-        apellido: userData.apellido,
-        email: response.data.email || userData.email,
-        dni: userData.dni,
-        telefono: userData.telefono,
-        rol: (response.data.rol as UserRole) || userData.rol || 'PACIENTE',
+        nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
+        apellido: response.data.apellido || '',
+        email: response.data.email || '',
+        dni: response.data.dni || '',
+        rol: normalizeUserRole(response.data.rol),
         activo: true,
         twoFactorEnabled: false,
-        emailVerified: false, // Requiere verificación por correo según HU-43
+        emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
+        isDeveloper: false,
       };
 
       tokenStorage.setAccessToken(token);
       currentSessionUser = user;
       sessionStorage.setItem('esu_session_active', '1');
 
+      if (user.rol === 'PACIENTE') {
+        try {
+          const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
+          if (perfilRes.data?.id) {
+            user.id = String(perfilRes.data.id);
+            if (perfilRes.data.dni) user.dni = perfilRes.data.dni;
+            if (perfilRes.data.nombre) user.nombre = perfilRes.data.nombre;
+            if (perfilRes.data.apellido) user.apellido = perfilRes.data.apellido;
+            currentSessionUser = user;
+          }
+        } catch {
+          // Mantener usuarioId como fallback
+        }
+      }
+
+      authBroadcast.postMessage({ type: 'LOGIN', userId: user.id });
       return { token, user };
     } catch (error: unknown) {
       if (isAxiosError<BackendAuthData>(error)) {
-        if (error.response?.data?.message) {
-          throw new Error(error.response.data.message);
+        const extracted = extractApiErrorMessage(error);
+        if (extracted && extracted !== 'Error de comunicación con el servidor.') {
+          throw new Error(extracted, { cause: error });
         }
-        if (error.response?.status === 400 || error.response?.status === 409) {
-          throw new Error(`El email "${userData.email}" ya se encuentra registrado.`);
+        if (error.response?.data?.message) {
+          throw new Error(error.response.data.message, { cause: error });
+        }
+        if (error.response?.status === 409) {
+          throw new Error('El correo ya está registrado mediante credenciales locales. Por favor inicie sesión con su contraseña tradicional.', { cause: error });
+        }
+        if (error.response?.status === 401) {
+          throw new Error('La credencial de Google no es válida o ha caducado.', { cause: error });
+        }
+        if (error.response?.status === 403) {
+          throw new Error('La cuenta de usuario se encuentra deshabilitada.', { cause: error });
         }
         if (error.response) {
           throw error;
         }
       }
 
-      const newUser: User = {
-        id: `u-${Date.now()}`,
-        nombre: userData.nombre,
-        apellido: userData.apellido,
-        email: userData.email,
-        dni: userData.dni,
-        telefono: userData.telefono,
-        rol: userData.rol || 'PACIENTE',
-        activo: true,
-        twoFactorEnabled: false,
-        emailVerified: false, // Requiere verificación según HU-43
-      };
-      const token = `mock-jwt-token-${newUser.id}`;
-      tokenStorage.setAccessToken(token);
-      currentSessionUser = newUser;
-      sessionStorage.setItem('esu_session_active', '1');
-
-      return { token, user: newUser };
+      throw error instanceof Error ? error : new Error('Error al conectar con el servicio de autenticación con Google.');
     }
   },
 
   /**
-   * Cierre de sesión seguro: notifica al servidor (HU-41), purga memoria y sincroniza pestañas (HU-44)
+   * Registro público de pacientes
    */
-  async logout(isSilent: boolean = false): Promise<void> {
+  async register(userData: Omit<User, 'id'> & { password?: string }): Promise<AuthResponse> {
+    const cleanData = sanitizeFormData(userData);
+    const email = cleanData.email.trim().toLowerCase();
+
+    const payload = {
+      email,
+      password: cleanData.password || '',
+      nombre: cleanData.nombre || '',
+      apellido: cleanData.apellido || '',
+    };
+
     try {
-      if (!isSilent) {
-        await apiClient.post('/auth/logout').catch(() => null);
+      const response = await apiClient.post<BackendAuthData>(API_ENDPOINTS.auth.register, payload);
+
+      const token = response.data.accessToken || response.data.token || '';
+
+      const user: User = {
+        id: String(response.data.usuarioId || Date.now()),
+        nombre: cleanData.nombre,
+        apellido: cleanData.apellido,
+        email,
+        dni: cleanData.dni,
+        rol: 'PACIENTE',
+        activo: true,
+        emailVerified: true,
+      };
+
+      if (token) {
+        tokenStorage.setAccessToken(token);
+        currentSessionUser = user;
+        sessionStorage.setItem('esu_session_active', '1');
       }
+
+      return {
+        token,
+        user,
+      };
+    } catch (error: unknown) {
+      throw new Error(extractApiErrorMessage(error, 'Error al registrar el paciente.'), { cause: error });
+    }
+  },
+
+  /**
+   * Cierre de sesión seguro: revoca refresh token en backend, limpia memoria y cookies
+   */
+  async logout(): Promise<void> {
+    try {
+      await apiClient.post(API_ENDPOINTS.auth.logout);
+    } catch {
+      // Ignorar fallo de red en logout
     } finally {
       tokenStorage.clearToken();
       currentSessionUser = null;
       sessionStorage.removeItem('esu_session_active');
+      localStorage.removeItem('esu_dev_mode');
+      localStorage.removeItem('esu_dev_active_role');
       authBroadcast.postMessage({ type: 'LOGOUT', reason: 'user' });
-    }
-  },
-
-  /**
-   * Renovación silenciosa de sesión o verificación de token activo (HU-41)
-   */
-  async devSwitchRole(newRole: UserRole): Promise<void> {
-    try {
-      await apiClient.post('/auth/dev-switch-role', { role: newRole });
-    } catch {
-      // Ignorar si el endpoint backend no está disponible
-    }
-  },
-
-  async refreshSession(): Promise<User | null> {
-    try {
-      const response = await apiClient.post<BackendAuthData>('/auth/refresh');
-      const token = response.data.accessToken || response.data.token;
-      if (token) {
-        tokenStorage.setAccessToken(token);
-        if (response.data.user) {
-          currentSessionUser = response.data.user;
-          return currentSessionUser;
-        }
-      }
-      return currentSessionUser;
-    } catch {
-      return null;
     }
   },
 
@@ -302,149 +290,101 @@ export const authService = {
     currentSessionUser = user;
   },
 
-  // -------------------------------------------------------------
-  // Módulo HU-42: Configuración y Verificación de Doble Factor (2FA/TOTP)
-  // -------------------------------------------------------------
-
   /**
-   * Inicia configuración 2FA: genera clave secreta, QR y 10 códigos de respaldo
+   * Renovación silenciosa de sesión vía Refresh Token seguro
    */
-  async setup2FA(): Promise<TwoFactorSetupData> {
+  async refreshSession(): Promise<User | null> {
     try {
-      const response = await apiClient.post<TwoFactorSetupData>('/auth/2fa/setup');
-      return response.data;
-    } catch {
-      // Fallback estandarizado para demo o cuando el backend está en desarrollo
-      const demoSecret = 'JBSWY3DPEHPK3PXP';
-      const userEmail = currentSessionUser?.email || 'usuario@esu.salud.gob.ar';
-      const otpAuthUri = `otpauth://totp/Luvia:${encodeURIComponent(userEmail)}?secret=${demoSecret}&issuer=Luvia`;
-      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpAuthUri)}`;
-
-      return {
-        secret: demoSecret,
-        qrCodeUrl,
-        backupCodes: [
-          '82947192',
-          '93810472',
-          '19384729',
-          '58204829',
-          '48291048',
-          '74920184',
-          '38194028',
-          '91827364',
-          '28401948',
-          '65920184',
-        ],
-      };
-    }
-  },
-
-  /**
-   * Valida reactivamente el primer código de 6 dígitos para activar 2FA
-   */
-  async confirm2FA(code: string): Promise<boolean> {
-    const cleanCode = sanitizeFormData(code).trim();
-    try {
-      const response = await apiClient.post<{ success?: boolean }>('/auth/2fa/verify', { code: cleanCode });
-      if (currentSessionUser) {
-        currentSessionUser.twoFactorEnabled = true;
+      const refreshRes = await apiClient.post<BackendAuthData>(API_ENDPOINTS.auth.refresh);
+      const newToken = refreshRes.data.accessToken || refreshRes.data.token;
+      if (newToken) {
+        tokenStorage.setAccessToken(newToken);
       }
-      return response.data.success ?? true;
-    } catch (err: unknown) {
-      if (isAxiosError(err) && err.response) {
-        throw err;
-      }
-      // En modo local/mock: cualquier código de 6 dígitos válido activa el 2FA
-      if (/^\d{6}$/.test(cleanCode)) {
-        if (currentSessionUser) {
-          currentSessionUser.twoFactorEnabled = true;
-          localStorage.setItem(`esu_2fa_enabled_${currentSessionUser.id}`, 'true');
+
+      const res = await apiClient.get<{ id: number; email: string; rol: string; activo: boolean; verificado: boolean }>(
+        API_ENDPOINTS.auth.me
+      );
+      if (res.data) {
+        const userRol = normalizeUserRole(res.data.rol);
+        let targetId = String(res.data.id);
+        let dni = String(res.data.id);
+        let nombre = res.data.email ? res.data.email.split('@')[0] : 'Usuario';
+        let apellido = '';
+
+        if (userRol === 'PACIENTE') {
+          try {
+            const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
+            if (perfilRes.data?.id) {
+              targetId = String(perfilRes.data.id);
+              if (perfilRes.data.dni) dni = perfilRes.data.dni;
+              if (perfilRes.data.nombre) nombre = perfilRes.data.nombre;
+              if (perfilRes.data.apellido) apellido = perfilRes.data.apellido;
+            }
+          } catch {
+            // Fallback
+          }
         }
-        return true;
-      }
-      throw new Error('Código TOTP de 6 dígitos inválido.');
-    }
-  },
 
-  /**
-   * Desafío 2FA durante el login: valida código TOTP (6 dígitos) o código de respaldo (8 dígitos)
-   */
-  async verify2FALogin(tempToken: string, code: string, isBackupCode: boolean = false): Promise<AuthResponse> {
-    const cleanCode = sanitizeFormData(code).trim();
-
-    try {
-      const response = await apiClient.post<BackendAuthData>('/auth/2fa/challenge', {
-        tempToken,
-        code: cleanCode,
-        isBackupCode,
-      });
-
-      const token = response.data.accessToken || response.data.token || `token-2fa-${Date.now()}`;
-      const user = response.data.user || currentSessionUser || (MOCK_USERS[0] as User);
-
-      tokenStorage.setAccessToken(token);
-      currentSessionUser = user;
-      sessionStorage.setItem('esu_session_active', '1');
-
-      return { token, user };
-    } catch (err: unknown) {
-      if (isAxiosError(err) && err.response) {
-        throw err;
-      }
-
-      // Verificación local mock:
-      const isValid = isBackupCode
-        ? /^\d{8}$/.test(cleanCode) || /^[A-Za-z0-9]{8}$/.test(cleanCode)
-        : /^\d{6}$/.test(cleanCode);
-
-      if (isValid) {
-        const token = `mock-token-2fa-verified-${Date.now()}`;
-        tokenStorage.setAccessToken(token);
-        if (currentSessionUser) {
-          currentSessionUser.twoFactorEnabled = true;
-        }
-        sessionStorage.setItem('esu_session_active', '1');
-        return {
-          token,
-          user: currentSessionUser || (MOCK_USERS[0] as User),
+        const refreshedUser: User = {
+          id: targetId,
+          nombre,
+          apellido,
+          email: res.data.email,
+          dni,
+          rol: userRol,
+          activo: res.data.activo !== false,
+          emailVerified: res.data.verificado !== false,
         };
+        currentSessionUser = refreshedUser;
+        return refreshedUser;
       }
-      throw new Error(isBackupCode ? 'Código de respaldo de 8 dígitos no válido.' : 'Código de 6 dígitos incorrecto.');
+      return null;
+    } catch {
+      return null;
     }
   },
 
   /**
-   * Desactivar 2FA
+   * Switch de rol solo operativo en desarrollo
    */
-  async disable2FA(): Promise<void> {
+  async devSwitchRole(newRole: UserRole): Promise<void> {
+    if (!import.meta.env.DEV) {
+      throw new Error('El cambio dinámico de rol no está habilitado en entornos productivos.');
+    }
     try {
-      await apiClient.post('/auth/2fa/disable');
+      const res = await apiClient.post<BackendAuthData>(
+        API_ENDPOINTS.auth.devSwitchRole,
+        { role: newRole },
+        { headers: { 'X-Dev-Secret': 'dev-secret-esu-2026' } }
+      );
+      const newToken = res.data?.accessToken || res.data?.token;
+      if (newToken) {
+        tokenStorage.setAccessToken(newToken);
+      }
+      if (res.data?.usuarioId && currentSessionUser) {
+        currentSessionUser.id = String(res.data.usuarioId);
+      }
     } catch {
-      // Ignorar error si está en mock
+      // Permitido en local
     }
     if (currentSessionUser) {
-      currentSessionUser.twoFactorEnabled = false;
-      localStorage.removeItem(`esu_2fa_enabled_${currentSessionUser.id}`);
+      currentSessionUser.rol = newRole;
+      localStorage.setItem('esu_dev_active_role', newRole);
     }
   },
 
-  // -------------------------------------------------------------
-  // Módulo HU-43: Recuperación de Contraseña y Verificación de Email
-  // -------------------------------------------------------------
-
   /**
-   * Solicita restablecimiento de contraseña con feedback seguro no revelador
+   * Recuperación de Contraseña con respuesta no reveladora
    */
   async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
     const cleanEmail = sanitizeFormData(email).trim().toLowerCase();
 
     try {
-      await apiClient.post('/auth/forgot-password', { email: cleanEmail });
+      await apiClient.post(API_ENDPOINTS.auth.forgotPassword, { email: cleanEmail });
     } catch {
-      // Fallback local: se mantiene la misma respuesta no reveladora
+      // Se mantiene respuesta no reveladora
     }
 
-    // Feedback no revelador para mitigar enumeración de cuentas
     return {
       success: true,
       message: 'Si el correo electrónico se encuentra registrado en nuestro sistema, recibirás un enlace con las instrucciones para restablecer tu contraseña.',
@@ -452,61 +392,60 @@ export const authService = {
   },
 
   /**
-   * Establece una nueva contraseña asociada al token temporal recibido por enlace
+   * Restablece contraseña vía token temporal
    */
   async resetPassword(token: string, newPassword: string): Promise<boolean> {
     const cleanPassword = sanitizeFormData(newPassword);
 
-    try {
-      await apiClient.post('/auth/reset-password', {
-        token,
-        newPassword: cleanPassword,
-      });
-      return true;
-    } catch (err: unknown) {
-      if (isAxiosError<BackendAuthData>(err)) {
-        if (err.response?.data?.message) {
-          throw new Error(err.response.data.message);
-        }
-        if (err.response) {
-          throw err;
-        }
-      }
-      return true;
-    }
+    await apiClient.post(API_ENDPOINTS.auth.resetPassword, {
+      token,
+      newPassword: cleanPassword,
+    });
+    return true;
   },
 
   /**
-   * Reenvía correo de confirmación de email
+   * Cambio de contraseña para usuarios autenticados
    */
-  async resendVerificationEmail(email?: string): Promise<{ success: boolean; message: string }> {
-    const targetEmail = email || currentSessionUser?.email || '';
-    try {
-      await apiClient.post('/auth/verify-email/resend', { email: targetEmail });
-    } catch {
-      // Fallback local
-    }
+  async cambiarPassword(passwordActual: string, nuevaPassword: string): Promise<{ success: boolean; message: string }> {
+    const cleanActual = sanitizeFormData(passwordActual);
+    const cleanNueva = sanitizeFormData(nuevaPassword);
+
+    const response = await apiClient.post<{ mensaje?: string }>(API_ENDPOINTS.auth.cambiarPassword, {
+      passwordActual: cleanActual,
+      nuevaPassword: cleanNueva,
+    });
+
     return {
       success: true,
-      message: 'Se ha enviado un nuevo enlace de confirmación a tu casilla de correo.',
+      message: response.data?.mensaje || 'Contraseña actualizada exitosamente.',
     };
   },
 
   /**
-   * Confirma la titularidad del correo electrónico mediante el token
+   * Reenvío de confirmación de email
+   */
+  async resendVerificationEmail(email?: string): Promise<{ success: boolean; message: string }> {
+    const targetEmail = email || currentSessionUser?.email || '';
+    try {
+      await apiClient.post(API_ENDPOINTS.auth.resendVerification, { email: targetEmail });
+    } catch {
+      // Fallback
+    }
+    return {
+      success: true,
+      message: 'Si la cuenta existe y no está verificada, se ha enviado un nuevo enlace de confirmación.',
+    };
+  },
+
+  /**
+   * Confirmación de email vía token
    */
   async verifyEmail(token: string): Promise<boolean> {
-    try {
-      await apiClient.get(`/auth/verify-email?token=${encodeURIComponent(token)}`);
-      if (currentSessionUser) {
-        currentSessionUser.emailVerified = true;
-      }
-      return true;
-    } catch {
-      if (currentSessionUser) {
-        currentSessionUser.emailVerified = true;
-      }
-      return true;
+    await apiClient.get(`${API_ENDPOINTS.auth.verifyEmail}?token=${encodeURIComponent(token)}`);
+    if (currentSessionUser) {
+      currentSessionUser.emailVerified = true;
     }
+    return true;
   },
 };

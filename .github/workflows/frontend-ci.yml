@@ -37,13 +37,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify the complete turnero integration
-        shell: bash
-        run: |
-          if [ ! -f src/features/turnero/demoBookingStore.ts ]; then
-            echo '::notice::This stacked slice is incomplete by design; full tests and build run once the demo integration is in the chain.'
-            exit 0
-          fi
+      - name: TypeScript TypeCheck
+        run: npx tsc -b
 
-          node --experimental-strip-types --test tests/*.test.mjs
-          npm run build
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Unit and Contract Tests
+        run: node --experimental-strip-types --test tests/*.test.mjs
+
+      - name: Production Build
+        run: npm run build

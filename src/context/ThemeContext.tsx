@@ -17,7 +17,7 @@ const getInitialTheme = (): Theme => {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved === 'light' || saved === 'dark') return saved;
   // Respeta la preferencia del sistema operativo si el usuario no eligió
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'light'; // Portal hospitalario unificado: modo clínico claro por defecto salvo que el usuario lo active manualmente
 };
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

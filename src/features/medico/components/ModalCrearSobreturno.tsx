@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { turnosService } from '@/api/turnosService';
 import { pacientesService } from '@/api/pacientesService';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import { useToast } from '@/context/ToastContext';
 import type { Turno, User } from '@/types';
 import {
@@ -34,8 +35,8 @@ export const ModalCrearSobreturno: React.FC<ModalCrearSobreturnoProps> = ({
   isOpen,
   onClose,
   profesionalId,
-  centroSaludId = 'c1',
-  fecha = new Date().toISOString().split('T')[0],
+  centroSaludId = '1',
+  fecha = new Date().toLocaleDateString('en-CA'),
   sobreturnosHoyCount,
   onSobreturnoCreado,
 }) => {
@@ -56,7 +57,7 @@ export const ModalCrearSobreturno: React.FC<ModalCrearSobreturnoProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      pacientesService.getAll().then(setPacientes);
+      pacientesService.getAll().then(setPacientes).catch(() => {});
     }
   }, [isOpen]);
 
@@ -115,8 +116,8 @@ export const ModalCrearSobreturno: React.FC<ModalCrearSobreturnoProps> = ({
       success(`Sobreturno asignado exitosamente (${sobreturnosHoyCount + 1}/3 cupos del día).`);
       if (onSobreturnoCreado) onSobreturnoCreado(nuevo);
       onClose();
-    } catch (err: any) {
-      error(err.message || 'Error al asignar el sobreturno.');
+    } catch (err: unknown) {
+      error(extractApiErrorMessage(err, 'Error al asignar el sobreturno.'));
     } finally {
       setGuardando(false);
     }
@@ -171,7 +172,7 @@ export const ModalCrearSobreturno: React.FC<ModalCrearSobreturnoProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl bg-muted px-4 py-2 text-xs font-bold text-foreground hover:bg-accent transition"
+              className="rounded-xl bg-muted px-4 py-2 text-xs font-bold text-foreground hover:bg-accent transition cursor-pointer"
             >
               Entendido / Cerrar
             </button>

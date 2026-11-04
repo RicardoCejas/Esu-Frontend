@@ -55,9 +55,7 @@ export function useAvailability(professionalId: string, date: string): Availabil
   return {
     slots: isCurrentResult ? result.slots : [],
     isLoading: hasBackendProfessionalId && Boolean(date) && !isCurrentResult,
-    error: professionalId && !hasBackendProfessionalId
-      ? 'La agenda digital de este profesional todavía no está conectada. No se pueden consultar horarios reales.'
-      : isCurrentResult ? result.error : null,
+    error: isCurrentResult ? result.error : null,
     canRetry: hasBackendProfessionalId,
     retry,
   }

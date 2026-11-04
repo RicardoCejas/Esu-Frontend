@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { turnosService } from '@/api/turnosService';
 import { centrosService } from '@/api/centrosService';
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { ModalAltaRapidaPaciente } from './components/ModalAltaRapidaPaciente';
 import { ModalVerificarCoberturaCopago } from './components/ModalVerificarCoberturaCopago';
+import { getFechaLocalHoy } from '@/lib/dateUtils';
 import { ModalTurnoMostrador } from './components/ModalTurnoMostrador';
 import { ModalCancelarMostrador } from './components/ModalCancelarMostrador';
 
@@ -50,18 +51,25 @@ export const RecepcionPage: React.FC = () => {
   const [alerta, setAlerta] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoading(true);
     Promise.all([
-      turnosService.getAll(),
-      centrosService.getAll(),
-      profesionalesService.getAll(),
-      pacientesService.getAll(),
-    ]).then(([turnosData, centrosData, profsData, pacsData]) => {
-      setTurnos(turnosData);
-      setCentros(centrosData);
-      setProfesionales(profsData);
-      setPacientes(pacsData);
-      setLoading(false);
-    });
+      turnosService.getAll().catch(() => []),
+      centrosService.getAll().catch(() => []),
+      profesionalesService.getAll().catch(() => []),
+      pacientesService.getAll().catch(() => []),
+    ])
+      .then(([turnosData, centrosData, profsData, pacsData]) => {
+        setTurnos(turnosData || []);
+        setCentros(centrosData || []);
+        setProfesionales(profsData || []);
+        setPacientes(pacsData || []);
+      })
+      .catch((err) => {
+        console.error('Error al cargar datos de recepción:', err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const mostrarAlerta = (mensaje: string) => {
@@ -88,7 +96,7 @@ export const RecepcionPage: React.FC = () => {
   }, [turnos]);
 
   // Filtrado reactivo con Debounce 300ms y filtros de sede/profesional/consultorio
-  const hoyStr = new Date().toISOString().split('T')[0];
+  const hoyStr = getFechaLocalHoy();
   const turnosHoy = useMemo(() => {
     return turnos.filter((t) => t.fecha === hoyStr);
   }, [turnos, hoyStr]);

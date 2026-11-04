@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { pacientesService } from '@/api/pacientesService';
 import type { ConsultaMedica } from '@/types';
@@ -37,10 +37,18 @@ export const MiHistorialPage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      pacientesService.getHistoriaClinica(user.id).then((data) => {
-        setConsultas(data);
-        setLoading(false);
-      });
+      setLoading(true);
+      pacientesService.getHistoriaClinica(user.id)
+        .then((data) => {
+          setConsultas(data || []);
+        })
+        .catch((err) => {
+          console.error('Error al cargar historia clínica:', err);
+          setConsultas([]);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   }, [user]);
 
@@ -176,7 +184,7 @@ export const MiHistorialPage: React.FC = () => {
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold font-heading">SISTEMA PÚBLICO Y PRIVADO DE SALUD UNIFICADA</h2>
-            <p className="text-xs text-slate-600">Hospital Provincial Aurelio Crespo • Cruz del Eje, Córdoba</p>
+            <p className="text-xs text-slate-600">Hospital Provincial Dr. Aurelio Crespo • Cruz del Eje, Córdoba</p>
           </div>
           <div className="text-right text-xs">
             <p><strong>Paciente:</strong> {user?.nombre} {user?.apellido}</p>
@@ -228,10 +236,16 @@ export const MiHistorialPage: React.FC = () => {
                     <h3 className="font-bold text-base text-foreground">
                       {highlightMatches(consulta.profesionalNombre, busqueda)}
                     </h3>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                      <Calendar className="h-3.5 w-3.5 text-primary" />
-                      <span>Atención realizada el {consulta.fecha}</span>
-                    </p>
+                    <div className="space-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                      <p className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-primary" />
+                        <span>Atención realizada el: <strong className="text-foreground">{consulta.fecha}</strong></span>
+                      </p>
+                      <p className="flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-sky-500 shrink-0" />
+                        <span>Centro de atención: <strong className="text-foreground">{consulta.centroSaludNombre || 'Hospital Provincial Dr. Aurelio Crespo'}</strong></span>
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -303,40 +317,60 @@ export const MiHistorialPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Receta Digital Asociada */}
+              {/* Receta Digital Asociada - Diseño Médico de Alto Contraste */}
               {consulta.receta && (
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3 print:border-slate-300">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Pill className="h-4 w-4 text-primary" />
-                      <h4 className="font-bold text-xs text-primary">Receta Electrónica Emitida</h4>
+                <div className="rounded-2xl border border-sky-300 dark:border-sky-800 bg-sky-50/70 dark:bg-slate-900/90 p-4 sm:p-5 space-y-3.5 shadow-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-200/80 dark:border-sky-800/60 pb-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-700 text-white shadow-2xs">
+                        <Pill className="h-4.5 w-4.5" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 font-heading">
+                          Receta Electrónica Emitida
+                        </h4>
+                        <span className="text-xs font-medium text-sky-800 dark:text-sky-300">
+                          Prescripción digital oficial (Ley 27.553) • {consulta.centroSaludNombre || 'Hospital Provincial Dr. Aurelio Crespo'}
+                        </span>
+                      </div>
                     </div>
-                    <span className="font-mono text-[11px] font-bold text-muted-foreground">
+                    <span className="font-mono text-xs font-bold text-sky-900 dark:text-sky-200 bg-white dark:bg-slate-800 border border-sky-300 dark:border-sky-700 px-3 py-1 rounded-lg shadow-2xs">
                       {consulta.receta.codigoQR}
                     </span>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {consulta.receta.medicamentos.map((med, idx) => (
                       <div
                         key={idx}
-                        className="rounded-lg border border-border bg-card p-2.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1"
+                        className="rounded-xl border border-sky-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs"
                       >
                         <div>
-                          <span className="font-bold text-foreground">{med.nombreComercial}</span>{' '}
-                          <span className="text-muted-foreground">({med.droga} - {med.presentacion})</span>
-                          <p className="text-[11px] text-primary font-medium mt-0.5">{med.dosisIndicada}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
+                              {med.nombreComercial}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/70 px-2 py-0.5 rounded-md border border-slate-200/70 dark:border-slate-600">
+                              {med.droga} • {med.presentacion}
+                            </span>
+                          </div>
+                          <p className="text-xs sm:text-sm text-sky-800 dark:text-sky-300 font-bold mt-1">
+                            Dosis indicada: {med.dosisIndicada}
+                          </p>
                         </div>
-                        <span className="text-[11px] font-semibold text-muted-foreground sm:text-right">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 sm:text-right shrink-0">
                           Cantidad: {med.cantidad}
                         </span>
                       </div>
                     ))}
                   </div>
 
-                  <p className="text-[11px] text-muted-foreground italic">
-                    Indicaciones: {consulta.receta.indicacionesGenerales}
-                  </p>
+                  {consulta.receta.indicacionesGenerales && (
+                    <div className="rounded-xl bg-white dark:bg-slate-800 border border-sky-200/70 dark:border-slate-700 p-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                      <strong className="text-sky-900 dark:text-sky-300 font-bold">Indicaciones Médicas:</strong>{' '}
+                      <span>{consulta.receta.indicacionesGenerales}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

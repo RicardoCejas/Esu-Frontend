@@ -3,15 +3,26 @@ import { tokenStorage } from './tokenStorage';
 import { getCsrfTokenFromCookie } from '@/lib/sanitizer';
 import { authBroadcast } from '@/lib/authBroadcast';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+function normalizeBaseUrl(rawUrl?: string): string {
+  if (!rawUrl || !rawUrl.trim()) {
+    return import.meta.env.DEV ? 'http://localhost:8080/api' : '/api';
+  }
+  let clean = rawUrl.trim().replace(/\/+$/, '');
+  if (clean.startsWith('http') && !clean.endsWith('/api')) {
+    clean += '/api';
+  }
+  return clean;
+}
+
+const BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_URL);
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 8000,
-  withCredentials: true, // HU-41 / HU-69: Habilita el envío de cookies HttpOnly seguras (Refresh Token)
+  timeout: 60000,
+  withCredentials: true,
 });
 
 // Interceptor de petición: inyecta Access Token desde memoria y token anti-CSRF (HU-41 / HU-44)
@@ -34,44 +45,42 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Variables para control del refresco concurrente de tokens (HU-41)
 let isRefreshing = false;
 let failedQueue: Array<{
-  resolve: (token: string | null) => void;
-  reject: (error: any) => void;
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
 }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((promise) => {
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
     if (error) {
-      promise.reject(error);
+      prom.reject(error);
     } else {
-      promise.resolve(token);
+      prom.resolve(token);
     }
   });
   failedQueue = [];
 };
 
-// Interceptor de respuesta con captura de 401 y cola de peticiones concurrentes (HU-41)
+// Interceptor de respuesta con renovación transparente mediante Refresh Token seguro (HTTP-only)
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const url = originalRequest?.url || '';
+    const isAuthEndpoint =
+      url.includes('/auth/login') ||
+      url.includes('/auth/registro') ||
+      url.includes('/auth/refresh') ||
+      url.includes('/auth/google');
 
-    // Evitar loop si la petición fallida fue el propio refresh, login o logout
-    const isAuthRoute =
-      originalRequest?.url?.includes('/auth/refresh') ||
-      originalRequest?.url?.includes('/auth/login') ||
-      originalRequest?.url?.includes('/auth/logout');
-
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthRoute) {
+    if (error.response?.status === 401 && !originalRequest?._retry && !isAuthEndpoint) {
       if (isRefreshing) {
-        // Encolar peticiones concurrentes mientras se renueva el token
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            if (token && originalRequest.headers) {
+            if (originalRequest.headers && token) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
             return apiClient(originalRequest);
@@ -83,30 +92,32 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Solicitud silenciosa de rotación de token (HU-41)
-        const refreshResponse = await axios.post(
+        const refreshResponse = await axios.post<{ accessToken?: string; token?: string }>(
           `${BASE_URL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
 
-        const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.data?.token;
-
+        const newAccessToken = refreshResponse.data.accessToken || refreshResponse.data.token;
         if (newAccessToken) {
           tokenStorage.setAccessToken(newAccessToken);
+          processQueue(null, newAccessToken);
+
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           }
-          processQueue(null, newAccessToken);
           return apiClient(originalRequest);
         } else {
-          throw new Error('Respuesta de refresh sin token válido');
+          throw new Error('No se recibió nuevo access token');
         }
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        tokenStorage.clearToken();
-        authBroadcast.postMessage({ type: 'LOGOUT', reason: 'expired' });
-        return Promise.reject(refreshError);
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        if (typeof window !== 'undefined') {
+          tokenStorage.clearToken();
+          window.sessionStorage.removeItem('esu_session_active');
+          authBroadcast.postMessage({ type: 'LOGOUT', reason: 'expired' });
+        }
+        return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;
       }

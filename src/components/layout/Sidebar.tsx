@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   Calendar,
   Clock,
+  Lock,
   FileText,
   Users,
   Building2,
@@ -17,10 +18,12 @@ import {
   Pill,
   FileCheck,
   User,
+  MapPin,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { useProximoTurno } from '@/hooks/useProximoTurno';
 import { ROLE_LABELS } from '@/lib/roles';
+import { esPacienteDniVerificado, esRutaProtegidaDni } from '@/lib/identityValidation';
 
 interface NavItem {
   title: string;
@@ -48,7 +51,7 @@ const navItems: NavItem[] = [
   { title: 'Padrón de Pacientes', path: '/dashboard/recepcion/pacientes', icon: Users, roles: ['RECEPCIONISTA', 'MEDICO', 'ADMIN'] },
   { title: 'Gestión de Turnos', path: '/dashboard/recepcion/turnos', icon: ListOrdered, roles: ['RECEPCIONISTA', 'ADMIN'] },
   { title: 'Médicos del Centro', path: '/dashboard/recepcion/medicos', icon: Stethoscope, roles: ['RECEPCIONISTA', 'ADMIN'] },
-  { title: 'Especialidades Habilitadas', path: '/dashboard/recepcion/especialidades', icon: Building2, roles: ['RECEPCIONISTA', 'ADMIN'] },
+  { title: 'Especialidades del Centro', path: '/dashboard/recepcion/especialidades', icon: Building2, roles: ['RECEPCIONISTA', 'ADMIN'] },
 
   // Rutas Administrador (HU-56 & HU-70)
   { title: 'Dashboard y Métricas', path: '/dashboard/admin', icon: Layers, roles: ['ADMIN'] },
@@ -56,6 +59,7 @@ const navItems: NavItem[] = [
   { title: 'Sedes y Consultorios', path: '/dashboard/admin/sedes', icon: Building2, roles: ['ADMIN'] },
   { title: 'Cuentas de Centros de Salud', path: '/dashboard/admin/usuarios', icon: ShieldCheck, roles: ['ADMIN'] },
   { title: 'Centros y Especialidades', path: '/dashboard/admin/especialidades', icon: Building2, roles: ['ADMIN'] },
+  { title: 'Mapa y Pines Cruz del Eje', path: '/dashboard/admin/mapa', icon: MapPin, roles: ['ADMIN'] },
 ];
 
 const INDEX_PATHS = ['/dashboard/paciente', '/dashboard/medico', '/dashboard/recepcion', '/dashboard/admin'];
@@ -64,7 +68,7 @@ export const Sidebar: React.FC = () => {
   const { user } = useAuth();
   const userRole = user?.rol || 'PACIENTE';
   const visibleItems = navItems.filter((item) => item.roles.includes(userRole));
-  const proximoTurno = useProximoTurno(user?.id, userRole === 'PACIENTE' || userRole === 'ADMIN');
+  const proximoTurno = useProximoTurno(user?.id, userRole === 'PACIENTE');
 
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-card">
@@ -123,15 +127,18 @@ export const Sidebar: React.FC = () => {
                 to={item.path}
                 end={INDEX_PATHS.includes(item.path)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                  `flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-semibold transition-all ${
                     isActive
                       ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
                       : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                   }`
                 }
               >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{item.title}</span>
+                <Icon className="h-4.5 w-4.5 shrink-0" />
+                <span className="text-[14px] sm:text-[14.5px] font-semibold leading-snug">{item.title}</span>
+                {userRole === 'PACIENTE' && esRutaProtegidaDni(item.path) && !esPacienteDniVerificado(user) && (
+                  <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0 ml-auto" />
+                )}
               </NavLink>
             );
           })}

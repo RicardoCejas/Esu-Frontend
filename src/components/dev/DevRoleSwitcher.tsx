@@ -1,14 +1,21 @@
-import React from 'react';
+﻿import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { User, Stethoscope, Building2, Shield, Code2 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
 export const DevRoleSwitcher: React.FC = () => {
-  const { user, switchRole } = useAuth();
+  const { user, switchRole, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const isDev = user?.isDeveloper || user?.email === 'dev@esu.gob.ar' || localStorage.getItem('esu_dev_mode') === 'true';
+  // El panel de desarrollador solo está habilitado en entorno de desarrollo local (DEV)
+  const isDev =
+    Boolean(import.meta.env.DEV) &&
+    isAuthenticated &&
+    !!user &&
+    (user.isDeveloper === true ||
+      user.email === 'dev@esu.gob.ar' ||
+      user.email?.toLowerCase().startsWith('dev@'));
 
   if (!isDev) {
     return null;

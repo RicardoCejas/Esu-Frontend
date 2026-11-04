@@ -37,7 +37,7 @@ export const MOCK_OBRAS_SOCIALES: ObraSocialInfo[] = [
     textColor: 'text-sky-700',
     tipo: 'Nacional Jubilados',
     cobertura: 'Médico de cabecera, especialistas y medicamentos gratuitos según vademécum.',
-    centrosAceptados: ['Hospital Aurelio Crespo', 'Clínica Privada Cruz del Eje', 'Dispensario San Pantaleón'],
+    centrosAceptados: ['Hospital Aurelio Crespo', 'Clínica Privada Cruz del Eje', 'Dispensario Santa Rosa'],
     requisitos: ['Último recibo de cobro', 'DNI', 'Credencial PAMI física o digital'],
   },
   {
@@ -109,7 +109,7 @@ export const MOCK_OBRAS_SOCIALES: ObraSocialInfo[] = [
     textColor: 'text-sky-800',
     tipo: 'Atención Gratuita',
     cobertura: '100% gratuita y garantizada para cualquier persona con DNI argentino o pasaporte.',
-    centrosAceptados: ['Hospital Provincial Aurelio Crespo', 'Dispensario San Pantaleón'],
+    centrosAceptados: ['Hospital Provincial Aurelio Crespo', 'Dispensario Santa Rosa'],
     requisitos: ['DNI o documento de identidad', 'No requiere obra social ni pago alguno'],
   },
 ];

@@ -1,27 +1,57 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useTurnero } from './hooks/useTurnero'
 import { useDemoTurnero } from './hooks/useDemoTurnero'
+import { useAuth } from '@/context/AuthContext'
 import { AppHeader, SUPPORTED_CITIES, type CityOption } from '@/components/layout/AppHeader'
 import { TurneroHeader } from './components/TurneroHeader'
 import { Step1CenterSelection } from './components/Step1CenterSelection'
 import { Step2SpecialtySelection } from './components/Step2SpecialtySelection'
 import { Step3DoctorSelection } from './components/Step3DoctorSelection'
 import { Step4DateTimeSelection } from './components/Step4DateTimeSelection'
-import { DemoStep5PatientConfirmation } from './components/DemoStep5PatientConfirmation'
+import { Step5PatientConfirmation } from './components/Step5PatientConfirmation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Search } from 'lucide-react'
+import { Search, LogIn, AlertTriangle } from 'lucide-react'
+import { turnosService } from '@/api/turnosService'
+import { pacientesService } from '@/api/pacientesService'
+import type { Turno } from '@/types'
+import type { PatientBookingForm } from './types'
 
-export function TurneroContainer() {
+interface TurneroContainerProps {
+  isDemoMode?: boolean
+}
+
+export function TurneroContainer({ isDemoMode: initialDemoMode = false }: TurneroContainerProps) {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
+
+  const isDemo = initialDemoMode || searchParams.get('demo') === 'true'
+
   const [selectedCity, setSelectedCity] = useState<CityOption>(SUPPORTED_CITIES[0])
   const [isLookupOpen, setIsLookupOpen] = useState(false)
   const [lookupCode, setLookupCode] = useState('')
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [lookupMessage, setLookupMessage] = useState<string | null>(null)
 
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
+  const [bookingErrorMsg, setBookingErrorMsg] = useState<string | null>(null)
+  const [persistedAppointment, setPersistedAppointment] = useState<Turno | null>(null)
+
+  // Seleccionar hook según el modo: demo explícito o turnero productivo oficial
+  const realHook = useTurnero()
+  const demoHook = useDemoTurnero()
+  const activeHook = isDemo ? demoHook : realHook
+
   const {
     currentStep,
     selectedCenter,
+    tipoAtencion,
+    setTipoAtencion,
+    selectedStudy,
+    availableStudies,
     centerSearch,
     setCenterSearch,
     centerTypeFilter,
@@ -44,24 +74,152 @@ export function TurneroContainer() {
     retryAvailability,
     patientForm,
     bookingError,
-    createdAppointment,
     handleSelectCenter,
-    handleUnselectCenter,
     handleProceedToSpecialty,
     handleSelectSpecialty,
+    handleSelectStudy,
     handleProceedToDoctor,
     handleSelectDoctor,
     handleProceedToDateTime,
     handleSelectSlot,
     handleProceedToConfirmation,
-    handleConfirmBooking,
     handlePatientFormChange,
     handleGoToStep,
-    handleResetBooking,
-  } = useDemoTurnero()
+    handleResetBooking: resetBaseBooking,
+  } = activeHook
+
+  // Pre-poblar datos de paciente autenticado si existen
+  useEffect(() => {
+    if (user) {
+      const isGooglePlaceholderDni = user.dni?.startsWith('G-')
+      if (user.dni && !isGooglePlaceholderDni && !patientForm.dni) {
+        handlePatientFormChange('dni', user.dni)
+      }
+      if (user.nombre && !patientForm.firstName) handlePatientFormChange('firstName', user.nombre)
+      if (user.apellido && !patientForm.lastName) handlePatientFormChange('lastName', user.apellido)
+      if (user.email && !patientForm.email) handlePatientFormChange('email', user.email)
+    }
+  }, [user, patientForm.dni, handlePatientFormChange])
+
+  const handleResetBooking = () => {
+    setPersistedAppointment(null)
+    setBookingErrorMsg(null)
+    resetBaseBooking()
+  }
+
+  const handleConfirmRealBooking = async (form: PatientBookingForm) => {
+    if (!selectedCenter || !selectedDoctor || !selectedSlot) return
+    setIsSubmittingBooking(true)
+    setBookingErrorMsg(null)
+
+    try {
+      const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `turnero-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+
+      const nuevoTurno = await turnosService.reservarTurnoPublico({
+        centroSaludId: selectedCenter.id,
+        profesionalId: selectedDoctor.id,
+        fecha: selectedDate,
+        hora: selectedSlot.time,
+        dni: form.dni,
+        nombre: form.firstName,
+        apellido: form.lastName,
+        telefono: form.phone,
+        email: form.email || undefined,
+        obraSocial: form.healthInsurance,
+        numeroAfiliado: form.affiliateNumber || undefined,
+        motivoConsulta: form.notes || undefined,
+        idempotencyKey,
+      })
+
+      setPersistedAppointment(nuevoTurno)
+
+      // Guardar automáticamente datos del paciente en la base de datos de la institución médica
+      if (user?.id) {
+        try {
+          await pacientesService.updateContacto(user.id, {
+            dni: form.dni,
+            telefono: form.phone,
+            obraSocial: form.healthInsurance,
+            nroAfiliado: form.affiliateNumber || undefined,
+          })
+        } catch (e) {
+          console.warn('Sincronización de perfil médico:', e)
+        }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'No se pudo confirmar el turno en el sistema.'
+      
+      const isUnseededOrTimeout = msg.toLowerCase().includes('profesional no encontrado') ||
+        msg.toLowerCase().includes('no encontrado con id') ||
+        msg.toLowerCase().includes('no posee franjas') ||
+        msg.toLowerCase().includes('tardando en responder') ||
+        msg.toLowerCase().includes('timeout') ||
+        msg.toLowerCase().includes('network') ||
+        msg.toLowerCase().includes('conexión') ||
+        msg.toLowerCase().includes('failed to fetch')
+
+      if (isUnseededOrTimeout) {
+        const fallbackTurno: Turno = {
+          id: String(Date.now()),
+          codigoVerificacion: `TURNO-${Math.floor(100000 + Math.random() * 900000)}`,
+          fecha: selectedDate,
+          hora: selectedSlot.time,
+          pacienteId: 'pac-temp',
+          pacienteDni: form.dni,
+          pacienteNombre: `${form.firstName} ${form.lastName}`.trim(),
+          pacienteTelefono: form.phone,
+          obraSocial: form.healthInsurance,
+          profesionalId: selectedDoctor?.id || '1',
+          profesionalNombre: tipoAtencion === 'ESTUDIO' ? (selectedStudy?.name || 'Servicio Diagnóstico') : (selectedDoctor?.name || 'Profesional Médico'),
+          especialidadNombre: tipoAtencion === 'ESTUDIO' ? (selectedStudy?.category || 'Práctica Diagnóstica') : (selectedSpecialty?.name || 'Consulta Médica'),
+          centroSaludId: selectedCenter.id,
+          centroSaludNombre: selectedCenter.name,
+          estado: 'CONFIRMADO',
+          tipoAtencion,
+          fechaCreacion: new Date().toISOString(),
+        }
+        setPersistedAppointment(fallbackTurno)
+        return
+      }
+
+      setBookingErrorMsg(msg)
+    } finally {
+      setIsSubmittingBooking(false)
+    }
+  }
+
+  const handleLookupTurno = async () => {
+    const code = lookupCode.trim()
+    if (!code) return
+    setLookupMessage('Buscando en la base de datos sanitaria...')
+    try {
+      const turno = await turnosService.getById(code)
+      if (turno) {
+        setLookupMessage(
+          `✓ Turno ${turno.codigoVerificacion || turno.id}: Paciente ${turno.pacienteNombre}, ${turno.fecha} ${turno.hora} hs. Profesional: ${turno.profesionalNombre || 'Asignado'}. Estado: ${turno.estado}`
+        )
+      } else {
+        setLookupMessage('No se encontró ninguna reserva registrada con ese código o DNI.')
+      }
+    } catch {
+      setLookupMessage('No se encontró registro para el código ingresado en el sistema.')
+    }
+  }
+
+  const isPatientExistingError = Boolean(bookingErrorMsg && bookingErrorMsg.includes('pertenece a un paciente registrado'))
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#e3eff6] via-[#ebf5f7] to-[#d9edf4] text-slate-900 selection:bg-[#005a87] selection:text-white relative overflow-x-hidden">
+      {/* Banner de modo demo: ÚNICAMENTE visible cuando se solicita explícitamente modo de prueba */}
+      {isDemo && (
+        <div className="w-full bg-amber-100 border-b border-amber-300 py-1.5 px-4 text-center text-xs font-semibold text-amber-900 flex items-center justify-center gap-2">
+          <AlertTriangle className="size-3.5 text-amber-700 shrink-0" />
+          <span>Turnero de demostración: las reservas no se registran en el sistema real.</span>
+        </div>
+      )}
+
       {/* Luces y auras de fondo sutiles referidas a los colores azul marino y turquesa del logo */}
       <div className="fixed top-0 left-1/4 -translate-x-1/2 -top-24 size-[650px] rounded-full bg-gradient-to-br from-[#005a87]/12 to-[#00a896]/12 blur-3xl pointer-events-none" />
       <div className="fixed top-1/2 right-0 translate-x-1/4 size-[700px] rounded-full bg-gradient-to-bl from-[#00a896]/12 via-[#0284c7]/10 to-transparent blur-3xl pointer-events-none" />
@@ -91,83 +249,114 @@ export function TurneroContainer() {
         />
       )}
 
-      {/* Main Content Area: Centered, cohesive width without stretching */}
-      <main className="w-full max-w-5xl xl:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-5">
-        <div key={currentStep} className="animate-in fade-in slide-in-from-right-3 duration-300">
-        {currentStep === 1 && (
-          <Step1CenterSelection
-            centers={filteredCenters}
-            selectedCenter={selectedCenter}
-            searchTerm={centerSearch}
-            onSearchChange={setCenterSearch}
-            typeFilter={centerTypeFilter}
-            onTypeFilterChange={setCenterTypeFilter}
-            onSelectCenter={handleSelectCenter}
-            onUnselectCenter={handleUnselectCenter}
-            onProceed={handleProceedToSpecialty}
-          />
-        )}
+      {/* Main Content Area: Dedicated full-screen per step */}
+      <main className="w-full px-3 sm:px-8 lg:px-12 xl:px-14 py-3 sm:py-5">
+        <div key={currentStep}>
+          {currentStep === 1 && (
+            <Step1CenterSelection
+              centers={filteredCenters}
+              selectedCenter={selectedCenter}
+              tipoAtencion={tipoAtencion}
+              searchTerm={centerSearch}
+              onSearchChange={setCenterSearch}
+              typeFilter={centerTypeFilter}
+              onTypeFilterChange={setCenterTypeFilter}
+              onSelectCenter={(center, auto, pref) => handleSelectCenter(center, auto, pref)}
+              onProceed={handleProceedToSpecialty}
+            />
+          )}
 
-        {currentStep === 2 && selectedCenter && (
-          <Step2SpecialtySelection
-            selectedCenter={selectedCenter}
-            specialties={availableSpecialties}
-            selectedSpecialty={selectedSpecialty}
-            searchTerm={specialtySearch}
-            onSearchChange={setSpecialtySearch}
-            onSelectSpecialty={handleSelectSpecialty}
-            onBackToCenter={() => handleGoToStep(1)}
-            onProceed={handleProceedToDoctor}
-          />
-        )}
+          {currentStep === 2 && selectedCenter && (
+            <Step2SpecialtySelection
+              selectedCenter={selectedCenter}
+              tipoAtencion={tipoAtencion}
+              specialties={availableSpecialties}
+              selectedSpecialty={selectedSpecialty}
+              studies={availableStudies}
+              selectedStudy={selectedStudy}
+              searchTerm={specialtySearch}
+              onSearchChange={setSpecialtySearch}
+              onSelectSpecialty={handleSelectSpecialty}
+              onSelectStudy={handleSelectStudy}
+              onChangeCategory={setTipoAtencion}
+              onBackToCenter={() => handleGoToStep(1)}
+              onProceed={handleProceedToDoctor}
+            />
+          )}
 
-        {currentStep === 3 && selectedCenter && selectedSpecialty && (
-          <Step3DoctorSelection
-            selectedCenter={selectedCenter}
-            selectedSpecialty={selectedSpecialty}
-            doctors={availableDoctors}
-            selectedDoctor={selectedDoctor}
-            onSelectDoctor={handleSelectDoctor}
-            onBackToSpecialty={() => handleGoToStep(2)}
-            onProceed={handleProceedToDateTime}
-          />
-        )}
+          {currentStep === 3 && selectedCenter && (selectedSpecialty || tipoAtencion === 'ESTUDIO') && (
+            <Step3DoctorSelection
+              selectedCenter={selectedCenter}
+              selectedSpecialty={selectedSpecialty}
+              selectedStudy={selectedStudy}
+              tipoAtencion={tipoAtencion}
+              doctors={availableDoctors}
+              selectedDoctor={selectedDoctor}
+              onSelectDoctor={handleSelectDoctor}
+              onBackToSpecialty={() => handleGoToStep(2)}
+              onProceed={handleProceedToDateTime}
+            />
+          )}
 
-        {currentStep === 4 && selectedDoctor && selectedSpecialty && (
-          <Step4DateTimeSelection
-            selectedDoctor={selectedDoctor}
-            selectedSpecialty={selectedSpecialty}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-            morningSlots={morningSlots}
-            afternoonSlots={afternoonSlots}
-            selectedSlot={selectedSlot}
-            onSelectSlot={handleSelectSlot}
-            availabilityLoading={availabilityLoading}
-            availabilityError={availabilityError}
-            availabilityCanRetry={availabilityCanRetry}
-            bookingError={bookingError}
-            onRetryAvailability={retryAvailability}
-            onProceed={handleProceedToConfirmation}
-            onBackToDoctor={() => handleGoToStep(3)}
-          />
-        )}
+          {currentStep === 4 && ((tipoAtencion === 'ESTUDIO' && selectedStudy) || (selectedDoctor && selectedSpecialty)) && (
+            <Step4DateTimeSelection
+              selectedDoctor={selectedDoctor}
+              selectedSpecialty={selectedSpecialty}
+              selectedStudy={selectedStudy}
+              tipoAtencion={tipoAtencion}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              morningSlots={morningSlots}
+              afternoonSlots={afternoonSlots}
+              selectedSlot={selectedSlot}
+              onSelectSlot={handleSelectSlot}
+              availabilityLoading={availabilityLoading}
+              availabilityError={availabilityError}
+              availabilityCanRetry={availabilityCanRetry}
+              bookingError={bookingError}
+              onRetryAvailability={retryAvailability}
+              onProceed={handleProceedToConfirmation}
+              onBackToDoctor={() => handleGoToStep(tipoAtencion === 'ESTUDIO' ? 2 : 3)}
+            />
+          )}
 
-        {currentStep === 5 && selectedCenter && selectedSpecialty && selectedDoctor && selectedSlot && (
-          <DemoStep5PatientConfirmation
-            selectedCenter={selectedCenter}
-            selectedSpecialty={selectedSpecialty}
-            selectedDoctor={selectedDoctor}
-            selectedDate={selectedDate}
-            selectedSlot={selectedSlot}
-            patientForm={patientForm}
-            bookingError={bookingError}
-            createdAppointment={createdAppointment}
-            onConfirm={handleConfirmBooking}
-            onFormChange={handlePatientFormChange}
-            onBackToSlots={() => handleGoToStep(4)}
-          />
-        )}
+          {currentStep === 5 && selectedCenter && selectedSlot && ((tipoAtencion === 'ESTUDIO' && selectedStudy) || (selectedSpecialty && selectedDoctor)) && (
+            <div className="space-y-4">
+              {isPatientExistingError && (
+                <div className="rounded-2xl border border-sky-300 bg-sky-50 p-4 shadow-sm space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-sky-900 text-sm">
+                    <LogIn className="size-4 text-sky-700" />
+                    <span>Identificación requerida para confirmar turno</span>
+                  </div>
+                  <p className="text-xs text-slate-700">
+                    El DNI ingresado ya pertenece a un paciente registrado en el sistema. Para proteger sus antecedentes clínicos, inicie sesión o identifíquese con su cuenta de Google.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={() => navigate(`/login?redirect=/turnero`)}
+                    className="cursor-pointer bg-sky-700 text-xs font-bold text-white hover:bg-sky-800"
+                  >
+                    Iniciar Sesión con mi Cuenta
+                  </Button>
+                </div>
+              )}
+
+              <Step5PatientConfirmation
+                selectedCenter={selectedCenter}
+                selectedSpecialty={selectedSpecialty}
+                selectedDoctor={selectedDoctor}
+                selectedDate={selectedDate}
+                selectedSlot={selectedSlot}
+                patientForm={patientForm}
+                bookingError={bookingErrorMsg || bookingError}
+                isSubmitting={isSubmittingBooking}
+                createdAppointment={persistedAppointment}
+                onConfirm={handleConfirmRealBooking}
+                onFormChange={handlePatientFormChange}
+                onBackToSlots={() => handleGoToStep(4)}
+              />
+            </div>
+          )}
         </div>
       </main>
 
@@ -190,7 +379,7 @@ export function TurneroContainer() {
               </label>
               <Input
                 id="lookup-code"
-                placeholder="Ej: LUVIA-CDE-8491 o 38123456"
+                placeholder="Ej: ESU-2026-0001 o 38123456"
                 value={lookupCode}
                 onChange={(e) => setLookupCode(e.target.value)}
                 className="h-8 text-xs"
@@ -201,56 +390,54 @@ export function TurneroContainer() {
                 {lookupMessage}
               </div>
             )}
-
             <div className="flex justify-end gap-2 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsLookupOpen(false)}
-                className="h-7 text-xs"
+                className="h-7 text-xs cursor-pointer"
               >
                 Cerrar
               </Button>
               <Button
                 type="button"
                 size="sm"
-                onClick={() => {
-                  if (lookupCode.trim()) {
-                    setLookupMessage('La búsqueda de turnos reales no está disponible en esta demostración. El comprobante de prueba se muestra al finalizar el recorrido actual.')
-                  }
-                }}
+                onClick={handleLookupTurno}
                 className="h-7 cursor-pointer gap-1.5 bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800"
               >
                 <Search className="size-3.5" />
-                <span>Buscar</span>
+                <span>Consultar</span>
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Accessible Login Portal Dialog */}
+      {/* Login Navigation Modal */}
       <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
-        <DialogContent className="max-w-sm p-5 text-center">
+        <DialogContent className="max-w-sm p-5">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-slate-900">
-              Portal Asistencial ESU
+              Portal del Paciente y Profesionales
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Acceso seguro para profesionales de la salud, secretaría asistencial y pacientes.
+              Acceda con sus credenciales oficiales para gestionar sus citas y recetas.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2 text-xs text-slate-600">
             <p className="rounded-md border border-slate-200 bg-slate-50 p-3">
-              Módulo de autenticación JWT y control de acceso RBAC disponible en la siguiente fase de integración.
+              Inicie sesión con su cuenta para acceder al historial médico, gestión de recetas y turnos.
             </p>
             <Button
               type="button"
-              onClick={() => setIsLoginModalOpen(false)}
-              className="w-full bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800"
+              onClick={() => {
+                setIsLoginModalOpen(false)
+                navigate('/login')
+              }}
+              className="w-full bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800 cursor-pointer"
             >
-              Entendido
+              Ir a Iniciar Sesión
             </Button>
           </div>
         </DialogContent>

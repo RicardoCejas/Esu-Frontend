@@ -66,7 +66,7 @@ export const InteractiveDonutChart: React.FC<DonutChartProps> = ({ data }) => {
   const total = data.reduce((acc, d) => acc + d.valor, 0);
 
   // Cálculo de segmentos SVG con stroke-dasharray
-  let acumulado = 0;
+  // Acumulado calculado funcionalmente por segmento
   const radius = 60;
   const circumference = 2 * Math.PI * radius;
 
@@ -86,8 +86,8 @@ export const InteractiveDonutChart: React.FC<DonutChartProps> = ({ data }) => {
           {data.map((item, idx) => {
             const porcentaje = total > 0 ? item.valor / total : 0;
             const strokeDasharray = `${porcentaje * circumference} ${circumference}`;
-            const strokeDashoffset = -acumulado * circumference;
-            acumulado += porcentaje;
+            const acumuladoPrevio = data.slice(0, idx).reduce((acc, prev) => acc + (total > 0 ? prev.valor / total : 0), 0);
+            const strokeDashoffset = -acumuladoPrevio * circumference;
             const isHovered = hoveredIndex === idx;
 
             return (

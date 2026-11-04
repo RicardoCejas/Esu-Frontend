@@ -1,215 +1,581 @@
 import { apiClient } from './apiClient';
-import { MOCK_TURNOS } from './mockData';
+import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
 import type { Turno, EstadoTurno, SobreturnoRequest } from '@/types';
-import { createPersistedTurno, type CreateTurnoRequest, type CreatedTurnoResponse } from './turnoCreation';
+import {
+  createPersistedTurno,
+  type CreateTurnoRequest,
+  type CreatedTurnoResponse,
+} from './turnoCreation';
 
-// Almacén en memoria local para persistencia durante la sesión
-let turnosState: Turno[] = [...MOCK_TURNOS];
+const CENTER_SLUG_MAP: Record<string, number> = {
+  'cde-hosp-crespo': 1,
+  'cde-clin-cabrera': 2,
+  'cde-centro-diag': 3,
+  'cde-sanat-isabel': 5,
+};
+
+const DOCTOR_SLUG_MAP: Record<string, number> = {
+  'doc-fernandez': 1,
+  'doc-martinez': 2,
+  'doc-castro': 3,
+  'doc-gomez': 4,
+  'doc-alvarez': 5,
+  'doc-rossi': 6,
+  'doc-lucero': 7,
+  'doc-benitez': 8,
+  'doc-acosta': 9,
+  'doc-torres': 10,
+  'doc-molina': 11,
+  'doc-navarro': 12,
+  'doc-morales': 13,
+  'doc-suarez': 14,
+  'doc-peralta': 15,
+  'doc-dominguez': 16,
+  'doc-vargas': 17,
+  'doc-ibarra': 18,
+  'doc-sanchez': 19,
+  'doc-romero': 20,
+  'doc-paredes': 21,
+  'doc-correa': 22,
+  'doc-ramos': 23,
+  'doc-albarracin': 24,
+};
+
+function toNumericId(raw: string | number | undefined, fallback = 1): number {
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  const str = String(raw ?? '').trim();
+  if (CENTER_SLUG_MAP[str]) return CENTER_SLUG_MAP[str];
+  if (DOCTOR_SLUG_MAP[str]) return DOCTOR_SLUG_MAP[str];
+  const digits = str.replace(/\D/g, '');
+  const parsed = Number(digits);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function toOptionalNumericId(raw: string | number | undefined | null): number | undefined {
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  const str = String(raw).trim();
+  if (DOCTOR_SLUG_MAP[str]) return DOCTOR_SLUG_MAP[str];
+  if (CENTER_SLUG_MAP[str]) return CENTER_SLUG_MAP[str];
+  const digits = str.replace(/\D/g, '');
+  const parsed = Number(digits);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function normalizeEstado(raw: unknown): EstadoTurno {
+  const s = String(raw ?? 'PENDIENTE').trim().toUpperCase();
+  if (s === 'ATENDIDO' || s === 'FINALIZADO' || s === 'COMPLETADO') return 'COMPLETADO';
+  if (
+    s === 'PENDIENTE' ||
+    s === 'CONFIRMADO' ||
+    s === 'EN_ESPERA' ||
+    s === 'EN_SALA_DE_ESPERA' ||
+    s === 'ATENDIENDO' ||
+    s === 'CANCELADO' ||
+    s === 'CANCELADO_POR_MEDICO' ||
+    s === 'AUSENTE'
+  ) {
+    return s;
+  }
+  return 'PENDIENTE';
+}
+
+export function normalizeTurno(d: Record<string, unknown>): Turno {
+  const pac = d.paciente as Record<string, unknown> | undefined;
+  const prof = d.profesional as Record<string, unknown> | undefined;
+  const profEsp =
+    (prof?.especialidad as Record<string, unknown> | undefined) ??
+    (Array.isArray(prof?.especialidades)
+      ? (prof?.especialidades[0] as Record<string, unknown> | undefined)
+      : undefined);
+
+  const rawFechaHora = typeof d.fechaHora === 'string' ? d.fechaHora : '';
+  const fecha = rawFechaHora.includes('T')
+    ? rawFechaHora.split('T')[0]!
+    : String(d.fecha ?? '');
+  const hora = rawFechaHora.includes('T')
+    ? rawFechaHora.split('T')[1]!.slice(0, 5)
+    : String(d.hora ?? '08:00').slice(0, 5);
+
+  const rawCheckIn = typeof d.fechaCheckIn === 'string' ? d.fechaCheckIn : '';
+  const horaCheckIn = rawCheckIn.includes('T')
+    ? rawCheckIn.split('T')[1]!.slice(0, 5)
+    : typeof d.horaCheckIn === 'string'
+    ? d.horaCheckIn
+    : undefined;
+
+  const idStr = String(d.id ?? '');
+
+  return {
+    id: idStr,
+    codigoVerificacion:
+      typeof d.codigoVerificacion === 'string'
+        ? d.codigoVerificacion
+        : `ESU-2026-${idStr.padStart(4, '0')}`,
+    fecha,
+    hora,
+    pacienteId: String(pac?.id ?? d.pacienteId ?? ''),
+    pacienteNombre: pac
+      ? `${String(pac.nombre ?? '')} ${String(pac.apellido ?? '')}`.trim()
+      : String(d.pacienteNombre ?? ''),
+    pacienteDni: String(pac?.dni ?? d.pacienteDni ?? ''),
+    pacienteTelefono: String(pac?.telefono ?? d.pacienteTelefono ?? ''),
+    obraSocial:
+      typeof pac?.obraSocial === 'string'
+        ? pac.obraSocial
+        : typeof d.obraSocial === 'string'
+        ? d.obraSocial
+        : undefined,
+    nroAfiliado:
+      typeof pac?.nroAfiliado === 'string'
+        ? pac.nroAfiliado
+        : typeof d.nroAfiliado === 'string'
+        ? d.nroAfiliado
+        : undefined,
+    numeroAfiliado:
+      typeof pac?.nroAfiliado === 'string'
+        ? pac.nroAfiliado
+        : typeof d.numeroAfiliado === 'string'
+        ? d.numeroAfiliado
+        : undefined,
+    grupoSanguineo:
+      typeof pac?.grupoSanguineo === 'string'
+        ? pac.grupoSanguineo
+        : typeof d.grupoSanguineo === 'string'
+        ? d.grupoSanguineo
+        : undefined,
+    copagoMonto:
+      typeof d.montoCopago === 'number'
+        ? d.montoCopago
+        : typeof d.copagoMonto === 'number'
+        ? d.copagoMonto
+        : undefined,
+    numeroBono: typeof d.numeroBono === 'string' ? d.numeroBono : undefined,
+    esPrimeraVez: Boolean(d.esPrimeraVez),
+    consultorioNumero:
+      typeof d.consultorioNumero === 'string' ? d.consultorioNumero : '102',
+    planta: typeof d.planta === 'string' ? d.planta : 'Planta Baja',
+    profesionalId: String(prof?.id ?? d.profesionalId ?? '1'),
+    profesionalNombre: prof
+      ? `${String(prof.nombre ?? '')} ${String(prof.apellido ?? '')}`.trim()
+      : String(d.profesionalNombre ?? ''),
+    especialidadNombre: String(
+      profEsp?.nombre ?? d.especialidadNombre ?? 'Medicina General'
+    ),
+    centroSaludId: String(d.centroSaludId ?? '1').replace(/^c/, ''),
+    centroSaludNombre: String(
+      d.centroSaludNombre ?? 'Hospital Regional Aurelio Crespo'
+    ),
+    estado: normalizeEstado(d.estado),
+    motivoConsulta:
+      typeof d.motivoTurno === 'string'
+        ? d.motivoTurno
+        : typeof d.motivoConsulta === 'string'
+        ? d.motivoConsulta
+        : undefined,
+    observaciones:
+      typeof d.observacionesAtencion === 'string'
+        ? d.observacionesAtencion
+        : typeof d.observaciones === 'string'
+        ? d.observaciones
+        : undefined,
+    justificativoCancelacion:
+      typeof d.motivoCancelacion === 'string'
+        ? d.motivoCancelacion
+        : typeof d.justificativoCancelacion === 'string'
+        ? d.justificativoCancelacion
+        : undefined,
+    fechaCreacion:
+      typeof d.fechaCreacion === 'string' ? d.fechaCreacion : fecha,
+    horaCheckIn,
+    horaLlamado: typeof d.horaLlamado === 'string' ? d.horaLlamado : undefined,
+    esSobreturno: Boolean(d.esSobreturno),
+    motivoSobreturno:
+      typeof d.motivoSobreturno === 'string' ? d.motivoSobreturno : undefined,
+    tipoAtencion:
+      typeof d.tipoAtencion === 'string'
+        ? d.tipoAtencion
+        : (prof || d.profesionalId ? 'CONSULTA' : 'ESTUDIO'),
+    servicio: typeof d.servicio === 'string' ? d.servicio : undefined,
+    especialidadId:
+      d.especialidadId !== undefined && d.especialidadId !== null
+        ? String(d.especialidadId)
+        : undefined,
+  };
+}
 
 export const turnosService = {
+  async getById(id: string): Promise<Turno | null> {
+    try {
+      const numId = toNumericId(id);
+      const response = await apiClient.get<Record<string, unknown>>(API_ENDPOINTS.turnos.byId(numId));
+      return response.data ? normalizeTurno(response.data) : null;
+    } catch {
+      return null;
+    }
+  },
+
   async getAll(): Promise<Turno[]> {
     try {
-      const response = await apiClient.get<Turno[]>('/turnos');
-      return response.data;
-    } catch {
-      return [...turnosState];
-    }
-  },
-
-  async getByPaciente(pacienteIdOrDni: string): Promise<Turno[]> {
-    try {
-      const response = await apiClient.get<Turno[]>(`/turnos/paciente/${pacienteIdOrDni}`);
-      return response.data;
-    } catch {
-      return turnosState.filter(
-        (t) => t.pacienteId === pacienteIdOrDni || t.pacienteDni === pacienteIdOrDni
+      const response = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.turnos.base
       );
+      return Array.isArray(response.data)
+        ? response.data.map(normalizeTurno)
+        : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el listado de turnos.'), { cause: err });
     }
   },
 
-  async getByProfesional(profesionalId: string, fecha?: string): Promise<Turno[]> {
+  async getByPaciente(pacienteId: string): Promise<Turno[]> {
     try {
-      const response = await apiClient.get<Turno[]>(`/turnos/profesional/${profesionalId}`, {
-        params: { fecha },
-      });
-      return response.data;
-    } catch {
-      return turnosState.filter(
-        (t) => t.profesionalId === profesionalId && (!fecha || t.fecha === fecha)
+      const numId = toNumericId(pacienteId);
+      const response = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.turnos.byPaciente(numId)
       );
+      return Array.isArray(response.data)
+        ? response.data.map(normalizeTurno)
+        : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(
+          err,
+          'No se pudieron obtener los turnos del paciente.'
+        ), { cause: err });
     }
   },
 
-  async createTurno(turnoData: CreateTurnoRequest): Promise<CreatedTurnoResponse> {
-    return createPersistedTurno((path, body) => apiClient.post<unknown>(path, body), turnoData);
+  async getByProfesional(
+    profesionalId: string,
+    params?: { fecha?: string; centroSaludId?: string } | string
+  ): Promise<Turno[]> {
+    const queryParams: Record<string, string | number> = {};
+    if (typeof params === 'string') {
+      queryParams.fecha = params;
+    } else if (params) {
+      if (params.fecha) queryParams.fecha = params.fecha;
+      if (params.centroSaludId && params.centroSaludId !== 'TODOS') {
+        queryParams.centroSaludId = toNumericId(params.centroSaludId);
+      }
+    }
+
+    try {
+      const numProfId = toNumericId(profesionalId);
+      const response = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.turnos.byProfesional(numProfId),
+        { params: queryParams }
+      );
+      return Array.isArray(response.data)
+        ? response.data.map(normalizeTurno)
+        : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(
+          err,
+          'No se pudo obtener la agenda de turnos del profesional.'
+        ), { cause: err });
+    }
+  },
+
+  async getMiAgenda(params?: {
+    fecha?: string;
+    centroSaludId?: string;
+  }): Promise<Turno[]> {
+    const queryParams: Record<string, string | number> = {};
+    if (params) {
+      if (params.fecha) queryParams.fecha = params.fecha;
+      if (params.centroSaludId && params.centroSaludId !== 'TODOS') {
+        queryParams.centroSaludId = toNumericId(params.centroSaludId);
+      }
+    }
+
+    try {
+      const response = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.turnos.miAgenda,
+        { params: queryParams }
+      );
+      return Array.isArray(response.data)
+        ? response.data.map(normalizeTurno)
+        : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo cargar su agenda médica.'), { cause: err });
+    }
+  },
+
+  async getDisponibles(profesionalId: string, fecha: string): Promise<string[]> {
+    try {
+      const numProfId = toNumericId(profesionalId);
+      const response = await apiClient.get<string[]>(
+        API_ENDPOINTS.turnos.disponibles,
+        {
+          params: { profesionalId: numProfId, fecha },
+        }
+      );
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(
+          err,
+          'No se pudo consultar la disponibilidad horaria.'
+        ), { cause: err });
+    }
+  },
+
+  async createTurno(
+    turnoData: CreateTurnoRequest
+  ): Promise<CreatedTurnoResponse> {
+    return createPersistedTurno(
+      (path, body) => apiClient.post<unknown>(path, body),
+      turnoData
+    );
+  },
+
+  async confirmarTurno(id: string): Promise<Turno> {
+    try {
+      const numId = toNumericId(id);
+      const response = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.confirmar(numId)
+      );
+      return normalizeTurno(response.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo confirmar el turno.'), { cause: err });
+    }
+  },
+
+  async reprogramarTurno(id: string, nuevaFechaHora: string): Promise<Turno> {
+    try {
+      const numId = toNumericId(id);
+      const isoDateTime = nuevaFechaHora.length === 16 ? `${nuevaFechaHora}:00` : nuevaFechaHora;
+      const response = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.reprogramar(numId),
+        null,
+        { params: { nuevaFechaHora: isoDateTime } }
+      );
+      return normalizeTurno(response.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo reprogramar el turno.'), { cause: err });
+    }
   },
 
   async updateEstado(id: string, estado: EstadoTurno): Promise<Turno | null> {
     try {
-      const response = await apiClient.patch<Turno>(`/turnos/${id}/estado`, { estado });
-      return response.data;
-    } catch {
-      const index = turnosState.findIndex((t) => t.id === id);
-      if (index !== -1) {
-        turnosState[index] = { ...turnosState[index], estado };
-        return turnosState[index];
-      }
-      return null;
+      const numId = toNumericId(id);
+      const response = await apiClient.patch<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.estado(numId),
+        { estado }
+      );
+      return response.data ? normalizeTurno(response.data) : null;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(
+          err,
+          'No se pudo actualizar el estado del turno.'
+        ), { cause: err });
     }
   },
 
   async checkIn(id: string): Promise<Turno | null> {
-    const now = new Date();
-    const horaCheckIn = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     try {
-      const response = await apiClient.put<Turno>(`/turnos/${id}/check-in`, { horaCheckIn });
-      return response.data;
-    } catch {
-      const index = turnosState.findIndex((t) => t.id === id);
-      if (index !== -1) {
-        turnosState[index] = {
-          ...turnosState[index],
-          estado: 'EN_SALA_DE_ESPERA',
-          horaCheckIn,
-        };
-        return turnosState[index];
-      }
-      return null;
+      const numId = toNumericId(id);
+      const response = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.checkIn(numId)
+      );
+      return response.data ? normalizeTurno(response.data) : null;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(
+          err,
+          'No se pudo registrar el check-in del paciente.'
+        ), { cause: err });
     }
   },
 
-  async registrarCopago(id: string, data: { obraSocial?: string; numeroAfiliado?: string; copagoMonto: number; numeroBono: string }): Promise<Turno | null> {
-    try {
-      const response = await apiClient.put<Turno>(`/turnos/${id}/copago`, data);
-      return response.data;
-    } catch {
-      const index = turnosState.findIndex((t) => t.id === id);
-      if (index !== -1) {
-        turnosState[index] = {
-          ...turnosState[index],
-          ...data,
-        };
-        return turnosState[index];
-      }
-      return null;
+  async registrarCopago(
+    id: string,
+    data: {
+      obraSocial?: string;
+      numeroAfiliado?: string;
+      copagoMonto: number;
+      numeroBono: string;
+      metodoPago?: string;
     }
-  },
-
-  async crearTurnoMostrador(data: Omit<Turno, 'id' | 'codigoVerificacion' | 'fechaCreacion'>): Promise<Turno> {
+  ): Promise<Turno | null> {
     try {
-      const response = await apiClient.post<Turno>('/turnos/mostrador', data);
-      return response.data;
-    } catch {
-      const nuevoTurno: Turno = {
-        ...data,
-        id: `t-mst-${Date.now()}`,
-        codigoVerificacion: `ESU-MST-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-        fechaCreacion: new Date().toISOString().split('T')[0],
+      const numId = toNumericId(id);
+      const payload = {
+        monto: data.copagoMonto,
+        copagoMonto: data.copagoMonto,
+        numeroBono: data.numeroBono,
+        metodoPago: data.metodoPago || 'EFECTIVO',
+        obraSocial: data.obraSocial,
+        numeroAfiliado: data.numeroAfiliado,
       };
-      turnosState = [nuevoTurno, ...turnosState];
-      return nuevoTurno;
+      const response = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.copago(numId),
+        payload
+      );
+      return response.data ? normalizeTurno(response.data) : null;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(
+          err,
+          'No se pudo registrar el copago ni la cobertura del turno.'
+        ), { cause: err });
+    }
+  },
+
+  async crearTurnoMostrador(
+    data: Omit<Turno, 'id' | 'codigoVerificacion' | 'fechaCreacion'>
+  ): Promise<Turno> {
+    try {
+      const payload = {
+        profesionalId: toNumericId(data.profesionalId),
+        pacienteId: data.pacienteId ? toNumericId(data.pacienteId) : undefined,
+        pacienteDni: data.pacienteDni,
+        pacienteNombre: data.pacienteNombre,
+        pacienteTelefono: data.pacienteTelefono,
+        obraSocial: data.obraSocial,
+        fecha: data.fecha,
+        hora: data.hora,
+        centroSaludId: toNumericId(data.centroSaludId),
+        centroSaludNombre: data.centroSaludNombre,
+        consultorioNumero: data.consultorioNumero,
+        motivoTurno: data.motivoConsulta,
+        copagoMonto: data.copagoMonto,
+        numeroBono: data.numeroBono,
+      };
+      const response = await apiClient.post<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.mostrador,
+        payload
+      );
+      return normalizeTurno(response.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(
+          err,
+          'No se pudo generar el turno presencial de mostrador.'
+        ), { cause: err });
+    }
+  },
+
+  // Reserva pública de turnos con persistencia directa en base de datos
+  async reservarTurnoPublico(payload: {
+    centroSaludId: number | string;
+    profesionalId?: number | string | null;
+    tipoAtencion?: 'CONSULTA' | 'ESTUDIO' | string;
+    servicio?: string;
+    especialidadId?: number | string | null;
+    fecha: string;
+    hora: string;
+    dni: string;
+    nombre: string;
+    apellido: string;
+    telefono: string;
+    email?: string;
+    obraSocial?: string;
+    numeroAfiliado?: string;
+    motivoConsulta?: string;
+    idempotencyKey?: string;
+  }): Promise<Turno> {
+    try {
+      const formattedTime = payload.hora.trim().padStart(5, '0');
+      const timeWithSeconds = formattedTime.length === 5 ? `${formattedTime}:00` : formattedTime;
+      const fechaHoraIso = `${payload.fecha.trim()}T${timeWithSeconds}`;
+      const idempotencyKey = payload.idempotencyKey ||
+        (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `idemp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
+
+      const response = await apiClient.post<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.reservarPublico,
+        {
+          centroSaludId: toNumericId(payload.centroSaludId),
+          profesionalId: toOptionalNumericId(payload.profesionalId),
+          tipoAtencion: payload.tipoAtencion || (payload.profesionalId ? 'CONSULTA' : 'ESTUDIO'),
+          servicio: payload.servicio?.trim() || undefined,
+          especialidadId: toOptionalNumericId(payload.especialidadId),
+          fechaHora: fechaHoraIso,
+          fecha: payload.fecha,
+          hora: payload.hora,
+          dni: payload.dni.replace(/\D/g, ''),
+          nombre: payload.nombre.trim(),
+          apellido: payload.apellido.trim(),
+          telefono: payload.telefono.trim(),
+          email: payload.email?.trim() || undefined,
+          obraSocial: payload.obraSocial?.trim() || undefined,
+          nroAfiliado: payload.numeroAfiliado?.trim() || undefined,
+          numeroAfiliado: payload.numeroAfiliado?.trim() || undefined,
+          motivoTurno: payload.motivoConsulta?.trim() || undefined,
+          motivoConsulta: payload.motivoConsulta?.trim() || undefined,
+          idempotencyKey,
+        }
+      );
+      return normalizeTurno(response.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar la reserva del turno.'), { cause: err });
     }
   },
 
   // HU-FE-63: Endpoint y lógica de Sobreturnos y Demanda Espontánea
   async crearSobreturno(data: SobreturnoRequest): Promise<Turno> {
     try {
-      const response = await apiClient.post<Turno>('/turnos/sobreturno', data);
-      turnosState = [response.data, ...turnosState];
-      return response.data;
-    } catch (err: any) {
-      // Si el backend responde con error 422 ProblemDetail
-      if (err.response?.data?.detail) {
-        throw new Error(err.response.data.detail);
-      }
-
-      // Fallback local con validación de límite de 3 sobreturnos por día
-      const count = turnosState.filter(
-        (t) =>
-          t.profesionalId === data.profesionalId &&
-          t.fecha === data.fecha &&
-          t.esSobreturno &&
-          t.estado !== 'CANCELADO'
-      ).length;
-
-      if (count >= 3) {
-        throw new Error('Cupo máximo de sobreturnos alcanzado para esta jornada (máximo 3 sobreturnos diarios por médico).');
-      }
-
-      const now = new Date();
-      const horaActual =
-        data.hora || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-      const nuevo: Turno = {
-        id: `t-sob-${Date.now()}`,
-        codigoVerificacion: `ESU-SOB-${Math.floor(1000 + Math.random() * 9000)}`,
-        fecha: data.fecha,
-        hora: horaActual,
-        pacienteId: data.pacienteId || `pac-exp-${Date.now()}`,
-        pacienteNombre: data.pacienteNombre,
+      const payload = {
+        profesionalId: toNumericId(data.profesionalId),
+        pacienteId: data.pacienteId ? toNumericId(data.pacienteId) : undefined,
         pacienteDni: data.pacienteDni,
-        pacienteTelefono: data.pacienteTelefono || '03549-150000',
-        obraSocial: data.obraSocial || 'Demanda Espontánea',
-        profesionalId: data.profesionalId,
-        profesionalNombre: 'Dr. Carlos Bustos',
-        especialidadNombre: 'Medicina General',
-        centroSaludId: data.centroSaludId,
-        centroSaludNombre: 'Hospital Provincial Aurelio Crespo',
-        estado: 'EN_ESPERA',
-        motivoConsulta: `Sobreturno: ${data.motivoSobreturno}`,
-        esSobreturno: true,
+        pacienteNombre: data.pacienteNombre,
+        pacienteTelefono: data.pacienteTelefono,
+        obraSocial: data.obraSocial,
+        centroSaludId: toNumericId(data.centroSaludId),
+        fecha: data.fecha,
+        hora: data.hora,
         motivoSobreturno: data.motivoSobreturno,
-        fechaCreacion: new Date().toISOString().split('T')[0],
       };
-      turnosState = [nuevo, ...turnosState];
-      return nuevo;
+      const response = await apiClient.post<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.sobreturno,
+        payload
+      );
+      return normalizeTurno(response.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo asignar el sobreturno.'), { cause: err });
     }
   },
 
   async cancelarTurno(id: string): Promise<boolean> {
     try {
-      await apiClient.delete(`/turnos/${id}`);
-      turnosState = turnosState.map((t) => (t.id === id ? { ...t, estado: 'CANCELADO' } : t));
+      const numId = toNumericId(id);
+      await apiClient.put(API_ENDPOINTS.turnos.cancelar(numId));
       return true;
-    } catch {
-      turnosState = turnosState.map((t) => (t.id === id ? { ...t, estado: 'CANCELADO' } : t));
-      return true;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo cancelar el turno.'), { cause: err });
     }
   },
 
   async cancelarConJustificativo(id: string, motivo: string): Promise<boolean> {
     try {
-      await apiClient.put(`/turnos/${id}/cancelar-mostrador`, { justificativo: motivo });
-      turnosState = turnosState.map((t) =>
-        t.id === id ? { ...t, estado: 'CANCELADO', justificativoCancelacion: motivo } : t
-      );
+      const numId = toNumericId(id);
+      await apiClient.put(API_ENDPOINTS.turnos.cancelarMostrador(numId), {
+        justificativo: motivo,
+      });
       return true;
-    } catch {
-      turnosState = turnosState.map((t) =>
-        t.id === id ? { ...t, estado: 'CANCELADO', justificativoCancelacion: motivo } : t
-      );
-      return true;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(
+          err,
+          'No se pudo registrar la cancelación con justificativo.'
+        ), { cause: err });
     }
   },
 
   async llamarPaciente(id: string, consultorio: string): Promise<Turno | null> {
     const now = new Date();
-    const horaLlamado = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const horaLlamado = `${String(now.getHours()).padStart(2, '0')}:${String(
+      now.getMinutes()
+    ).padStart(2, '0')}`;
     try {
-      const response = await apiClient.put<Turno>(`/turnos/${id}/llamar`, { consultorio, horaLlamado });
-      return response.data;
-    } catch {
-      const index = turnosState.findIndex((t) => t.id === id);
-      if (index !== -1) {
-        turnosState[index] = {
-          ...turnosState[index],
-          estado: 'ATENDIENDO',
-          consultorioNumero: consultorio,
-          horaLlamado,
-        };
-        return turnosState[index];
-      }
-      return null;
+      const numId = toNumericId(id);
+      const response = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.llamar(numId),
+        { consultorio, horaLlamado }
+      );
+      const normalized = response.data ? normalizeTurno(response.data) : null;
+      return normalized ? { ...normalized, horaLlamado } : null;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(
+          err,
+          'No se pudo llamar al paciente a consultorio.'
+        ), { cause: err });
     }
   },
 };

@@ -124,7 +124,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
     e.preventDefault();
     setErrorMsg(null);
 
-    let firmaData = '';
+    let firmaData: string;
     if (metodoFirma === 'CANVAS') {
       if (!tieneFirmaEnCanvas || !canvasRef.current) {
         setErrorMsg('Por favor estampe su firma manuscrita sobre el recuadro digital.');
@@ -151,8 +151,8 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 
       setConstanciaGenerada(resp);
       if (onConsentimientoFirmado) onConsentimientoFirmado(resp);
-    } catch (err: any) {
-      setErrorMsg(err.response?.data?.detail || 'No se pudo registrar la firma inmutable.');
+    } catch (err: unknown) {
+      setErrorMsg((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || (err instanceof Error ? err.message : 'No se pudo registrar la firma inmutable.'));
     } finally {
       setFirmando(false);
     }

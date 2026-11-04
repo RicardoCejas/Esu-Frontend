@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { turnosService } from '@/api/turnosService';
 import { centrosService } from '@/api/centrosService';
@@ -14,6 +14,7 @@ import {
   Plus
 } from 'lucide-react';
 import { ModalCrearSobreturno } from '@/features/medico/components/ModalCrearSobreturno';
+import { getFechaLocalHoy } from '@/lib/dateUtils';
 
 export const SalasEsperaKanbanPage: React.FC = () => {
   const [turnos, setTurnos] = useState<Turno[]>([]);
@@ -24,14 +25,26 @@ export const SalasEsperaKanbanPage: React.FC = () => {
   const [consultorioSeleccionado, setConsultorioSeleccionado] = useState<string>('102');
   const [isModalSobreturnoOpen, setIsModalSobreturnoOpen] = useState(false);
 
-  const hoyStr = new Date().toISOString().split('T')[0];
+  const hoyStr = getFechaLocalHoy();
 
   const cargarDatos = () => {
-    Promise.all([turnosService.getAll(), centrosService.getAll()]).then(([t, c]) => {
-      setTurnos(t);
-      setCentros(c);
-      setLoading(false);
-    });
+    setLoading(true);
+    Promise.all([
+      turnosService.getAll().catch(() => []),
+      centrosService.getAll().catch(() => [])
+    ])
+      .then(([t, c]) => {
+        setTurnos(t || []);
+        setCentros(c || []);
+      })
+      .catch((err) => {
+        console.error('Error al cargar datos del tablero:', err);
+        setTurnos([]);
+        setCentros([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   useEffect(() => {

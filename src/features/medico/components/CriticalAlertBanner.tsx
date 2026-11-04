@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Plus, X, ShieldAlert } from 'lucide-react';
 import { clinicaService } from '@/api/clinicaService';
+import { getFechaLocalHoy } from '@/lib/dateUtils';
 import type { AlergiaPaciente, SeveridadAlergia } from '@/types';
 
 interface CriticalAlertBannerProps {
@@ -55,7 +56,7 @@ export const CriticalAlertBanner: React.FC<CriticalAlertBannerProps> = ({
       await clinicaService.agregarAlergia(pacienteId, {
         sustanciaAlergeno: sustancia.trim(),
         severidad,
-        fechaDiagnostico: new Date().toISOString().split('T')[0],
+        fechaDiagnostico: getFechaLocalHoy(),
         observaciones: observaciones.trim() || undefined,
       });
       setSustancia('');
@@ -63,8 +64,8 @@ export const CriticalAlertBanner: React.FC<CriticalAlertBannerProps> = ({
       setModalAbierto(false);
       await cargarAlergias();
       if (onAlergiaAdded) onAlergiaAdded();
-    } catch (err: any) {
-      setErrorMsg(err.response?.data?.detail || 'No se pudo registrar la alerta médica.');
+    } catch (err: unknown) {
+      setErrorMsg((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || (err instanceof Error ? err.message : 'No se pudo registrar la alerta médica.'));
     } finally {
       setGuardando(false);
     }

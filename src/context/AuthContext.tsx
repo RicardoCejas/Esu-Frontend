@@ -1,18 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+﻿import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, UserRole } from '@/types';
 import { authService, type LoginCredentials, type AuthResponse } from '@/api/authService';
 import { tokenStorage } from '@/api/tokenStorage';
 import { authBroadcast, type AuthBroadcastMessage } from '@/lib/authBroadcast';
-import { MOCK_USERS } from '@/api/mockData';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<AuthResponse>;
+  loginWithGoogle: (idToken: string) => Promise<AuthResponse>;
   register: (userData: Omit<User, 'id'> & { password?: string }) => Promise<void>;
   logout: () => Promise<void>;
-  switchRole: (newRole: UserRole) => void;
+  switchRole: (newRole: UserRole) => Promise<void>;
   updateUser: (updatedData: Partial<User>) => void;
 }
 
@@ -20,7 +20,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    try {
+      return Boolean(sessionStorage.getItem('esu_session_active'));
+    } catch {
+      return false;
+    }
+  });
 
   // Inicialización de sesión segura en memoria (HU-41)
   useEffect(() => {
@@ -29,32 +35,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initAuth = async () => {
       try {
         const sessionActive = sessionStorage.getItem('esu_session_active');
-        const isDev = localStorage.getItem('esu_dev_mode') === 'true';
-        if (sessionActive || isDev) {
-          const savedRole = (localStorage.getItem('esu_dev_active_role') as UserRole) || null;
+        if (sessionActive) {
           let refreshedUser: User | null = null;
           try {
             refreshedUser = await authService.refreshSession();
           } catch {
             // Backend offline
           }
-          if (isMounted && refreshedUser && !isDev) {
+          if (isMounted) {
             setUser(refreshedUser);
-          } else if (isMounted) {
-            let fallbackUser = authService.getCurrentUser();
-            if (isDev && savedRole) {
-              const matched = MOCK_USERS.find((u) => u.rol === savedRole);
-              if (matched) {
-                fallbackUser = { ...matched, isDeveloper: true };
-              }
-            }
-            if (!fallbackUser) {
-              fallbackUser = isDev
-                ? { ...(MOCK_USERS.find((u) => u.email === 'dev@esu.gob.ar') || MOCK_USERS[4]), isDeveloper: true }
-                : (authService.getCurrentUser() || MOCK_USERS[0]);
-            }
-            setUser(fallbackUser);
-            authService.setCurrentUser(fallbackUser);
           }
         }
       } catch (err) {
@@ -73,6 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (msg.type === 'LOGOUT') {
         setUser(null);
         tokenStorage.clearToken();
+        sessionStorage.removeItem('esu_session_active');
       }
     });
 
@@ -86,7 +76,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const authData = await authService.login(credentials);
-      if (!authData.requires2FA && authData.user) {
+      if (authData.user) {
+        setUser(authData.user);
+      }
+      return authData;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async (idToken: string): Promise<AuthResponse> => {
+    setIsLoading(true);
+    try {
+      const authData = await authService.loginWithGoogle(idToken);
+      if (authData.user) {
         setUser(authData.user);
       }
       return authData;
@@ -119,28 +122,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  // Función utilitaria para cambiar de rol en entorno de evaluación (HU-DEV)
-  const switchRole = (newRole: UserRole) => {
-    const isDev = user?.isDeveloper || localStorage.getItem('esu_dev_mode') === 'true';
-    const baseUser = MOCK_USERS.find((u) => u.rol === newRole) || {
-      id: `u-${newRole.toLowerCase()}-demo`,
-      nombre: `Usuario ${newRole}`,
-      apellido: 'Demo',
-      email: `${newRole.toLowerCase()}@esu.salud.gob.ar`,
-      dni: '30000000',
-      rol: newRole,
-      activo: true,
-      twoFactorEnabled: false,
-      emailVerified: true,
-    };
-    const targetUser = { ...baseUser, isDeveloper: isDev };
-    tokenStorage.setAccessToken(`mock-token-${targetUser.id}`);
-    authService.setCurrentUser(targetUser);
-    setUser(targetUser);
-    sessionStorage.setItem('esu_session_active', '1');
-    localStorage.setItem('esu_dev_mode', 'true');
-    localStorage.setItem('esu_dev_active_role', newRole);
-    authService.devSwitchRole(newRole);
+  // Función utilitaria para cambiar de rol únicamente en entorno de desarrollo local
+  const switchRole = async (newRole: UserRole) => {
+    if (!import.meta.env.DEV) {
+      console.warn('El cambio de rol de prueba está restringido a entornos de desarrollo.');
+      return;
+    }
+    await authService.devSwitchRole(newRole);
+    if (user) {
+      const updated: User = { ...user, rol: newRole };
+      setUser(updated);
+      authService.setCurrentUser(updated);
+    }
   };
 
   return (
@@ -150,6 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user,
         isLoading,
         login,
+        loginWithGoogle,
         register,
         logout,
         switchRole,

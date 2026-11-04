@@ -293,13 +293,13 @@ export const AtencionConsultaPage: React.FC = () => {
       };
 
       const res = await clinicaService.finalizarAtencion(turnoId || '1', payload);
-      setHashGenerado(res.hashIntegridad || '3a887b41e8c950d88251e6b83f09804b49cb3766');
+      setHashGenerado((res as { hashIntegridad?: string })?.hashIntegridad || '3a887b41e8c950d88251e6b83f09804b49cb3766');
 
       // Limpiar borrador local al firmar definitivamente
       localStorage.removeItem(`esu_draft_consulta_${pacienteId}`);
       setGuardadoExitoso(true);
-    } catch (err: any) {
-      alert('Error al firmar consulta: ' + (err.response?.data?.message || err.message));
+    } catch (err: unknown) {
+      alert('Error al firmar consulta: ' + ((err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Error desconocido')));
     } finally {
       setIsSubmitting(false);
     }
@@ -323,8 +323,8 @@ export const AtencionConsultaPage: React.FC = () => {
       setShowAdendaModal(false);
       setJustificacionAdenda('');
       setContenidoAdenda('');
-    } catch (err: any) {
-      alert('Error emitiendo adenda: ' + (err.message || 'Error'));
+    } catch (err: unknown) {
+      alert('Error emitiendo adenda: ' + ((err instanceof Error ? err.message : 'Error')));
     }
   };
 
