@@ -93,7 +93,7 @@ export const AdminMapaPinesPage: React.FC = () => {
 
     map.addControl(new NavigationControl({ visualizePitch: false }), 'top-right');
 
-    map.on('click', (e) => {
+    map.on('click', (e: any) => {
       const lat = Number(e.lngLat.lat.toFixed(6));
       const lng = Number(e.lngLat.lng.toFixed(6));
       setCurrentLat(lat);

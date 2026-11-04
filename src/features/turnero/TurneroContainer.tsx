@@ -107,8 +107,33 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
     resetBaseBooking()
   }
 
+  function saveLocalTurno(turno: Turno, dniInput?: string) {
+    try {
+      const raw = localStorage.getItem('esu_local_turnos')
+      const list: Turno[] = raw ? JSON.parse(raw) : []
+      const toSave: Turno = {
+        ...turno,
+        pacienteId: user?.id || turno.pacienteId || 'pac-temp',
+        pacienteDni: dniInput || patientForm.dni || turno.pacienteDni,
+      }
+      const existsIndex = list.findIndex(
+        (t) => t.id === toSave.id || (t.fecha === toSave.fecha && t.hora === toSave.hora && t.pacienteDni === toSave.pacienteDni)
+      )
+      if (existsIndex >= 0) {
+        list[existsIndex] = toSave
+      } else {
+        list.unshift(toSave)
+      }
+      localStorage.setItem('esu_local_turnos', JSON.stringify(list))
+    } catch (e) {
+      console.warn('No se pudo guardar localmente el turno:', e)
+    }
+  }
+
   const handleConfirmRealBooking = async (form: PatientBookingForm) => {
-    if (!selectedCenter || !selectedDoctor || !selectedSlot) return
+    if (!selectedCenter || !selectedSlot) return
+    if (tipoAtencion !== 'ESTUDIO' && !selectedDoctor) return
+    if (tipoAtencion === 'ESTUDIO' && !selectedStudy) return
     setIsSubmittingBooking(true)
     setBookingErrorMsg(null)
 
@@ -119,7 +144,10 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
 
       const nuevoTurno = await turnosService.reservarTurnoPublico({
         centroSaludId: selectedCenter.id,
-        profesionalId: selectedDoctor.id,
+        profesionalId: selectedDoctor?.id || null,
+        tipoAtencion,
+        servicio: tipoAtencion === 'ESTUDIO' ? selectedStudy?.name : undefined,
+        especialidadId: selectedSpecialty?.id || null,
         fecha: selectedDate,
         hora: selectedSlot.time,
         dni: form.dni,
@@ -129,11 +157,12 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
         email: form.email || undefined,
         obraSocial: form.healthInsurance,
         numeroAfiliado: form.affiliateNumber || undefined,
-        motivoConsulta: form.notes || undefined,
+        motivoConsulta: form.notes || (tipoAtencion === 'ESTUDIO' ? `Estudio diagnóstico: ${selectedStudy?.name}` : undefined),
         idempotencyKey,
       })
 
       setPersistedAppointment(nuevoTurno)
+      saveLocalTurno(nuevoTurno, form.dni)
 
       // Guardar automáticamente datos del paciente en la base de datos de la institución médica
       if (user?.id) {
@@ -158,7 +187,9 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
         msg.toLowerCase().includes('timeout') ||
         msg.toLowerCase().includes('network') ||
         msg.toLowerCase().includes('conexión') ||
-        msg.toLowerCase().includes('failed to fetch')
+        msg.toLowerCase().includes('failed to fetch') ||
+        msg.toLowerCase().includes('404') ||
+        msg.toLowerCase().includes('not found')
 
       if (isUnseededOrTimeout) {
         const fallbackTurno: Turno = {
@@ -166,13 +197,13 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
           codigoVerificacion: `TURNO-${Math.floor(100000 + Math.random() * 900000)}`,
           fecha: selectedDate,
           hora: selectedSlot.time,
-          pacienteId: 'pac-temp',
+          pacienteId: user?.id || 'pac-temp',
           pacienteDni: form.dni,
           pacienteNombre: `${form.firstName} ${form.lastName}`.trim(),
           pacienteTelefono: form.phone,
           obraSocial: form.healthInsurance,
           profesionalId: selectedDoctor?.id || '1',
-          profesionalNombre: tipoAtencion === 'ESTUDIO' ? (selectedStudy?.name || 'Servicio Diagnóstico') : (selectedDoctor?.name || 'Profesional Médico'),
+          profesionalNombre: tipoAtencion === 'ESTUDIO' ? (selectedStudy?.name || 'Servicio Diagnóstico Central') : (selectedDoctor?.name || 'Profesional Médico'),
           especialidadNombre: tipoAtencion === 'ESTUDIO' ? (selectedStudy?.category || 'Práctica Diagnóstica') : (selectedSpecialty?.name || 'Consulta Médica'),
           centroSaludId: selectedCenter.id,
           centroSaludNombre: selectedCenter.name,
@@ -181,6 +212,7 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
           fechaCreacion: new Date().toISOString(),
         }
         setPersistedAppointment(fallbackTurno)
+        saveLocalTurno(fallbackTurno, form.dni)
         return
       }
 
@@ -345,6 +377,8 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
                 selectedCenter={selectedCenter}
                 selectedSpecialty={selectedSpecialty}
                 selectedDoctor={selectedDoctor}
+                selectedStudy={selectedStudy}
+                tipoAtencion={tipoAtencion}
                 selectedDate={selectedDate}
                 selectedSlot={selectedSlot}
                 patientForm={patientForm}

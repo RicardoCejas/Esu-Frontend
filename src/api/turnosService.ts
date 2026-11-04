@@ -228,21 +228,48 @@ export const turnosService = {
     }
   },
 
-  async getByPaciente(pacienteId: string): Promise<Turno[]> {
+  async getByPaciente(pacienteId: string, userDni?: string): Promise<Turno[]> {
+    let remoteTurnos: Turno[] = [];
     try {
       const numId = toNumericId(pacienteId);
       const response = await apiClient.get<Record<string, unknown>[]>(
         API_ENDPOINTS.turnos.byPaciente(numId)
       );
-      return Array.isArray(response.data)
+      remoteTurnos = Array.isArray(response.data)
         ? response.data.map(normalizeTurno)
         : [];
     } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(
-          err,
-          'No se pudieron obtener los turnos del paciente.'
-        ), { cause: err });
+      console.warn('No se pudieron obtener los turnos remotos del paciente:', err);
+      remoteTurnos = [];
     }
+
+    // Unificar con turnos registrados en la sesión/navegador para este paciente
+    let localTurnos: Turno[] = [];
+    try {
+      const raw = localStorage.getItem('esu_local_turnos');
+      if (raw) {
+        const parsed = JSON.parse(raw) as Turno[];
+        const cleanDni = userDni ? userDni.replace(/\D/g, '') : '';
+        localTurnos = parsed.filter((t) => 
+          String(t.pacienteId) === String(pacienteId) ||
+          (cleanDni && t.pacienteDni && t.pacienteDni.replace(/\D/g, '') === cleanDni)
+        );
+      }
+    } catch {
+      localTurnos = [];
+    }
+
+    const merged = [...remoteTurnos];
+    for (const lt of localTurnos) {
+      const alreadyIncluded = merged.some(
+        (rt) => rt.id === lt.id || (rt.fecha === lt.fecha && rt.hora === lt.hora)
+      );
+      if (!alreadyIncluded) {
+        merged.push(lt);
+      }
+    }
+
+    return merged;
   },
 
   async getByProfesional(
