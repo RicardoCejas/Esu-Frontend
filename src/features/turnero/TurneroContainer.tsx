@@ -104,29 +104,6 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
     resetBaseBooking()
   }
 
-  function saveLocalTurno(turno: Turno, dniInput?: string) {
-    try {
-      const raw = localStorage.getItem('esu_local_turnos')
-      const list: Turno[] = raw ? JSON.parse(raw) : []
-      const toSave: Turno = {
-        ...turno,
-        pacienteId: user?.id || turno.pacienteId || 'pac-temp',
-        pacienteDni: dniInput || patientForm.dni || turno.pacienteDni,
-      }
-      const existsIndex = list.findIndex(
-        (t) => t.id === toSave.id || (t.fecha === toSave.fecha && t.hora === toSave.hora && t.pacienteDni === toSave.pacienteDni)
-      )
-      if (existsIndex >= 0) {
-        list[existsIndex] = toSave
-      } else {
-        list.unshift(toSave)
-      }
-      localStorage.setItem('esu_local_turnos', JSON.stringify(list))
-    } catch (e) {
-      console.warn('No se pudo guardar localmente el turno:', e)
-    }
-  }
-
   const handleConfirmRealBooking = async (form: PatientBookingForm) => {
     if (!selectedCenter || !selectedSlot) return
     if (tipoAtencion !== 'ESTUDIO' && !selectedDoctor) return
@@ -159,7 +136,6 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
       })
 
       setPersistedAppointment(nuevoTurno)
-      saveLocalTurno(nuevoTurno, form.dni)
 
       // Guardar automáticamente datos del paciente en la base de datos de la institución médica
       if (user?.id) {

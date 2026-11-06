@@ -210,8 +210,8 @@ export const turnosService = {
       const numId = toNumericId(id);
       const response = await apiClient.get<Record<string, unknown>>(API_ENDPOINTS.turnos.byId(numId));
       return response.data ? normalizeTurno(response.data) : null;
-    } catch {
-      return null;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el turno solicitado.'), { cause: err });
     }
   },
 
@@ -228,48 +228,18 @@ export const turnosService = {
     }
   },
 
-  async getByPaciente(pacienteId: string, userDni?: string): Promise<Turno[]> {
-    let remoteTurnos: Turno[];
+  async getByPaciente(pacienteId: string): Promise<Turno[]> {
     try {
       const numId = toNumericId(pacienteId);
       const response = await apiClient.get<Record<string, unknown>[]>(
         API_ENDPOINTS.turnos.byPaciente(numId)
       );
-      remoteTurnos = Array.isArray(response.data)
+      return Array.isArray(response.data)
         ? response.data.map(normalizeTurno)
         : [];
     } catch (err: unknown) {
-      console.warn('No se pudieron obtener los turnos remotos del paciente:', err);
-      remoteTurnos = [];
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los turnos del paciente.'), { cause: err });
     }
-
-    // Unificar con turnos registrados en la sesión/navegador para este paciente
-    let localTurnos: Turno[] = [];
-    try {
-      const raw = localStorage.getItem('esu_local_turnos');
-      if (raw) {
-        const parsed = JSON.parse(raw) as Turno[];
-        const cleanDni = userDni ? userDni.replace(/\D/g, '') : '';
-        localTurnos = parsed.filter((t) => 
-          String(t.pacienteId) === String(pacienteId) ||
-          (cleanDni && t.pacienteDni && t.pacienteDni.replace(/\D/g, '') === cleanDni)
-        );
-      }
-    } catch {
-      localTurnos = [];
-    }
-
-    const merged = [...remoteTurnos];
-    for (const lt of localTurnos) {
-      const alreadyIncluded = merged.some(
-        (rt) => rt.id === lt.id || (rt.fecha === lt.fecha && rt.hora === lt.hora)
-      );
-      if (!alreadyIncluded) {
-        merged.push(lt);
-      }
-    }
-
-    return merged;
   },
 
   async getByProfesional(
@@ -564,22 +534,10 @@ export const turnosService = {
     try {
       const numId = toNumericId(id);
       await apiClient.put(API_ENDPOINTS.turnos.cancelar(numId));
+      return true;
     } catch (err: unknown) {
-      console.warn('No se pudo cancelar en backend:', err);
+      throw new Error(extractApiErrorMessage(err, 'No se pudo cancelar el turno.'), { cause: err });
     }
-
-    try {
-      const raw = localStorage.getItem('esu_local_turnos');
-      if (raw) {
-        const list = JSON.parse(raw) as Turno[];
-        const updated = list.map((t) => (t.id === id ? { ...t, estado: 'CANCELADO' as const } : t));
-        localStorage.setItem('esu_local_turnos', JSON.stringify(updated));
-      }
-    } catch (err: unknown) {
-      console.warn('No se pudo actualizar el turno local:', err);
-    }
-
-    return true;
   },
 
   async cancelarConJustificativo(id: string, motivo: string): Promise<boolean> {

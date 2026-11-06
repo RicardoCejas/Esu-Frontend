@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { turnosService } from '@/api/turnosService';
 import type { Turno } from '@/types';
 import {
@@ -25,6 +26,7 @@ import { ScannableQrCode } from '@/components/common/ScannableQrCode';
 
 export const MisTurnosPage: React.FC = () => {
   const { user } = useAuth();
+  const { error: toastError } = useToast();
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
   const [tabActiva, setTabActiva] = useState<'proximos' | 'historial'>('proximos');
@@ -36,19 +38,19 @@ export const MisTurnosPage: React.FC = () => {
   useEffect(() => {
     if (user) {
       setLoading(true);
-      turnosService.getByPaciente(user.id, user.dni)
+      turnosService.getByPaciente(user.id)
         .then((data) => {
           setTurnos(data || []);
         })
         .catch((err) => {
-          console.error('Error al cargar turnos del paciente:', err);
+          toastError(err instanceof Error ? err.message : 'No se pudieron cargar tus turnos.');
           setTurnos([]);
         })
         .finally(() => {
           setLoading(false);
         });
     }
-  }, [user]);
+  }, [user, toastError]);
 
   // Bloqueo de scroll cuando un modal está abierto
   useEffect(() => {
@@ -64,11 +66,15 @@ export const MisTurnosPage: React.FC = () => {
 
   const handleConfirmarCancelacion = async () => {
     if (!turnoACancelar) return;
-    await turnosService.cancelarTurno(turnoACancelar.id);
-    setTurnos((prev) =>
-      prev.map((t) => (t.id === turnoACancelar.id ? { ...t, estado: 'CANCELADO' } : t))
-    );
-    setTurnoACancelar(null);
+    try {
+      await turnosService.cancelarTurno(turnoACancelar.id);
+      setTurnos((prev) =>
+        prev.map((t) => (t.id === turnoACancelar.id ? { ...t, estado: 'CANCELADO' } : t))
+      );
+      setTurnoACancelar(null);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'No se pudo cancelar el turno.');
+    }
   };
 
   const getBadgeEstado = (estado: string) => {
