@@ -3,11 +3,13 @@ name: Frontend CI
 on:
   push:
     branches:
+      - main
       - develop
       - feat/turnero-mocks
       - feat/turnero-mocks-*
   pull_request:
     branches:
+      - main
       - develop
       - feat/turnero-mocks
       - feat/turnero-mocks-*
@@ -44,7 +46,7 @@ jobs:
         run: npm run lint
 
       - name: Run Unit and Contract Tests
-        run: node --experimental-strip-types --test tests/*.test.mjs
+        run: npm test
 
       - name: Production Build
         run: npm run build

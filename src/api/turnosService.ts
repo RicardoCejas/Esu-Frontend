@@ -229,7 +229,7 @@ export const turnosService = {
   },
 
   async getByPaciente(pacienteId: string, userDni?: string): Promise<Turno[]> {
-    let remoteTurnos: Turno[] = [];
+    let remoteTurnos: Turno[];
     try {
       const numId = toNumericId(pacienteId);
       const response = await apiClient.get<Record<string, unknown>[]>(
@@ -575,7 +575,9 @@ export const turnosService = {
         const updated = list.map((t) => (t.id === id ? { ...t, estado: 'CANCELADO' as const } : t));
         localStorage.setItem('esu_local_turnos', JSON.stringify(updated));
       }
-    } catch {}
+    } catch (err: unknown) {
+      console.warn('No se pudo actualizar el turno local:', err);
+    }
 
     return true;
   },
