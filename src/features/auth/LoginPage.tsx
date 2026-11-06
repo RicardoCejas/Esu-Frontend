@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { GoogleAuthButton } from './components/GoogleAuthButton';
+import { TwoFactorChallengeModal } from './TwoFactorChallengeModal';
 import { extractApiErrorMessage } from '@/api/endpoints';
 
 export const LoginPage: React.FC = () => {
@@ -31,6 +32,8 @@ export const LoginPage: React.FC = () => {
     (import.meta.env.VITE_GOOGLE_AUTH_ENABLED !== 'false' && Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID));
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [is2FAOpen, setIs2FAOpen] = useState(false);
+  const [tempToken2FA, setTempToken2FA] = useState('');
 
   // Cargar usuario y contraseña recordados o cuenta dev por defecto en desarrollo local
   useEffect(() => {
@@ -96,6 +99,12 @@ export const LoginPage: React.FC = () => {
         dni: emailOrDni || undefined,
         password: password || undefined,
       });
+
+      if (authResponse.requires2FA && authResponse.tempToken) {
+        setTempToken2FA(authResponse.tempToken);
+        setIs2FAOpen(true);
+        return;
+      }
 
       if (authResponse.user) {
         redirectByRole(authResponse.user.rol);
@@ -287,6 +296,20 @@ export const LoginPage: React.FC = () => {
           </Link>
         </p>
       </main>
+
+      <TwoFactorChallengeModal
+        isOpen={is2FAOpen}
+        tempToken={tempToken2FA}
+        onSuccess={(rol) => {
+          setIs2FAOpen(false);
+          setTempToken2FA('');
+          redirectByRole(rol);
+        }}
+        onCancel={() => {
+          setIs2FAOpen(false);
+          setTempToken2FA('');
+        }}
+      />
     </div>
   );
 };

@@ -16,6 +16,14 @@ export interface LoginCredentials {
 export interface AuthResponse {
   token: string;
   user: User;
+  requires2FA?: boolean;
+  tempToken?: string;
+}
+
+export interface TwoFactorSetupData {
+  secret: string;
+  qrCodeUrl: string;
+  backupCodes: string[];
 }
 
 interface BackendAuthData {
@@ -31,6 +39,9 @@ interface BackendAuthData {
   dni?: string;
   emailVerificado?: boolean;
   emailVerified?: boolean;
+  twoFactorEnabled?: boolean;
+  requires2FA?: boolean;
+  tempToken?: string;
   user?: User;
   message?: string;
 }
@@ -70,6 +81,31 @@ export const authService = {
       };
 
       const response = await apiClient.post<BackendAuthData>(API_ENDPOINTS.auth.login, payload);
+
+      if (response.data.requires2FA) {
+        const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
+        const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
+        const challengeUser: User = {
+          id: pacienteId || profesionalId || String(response.data.usuarioId || ''),
+          pacienteId,
+          profesionalId,
+          nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
+          apellido: response.data.apellido || '',
+          email: response.data.email || payload.email,
+          dni: response.data.dni || cleanCredentials.dni || '',
+          rol: normalizeUserRole(response.data.rol),
+          activo: true,
+          twoFactorEnabled: true,
+          emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
+        };
+
+        return {
+          token: '',
+          user: challengeUser,
+          requires2FA: true,
+          tempToken: response.data.tempToken,
+        };
+      }
 
       const token = response.data.accessToken || response.data.token;
       if (!token) {
@@ -464,12 +500,70 @@ export const authService = {
   },
 
   /**
-   * Confirmación de email vía token
+   * Confirmaci��n de email v��a token
    */
   async verifyEmail(token: string): Promise<boolean> {
     await apiClient.get(`${API_ENDPOINTS.auth.verifyEmail}?token=${encodeURIComponent(token)}`);
     if (currentSessionUser) {
       currentSessionUser.emailVerified = true;
+    }
+    return true;
+  },
+
+  async setup2FA(): Promise<TwoFactorSetupData> {
+    const response = await apiClient.post<TwoFactorSetupData>(API_ENDPOINTS.auth.twoFactorSetup);
+    return response.data;
+  },
+
+  async confirm2FA(code: string): Promise<boolean> {
+    const response = await apiClient.post<{ success?: boolean }>(API_ENDPOINTS.auth.twoFactorVerify, {
+      code: code.trim(),
+    });
+    if (currentSessionUser) {
+      currentSessionUser.twoFactorEnabled = true;
+    }
+    return response.data?.success ?? true;
+  },
+
+  async verify2FALogin(tempToken: string, code: string, isBackupCode = false): Promise<AuthResponse> {
+    const response = await apiClient.post<BackendAuthData>(API_ENDPOINTS.auth.twoFactorChallenge, {
+      tempToken,
+      code: code.trim(),
+      isBackupCode,
+    });
+
+    const token = response.data.accessToken || response.data.token;
+    if (!token) {
+      throw new Error('El servidor no retorn�� un token de acceso v��lido.');
+    }
+
+    const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
+    const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
+    const user: User = {
+      id: pacienteId || profesionalId || String(response.data.usuarioId || ''),
+      pacienteId,
+      profesionalId,
+      nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
+      apellido: response.data.apellido || '',
+      email: response.data.email || '',
+      dni: response.data.dni || '',
+      rol: normalizeUserRole(response.data.rol),
+      activo: true,
+      twoFactorEnabled: true,
+      emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
+    };
+
+    tokenStorage.setAccessToken(token);
+    currentSessionUser = user;
+    sessionStorage.setItem('esu_session_active', '1');
+    authBroadcast.postMessage({ type: 'LOGIN', userId: user.id });
+    return { token, user };
+  },
+
+  async disable2FA(password?: string, code?: string): Promise<boolean> {
+    await apiClient.post(API_ENDPOINTS.auth.twoFactorDisable, { password, code });
+    if (currentSessionUser) {
+      currentSessionUser.twoFactorEnabled = false;
     }
     return true;
   },

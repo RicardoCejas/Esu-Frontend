@@ -10,6 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<AuthResponse>;
   loginWithGoogle: (idToken: string) => Promise<AuthResponse>;
+  verify2FALogin: (tempToken: string, code: string, isBackupCode?: boolean) => Promise<AuthResponse>;
   register: (userData: Omit<User, 'id'> & { password?: string }) => Promise<void>;
   logout: () => Promise<void>;
   switchRole: (newRole: UserRole) => Promise<void>;
@@ -76,6 +77,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const authData = await authService.login(credentials);
+      if (!authData.requires2FA && authData.user) {
+        setUser(authData.user);
+      }
+      return authData;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verify2FALogin = async (tempToken: string, code: string, isBackupCode = false): Promise<AuthResponse> => {
+    setIsLoading(true);
+    try {
+      const authData = await authService.verify2FALogin(tempToken, code, isBackupCode);
       if (authData.user) {
         setUser(authData.user);
       }
@@ -144,6 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         loginWithGoogle,
+        verify2FALogin,
         register,
         logout,
         switchRole,
