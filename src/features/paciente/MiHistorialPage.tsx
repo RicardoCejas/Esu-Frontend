@@ -20,6 +20,7 @@ import { MedicalAttachmentViewer } from '../medico/components/MedicalAttachmentV
 
 export const MiHistorialPage: React.FC = () => {
   const { user } = useAuth();
+  const pacienteId = user?.pacienteId || user?.id;
   const [consultas, setConsultas] = useState<ConsultaMedica[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,21 +37,21 @@ export const MiHistorialPage: React.FC = () => {
   const [consultaAAnular, setConsultaAAnular] = useState<ConsultaMedica | null>(null);
 
   useEffect(() => {
-    if (user) {
+    if (pacienteId) {
       setLoading(true);
-      pacientesService.getHistoriaClinica(user.id)
+      pacientesService.getHistoriaClinica(pacienteId)
         .then((data) => {
           setConsultas(data || []);
         })
         .catch((err) => {
-          console.error('Error al cargar historia clínica:', err);
+          console.error('Error al cargar historia cl�nica:', err);
           setConsultas([]);
         })
         .finally(() => {
           setLoading(false);
         });
     }
-  }, [user]);
+  }, [pacienteId]);
 
   // Bloqueo de scroll cuando un modal está abierto
   useEffect(() => {
@@ -196,7 +197,7 @@ export const MiHistorialPage: React.FC = () => {
 
       {/* HU-73: Vista de Estudios Médicos Complementarios cuando la pastilla seleccionada es ESTUDIOS */}
       {filtroTipo === 'ESTUDIOS' ? (
-        <MedicalAttachmentViewer pacienteId={user?.id || '1'} readOnly={true} />
+        <MedicalAttachmentViewer pacienteId={pacienteId || '1'} readOnly={true} />
       ) : loading ? (
         <div className="flex h-48 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />

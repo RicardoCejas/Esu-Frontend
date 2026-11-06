@@ -27,6 +27,7 @@ import { ScannableQrCode } from '@/components/common/ScannableQrCode';
 export const MisTurnosPage: React.FC = () => {
   const { user } = useAuth();
   const { error: toastError } = useToast();
+  const pacienteId = user?.pacienteId || user?.id;
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
   const [tabActiva, setTabActiva] = useState<'proximos' | 'historial'>('proximos');
@@ -36,9 +37,9 @@ export const MisTurnosPage: React.FC = () => {
   const [isGrupoFamiliarOpen, setIsGrupoFamiliarOpen] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (pacienteId) {
       setLoading(true);
-      turnosService.getByPaciente(user.id)
+      turnosService.getByPaciente(pacienteId)
         .then((data) => {
           setTurnos(data || []);
         })
@@ -50,7 +51,7 @@ export const MisTurnosPage: React.FC = () => {
           setLoading(false);
         });
     }
-  }, [user, toastError]);
+  }, [pacienteId, toastError]);
 
   // Bloqueo de scroll cuando un modal está abierto
   useEffect(() => {

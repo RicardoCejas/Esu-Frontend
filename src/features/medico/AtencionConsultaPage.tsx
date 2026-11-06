@@ -47,9 +47,11 @@ export const AtencionConsultaPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const pacienteId = searchParams.get('pacienteId') || '1';
+  const pacienteId = searchParams.get('pacienteId') || user?.pacienteId || '';
   const turnoId = searchParams.get('turnoId') || '';
   const pacienteNombreParam = searchParams.get('pacienteNombre');
+  const profesionalId = user?.profesionalId || user?.id || '';
+  const [evolucionId, setEvolucionId] = useState<string | null>(searchParams.get('evolucionId'));
   const [consentimientoModalAbierto, setConsentimientoModalAbierto] = useState(false);
 
   // Resumen del paciente y alertas críticas
@@ -173,6 +175,8 @@ export const AtencionConsultaPage: React.FC = () => {
 
   // Carga inicial del Resumen Clínico (HU-49)
   useEffect(() => {
+    if (!pacienteId) return;
+
     const cargarResumen = async () => {
       try {
         const data = await clinicaService.getResumenClinico(pacienteId);
@@ -266,7 +270,11 @@ export const AtencionConsultaPage: React.FC = () => {
   // Confirmar Firma Inalterable (HU-51)
   const handleConfirmarFirma = async () => {
     if (!cie10) {
-      alert('Debe seleccionar al menos un diagnóstico formal CIE-10 antes de firmar.');
+      alert('Debe seleccionar al menos un diagn��stico formal CIE-10 antes de firmar.');
+      return;
+    }
+    if (!turnoId) {
+      alert('No se pudo identificar el turno de la atenci��n. Abra la consulta desde la agenda m��dica.');
       return;
     }
 
@@ -292,8 +300,12 @@ export const AtencionConsultaPage: React.FC = () => {
         medicamentos: incluirReceta ? medicamentos : [],
       };
 
-      const res = await clinicaService.finalizarAtencion(turnoId || '1', payload);
-      setHashGenerado((res as { hashIntegridad?: string })?.hashIntegridad || '3a887b41e8c950d88251e6b83f09804b49cb3766');
+      const res = await clinicaService.finalizarAtencion(turnoId, payload);
+      const resultado = res as { id?: number | string; hashIntegridad?: string };
+      if (resultado.id) {
+        setEvolucionId(String(resultado.id));
+      }
+      setHashGenerado(resultado.hashIntegridad || '3a887b41e8c950d88251e6b83f09804b49cb3766');
 
       // Limpiar borrador local al firmar definitivamente
       localStorage.removeItem(`esu_draft_consulta_${pacienteId}`);
@@ -309,13 +321,17 @@ export const AtencionConsultaPage: React.FC = () => {
   const handleGuardarAdenda = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!justificacionAdenda.trim() || !contenidoAdenda.trim()) {
-      alert('La justificación clínica y el contenido aclaratorio son obligatorios.');
+      alert('La justificaci��n cl��nica y el contenido aclaratorio son obligatorios.');
+      return;
+    }
+    if (!evolucionId) {
+      alert('No se pudo identificar la evoluci��n cl��nica a rectificar.');
       return;
     }
 
     try {
-      await clinicaService.registrarAdenda(1, {
-        profesionalId: user?.id || 1,
+      await clinicaService.registrarAdenda(evolucionId, {
+        profesionalId: profesionalId || 1,
         justificacionClinica: justificacionAdenda,
         contenidoAdicional: contenidoAdenda,
       });
@@ -1184,7 +1200,7 @@ export const AtencionConsultaPage: React.FC = () => {
         abierto={consentimientoModalAbierto}
         onCerrar={() => setConsentimientoModalAbierto(false)}
         pacienteId={pacienteId}
-        profesionalId={user?.id || '1'}
+        profesionalId={profesionalId || '1'}
         pacienteNombre={pacienteNombreParam || resumen?.nombreCompleto || 'Lucas Agustín Ramírez'}
         procedimientoInicial={motivo || 'Procedimiento de Atención Clínica'}
       />

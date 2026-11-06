@@ -2,6 +2,8 @@ export type UserRole = 'PACIENTE' | 'MEDICO' | 'RECEPCIONISTA' | 'ADMIN';
 
 export interface User {
   id: string;
+  pacienteId?: string;
+  profesionalId?: string;
   nombre: string;
   apellido: string;
   email: string;

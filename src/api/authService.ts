@@ -22,6 +22,8 @@ interface BackendAuthData {
   accessToken?: string;
   token?: string;
   usuarioId?: string | number;
+  pacienteId?: string | number;
+  profesionalId?: string | number;
   email?: string;
   rol?: string;
   nombre?: string;
@@ -71,11 +73,15 @@ export const authService = {
 
       const token = response.data.accessToken || response.data.token;
       if (!token) {
-        throw new Error('El servidor no retornó un token de acceso válido.');
+        throw new Error('El servidor no retorn�� un token de acceso vǭlido.');
       }
 
+      const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
+      const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
       const user: User = {
-        id: String(response.data.usuarioId || Date.now()),
+        id: pacienteId || profesionalId || String(response.data.usuarioId || Date.now()),
+        pacienteId,
+        profesionalId,
         nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
         apellido: response.data.apellido || '',
         email: response.data.email || payload.email,
@@ -99,6 +105,7 @@ export const authService = {
           const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
           if (perfilRes.data?.id) {
             user.id = String(perfilRes.data.id);
+            user.pacienteId = user.id;
             if (perfilRes.data.dni) user.dni = perfilRes.data.dni;
             if (perfilRes.data.nombre) user.nombre = perfilRes.data.nombre;
             if (perfilRes.data.apellido) user.apellido = perfilRes.data.apellido;
@@ -159,7 +166,9 @@ export const authService = {
       }
 
       const user: User = {
-        id: String(response.data.usuarioId || Date.now()),
+        id: String(response.data.pacienteId || response.data.profesionalId || response.data.usuarioId || Date.now()),
+        pacienteId: response.data.pacienteId != null ? String(response.data.pacienteId) : undefined,
+        profesionalId: response.data.profesionalId != null ? String(response.data.profesionalId) : undefined,
         nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
         apellido: response.data.apellido || '',
         email: response.data.email || '',
@@ -180,6 +189,7 @@ export const authService = {
           const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
           if (perfilRes.data?.id) {
             user.id = String(perfilRes.data.id);
+            user.pacienteId = user.id;
             if (perfilRes.data.dni) user.dni = perfilRes.data.dni;
             if (perfilRes.data.nombre) user.nombre = perfilRes.data.nombre;
             if (perfilRes.data.apellido) user.apellido = perfilRes.data.apellido;
@@ -239,7 +249,8 @@ export const authService = {
       const token = response.data.accessToken || response.data.token || '';
 
       const user: User = {
-        id: String(response.data.usuarioId || Date.now()),
+        id: String(response.data.pacienteId || response.data.usuarioId || Date.now()),
+        pacienteId: response.data.pacienteId != null ? String(response.data.pacienteId) : undefined,
         nombre: cleanData.nombre,
         apellido: cleanData.apellido,
         email,
@@ -301,17 +312,29 @@ export const authService = {
         tokenStorage.setAccessToken(newToken);
       }
 
-      const res = await apiClient.get<{ id: number; email: string; rol: string; activo: boolean; verificado: boolean }>(
-        API_ENDPOINTS.auth.me
-      );
+      const res = await apiClient.get<{
+        id: number;
+        usuarioId?: number;
+        pacienteId?: number | null;
+        profesionalId?: number | null;
+        email: string;
+        rol: string;
+        nombre?: string;
+        apellido?: string;
+        dni?: string;
+        activo: boolean;
+        verificado: boolean;
+      }>(API_ENDPOINTS.auth.me);
       if (res.data) {
         const userRol = normalizeUserRole(res.data.rol);
-        let targetId = String(res.data.id);
-        let dni = String(res.data.id);
-        let nombre = res.data.email ? res.data.email.split('@')[0] : 'Usuario';
-        let apellido = '';
+        const pacienteId = res.data.pacienteId != null ? String(res.data.pacienteId) : undefined;
+        const profesionalId = res.data.profesionalId != null ? String(res.data.profesionalId) : undefined;
+        let targetId = pacienteId || profesionalId || String(res.data.usuarioId || res.data.id);
+        let dni = res.data.dni || String(res.data.id);
+        let nombre = res.data.nombre || (res.data.email ? res.data.email.split('@')[0] : 'Usuario');
+        let apellido = res.data.apellido || '';
 
-        if (userRol === 'PACIENTE') {
+        if (userRol === 'PACIENTE' && !pacienteId) {
           try {
             const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
             if (perfilRes.data?.id) {
@@ -327,6 +350,8 @@ export const authService = {
 
         const refreshedUser: User = {
           id: targetId,
+          pacienteId: pacienteId || (userRol === 'PACIENTE' ? targetId : undefined),
+          profesionalId,
           nombre,
           apellido,
           email: res.data.email,

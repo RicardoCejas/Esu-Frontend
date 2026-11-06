@@ -6,6 +6,7 @@ import type { RecetaDigitalDto } from '@/types';
 
 export const MisRecetasPage: React.FC = () => {
   const { user } = useAuth();
+  const pacienteId = user?.pacienteId || user?.id;
   const [recetas, setRecetas] = useState<RecetaDigitalDto[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
@@ -22,8 +23,8 @@ export const MisRecetasPage: React.FC = () => {
         data = await clinicaService.getMisRecetas();
       } catch (err) {
         // Fallback por pacienteId solo si falló la consulta directa por usuario
-        if (user?.id) {
-          data = await clinicaService.getRecetasPorPaciente(user.id);
+        if (pacienteId) {
+          data = await clinicaService.getRecetasPorPaciente(pacienteId);
         } else {
           throw err;
         }
@@ -39,7 +40,7 @@ export const MisRecetasPage: React.FC = () => {
 
   useEffect(() => {
     cargarRecetas();
-  }, [user?.id]);
+  }, [pacienteId]);
 
   const handleDescargarPdf = async (recetaId: number | string) => {
     try {
