@@ -156,45 +156,9 @@ export function isDemoModeEnabled(): boolean {
   return import.meta.env.VITE_ENABLE_DEMO_MODE === 'true';
 }
 
-export function extractApiErrorMessage(
-  error: unknown,
-  fallbackMessage = 'Error de comunicación con el servidor.'
-): string {
-  if (!error) return fallbackMessage;
-
-  if (typeof error === 'object' && error !== null) {
-    const maybeAxios = error as {
-      response?: {
-        data?: {
-          detail?: string;
-          message?: string;
-          mensaje?: string;
-          error?: string;
-          title?: string;
-        };
-      };
-      message?: string;
-    };
-
-    const data = maybeAxios.response?.data;
-    if (data) {
-      if (typeof data.detail === 'string' && data.detail.trim()) return data.detail.trim();
-      if (typeof data.mensaje === 'string' && data.mensaje.trim()) return data.mensaje.trim();
-      if (typeof data.message === 'string' && data.message.trim()) return data.message.trim();
-      if (typeof data.error === 'string' && data.error.trim()) return data.error.trim();
-    }
-
-    if (typeof maybeAxios.message === 'string' && maybeAxios.message.trim()) {
-      if (maybeAxios.message.toLowerCase().includes('timeout')) {
-        return 'El servidor está tardando en responder. Por favor reintente en unos instantes.';
-      }
-      return maybeAxios.message.trim();
-    }
-  }
-
-  if (typeof error === 'string' && error.trim()) {
-    return error.trim();
-  }
-
-  return fallbackMessage;
-}
+export {
+  classifyApiError,
+  extractApiErrorMessage,
+  type ClassifiedApiError,
+  type ApiErrorKind,
+} from './apiErrors.ts';

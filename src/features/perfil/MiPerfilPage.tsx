@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { pacientesService } from '@/api/pacientesService';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import { AuditoriaSesionesSection } from './components/AuditoriaSesionesSection';
 import { CambiarPasswordSection } from './components/CambiarPasswordSection';
 import { TwoFactorSetupModal } from '@/features/auth/TwoFactorSetupModal';
@@ -165,19 +166,18 @@ export const MiPerfilPage: React.FC = () => {
     setMensajeExito(null);
 
     try {
-      localStorage.setItem('esu_patient_profile_data', JSON.stringify(formData));
-      if (user?.id) {
-        try {
-          await pacientesService.updateContacto(user.id, {
-            dni: user.dni,
-            telefono: formData.telefonoPrincipal,
-            obraSocial: formData.obraSocial,
-            nroAfiliado: formData.nroAfiliado,
-          });
-        } catch (e) {
-          console.warn('Sincronización con backend:', e);
-        }
+      const targetId = user?.pacienteId || user?.usuarioId || user?.id;
+      if (targetId) {
+        await pacientesService.updateContacto(targetId, {
+          dni: user.dni,
+          telefono: formData.telefonoPrincipal,
+          obraSocial: formData.obraSocial,
+          nroAfiliado: formData.nroAfiliado,
+        });
       }
+
+      // Persistir en almacenamiento y estado de sesión SOLO ante éxito del backend
+      localStorage.setItem('esu_patient_profile_data', JSON.stringify(formData));
       updateUser({
         telefono: formData.telefonoPrincipal,
         obraSocial: formData.obraSocial,
@@ -188,8 +188,8 @@ export const MiPerfilPage: React.FC = () => {
       setMensajeExito(`Los datos de ${seccion} se actualizaron correctamente.`);
       success(`Datos de ${seccion} guardados.`);
       setTimeout(() => setMensajeExito(null), 4000);
-    } catch {
-      toastError('No se pudieron guardar los cambios.');
+    } catch (err: unknown) {
+      toastError(extractApiErrorMessage(err, 'No se pudieron guardar los cambios en el servidor.'));
     } finally {
       setGuardando(false);
     }

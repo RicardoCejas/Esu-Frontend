@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import { extractApiErrorMessage, isDemoModeEnabled } from './endpoints';
 
 export interface SesionActivaItem {
   id: string;
@@ -67,21 +68,29 @@ export const sesionesService = {
   async getSesiones(): Promise<SesionActivaItem[]> {
     try {
       const res = await apiClient.get<SesionActivaItem[]>('/auth/sesiones');
-      return res.data;
-    } catch {
-      return [...sesionesState];
+      return Array.isArray(res.data) ? res.data : [];
+    } catch (err: unknown) {
+      if (isDemoModeEnabled()) {
+        return [...sesionesState];
+      }
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener las sesiones activas.'), { cause: err });
     }
   },
 
   async cerrarSesionRemota(id: string): Promise<boolean> {
     try {
       await apiClient.delete(`/auth/sesiones/${id}`);
-    } catch {
-      // fallback
+      sesionesState = sesionesState.filter((s) => s.id !== id);
+      saveState();
+      return true;
+    } catch (err: unknown) {
+      if (isDemoModeEnabled()) {
+        sesionesState = sesionesState.filter((s) => s.id !== id);
+        saveState();
+        return true;
+      }
+      throw new Error(extractApiErrorMessage(err, 'No se pudo revocar la sesión remota.'), { cause: err });
     }
-    sesionesState = sesionesState.filter((s) => s.id !== id);
-    saveState();
-    return true;
   },
 
   async cerrarTodasLasDemasSesiones(passwordActual: string): Promise<{ success: boolean; revocadas: number }> {
@@ -90,19 +99,25 @@ export const sesionesService = {
     }
 
     try {
-      await apiClient.post('/auth/sesiones/revocar-todas', { password: passwordActual });
-    } catch {
-      // fallback
+      const res = await apiClient.post<{ success: boolean; revocadas?: number }>('/auth/sesiones/revocar-todas', { password: passwordActual });
+      const cantidadAnterior = sesionesState.length;
+      sesionesState = sesionesState.filter((s) => s.esActual);
+      saveState();
+      return {
+        success: res.data?.success ?? true,
+        revocadas: res.data?.revocadas ?? Math.max(0, cantidadAnterior - 1),
+      };
+    } catch (err: unknown) {
+      if (isDemoModeEnabled()) {
+        const cantidadAnterior = sesionesState.length;
+        sesionesState = sesionesState.filter((s) => s.esActual);
+        saveState();
+        return {
+          success: true,
+          revocadas: Math.max(0, cantidadAnterior - 1),
+        };
+      }
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron revocar las demás sesiones.'), { cause: err });
     }
-
-    const cantidadAnterior = sesionesState.length;
-    // Mantiene solo la sesión actual
-    sesionesState = sesionesState.filter((s) => s.esActual);
-    saveState();
-
-    return {
-      success: true,
-      revocadas: Math.max(0, cantidadAnterior - 1),
-    };
   },
 };

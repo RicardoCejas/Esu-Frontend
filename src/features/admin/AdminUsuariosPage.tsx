@@ -225,7 +225,28 @@ export const AdminUsuariosPage: React.FC = () => {
       </div>
 
       {/* Grid de Cuentas de Centros de Salud */}
-      {!isLoading && (
+      {isLoading ? (
+        <div className="flex h-32 items-center justify-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      ) : loadError ? (
+        <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-6 text-center space-y-3">
+          <AlertCircle className="mx-auto h-7 w-7 text-destructive" />
+          <p className="text-xs text-muted-foreground">{loadError}</p>
+          <button
+            type="button"
+            onClick={cargarDatos}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition cursor-pointer"
+          >
+            <RefreshCw className="h-3 w-3" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      ) : cuentasFiltradas.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+          No se encontraron cuentas institucionales registradas con los filtros seleccionados.
+        </div>
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {cuentasFiltradas.map((cuenta) => {
             const centroInfo = centros.find((c) => c.id === cuenta.centroSaludId);

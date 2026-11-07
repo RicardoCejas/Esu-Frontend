@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { centrosService, type ConsultorioItem } from '@/api/centrosService';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import type { CentroSalud } from '@/types';
 import {
   Building2,
@@ -11,13 +12,16 @@ import {
   Phone,
   Clock,
   ShieldCheck,
-  X
+  X,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 
 export const AdminSedesPage: React.FC = () => {
   const [centros, setCentros] = useState<CentroSalud[]>([]);
   const [consultorios, setConsultorios] = useState<ConsultorioItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Modal Centro (Crear / Editar)
   const [modalCentroOpen, setModalCentroOpen] = useState(false);
@@ -44,19 +48,26 @@ export const AdminSedesPage: React.FC = () => {
 
   const [centroSeleccionadoId, setCentroSeleccionadoId] = useState<string>('TODOS');
 
-  const cargarDatos = async () => {
-    const [cData, csData] = await Promise.all([
-      centrosService.getAll(),
-      centrosService.getConsultorios(),
-    ]);
-    setCentros(cData);
-    setConsultorios(csData);
-    setLoading(false);
-  };
+  const cargarDatos = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [cData, csData] = await Promise.all([
+        centrosService.getAll(),
+        centrosService.getConsultorios(),
+      ]);
+      setCentros(cData);
+      setConsultorios(csData);
+    } catch (err: unknown) {
+      setLoadError(extractApiErrorMessage(err, 'No se pudieron cargar las sedes y consultorios del sistema.'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     cargarDatos();
-  }, []);
+  }, [cargarDatos]);
 
   const handleAbrirCrearCentro = () => {
     setEditandoCentro(null);
@@ -176,6 +187,23 @@ export const AdminSedesPage: React.FC = () => {
           <div className="flex h-32 items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
+        ) : loadError ? (
+          <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-6 text-center space-y-3">
+            <AlertCircle className="mx-auto h-7 w-7 text-destructive" />
+            <p className="text-xs text-muted-foreground">{loadError}</p>
+            <button
+              type="button"
+              onClick={cargarDatos}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition cursor-pointer"
+            >
+              <RefreshCw className="h-3 w-3" />
+              <span>Reintentar</span>
+            </button>
+          </div>
+        ) : centros.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+            No hay sedes ni centros de salud registrados en el sistema.
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {centros.map((centro) => {
@@ -267,7 +295,12 @@ export const AdminSedesPage: React.FC = () => {
         </div>
 
         <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
-          <table className="w-full text-left text-xs">
+          {consultoriosFiltrados.length === 0 ? (
+            <div className="p-8 text-center text-xs text-muted-foreground">
+              No hay consultorios registrados para la sede seleccionada.
+            </div>
+          ) : (
+            <table className="w-full text-left text-xs">
             <thead className="border-b border-border bg-muted/40 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">
               <tr>
                 <th className="p-3.5">Consultorio N°</th>
@@ -312,6 +345,7 @@ export const AdminSedesPage: React.FC = () => {
               })}
             </tbody>
           </table>
+          )}
         </div>
       </div>
 

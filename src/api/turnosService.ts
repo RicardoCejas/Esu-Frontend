@@ -41,14 +41,15 @@ const DOCTOR_SLUG_MAP: Record<string, number> = {
   'doc-albarracin': 24,
 };
 
-function toNumericId(raw: string | number | undefined, fallback = 1): number {
-  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+function toNumericId(raw: string | number | undefined, fieldName = 'identificador'): number {
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) return raw;
   const str = String(raw ?? '').trim();
   if (CENTER_SLUG_MAP[str]) return CENTER_SLUG_MAP[str];
   if (DOCTOR_SLUG_MAP[str]) return DOCTOR_SLUG_MAP[str];
   const digits = str.replace(/\D/g, '');
   const parsed = Number(digits);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  throw new Error(`El identificador '${fieldName}' es obligatorio y debe ser un número válido.`);
 }
 
 function toOptionalNumericId(raw: string | number | undefined | null): number | undefined {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { pacientesService } from '@/api/pacientesService';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import type { ConsultaMedica } from '@/types';
 import {
   FileText,
@@ -23,6 +24,7 @@ export const MiHistorialPage: React.FC = () => {
   const pacienteId = user?.pacienteId;
   const [consultas, setConsultas] = useState<ConsultaMedica[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // HU-74: Buscador y Filtro Multifactor en el Timeline de Historia Clínica
   const [busqueda, setBusqueda] = useState('');
@@ -39,17 +41,19 @@ export const MiHistorialPage: React.FC = () => {
   useEffect(() => {
     if (!pacienteId) {
       setLoading(false);
+      setError(null);
       setConsultas([]);
       return;
     }
 
     setLoading(true);
+    setError(null);
     pacientesService.getHistoriaClinica(pacienteId)
       .then((data) => {
         setConsultas(data || []);
       })
       .catch((err) => {
-        console.error('Error al cargar historia clínica:', err);
+        setError(extractApiErrorMessage(err, 'No se pudo recuperar el historial clínico del paciente.'));
         setConsultas([]);
       })
       .finally(() => {
@@ -215,6 +219,29 @@ export const MiHistorialPage: React.FC = () => {
       ) : loading ? (
         <div className="flex h-48 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-8 text-center space-y-3">
+          <AlertCircle className="mx-auto h-10 w-10 text-destructive" />
+          <h3 className="font-bold text-base text-foreground">Error al cargar la historia clínica</h3>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">{error}</p>
+          <button
+            type="button"
+            onClick={() => {
+              if (!pacienteId) return;
+              setLoading(true);
+              setError(null);
+              pacientesService
+                .getHistoriaClinica(pacienteId)
+                .then((data) => setConsultas(data || []))
+                .catch((err) => setError(extractApiErrorMessage(err, 'No se pudo recuperar el historial clínico.')))
+                .finally(() => setLoading(false));
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition cursor-pointer"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Reintentar</span>
+          </button>
         </div>
       ) : consultasFiltradas.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center space-y-3">
