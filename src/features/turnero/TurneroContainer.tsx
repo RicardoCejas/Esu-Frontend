@@ -138,9 +138,9 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
       setPersistedAppointment(nuevoTurno)
 
       // Guardar automáticamente datos del paciente en la base de datos de la institución médica
-      if (user?.pacienteId || user?.id) {
+      if (user?.pacienteId) {
         try {
-          await pacientesService.updateContacto(user.pacienteId || user.id, {
+          await pacientesService.updateContacto(user.pacienteId, {
             dni: form.dni,
             telefono: form.phone,
             obraSocial: form.healthInsurance,

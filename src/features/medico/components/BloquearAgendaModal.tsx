@@ -90,10 +90,15 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
       ? `${motivoCategoria}: ${motivoDetalle.trim()}`
       : motivoCategoria;
 
+    if (!profesionalId) {
+      error('Identificador de profesional no disponible en la sesión.');
+      return;
+    }
+
     setGuardando(true);
     try {
-      await profesionalesService.bloquearAgenda(profesionalId || 'p1', {
-        profesionalId: profesionalId || 'p1',
+      await profesionalesService.bloquearAgenda(profesionalId, {
+        profesionalId,
         fechaInicio,
         fechaFin,
         horaInicio: esDiaCompleto ? '00:00' : horaInicio,

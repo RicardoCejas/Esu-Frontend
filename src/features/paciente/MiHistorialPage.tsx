@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { pacientesService } from '@/api/pacientesService';
 import type { ConsultaMedica } from '@/types';
@@ -20,7 +20,7 @@ import { MedicalAttachmentViewer } from '../medico/components/MedicalAttachmentV
 
 export const MiHistorialPage: React.FC = () => {
   const { user } = useAuth();
-  const pacienteId = user?.pacienteId || user?.id;
+  const pacienteId = user?.pacienteId;
   const [consultas, setConsultas] = useState<ConsultaMedica[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,20 +37,24 @@ export const MiHistorialPage: React.FC = () => {
   const [consultaAAnular, setConsultaAAnular] = useState<ConsultaMedica | null>(null);
 
   useEffect(() => {
-    if (pacienteId) {
-      setLoading(true);
-      pacientesService.getHistoriaClinica(pacienteId)
-        .then((data) => {
-          setConsultas(data || []);
-        })
-        .catch((err) => {
-          console.error('Error al cargar historia cl�nica:', err);
-          setConsultas([]);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+    if (!pacienteId) {
+      setLoading(false);
+      setConsultas([]);
+      return;
     }
+
+    setLoading(true);
+    pacientesService.getHistoriaClinica(pacienteId)
+      .then((data) => {
+        setConsultas(data || []);
+      })
+      .catch((err) => {
+        console.error('Error al cargar historia clínica:', err);
+        setConsultas([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [pacienteId]);
 
   // Bloqueo de scroll cuando un modal está abierto
@@ -195,9 +199,19 @@ export const MiHistorialPage: React.FC = () => {
         </div>
       </div>
 
-      {/* HU-73: Vista de Estudios Médicos Complementarios cuando la pastilla seleccionada es ESTUDIOS */}
-      {filtroTipo === 'ESTUDIOS' ? (
-        <MedicalAttachmentViewer pacienteId={pacienteId || '1'} readOnly={true} />
+      {/* Estado si el paciente no tiene pacienteId vinculado */}
+      {!pacienteId ? (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-8 text-center space-y-3">
+          <FileText className="mx-auto h-10 w-10 text-amber-600 dark:text-amber-400" />
+          <h3 className="font-bold text-base text-amber-950 dark:text-amber-200">
+            Historia clínica no vinculada
+          </h3>
+          <p className="text-xs text-amber-800 dark:text-amber-300 max-w-md mx-auto">
+            Esta cuenta no posee un identificador de paciente activo emitido por el backend. Por favor acérquese a recepción o vuelva a iniciar sesión.
+          </p>
+        </div>
+      ) : filtroTipo === 'ESTUDIOS' ? (
+        <MedicalAttachmentViewer pacienteId={pacienteId} readOnly={true} />
       ) : loading ? (
         <div className="flex h-48 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />

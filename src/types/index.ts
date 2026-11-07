@@ -1,7 +1,9 @@
-export type UserRole = 'PACIENTE' | 'MEDICO' | 'RECEPCIONISTA' | 'ADMIN';
+export type BackendUserRole = 'PACIENTE' | 'PROFESIONAL' | 'RECEPCIONISTA' | 'ADMIN';
+export type UserRole = 'PACIENTE' | 'MEDICO' | 'PROFESIONAL' | 'RECEPCIONISTA' | 'ADMIN';
 
 export interface User {
   id: string;
+  usuarioId?: string;
   pacienteId?: string;
   profesionalId?: string;
   nombre: string;

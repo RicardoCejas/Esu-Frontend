@@ -50,7 +50,7 @@ export const AtencionConsultaPage: React.FC = () => {
   const pacienteId = searchParams.get('pacienteId') || user?.pacienteId || '';
   const turnoId = searchParams.get('turnoId') || '';
   const pacienteNombreParam = searchParams.get('pacienteNombre');
-  const profesionalId = user?.profesionalId || user?.id || '';
+  const profesionalId = user?.profesionalId || '';
   const [evolucionId, setEvolucionId] = useState<string | null>(searchParams.get('evolucionId'));
   const [consentimientoModalAbierto, setConsentimientoModalAbierto] = useState(false);
 
@@ -325,13 +325,17 @@ export const AtencionConsultaPage: React.FC = () => {
       return;
     }
     if (!evolucionId) {
-      alert('No se pudo identificar la evoluci��n cl��nica a rectificar.');
+      alert('No se pudo identificar la evolución clínica a rectificar.');
+      return;
+    }
+    if (!profesionalId) {
+      alert('Identificador de profesional no disponible en la sesión.');
       return;
     }
 
     try {
       await clinicaService.registrarAdenda(evolucionId, {
-        profesionalId: profesionalId || 1,
+        profesionalId,
         justificacionClinica: justificacionAdenda,
         contenidoAdicional: contenidoAdenda,
       });
@@ -1200,7 +1204,7 @@ export const AtencionConsultaPage: React.FC = () => {
         abierto={consentimientoModalAbierto}
         onCerrar={() => setConsentimientoModalAbierto(false)}
         pacienteId={pacienteId}
-        profesionalId={profesionalId || '1'}
+        profesionalId={profesionalId}
         pacienteNombre={pacienteNombreParam || resumen?.nombreCompleto || 'Lucas Agustín Ramírez'}
         procedimientoInicial={motivo || 'Procedimiento de Atención Clínica'}
       />

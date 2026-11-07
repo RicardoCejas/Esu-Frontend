@@ -24,7 +24,7 @@ import { getFechaLocalHoy } from '@/lib/dateUtils';
 export const AgendaMedicaPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const profesionalId = user?.profesionalId || user?.id || '';
+  const profesionalId = user?.profesionalId || '';
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [bloqueos, setBloqueos] = useState<BloqueoAgenda[]>([]);
   const [centros, setCentros] = useState<CentroSalud[]>([]);
@@ -46,7 +46,7 @@ export const AgendaMedicaPage: React.FC = () => {
         turnosService.getMiAgenda({
           centroSaludId: filtroCentroId !== 'TODOS' ? filtroCentroId : undefined,
         }),
-        profesionalesService.getBloqueos(profesionalId),
+        profesionalId ? profesionalesService.getBloqueos(profesionalId) : Promise.resolve([]),
         centrosService.getAll()
       ]);
 

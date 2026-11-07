@@ -4,6 +4,7 @@ import { tokenStorage } from './tokenStorage';
 import { authBroadcast } from '@/lib/authBroadcast';
 import { sanitizeFormData } from '@/lib/sanitizer';
 import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
+import { toFrontendRole, toBackendRole } from '@/lib/roles';
 import type { User, UserRole } from '@/types';
 
 export interface LoginCredentials {
@@ -50,11 +51,7 @@ interface BackendAuthData {
 let currentSessionUser: User | null = null;
 
 function normalizeUserRole(rawRole?: string): UserRole {
-  const upper = (rawRole || 'PACIENTE').toUpperCase();
-  if (upper === 'MEDICO' || upper === 'PROFESIONAL') return 'MEDICO';
-  if (upper === 'RECEPCIONISTA') return 'RECEPCIONISTA';
-  if (upper === 'ADMIN') return 'ADMIN';
-  return 'PACIENTE';
+  return toFrontendRole(rawRole);
 }
 
 export const authService = {
@@ -85,8 +82,10 @@ export const authService = {
       if (response.data.requires2FA) {
         const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
         const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
+        const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
         const challengeUser: User = {
-          id: pacienteId || profesionalId || String(response.data.usuarioId || ''),
+          id: usuarioId || '',
+          usuarioId,
           pacienteId,
           profesionalId,
           nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
@@ -109,13 +108,15 @@ export const authService = {
 
       const token = response.data.accessToken || response.data.token;
       if (!token) {
-        throw new Error('El servidor no retorn�� un token de acceso vǭlido.');
+        throw new Error('El servidor no retornó un token de acceso válido.');
       }
 
       const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
       const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
+      const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
       const user: User = {
-        id: pacienteId || profesionalId || String(response.data.usuarioId || Date.now()),
+        id: usuarioId || String(Date.now()),
+        usuarioId,
         pacienteId,
         profesionalId,
         nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
@@ -201,8 +202,10 @@ export const authService = {
         throw new Error('El servidor no retornó un token de acceso válido.');
       }
 
+      const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
       const user: User = {
-        id: String(response.data.pacienteId || response.data.profesionalId || response.data.usuarioId || Date.now()),
+        id: usuarioId || String(Date.now()),
+        usuarioId,
         pacienteId: response.data.pacienteId != null ? String(response.data.pacienteId) : undefined,
         profesionalId: response.data.profesionalId != null ? String(response.data.profesionalId) : undefined,
         nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
@@ -220,19 +223,18 @@ export const authService = {
       currentSessionUser = user;
       sessionStorage.setItem('esu_session_active', '1');
 
-      if (user.rol === 'PACIENTE') {
+      if (user.rol === 'PACIENTE' && !user.pacienteId) {
         try {
           const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
           if (perfilRes.data?.id) {
-            user.id = String(perfilRes.data.id);
-            user.pacienteId = user.id;
+            user.pacienteId = String(perfilRes.data.id);
             if (perfilRes.data.dni) user.dni = perfilRes.data.dni;
             if (perfilRes.data.nombre) user.nombre = perfilRes.data.nombre;
             if (perfilRes.data.apellido) user.apellido = perfilRes.data.apellido;
             currentSessionUser = user;
           }
         } catch {
-          // Mantener usuarioId como fallback
+          // Ignorar si /pacientes/me no responde
         }
       }
 
@@ -284,8 +286,10 @@ export const authService = {
 
       const token = response.data.accessToken || response.data.token || '';
 
+      const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
       const user: User = {
-        id: String(response.data.pacienteId || response.data.usuarioId || Date.now()),
+        id: usuarioId || String(Date.now()),
+        usuarioId,
         pacienteId: response.data.pacienteId != null ? String(response.data.pacienteId) : undefined,
         nombre: cleanData.nombre,
         apellido: cleanData.apellido,
@@ -365,28 +369,30 @@ export const authService = {
         const userRol = normalizeUserRole(res.data.rol);
         const pacienteId = res.data.pacienteId != null ? String(res.data.pacienteId) : undefined;
         const profesionalId = res.data.profesionalId != null ? String(res.data.profesionalId) : undefined;
-        let targetId = pacienteId || profesionalId || String(res.data.usuarioId || res.data.id);
+        const authUserId = String(res.data.usuarioId || res.data.id);
+        let resolvedPacienteId = pacienteId;
         let dni = res.data.dni || String(res.data.id);
         let nombre = res.data.nombre || (res.data.email ? res.data.email.split('@')[0] : 'Usuario');
         let apellido = res.data.apellido || '';
 
-        if (userRol === 'PACIENTE' && !pacienteId) {
+        if (userRol === 'PACIENTE' && !resolvedPacienteId) {
           try {
             const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
             if (perfilRes.data?.id) {
-              targetId = String(perfilRes.data.id);
+              resolvedPacienteId = String(perfilRes.data.id);
               if (perfilRes.data.dni) dni = perfilRes.data.dni;
               if (perfilRes.data.nombre) nombre = perfilRes.data.nombre;
               if (perfilRes.data.apellido) apellido = perfilRes.data.apellido;
             }
           } catch {
-            // Fallback
+            // Fallback si no está disponible
           }
         }
 
         const refreshedUser: User = {
-          id: targetId,
-          pacienteId: pacienteId || (userRol === 'PACIENTE' ? targetId : undefined),
+          id: authUserId,
+          usuarioId: authUserId,
+          pacienteId: resolvedPacienteId,
           profesionalId,
           nombre,
           apellido,
@@ -415,7 +421,7 @@ export const authService = {
     try {
       const res = await apiClient.post<BackendAuthData>(
         API_ENDPOINTS.auth.devSwitchRole,
-        { role: newRole },
+        { role: toBackendRole(newRole) },
         { headers: { 'X-Dev-Secret': 'dev-secret-esu-2026' } }
       );
       const newToken = res.data?.accessToken || res.data?.token;
@@ -534,13 +540,15 @@ export const authService = {
 
     const token = response.data.accessToken || response.data.token;
     if (!token) {
-      throw new Error('El servidor no retorn�� un token de acceso v��lido.');
+      throw new Error('El servidor no retornó un token de acceso válido.');
     }
 
     const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
     const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
+    const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
     const user: User = {
-      id: pacienteId || profesionalId || String(response.data.usuarioId || ''),
+      id: usuarioId || String(Date.now()),
+      usuarioId,
       pacienteId,
       profesionalId,
       nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),

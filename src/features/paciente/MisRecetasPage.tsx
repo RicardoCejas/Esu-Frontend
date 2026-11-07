@@ -6,7 +6,7 @@ import type { RecetaDigitalDto } from '@/types';
 
 export const MisRecetasPage: React.FC = () => {
   const { user } = useAuth();
-  const pacienteId = user?.pacienteId || user?.id;
+  const pacienteId = user?.pacienteId;
   const [recetas, setRecetas] = useState<RecetaDigitalDto[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
