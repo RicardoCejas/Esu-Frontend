@@ -80,7 +80,11 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
     setIsSubmitting(true);
     setError(null);
     try {
-      await authService.confirm2FA(code.trim());
+      const isConfirmed = await authService.confirm2FA(code.trim());
+      if (!isConfirmed) {
+        setError('El código ingresado es incorrecto o ha expirado.');
+        return;
+      }
       setSuccess(true);
       onStatusChange(true);
     } catch (err: unknown) {

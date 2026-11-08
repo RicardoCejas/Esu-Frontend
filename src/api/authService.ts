@@ -364,6 +364,7 @@ export const authService = {
         dni?: string;
         activo: boolean;
         verificado: boolean;
+        twoFactorEnabled?: boolean;
       }>(API_ENDPOINTS.auth.me);
       if (res.data) {
         const userRol = normalizeUserRole(res.data.rol);
@@ -401,6 +402,7 @@ export const authService = {
           rol: userRol,
           activo: res.data.activo !== false,
           emailVerified: res.data.verificado !== false,
+          twoFactorEnabled: res.data.twoFactorEnabled ?? currentSessionUser?.twoFactorEnabled ?? false,
         };
         currentSessionUser = refreshedUser;
         return refreshedUser;
@@ -520,10 +522,11 @@ export const authService = {
     const response = await apiClient.post<{ success?: boolean }>(API_ENDPOINTS.auth.twoFactorVerify, {
       code: code.trim(),
     });
-    if (currentSessionUser) {
+    const isSuccess = response.data?.success === true;
+    if (isSuccess && currentSessionUser) {
       currentSessionUser.twoFactorEnabled = true;
     }
-    return response.data?.success ?? true;
+    return isSuccess;
   },
 
   async verify2FALogin(tempToken: string, code: string, isBackupCode = false): Promise<AuthResponse> {
