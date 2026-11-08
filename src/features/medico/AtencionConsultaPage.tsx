@@ -30,6 +30,8 @@ import {
 import { CriticalAlertBanner } from './components/CriticalAlertBanner';
 import { MedicalAttachmentViewer } from './components/MedicalAttachmentViewer';
 import { InformedConsentModal } from './components/InformedConsentModal';
+import { useToast } from '@/context/ToastContext';
+import { extractApiErrorMessage } from '@/api/endpoints';
 
 interface FármacoPrescripto {
   nombreComercial: string;
@@ -46,10 +48,13 @@ export const AtencionConsultaPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToast();
 
-  const pacienteId = searchParams.get('pacienteId') || '1';
+  const pacienteId = searchParams.get('pacienteId') || user?.pacienteId || '';
   const turnoId = searchParams.get('turnoId') || '';
   const pacienteNombreParam = searchParams.get('pacienteNombre');
+  const profesionalId = user?.profesionalId || '';
+  const [evolucionId, setEvolucionId] = useState<string | null>(searchParams.get('evolucionId'));
   const [consentimientoModalAbierto, setConsentimientoModalAbierto] = useState(false);
 
   // Resumen del paciente y alertas críticas
@@ -173,6 +178,8 @@ export const AtencionConsultaPage: React.FC = () => {
 
   // Carga inicial del Resumen Clínico (HU-49)
   useEffect(() => {
+    if (!pacienteId) return;
+
     const cargarResumen = async () => {
       try {
         const data = await clinicaService.getResumenClinico(pacienteId);
@@ -263,10 +270,22 @@ export const AtencionConsultaPage: React.FC = () => {
     setMedicamentos(updated);
   };
 
-  // Confirmar Firma Inalterable (HU-51)
+  // Confirmar Firma Inalterable (HU-51 / HU-95)
   const handleConfirmarFirma = async () => {
     if (!cie10) {
-      alert('Debe seleccionar al menos un diagnóstico formal CIE-10 antes de firmar.');
+      toastError('Debe seleccionar al menos un diagnóstico formal CIE-10 antes de firmar.');
+      return;
+    }
+    if (!turnoId) {
+      toastError('No se pudo identificar el turno de la atención. Abra la consulta desde la agenda médica.');
+      return;
+    }
+    if (!profesionalId) {
+      toastError('No se pudo validar el identificador del profesional médico actuante.');
+      return;
+    }
+    if (!pacienteId) {
+      toastError('No se pudo identificar al paciente de la consulta médica.');
       return;
     }
 
@@ -292,14 +311,18 @@ export const AtencionConsultaPage: React.FC = () => {
         medicamentos: incluirReceta ? medicamentos : [],
       };
 
-      const res = await clinicaService.finalizarAtencion(turnoId || '1', payload);
-      setHashGenerado((res as { hashIntegridad?: string })?.hashIntegridad || '3a887b41e8c950d88251e6b83f09804b49cb3766');
+      const res = await clinicaService.finalizarAtencion(turnoId, payload);
+      const resultado = res as { id?: number | string; hashIntegridad?: string };
+      if (resultado.id) {
+        setEvolucionId(String(resultado.id));
+      }
+      setHashGenerado(resultado.hashIntegridad || null);
 
       // Limpiar borrador local al firmar definitivamente
       localStorage.removeItem(`esu_draft_consulta_${pacienteId}`);
       setGuardadoExitoso(true);
     } catch (err: unknown) {
-      alert('Error al firmar consulta: ' + ((err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Error desconocido')));
+      toastError(extractApiErrorMessage(err, 'Error al firmar y finalizar la consulta médica.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -309,29 +332,37 @@ export const AtencionConsultaPage: React.FC = () => {
   const handleGuardarAdenda = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!justificacionAdenda.trim() || !contenidoAdenda.trim()) {
-      alert('La justificación clínica y el contenido aclaratorio son obligatorios.');
+      toastError('La justificación clínica y el contenido aclaratorio son obligatorios.');
+      return;
+    }
+    if (!evolucionId) {
+      toastError('No se pudo identificar la evolución clínica a rectificar.');
+      return;
+    }
+    if (!profesionalId) {
+      toastError('Identificador de profesional no disponible en la sesión.');
       return;
     }
 
     try {
-      await clinicaService.registrarAdenda(1, {
-        profesionalId: user?.id || 1,
+      await clinicaService.registrarAdenda(evolucionId, {
+        profesionalId,
         justificacionClinica: justificacionAdenda,
         contenidoAdicional: contenidoAdenda,
       });
-      alert('Adenda médica registrada con éxito con hash de inalterabilidad.');
+      toastSuccess('Adenda médica registrada con éxito con hash de inalterabilidad.');
       setShowAdendaModal(false);
       setJustificacionAdenda('');
       setContenidoAdenda('');
     } catch (err: unknown) {
-      alert('Error emitiendo adenda: ' + ((err instanceof Error ? err.message : 'Error')));
+      toastError(extractApiErrorMessage(err, 'Error al emitir la adenda médica.'));
     }
   };
 
   // Solicitud de anulación legal (HU-51)
   const handleSolicitarAnulacion = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Dictamen legal registrado. La solicitud de anulación ha sido elevada al Comité de Auditoría y Legales.');
+    toastSuccess('Dictamen legal registrado. La solicitud de anulación ha sido elevada al Comité de Auditoría y Legales.');
     setShowAnulacionModal(false);
     setDictamenAnulacion('');
   };
@@ -412,7 +443,7 @@ export const AtencionConsultaPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6">
         {/* HU-76: Banner Superior Permanente de Alergias Críticas y Factores de Riesgo */}
         <div className="mb-5">
-          <CriticalAlertBanner pacienteId={pacienteId} pacienteNombre={pacienteNombreParam || resumen?.nombreCompleto || 'Lucas Agustín Ramírez'} />
+          <CriticalAlertBanner pacienteId={pacienteId} pacienteNombre={pacienteNombreParam || resumen?.nombreCompleto || 'Paciente'} />
         </div>
         {guardadoExitoso ? (
           <div className="bg-white rounded-2xl p-8 border border-emerald-200 shadow-md text-center max-w-2xl mx-auto my-8">
@@ -426,11 +457,18 @@ export const AtencionConsultaPage: React.FC = () => {
               El acto médico ha quedado inscripto en la Historia Clínica Única con validez jurídica conforme a la Ley 26.529. El turno se actualizó a estado <strong>FINALIZADO</strong>.
             </p>
 
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left mb-6 font-mono text-xs text-slate-600 space-y-1">
-              <p><span className="font-bold text-slate-900">Hash SHA-256 de Integridad:</span> {hashGenerado}</p>
-              <p><span className="font-bold text-slate-900">Estado de la Evolución:</span> INALTERABLE / FIRMADA</p>
-              <p><span className="font-bold text-slate-900">Fecha y Hora de Cierre:</span> {new Date().toLocaleString()}</p>
-            </div>
+            {hashGenerado ? (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left mb-6 font-mono text-xs text-slate-600 space-y-1">
+                <p><span className="font-bold text-slate-900">Hash SHA-256 de Integridad:</span> {hashGenerado}</p>
+                <p><span className="font-bold text-slate-900">Estado de la Evolución:</span> INALTERABLE / FIRMADA</p>
+                <p><span className="font-bold text-slate-900">Fecha y Hora de Cierre:</span> {new Date().toLocaleString()}</p>
+              </div>
+            ) : (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left mb-6 text-xs text-slate-600 space-y-1">
+                <p><span className="font-bold text-slate-900">Estado de la Evolución:</span> INALTERABLE / FIRMADA</p>
+                <p><span className="font-bold text-slate-900">Fecha y Hora de Cierre:</span> {new Date().toLocaleString()}</p>
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link
@@ -1184,7 +1222,7 @@ export const AtencionConsultaPage: React.FC = () => {
         abierto={consentimientoModalAbierto}
         onCerrar={() => setConsentimientoModalAbierto(false)}
         pacienteId={pacienteId}
-        profesionalId={user?.id || '1'}
+        profesionalId={profesionalId}
         pacienteNombre={pacienteNombreParam || resumen?.nombreCompleto || 'Lucas Agustín Ramírez'}
         procedimientoInicial={motivo || 'Procedimiento de Atención Clínica'}
       />

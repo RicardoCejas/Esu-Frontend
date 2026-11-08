@@ -40,6 +40,7 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
   const realHook = useTurnero()
   const demoHook = useDemoTurnero()
   const activeHook = isDemo ? demoHook : realHook
+  const { catalogLoading, catalogError, retryCatalog } = realHook
 
   const {
     currentStep,
@@ -103,29 +104,6 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
     resetBaseBooking()
   }
 
-  function saveLocalTurno(turno: Turno, dniInput?: string) {
-    try {
-      const raw = localStorage.getItem('esu_local_turnos')
-      const list: Turno[] = raw ? JSON.parse(raw) : []
-      const toSave: Turno = {
-        ...turno,
-        pacienteId: user?.id || turno.pacienteId || 'pac-temp',
-        pacienteDni: dniInput || patientForm.dni || turno.pacienteDni,
-      }
-      const existsIndex = list.findIndex(
-        (t) => t.id === toSave.id || (t.fecha === toSave.fecha && t.hora === toSave.hora && t.pacienteDni === toSave.pacienteDni)
-      )
-      if (existsIndex >= 0) {
-        list[existsIndex] = toSave
-      } else {
-        list.unshift(toSave)
-      }
-      localStorage.setItem('esu_local_turnos', JSON.stringify(list))
-    } catch (e) {
-      console.warn('No se pudo guardar localmente el turno:', e)
-    }
-  }
-
   const handleConfirmRealBooking = async (form: PatientBookingForm) => {
     if (!selectedCenter || !selectedSlot) return
     if (tipoAtencion !== 'ESTUDIO' && !selectedDoctor) return
@@ -158,12 +136,11 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
       })
 
       setPersistedAppointment(nuevoTurno)
-      saveLocalTurno(nuevoTurno, form.dni)
 
       // Guardar automáticamente datos del paciente en la base de datos de la institución médica
-      if (user?.id) {
+      if (user?.pacienteId) {
         try {
-          await pacientesService.updateContacto(user.id, {
+          await pacientesService.updateContacto(user.pacienteId, {
             dni: form.dni,
             telefono: form.phone,
             obraSocial: form.healthInsurance,
@@ -175,47 +152,42 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'No se pudo confirmar el turno en el sistema.'
-      
-      const isUnseededOrTimeout = msg.toLowerCase().includes('profesional no encontrado') ||
-        msg.toLowerCase().includes('no encontrado con id') ||
-        msg.toLowerCase().includes('no posee franjas') ||
-        msg.toLowerCase().includes('tardando en responder') ||
-        msg.toLowerCase().includes('timeout') ||
-        msg.toLowerCase().includes('network') ||
-        msg.toLowerCase().includes('conexión') ||
-        msg.toLowerCase().includes('failed to fetch') ||
-        msg.toLowerCase().includes('404') ||
-        msg.toLowerCase().includes('not found')
-
-      if (isUnseededOrTimeout) {
-        const fallbackTurno: Turno = {
-          id: String(Date.now()),
-          codigoVerificacion: `TURNO-${Math.floor(100000 + Math.random() * 900000)}`,
-          fecha: selectedDate,
-          hora: selectedSlot.time,
-          pacienteId: user?.id || 'pac-temp',
-          pacienteDni: form.dni,
-          pacienteNombre: `${form.firstName} ${form.lastName}`.trim(),
-          pacienteTelefono: form.phone,
-          obraSocial: form.healthInsurance,
-          profesionalId: selectedDoctor?.id || '1',
-          profesionalNombre: tipoAtencion === 'ESTUDIO' ? (selectedStudy?.name || 'Servicio Diagnóstico Central') : (selectedDoctor?.name || 'Profesional Médico'),
-          especialidadNombre: tipoAtencion === 'ESTUDIO' ? (selectedStudy?.category || 'Práctica Diagnóstica') : (selectedSpecialty?.name || 'Consulta Médica'),
-          centroSaludId: selectedCenter.id,
-          centroSaludNombre: selectedCenter.name,
-          estado: 'CONFIRMADO',
-          tipoAtencion,
-          fechaCreacion: new Date().toISOString(),
-        }
-        setPersistedAppointment(fallbackTurno)
-        saveLocalTurno(fallbackTurno, form.dni)
-        return
-      }
-
       setBookingErrorMsg(msg)
     } finally {
       setIsSubmittingBooking(false)
     }
+  }
+
+  const demoTurno: Turno | null = isDemo && demoHook.createdAppointment ? {
+    id: demoHook.createdAppointment.code,
+    codigoVerificacion: demoHook.createdAppointment.code,
+    fecha: selectedDate,
+    hora: selectedSlot?.time || '',
+    pacienteId: '',
+    pacienteNombre: `${demoHook.createdAppointment.patient.firstName} ${demoHook.createdAppointment.patient.lastName}`,
+    pacienteDni: demoHook.createdAppointment.patient.dni,
+    pacienteTelefono: demoHook.createdAppointment.patient.phone,
+    obraSocial: demoHook.createdAppointment.patient.healthInsurance,
+    numeroAfiliado: demoHook.createdAppointment.patient.affiliateNumber,
+    profesionalId: demoHook.createdAppointment.doctor.id,
+    profesionalNombre: ('name' in demoHook.createdAppointment.doctor && typeof (demoHook.createdAppointment.doctor as { name?: string }).name === 'string')
+      ? (demoHook.createdAppointment.doctor as { name: string }).name
+      : (selectedDoctor?.name || 'Profesional de demostración'),
+    especialidadNombre: selectedSpecialty?.name ?? '',
+    centroSaludId: selectedCenter?.id ?? '',
+    centroSaludNombre: selectedCenter?.name ?? '',
+    estado: 'PENDIENTE',
+    fechaCreacion: new Date().toISOString(),
+  } : null
+
+  const effectiveCreatedAppointment = isDemo ? demoTurno : persistedAppointment
+
+  const handleConfirmBooking = async (form: PatientBookingForm) => {
+    if (isDemo) {
+      demoHook.handleConfirmBooking()
+      return
+    }
+    await handleConfirmRealBooking(form)
   }
 
   const isPatientExistingError = Boolean(bookingErrorMsg && bookingErrorMsg.includes('pertenece a un paciente registrado'))
@@ -227,6 +199,21 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
         <div className="w-full bg-amber-100 border-b border-amber-300 py-1.5 px-4 text-center text-xs font-semibold text-amber-900 flex items-center justify-center gap-2">
           <AlertTriangle className="size-3.5 text-amber-700 shrink-0" />
           <span>Turnero de demostración: las reservas no se registran en el sistema real.</span>
+        </div>
+      )}
+
+      {catalogError && !isDemo && (
+        <div role="alert" className="w-full bg-red-50 border-b border-red-300 py-2 px-4 text-center text-xs font-semibold text-red-800 flex items-center justify-center gap-3">
+          <span>{catalogError}</span>
+          <Button type="button" size="sm" variant="outline" onClick={retryCatalog}>
+            Reintentar
+          </Button>
+        </div>
+      )}
+
+      {catalogLoading && !isDemo && (
+        <div role="status" className="w-full bg-sky-50 border-b border-sky-200 py-2 px-4 text-center text-xs font-semibold text-sky-900">
+          Cargando centros, especialidades y profesionales...
         </div>
       )}
 
@@ -358,8 +345,8 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
                 patientForm={patientForm}
                 bookingError={bookingErrorMsg || bookingError}
                 isSubmitting={isSubmittingBooking}
-                createdAppointment={persistedAppointment}
-                onConfirm={handleConfirmRealBooking}
+                createdAppointment={effectiveCreatedAppointment}
+                onConfirm={handleConfirmBooking}
                 onFormChange={handlePatientFormChange}
                 onBackToSlots={() => handleGoToStep(4)}
               />

@@ -1,11 +1,11 @@
-import { apiClient } from './apiClient';
-import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
+import { apiClient } from './apiClient.ts';
+import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints.ts';
 import type { Turno, EstadoTurno, SobreturnoRequest } from '@/types';
 import {
   createPersistedTurno,
   type CreateTurnoRequest,
   type CreatedTurnoResponse,
-} from './turnoCreation';
+} from './turnoCreation.ts';
 
 const CENTER_SLUG_MAP: Record<string, number> = {
   'cde-hosp-crespo': 1,
@@ -41,14 +41,15 @@ const DOCTOR_SLUG_MAP: Record<string, number> = {
   'doc-albarracin': 24,
 };
 
-function toNumericId(raw: string | number | undefined, fallback = 1): number {
-  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+function toNumericId(raw: string | number | undefined, fieldName = 'identificador'): number {
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) return raw;
   const str = String(raw ?? '').trim();
   if (CENTER_SLUG_MAP[str]) return CENTER_SLUG_MAP[str];
   if (DOCTOR_SLUG_MAP[str]) return DOCTOR_SLUG_MAP[str];
   const digits = str.replace(/\D/g, '');
   const parsed = Number(digits);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  throw new Error(`El identificador '${fieldName}' es obligatorio y debe ser un número válido.`);
 }
 
 function toOptionalNumericId(raw: string | number | undefined | null): number | undefined {
@@ -62,147 +63,8 @@ function toOptionalNumericId(raw: string | number | undefined | null): number | 
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-function normalizeEstado(raw: unknown): EstadoTurno {
-  const s = String(raw ?? 'PENDIENTE').trim().toUpperCase();
-  if (s === 'ATENDIDO' || s === 'FINALIZADO' || s === 'COMPLETADO') return 'COMPLETADO';
-  if (
-    s === 'PENDIENTE' ||
-    s === 'CONFIRMADO' ||
-    s === 'EN_ESPERA' ||
-    s === 'EN_SALA_DE_ESPERA' ||
-    s === 'ATENDIENDO' ||
-    s === 'CANCELADO' ||
-    s === 'CANCELADO_POR_MEDICO' ||
-    s === 'AUSENTE'
-  ) {
-    return s;
-  }
-  return 'PENDIENTE';
-}
-
-export function normalizeTurno(d: Record<string, unknown>): Turno {
-  const pac = d.paciente as Record<string, unknown> | undefined;
-  const prof = d.profesional as Record<string, unknown> | undefined;
-  const profEsp =
-    (prof?.especialidad as Record<string, unknown> | undefined) ??
-    (Array.isArray(prof?.especialidades)
-      ? (prof?.especialidades[0] as Record<string, unknown> | undefined)
-      : undefined);
-
-  const rawFechaHora = typeof d.fechaHora === 'string' ? d.fechaHora : '';
-  const fecha = rawFechaHora.includes('T')
-    ? rawFechaHora.split('T')[0]!
-    : String(d.fecha ?? '');
-  const hora = rawFechaHora.includes('T')
-    ? rawFechaHora.split('T')[1]!.slice(0, 5)
-    : String(d.hora ?? '08:00').slice(0, 5);
-
-  const rawCheckIn = typeof d.fechaCheckIn === 'string' ? d.fechaCheckIn : '';
-  const horaCheckIn = rawCheckIn.includes('T')
-    ? rawCheckIn.split('T')[1]!.slice(0, 5)
-    : typeof d.horaCheckIn === 'string'
-    ? d.horaCheckIn
-    : undefined;
-
-  const idStr = String(d.id ?? '');
-
-  return {
-    id: idStr,
-    codigoVerificacion:
-      typeof d.codigoVerificacion === 'string'
-        ? d.codigoVerificacion
-        : `ESU-2026-${idStr.padStart(4, '0')}`,
-    fecha,
-    hora,
-    pacienteId: String(pac?.id ?? d.pacienteId ?? ''),
-    pacienteNombre: pac
-      ? `${String(pac.nombre ?? '')} ${String(pac.apellido ?? '')}`.trim()
-      : String(d.pacienteNombre ?? ''),
-    pacienteDni: String(pac?.dni ?? d.pacienteDni ?? ''),
-    pacienteTelefono: String(pac?.telefono ?? d.pacienteTelefono ?? ''),
-    obraSocial:
-      typeof pac?.obraSocial === 'string'
-        ? pac.obraSocial
-        : typeof d.obraSocial === 'string'
-        ? d.obraSocial
-        : undefined,
-    nroAfiliado:
-      typeof pac?.nroAfiliado === 'string'
-        ? pac.nroAfiliado
-        : typeof d.nroAfiliado === 'string'
-        ? d.nroAfiliado
-        : undefined,
-    numeroAfiliado:
-      typeof pac?.nroAfiliado === 'string'
-        ? pac.nroAfiliado
-        : typeof d.numeroAfiliado === 'string'
-        ? d.numeroAfiliado
-        : undefined,
-    grupoSanguineo:
-      typeof pac?.grupoSanguineo === 'string'
-        ? pac.grupoSanguineo
-        : typeof d.grupoSanguineo === 'string'
-        ? d.grupoSanguineo
-        : undefined,
-    copagoMonto:
-      typeof d.montoCopago === 'number'
-        ? d.montoCopago
-        : typeof d.copagoMonto === 'number'
-        ? d.copagoMonto
-        : undefined,
-    numeroBono: typeof d.numeroBono === 'string' ? d.numeroBono : undefined,
-    esPrimeraVez: Boolean(d.esPrimeraVez),
-    consultorioNumero:
-      typeof d.consultorioNumero === 'string' ? d.consultorioNumero : '102',
-    planta: typeof d.planta === 'string' ? d.planta : 'Planta Baja',
-    profesionalId: String(prof?.id ?? d.profesionalId ?? '1'),
-    profesionalNombre: prof
-      ? `${String(prof.nombre ?? '')} ${String(prof.apellido ?? '')}`.trim()
-      : String(d.profesionalNombre ?? ''),
-    especialidadNombre: String(
-      profEsp?.nombre ?? d.especialidadNombre ?? 'Medicina General'
-    ),
-    centroSaludId: String(d.centroSaludId ?? '1').replace(/^c/, ''),
-    centroSaludNombre: String(
-      d.centroSaludNombre ?? 'Hospital Regional Aurelio Crespo'
-    ),
-    estado: normalizeEstado(d.estado),
-    motivoConsulta:
-      typeof d.motivoTurno === 'string'
-        ? d.motivoTurno
-        : typeof d.motivoConsulta === 'string'
-        ? d.motivoConsulta
-        : undefined,
-    observaciones:
-      typeof d.observacionesAtencion === 'string'
-        ? d.observacionesAtencion
-        : typeof d.observaciones === 'string'
-        ? d.observaciones
-        : undefined,
-    justificativoCancelacion:
-      typeof d.motivoCancelacion === 'string'
-        ? d.motivoCancelacion
-        : typeof d.justificativoCancelacion === 'string'
-        ? d.justificativoCancelacion
-        : undefined,
-    fechaCreacion:
-      typeof d.fechaCreacion === 'string' ? d.fechaCreacion : fecha,
-    horaCheckIn,
-    horaLlamado: typeof d.horaLlamado === 'string' ? d.horaLlamado : undefined,
-    esSobreturno: Boolean(d.esSobreturno),
-    motivoSobreturno:
-      typeof d.motivoSobreturno === 'string' ? d.motivoSobreturno : undefined,
-    tipoAtencion:
-      typeof d.tipoAtencion === 'string'
-        ? d.tipoAtencion
-        : (prof || d.profesionalId ? 'CONSULTA' : 'ESTUDIO'),
-    servicio: typeof d.servicio === 'string' ? d.servicio : undefined,
-    especialidadId:
-      d.especialidadId !== undefined && d.especialidadId !== null
-        ? String(d.especialidadId)
-        : undefined,
-  };
-}
+import { normalizeTurno, normalizeEstado } from './turnoNormalizer.ts';
+export { normalizeTurno, normalizeEstado };
 
 export const turnosService = {
   async getById(id: string): Promise<Turno | null> {
@@ -210,8 +72,8 @@ export const turnosService = {
       const numId = toNumericId(id);
       const response = await apiClient.get<Record<string, unknown>>(API_ENDPOINTS.turnos.byId(numId));
       return response.data ? normalizeTurno(response.data) : null;
-    } catch {
-      return null;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el turno solicitado.'), { cause: err });
     }
   },
 
@@ -228,48 +90,18 @@ export const turnosService = {
     }
   },
 
-  async getByPaciente(pacienteId: string, userDni?: string): Promise<Turno[]> {
-    let remoteTurnos: Turno[] = [];
+  async getByPaciente(pacienteId: string): Promise<Turno[]> {
     try {
       const numId = toNumericId(pacienteId);
       const response = await apiClient.get<Record<string, unknown>[]>(
         API_ENDPOINTS.turnos.byPaciente(numId)
       );
-      remoteTurnos = Array.isArray(response.data)
+      return Array.isArray(response.data)
         ? response.data.map(normalizeTurno)
         : [];
     } catch (err: unknown) {
-      console.warn('No se pudieron obtener los turnos remotos del paciente:', err);
-      remoteTurnos = [];
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los turnos del paciente.'), { cause: err });
     }
-
-    // Unificar con turnos registrados en la sesión/navegador para este paciente
-    let localTurnos: Turno[] = [];
-    try {
-      const raw = localStorage.getItem('esu_local_turnos');
-      if (raw) {
-        const parsed = JSON.parse(raw) as Turno[];
-        const cleanDni = userDni ? userDni.replace(/\D/g, '') : '';
-        localTurnos = parsed.filter((t) => 
-          String(t.pacienteId) === String(pacienteId) ||
-          (cleanDni && t.pacienteDni && t.pacienteDni.replace(/\D/g, '') === cleanDni)
-        );
-      }
-    } catch {
-      localTurnos = [];
-    }
-
-    const merged = [...remoteTurnos];
-    for (const lt of localTurnos) {
-      const alreadyIncluded = merged.some(
-        (rt) => rt.id === lt.id || (rt.fecha === lt.fecha && rt.hora === lt.hora)
-      );
-      if (!alreadyIncluded) {
-        merged.push(lt);
-      }
-    }
-
-    return merged;
   },
 
   async getByProfesional(
@@ -564,20 +396,10 @@ export const turnosService = {
     try {
       const numId = toNumericId(id);
       await apiClient.put(API_ENDPOINTS.turnos.cancelar(numId));
+      return true;
     } catch (err: unknown) {
-      console.warn('No se pudo cancelar en backend:', err);
+      throw new Error(extractApiErrorMessage(err, 'No se pudo cancelar el turno.'), { cause: err });
     }
-
-    try {
-      const raw = localStorage.getItem('esu_local_turnos');
-      if (raw) {
-        const list = JSON.parse(raw) as Turno[];
-        const updated = list.map((t) => (t.id === id ? { ...t, estado: 'CANCELADO' as const } : t));
-        localStorage.setItem('esu_local_turnos', JSON.stringify(updated));
-      }
-    } catch {}
-
-    return true;
   },
 
   async cancelarConJustificativo(id: string, motivo: string): Promise<boolean> {

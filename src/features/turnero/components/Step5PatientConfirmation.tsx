@@ -210,8 +210,12 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
 
                 <div className="rounded-xl border border-emerald-200 bg-white p-4 space-y-2 text-xs">
                   <p>
-                    <span className="font-semibold text-slate-500">Código de Turno:</span>{' '}
-                    <span className="font-mono font-bold text-sky-800 text-sm">{createdAppointment.codigoVerificacion}</span>
+                    <span className="font-semibold text-slate-500">
+                      {createdAppointment.codigoVerificacion ? 'Código de Turno:' : 'Identificador de Turno:'}
+                    </span>{' '}
+                    <span className="font-mono font-bold text-sky-800 text-sm">
+                      {createdAppointment.codigoVerificacion || `#${createdAppointment.id}`}
+                    </span>
                   </p>
                   <p>
                     <span className="font-semibold text-slate-500">Paciente:</span>{' '}

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { pacientesService } from '@/api/pacientesService';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import { AuditoriaSesionesSection } from './components/AuditoriaSesionesSection';
 import { CambiarPasswordSection } from './components/CambiarPasswordSection';
+import { TwoFactorSetupModal } from '@/features/auth/TwoFactorSetupModal';
 import { ValidacionDniModal } from '@/components/auth/ValidacionDniModal';
 import { esPacienteDniVerificado } from '@/lib/identityValidation';
 import {
@@ -104,6 +106,7 @@ export const MiPerfilPage: React.FC = () => {
   const [dniInput, setDniInput] = useState(user?.dni || '');
   const [isEditingDni, setIsEditingDni] = useState(false);
   const [mostrarModalValidacionDni, setMostrarModalValidacionDni] = useState(false);
+  const [is2FAOpen, setIs2FAOpen] = useState(false);
 
   useEffect(() => {
     if (user?.dni) {
@@ -163,19 +166,18 @@ export const MiPerfilPage: React.FC = () => {
     setMensajeExito(null);
 
     try {
-      localStorage.setItem('esu_patient_profile_data', JSON.stringify(formData));
-      if (user?.id) {
-        try {
-          await pacientesService.updateContacto(user.id, {
-            dni: user.dni,
-            telefono: formData.telefonoPrincipal,
-            obraSocial: formData.obraSocial,
-            nroAfiliado: formData.nroAfiliado,
-          });
-        } catch (e) {
-          console.warn('Sincronización con backend:', e);
-        }
+      const targetId = user?.pacienteId || user?.usuarioId || user?.id;
+      if (targetId) {
+        await pacientesService.updateContacto(targetId, {
+          dni: user.dni,
+          telefono: formData.telefonoPrincipal,
+          obraSocial: formData.obraSocial,
+          nroAfiliado: formData.nroAfiliado,
+        });
       }
+
+      // Persistir en almacenamiento y estado de sesión SOLO ante éxito del backend
+      localStorage.setItem('esu_patient_profile_data', JSON.stringify(formData));
       updateUser({
         telefono: formData.telefonoPrincipal,
         obraSocial: formData.obraSocial,
@@ -186,8 +188,8 @@ export const MiPerfilPage: React.FC = () => {
       setMensajeExito(`Los datos de ${seccion} se actualizaron correctamente.`);
       success(`Datos de ${seccion} guardados.`);
       setTimeout(() => setMensajeExito(null), 4000);
-    } catch {
-      toastError('No se pudieron guardar los cambios.');
+    } catch (err: unknown) {
+      toastError(extractApiErrorMessage(err, 'No se pudieron guardar los cambios en el servidor.'));
     } finally {
       setGuardando(false);
     }
@@ -792,6 +794,29 @@ export const MiPerfilPage: React.FC = () => {
       </div>
 
       {/* Cambio de Contraseña y Seguridad de Cuenta */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+            <ShieldAlert className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Autenticación en dos pasos</h2>
+            <p className="mt-1 text-xs text-slate-600">
+              {user?.twoFactorEnabled
+                ? '2FA está activo. Podés revisar la configuración o desactivarlo con tu contraseña.'
+                : 'Sumá una capa extra de seguridad con una aplicación autenticadora TOTP.'}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIs2FAOpen(true)}
+          className="shrink-0 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-bold text-sky-800 hover:bg-sky-100 transition cursor-pointer"
+        >
+          {user?.twoFactorEnabled ? 'Gestionar 2FA' : 'Activar 2FA'}
+        </button>
+      </div>
+
       <CambiarPasswordSection />
 
       {/* HU-72: Auditoría de Seguridad y Sesiones Activas */}
@@ -898,6 +923,17 @@ export const MiPerfilPage: React.FC = () => {
         onClose={() => setMostrarModalValidacionDni(false)}
         onSuccess={() => setMostrarModalValidacionDni(false)}
         isMandatory={false}
+      />
+
+      <TwoFactorSetupModal
+        isOpen={is2FAOpen}
+        enabled={Boolean(user?.twoFactorEnabled)}
+        onClose={() => setIs2FAOpen(false)}
+        onStatusChange={(enabled) => updateUser({ twoFactorEnabled: enabled })}
+        onDisabled={async () => {
+          await logout();
+          navigate('/login');
+        }}
       />
     </div>
   );

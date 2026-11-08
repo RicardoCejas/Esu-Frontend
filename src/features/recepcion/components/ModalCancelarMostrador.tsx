@@ -51,7 +51,7 @@ export const ModalCancelarMostrador: React.FC<ModalCancelarMostradorProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-foreground">Cancelación con Justificativo</h2>
-              <p className="text-xs text-muted-foreground">Turno: {turno.codigoVerificacion}</p>
+              <p className="text-xs text-muted-foreground">Turno: {turno.codigoVerificacion || `#${turno.id}`}</p>
             </div>
           </div>
           <button

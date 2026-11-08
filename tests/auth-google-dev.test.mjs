@@ -5,6 +5,10 @@ import { API_ENDPOINTS } from '../src/api/endpoints.ts'
 test('auth endpoints configuration includes google and refresh', () => {
   assert.equal(API_ENDPOINTS.auth.google, '/auth/google')
   assert.equal(API_ENDPOINTS.auth.refresh, '/auth/refresh')
+  assert.equal(API_ENDPOINTS.auth.twoFactorSetup, '/auth/2fa/setup')
+  assert.equal(API_ENDPOINTS.auth.twoFactorVerify, '/auth/2fa/verify')
+  assert.equal(API_ENDPOINTS.auth.twoFactorChallenge, '/auth/2fa/challenge')
+  assert.equal(API_ENDPOINTS.auth.twoFactorDisable, '/auth/2fa/disable')
   assert.equal(API_ENDPOINTS.turnos.reservarPublico, '/turnos/publico/reservar')
 })
 
