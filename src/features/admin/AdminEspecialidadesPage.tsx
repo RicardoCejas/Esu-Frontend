@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { centrosService } from '@/api/centrosService';
 import { profesionalesService } from '@/api/profesionalesService';
-import { extractApiErrorMessage, isDemoModeEnabled } from '@/api/endpoints';
-import { MOCK_CENTROS, MOCK_ESPECIALIDADES } from '@/api/mockData';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import type { CentroSalud, Especialidad } from '@/types';
 import { Building2, Stethoscope, MapPin, Phone, Clock, PlusCircle, Search, AlertCircle, RefreshCw } from 'lucide-react';
 
@@ -23,20 +22,10 @@ export const AdminEspecialidadesPage: React.FC = () => {
         profesionalesService.getEspecialidades(),
       ]);
 
-      if (isDemoModeEnabled() && (!cData?.length || !eData?.length)) {
-        setCentros(cData?.length ? cData : MOCK_CENTROS);
-        setEspecialidades(eData?.length ? eData : MOCK_ESPECIALIDADES);
-      } else {
-        setCentros(cData || []);
-        setEspecialidades(eData || []);
-      }
+      setCentros(Array.isArray(cData) ? cData : []);
+      setEspecialidades(Array.isArray(eData) ? eData : []);
     } catch (err: unknown) {
-      if (isDemoModeEnabled()) {
-        setCentros(MOCK_CENTROS);
-        setEspecialidades(MOCK_ESPECIALIDADES);
-      } else {
-        setError(extractApiErrorMessage(err, 'No se pudieron sincronizar las especialidades y centros desde el servidor.'));
-      }
+      setError(extractApiErrorMessage(err, 'No se pudieron sincronizar las especialidades y centros desde el servidor.'));
     } finally {
       setLoading(false);
     }
@@ -46,7 +35,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
     cargarDatos();
   }, [cargarDatos]);
 
-  // HU-13: Búsqueda en tiempo real de especialidades
+  // Búsqueda en tiempo real de especialidades
   const especialidadesFiltradas = especialidades.filter((esp) =>
     esp.nombre.toLowerCase().includes(busquedaEspecialidad.toLowerCase()) ||
     (esp.descripcion || '').toLowerCase().includes(busquedaEspecialidad.toLowerCase())
@@ -56,7 +45,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">
             Centros de Salud y Especialidades
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -64,7 +53,6 @@ export const AdminEspecialidadesPage: React.FC = () => {
           </p>
         </div>
 
-        {/* HU-11: Botón para Crear Especialidad */}
         <Link
           to="/dashboard/admin/especialidades/nueva"
           className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition cursor-pointer"
@@ -148,7 +136,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
                 <span>Catálogo de Especialidades Médicas ({especialidadesFiltradas.length})</span>
               </h2>
 
-              {/* HU-13: Buscador en tiempo real */}
+              {/* Buscador en tiempo real */}
               <div className="relative min-w-[260px]">
                 <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                 <input

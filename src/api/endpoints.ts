@@ -145,6 +145,8 @@ export const API_ENDPOINTS = {
     base: '/usuarios',
     crear: '/usuarios/crear',
     todos: '/usuarios/obtener/todos',
+    byId: (id: string | number) => `/usuarios/obtener/${id}`,
+    eliminar: (id: string | number) => `/usuarios/eliminar/${id}`,
     preferencias: '/usuarios/preferencias',
     cambiarEstado: (id: string | number) => `/usuarios/${id}/estado`,
     revocarMisSesiones: '/usuarios/me/revocar-sesiones',
