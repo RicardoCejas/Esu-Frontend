@@ -3,7 +3,7 @@ import { apiClient } from './apiClient';
 import { tokenStorage } from './tokenStorage';
 import { authBroadcast } from '@/lib/authBroadcast';
 import { sanitizeFormData } from '@/lib/sanitizer';
-import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
+import { API_ENDPOINTS, extractApiErrorMessage, isDemoModeEnabled } from './endpoints';
 import { toFrontendRole, toBackendRole } from '@/lib/roles';
 import type { User, UserRole } from '@/types';
 
@@ -64,17 +64,16 @@ export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const cleanCredentials = sanitizeFormData(credentials);
     const emailLower = (cleanCredentials.email || cleanCredentials.dni || '').trim().toLowerCase();
-    const isDev = import.meta.env.DEV;
-    const isDevCredentials = emailLower === 'dev@esu.gob.ar' && cleanCredentials.password === 'Dev12345!';
+    const rawPassword = credentials.password || '';
 
-    if (!cleanCredentials.password) {
+    if (!rawPassword) {
       throw new Error('Debe ingresar su contraseña.');
     }
 
     try {
       const payload = {
         email: cleanCredentials.email || (cleanCredentials.dni ? `${cleanCredentials.dni}@esu.com` : ''),
-        password: cleanCredentials.password,
+        password: rawPassword,
       };
 
       const response = await apiClient.post<BackendAuthData>(API_ENDPOINTS.auth.login, payload);
@@ -114,6 +113,7 @@ export const authService = {
       const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
       const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
       const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
+      const allowSimulatedRole = Boolean((import.meta.env.DEV || isDemoModeEnabled()) && credentials.rolSimulado);
       const user: User = {
         id: usuarioId || String(Date.now()),
         usuarioId,
@@ -123,17 +123,17 @@ export const authService = {
         apellido: response.data.apellido || '',
         email: response.data.email || payload.email,
         dni: response.data.dni || cleanCredentials.dni || '',
-        rol: credentials.rolSimulado && (isDevCredentials || isDev) ? credentials.rolSimulado : normalizeUserRole(response.data.rol),
+        rol: allowSimulatedRole ? credentials.rolSimulado! : normalizeUserRole(response.data.rol),
         activo: true,
         twoFactorEnabled: false,
         emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
-        isDeveloper: (isDev || isDevCredentials) && emailLower === 'dev@esu.gob.ar',
+        isDeveloper: Boolean(import.meta.env.DEV && emailLower === 'dev@esu.gob.ar'),
       };
 
       tokenStorage.setAccessToken(token);
       currentSessionUser = user;
       sessionStorage.setItem('esu_session_active', '1');
-      if (credentials.rolSimulado && (isDevCredentials || isDev)) {
+      if (allowSimulatedRole && credentials.rolSimulado) {
         await authService.devSwitchRole(credentials.rolSimulado);
       }
 
@@ -276,7 +276,7 @@ export const authService = {
 
     const payload = {
       email,
-      password: cleanData.password || '',
+      password: userData.password || '',
       nombre: cleanData.nombre || '',
       apellido: cleanData.apellido || '',
     };
@@ -415,7 +415,7 @@ export const authService = {
    * Switch de rol solo operativo en desarrollo
    */
   async devSwitchRole(newRole: UserRole): Promise<void> {
-    if (!import.meta.env.DEV) {
+    if (!import.meta.env.DEV && !isDemoModeEnabled()) {
       throw new Error('El cambio dinámico de rol no está habilitado en entornos productivos.');
     }
     try {
@@ -462,11 +462,9 @@ export const authService = {
    * Restablece contraseña vía token temporal
    */
   async resetPassword(token: string, newPassword: string): Promise<boolean> {
-    const cleanPassword = sanitizeFormData(newPassword);
-
     await apiClient.post(API_ENDPOINTS.auth.resetPassword, {
       token,
-      newPassword: cleanPassword,
+      newPassword,
     });
     return true;
   },
@@ -475,12 +473,9 @@ export const authService = {
    * Cambio de contraseña para usuarios autenticados
    */
   async cambiarPassword(passwordActual: string, nuevaPassword: string): Promise<{ success: boolean; message: string }> {
-    const cleanActual = sanitizeFormData(passwordActual);
-    const cleanNueva = sanitizeFormData(nuevaPassword);
-
     const response = await apiClient.post<{ mensaje?: string }>(API_ENDPOINTS.auth.cambiarPassword, {
-      passwordActual: cleanActual,
-      nuevaPassword: cleanNueva,
+      passwordActual,
+      nuevaPassword,
     });
 
     return {

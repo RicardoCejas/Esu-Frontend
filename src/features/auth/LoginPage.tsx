@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -14,7 +14,7 @@ import {
 import type { UserRole } from '@/types';
 import { GoogleAuthButton } from './components/GoogleAuthButton';
 import { TwoFactorChallengeModal } from './TwoFactorChallengeModal';
-import { extractApiErrorMessage } from '@/api/endpoints';
+import { extractApiErrorMessage, isDemoModeEnabled } from '@/api/endpoints';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -35,18 +35,16 @@ export const LoginPage: React.FC = () => {
   const [is2FAOpen, setIs2FAOpen] = useState(false);
   const [tempToken2FA, setTempToken2FA] = useState('');
 
-  // Cargar usuario y contraseña recordados o cuenta dev por defecto en desarrollo local
+  // Cargar usuario recordado (solo identificador, nunca contraseñas en claro)
   useEffect(() => {
     try {
+      // Limpieza proactiva de cualquier contraseña persistida en versiones anteriores
+      localStorage.removeItem('esu_remember_password');
       const savedUser = localStorage.getItem('esu_remember_login');
-      const savedPass = localStorage.getItem('esu_remember_password');
       if (savedUser) {
         setEmailOrDni(savedUser);
-        if (savedPass) {
-          setPassword(savedPass);
-        }
         setRememberLogin(true);
-      } else if (import.meta.env.DEV) {
+      } else if (import.meta.env.DEV && isDemoModeEnabled()) {
         setEmailOrDni('dev@esu.gob.ar');
         setPassword('Dev12345!');
         setRememberLogin(true);
@@ -86,13 +84,10 @@ export const LoginPage: React.FC = () => {
     try {
       if (rememberLogin) {
         localStorage.setItem('esu_remember_login', emailOrDni.trim());
-        if (password) {
-          localStorage.setItem('esu_remember_password', password);
-        }
       } else {
         localStorage.removeItem('esu_remember_login');
-        localStorage.removeItem('esu_remember_password');
       }
+      localStorage.removeItem('esu_remember_password');
 
       const authResponse = await login({
         email: emailOrDni || undefined,
