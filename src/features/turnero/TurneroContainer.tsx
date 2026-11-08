@@ -158,6 +158,38 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
     }
   }
 
+  const demoTurno: Turno | null = isDemo && demoHook.createdAppointment ? {
+    id: demoHook.createdAppointment.code,
+    codigoVerificacion: demoHook.createdAppointment.code,
+    fecha: selectedDate,
+    hora: selectedSlot?.time || '',
+    pacienteId: '',
+    pacienteNombre: `${demoHook.createdAppointment.patient.firstName} ${demoHook.createdAppointment.patient.lastName}`,
+    pacienteDni: demoHook.createdAppointment.patient.dni,
+    pacienteTelefono: demoHook.createdAppointment.patient.phone,
+    obraSocial: demoHook.createdAppointment.patient.healthInsurance,
+    numeroAfiliado: demoHook.createdAppointment.patient.affiliateNumber,
+    profesionalId: demoHook.createdAppointment.doctor.id,
+    profesionalNombre: ('name' in demoHook.createdAppointment.doctor && typeof (demoHook.createdAppointment.doctor as { name?: string }).name === 'string')
+      ? (demoHook.createdAppointment.doctor as { name: string }).name
+      : (selectedDoctor?.name || 'Profesional de demostración'),
+    especialidadNombre: selectedSpecialty?.name ?? '',
+    centroSaludId: selectedCenter?.id ?? '',
+    centroSaludNombre: selectedCenter?.name ?? '',
+    estado: 'PENDIENTE',
+    fechaCreacion: new Date().toISOString(),
+  } : null
+
+  const effectiveCreatedAppointment = isDemo ? demoTurno : persistedAppointment
+
+  const handleConfirmBooking = async (form: PatientBookingForm) => {
+    if (isDemo) {
+      demoHook.handleConfirmBooking()
+      return
+    }
+    await handleConfirmRealBooking(form)
+  }
+
   const isPatientExistingError = Boolean(bookingErrorMsg && bookingErrorMsg.includes('pertenece a un paciente registrado'))
 
   return (
@@ -313,8 +345,8 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
                 patientForm={patientForm}
                 bookingError={bookingErrorMsg || bookingError}
                 isSubmitting={isSubmittingBooking}
-                createdAppointment={persistedAppointment}
-                onConfirm={handleConfirmRealBooking}
+                createdAppointment={effectiveCreatedAppointment}
+                onConfirm={handleConfirmBooking}
                 onFormChange={handlePatientFormChange}
                 onBackToSlots={() => handleGoToStep(4)}
               />

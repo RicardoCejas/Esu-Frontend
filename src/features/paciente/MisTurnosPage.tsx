@@ -460,17 +460,13 @@ export const MisTurnosPage: React.FC = () => {
             <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-white p-6 text-slate-900 shadow-inner">
               <div className="flex h-36 w-36 items-center justify-center rounded-lg border border-slate-200 bg-white p-1">
                 <ScannableQrCode
-                  value={
-                    typeof window !== 'undefined'
-                      ? `${window.location.origin}/dashboard/paciente?turnoVerif=${encodeURIComponent(selectedTurnoQr.codigoVerificacion)}&paciente=${encodeURIComponent(selectedTurnoQr.pacienteNombre)}`
-                      : `https://esuluvia.vercel.app/turnero?verif=${encodeURIComponent(selectedTurnoQr.codigoVerificacion)}`
-                  }
+                  value={`ESU-TURNO:${selectedTurnoQr.id}:${selectedTurnoQr.codigoVerificacion || selectedTurnoQr.id}:${selectedTurnoQr.pacienteDni || selectedTurnoQr.pacienteId}`}
                   size={132}
-                  alt={`QR Comprobante Turno ${selectedTurnoQr.codigoVerificacion}`}
+                  alt={`QR Comprobante Turno ${selectedTurnoQr.codigoVerificacion || selectedTurnoQr.id}`}
                 />
               </div>
               <span className="mt-3 font-mono text-xs font-bold text-slate-800">
-                {selectedTurnoQr.codigoVerificacion}
+                {selectedTurnoQr.codigoVerificacion || `Turno #${selectedTurnoQr.id}`}
               </span>
               <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full mt-1 border border-emerald-200">
                 Escaneable desde celular en recepción
