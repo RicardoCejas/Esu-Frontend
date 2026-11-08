@@ -1,6 +1,13 @@
-import { apiClient } from './apiClient';
-import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
-import type { User, ConsultaMedica } from '@/types';
+import { apiClient } from './apiClient.ts';
+import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints.ts';
+import type { User, ConsultaMedica, TimelineItem } from '@/types';
+import {
+  normalizePaciente,
+  normalizeConsulta,
+  normalizeTimelineToConsulta,
+} from './pacienteNormalizer.ts';
+
+export { normalizePaciente, normalizeConsulta, normalizeTimelineToConsulta };
 
 function toNumericId(raw: string | number | undefined, fieldName = 'pacienteId'): number {
   if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) return raw;
@@ -8,45 +15,6 @@ function toNumericId(raw: string | number | undefined, fieldName = 'pacienteId')
   const parsed = Number(digits);
   if (Number.isFinite(parsed) && parsed > 0) return parsed;
   throw new Error(`El identificador '${fieldName}' es obligatorio y debe ser un número válido.`);
-}
-
-function normalizePaciente(d: Record<string, unknown>): User {
-  return {
-    id: String(d.id ?? ''),
-    nombre: String(d.nombre ?? ''),
-    apellido: String(d.apellido ?? ''),
-    dni: String(d.dni ?? ''),
-    email: String(d.email ?? `${d.dni ?? 'paciente'}@esu.gob.ar`),
-    telefono: typeof d.telefono === 'string' ? d.telefono : undefined,
-    rol: 'PACIENTE',
-    obraSocial: typeof d.obraSocial === 'string' ? d.obraSocial : undefined,
-    nroAfiliado: typeof d.nroAfiliado === 'string' ? d.nroAfiliado : undefined,
-    grupoSanguineo: typeof d.grupoSanguineo === 'string' ? d.grupoSanguineo : undefined,
-    activo: true,
-  };
-}
-
-function normalizeConsulta(d: Record<string, unknown>): ConsultaMedica {
-  const pac = d.paciente as Record<string, unknown> | undefined;
-  const prof = d.profesional as Record<string, unknown> | undefined;
-  const rawFecha = String(d.fechaAtencion ?? d.fecha ?? '');
-  return {
-    id: String(d.id ?? ''),
-    pacienteId: String(pac?.id ?? d.pacienteId ?? ''),
-    pacienteNombre: pac
-      ? `${String(pac.nombre ?? '')} ${String(pac.apellido ?? '')}`.trim()
-      : String(d.pacienteNombre ?? ''),
-    profesionalId: String(prof?.id ?? d.profesionalId ?? '1'),
-    profesionalNombre: prof
-      ? `Dr./Dra. ${String(prof.nombre ?? '')} ${String(prof.apellido ?? '')}`.trim()
-      : String(d.profesionalNombre ?? 'Profesional ESU'),
-    centroSaludId: (d.centroSaludId as string | number | undefined) ?? 1,
-    centroSaludNombre: String(d.centroSaludNombre ?? 'Hospital Regional Aurelio Crespo'),
-    fecha: rawFecha.includes('T') ? rawFecha.split('T')[0]! : rawFecha,
-    motivo: String(d.motivoConsulta ?? d.motivo ?? 'Consulta médica'),
-    diagnostico: String(d.diagnostico ?? ''),
-    tratamiento: String(d.tratamiento ?? ''),
-  };
 }
 
 export const pacientesService = {
@@ -72,9 +40,21 @@ export const pacientesService = {
     }
   },
 
-  async getHistoriaClinica(pacienteId: string): Promise<ConsultaMedica[]> {
+  async getHistoriaClinica(pacienteId: string | number): Promise<ConsultaMedica[]> {
     try {
       const numId = toNumericId(pacienteId);
+      // Intentar primero obtener el timeline completo estructurado (HU-52 / HU-95)
+      try {
+        const timelineRes = await apiClient.get<TimelineItem[]>(
+          API_ENDPOINTS.historiasClinicas.timelinePaciente(numId)
+        );
+        if (Array.isArray(timelineRes.data) && timelineRes.data.length > 0) {
+          return timelineRes.data.map((item) => normalizeTimelineToConsulta(item, String(numId)));
+        }
+      } catch {
+        // Fallback al endpoint clásico de historias clínicas
+      }
+
       const res = await apiClient.get<Record<string, unknown>[]>(
         API_ENDPOINTS.historiasClinicas.byPaciente(numId)
       );
