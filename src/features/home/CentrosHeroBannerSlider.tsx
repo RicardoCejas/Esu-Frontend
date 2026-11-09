@@ -132,8 +132,6 @@ export const CentrosHeroBannerSlider: React.FC = () => {
     return () => clearInterval(interval);
   }, [isPaused]);
 
-  const slide = BANNER_SLIDES[currentSlide];
-
   const handlePrev = () => {
     setCurrentSlide((prev) => (prev === 0 ? BANNER_SLIDES.length - 1 : prev - 1));
   };
@@ -148,92 +146,98 @@ export const CentrosHeroBannerSlider: React.FC = () => {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Contenedor del Slide Activo con Transición Suave */}
-      <div className="relative min-h-[380px] sm:min-h-[440px] md:min-h-[480px] w-full flex items-center">
-        {/* Foto de Fondo con Nitidez Total */}
-        <img
-          src={slide.bgImage}
-          alt={`${slide.titlePrimary} ${slide.titleSecondary}`}
-          width="1440"
-          height="480"
-          fetchPriority={currentSlide === 0 ? "high" : "auto"}
-          loading={currentSlide === 0 ? "eager" : "lazy"}
-          decoding="async"
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 pointer-events-none"
-        />
+      {/* Track de Slides con Desplazamiento Horizontal y Movimiento Suave */}
+      <div
+        className="flex transition-transform duration-700 ease-in-out w-full"
+        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+      >
+        {BANNER_SLIDES.map((itemSlide) => (
+          <div
+            key={itemSlide.id}
+            className="relative min-w-full min-h-[380px] sm:min-h-[440px] md:min-h-[480px] flex items-center shrink-0"
+          >
+            {/* Foto de Fondo con Nitidez Total */}
+            <img
+              src={itemSlide.bgImage}
+              alt={`${itemSlide.titlePrimary} ${itemSlide.titleSecondary}`}
+              width="1440"
+              height="480"
+              loading="eager"
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+            />
 
-        {/* Overlay Oscuro Sutil Elegante (Idéntico a la imagen de referencia para que la foto y las letras se aprecien al 100%) */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/50 to-slate-950/25" />
+            {/* Overlay Oscuro Sutil Elegante */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/50 to-slate-950/25" />
 
-        {/* Flechas de Navegación Lateral Minimalistas (Idénticas a la imagen de referencia) */}
-        <button
-          onClick={handlePrev}
-          className="absolute left-3 sm:left-6 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center text-white/70 hover:text-white hover:scale-110 transition cursor-pointer"
-          aria-label="Anterior"
-        >
-          <ChevronLeft className="h-8 w-8 sm:h-10 sm:w-10 stroke-[1.5]" />
-        </button>
+            {/* Contenido Textual Izquierdo */}
+            <div className="container relative z-10 mx-auto max-w-7xl px-8 sm:px-14 lg:px-20 py-12">
+              <div className="max-w-xl space-y-4">
+                {/* Eyebrow / Categoría */}
+                <span className="text-xs sm:text-sm font-semibold tracking-wide text-white/90 drop-shadow-sm block">
+                  {itemSlide.titlePrimary}
+                </span>
 
-        <button
-          onClick={handleNext}
-          className="absolute right-3 sm:right-6 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center text-white/70 hover:text-white hover:scale-110 transition cursor-pointer"
-          aria-label="Siguiente"
-        >
-          <ChevronRight className="h-8 w-8 sm:h-10 sm:w-10 stroke-[1.5]" />
-        </button>
+                {/* Título Principal Blanco Grande y Nítido */}
+                <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight font-heading drop-shadow-md">
+                  {itemSlide.titleSecondary}
+                </h2>
 
-        {/* Contenido Textual Izquierdo (Idéntico a la imagen de referencia: eyebrow + título grande blanco + bajada + botón) */}
-        <div className="container relative z-10 mx-auto max-w-7xl px-8 sm:px-14 lg:px-20 py-12">
-          <div className="max-w-xl space-y-4 animate-in fade-in duration-300">
-            {/* Eyebrow / Categoría */}
-            <span className="text-xs sm:text-sm font-semibold tracking-wide text-white/90 drop-shadow-sm block">
-              {slide.titlePrimary}
-            </span>
+                {/* Bajada / Subtítulo */}
+                <p className="text-sm sm:text-base md:text-lg text-slate-200 font-normal leading-relaxed drop-shadow-sm">
+                  {itemSlide.subtitle}
+                </p>
 
-            {/* Título Principal Blanco Grande y Nítido */}
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight font-heading drop-shadow-md">
-              {slide.titleSecondary}
-            </h2>
-
-            {/* Bajada / Subtítulo */}
-            <p className="text-sm sm:text-base md:text-lg text-slate-200 font-normal leading-relaxed drop-shadow-sm">
-              {slide.subtitle}
-            </p>
-
-            {/* Botones de Acción */}
-            <div className="pt-2 flex flex-wrap items-center gap-3">
-              <Link
-                to="/turnero"
-                className="inline-flex items-center justify-center rounded-lg bg-[#005a87] hover:bg-[#00486c] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all cursor-pointer"
-              >
-                Sacar Turno
-              </Link>
-
-              <button
-                onClick={() => setModalSlide(slide)}
-                className="inline-flex items-center justify-center rounded-lg border border-white/60 bg-white/10 hover:bg-white/20 px-5 py-2.5 text-xs font-bold text-white backdrop-blur-xs transition cursor-pointer"
-              >
-                Conocer Instalaciones
-              </button>
+                {/* Botón de Acción */}
+                <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setModalSlide(itemSlide)}
+                    className="inline-flex items-center justify-center rounded-lg bg-[#005a87] hover:bg-[#00486c] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all cursor-pointer"
+                  >
+                    Conocer Instalaciones
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        ))}
+      </div>
 
-        {/* Puntos de Paginación Minimalistas (Idénticos a la referencia: circulitos con borde blanco) */}
-        <div className="absolute bottom-5 left-0 right-0 z-20 flex justify-center items-center gap-2">
-          {BANNER_SLIDES.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`rounded-full transition-all cursor-pointer ${
-                currentSlide === index
-                  ? 'h-2.5 w-2.5 bg-white border border-white'
-                  : 'h-2.5 w-2.5 bg-transparent border border-white/70 hover:border-white'
-              }`}
-              aria-label={`Ir al slide ${index + 1}`}
-            />
-          ))}
-        </div>
+      {/* Flechas de Navegación Lateral Minimalistas */}
+      <button
+        type="button"
+        onClick={handlePrev}
+        className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center text-white/70 hover:text-white hover:scale-110 transition cursor-pointer"
+        aria-label="Anterior"
+      >
+        <ChevronLeft className="h-8 w-8 sm:h-10 sm:w-10 stroke-[1.5]" />
+      </button>
+
+      <button
+        type="button"
+        onClick={handleNext}
+        className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center text-white/70 hover:text-white hover:scale-110 transition cursor-pointer"
+        aria-label="Siguiente"
+      >
+        <ChevronRight className="h-8 w-8 sm:h-10 sm:w-10 stroke-[1.5]" />
+      </button>
+
+      {/* Puntos de Paginación Minimalistas */}
+      <div className="absolute bottom-5 left-0 right-0 z-20 flex justify-center items-center gap-2">
+        {BANNER_SLIDES.map((_, index) => (
+          <button
+            key={index}
+            type="button"
+            onClick={() => setCurrentSlide(index)}
+            className={`rounded-full transition-all cursor-pointer ${
+              currentSlide === index
+                ? 'h-2.5 w-2.5 bg-white border border-white'
+                : 'h-2.5 w-2.5 bg-transparent border border-white/70 hover:border-white'
+            }`}
+            aria-label={`Ir al slide ${index + 1}`}
+          />
+        ))}
       </div>
 
       {/* MODAL DETALLES DEL CENTRO AL CLICAR EN "MÁS INFORMACIÓN" */}

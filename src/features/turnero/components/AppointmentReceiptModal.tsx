@@ -66,7 +66,7 @@ ESPECIALIDAD: ${appointment.specialty?.name || appointment.servicio || 'Estudio 
 FECHA: ${appointment.date}
 HORA: ${appointment.slot.time} hs
 
-CÓDIGO DE VALIDACIÓN QR: ESU-VERIF-${appointment.bookingCode}
+CÓDIGO DE TURNO: ${appointment.bookingCode}
 ----------------------------------------
 Presente este comprobante en mesa de entradas al llegar.
 Guardia Hospital Aurelio Crespo: 107 / (03549) 422111
@@ -147,7 +147,7 @@ Guardia Hospital Aurelio Crespo: 107 / (03549) 422111
             <div className="flex flex-col items-center gap-2">
               <QrCode className="h-24 w-24 text-slate-800" />
               <span className="text-[10px] font-mono font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded">
-                ESU-VERIF-{appointment.bookingCode}
+                {appointment.bookingCode}
               </span>
             </div>
           </div>

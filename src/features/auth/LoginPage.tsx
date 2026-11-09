@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { GoogleAuthButton } from './components/GoogleAuthButton';
-import { extractApiErrorMessage } from '@/api/endpoints';
+import { TwoFactorChallengeModal } from './TwoFactorChallengeModal';
+import { extractApiErrorMessage, isDemoModeEnabled } from '@/api/endpoints';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -31,19 +32,19 @@ export const LoginPage: React.FC = () => {
     (import.meta.env.VITE_GOOGLE_AUTH_ENABLED !== 'false' && Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID));
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [is2FAOpen, setIs2FAOpen] = useState(false);
+  const [tempToken2FA, setTempToken2FA] = useState('');
 
-  // Cargar usuario y contraseña recordados o cuenta dev por defecto en desarrollo local
+  // Cargar usuario recordado (solo identificador, nunca contraseñas en claro)
   useEffect(() => {
     try {
+      // Limpieza proactiva de cualquier contraseña persistida en versiones anteriores
+      localStorage.removeItem('esu_remember_password');
       const savedUser = localStorage.getItem('esu_remember_login');
-      const savedPass = localStorage.getItem('esu_remember_password');
       if (savedUser) {
         setEmailOrDni(savedUser);
-        if (savedPass) {
-          setPassword(savedPass);
-        }
         setRememberLogin(true);
-      } else if (import.meta.env.DEV) {
+      } else if (import.meta.env.DEV && isDemoModeEnabled()) {
         setEmailOrDni('dev@esu.gob.ar');
         setPassword('Dev12345!');
         setRememberLogin(true);
@@ -83,19 +84,22 @@ export const LoginPage: React.FC = () => {
     try {
       if (rememberLogin) {
         localStorage.setItem('esu_remember_login', emailOrDni.trim());
-        if (password) {
-          localStorage.setItem('esu_remember_password', password);
-        }
       } else {
         localStorage.removeItem('esu_remember_login');
-        localStorage.removeItem('esu_remember_password');
       }
+      localStorage.removeItem('esu_remember_password');
 
       const authResponse = await login({
         email: emailOrDni || undefined,
         dni: emailOrDni || undefined,
         password: password || undefined,
       });
+
+      if (authResponse.requires2FA && authResponse.tempToken) {
+        setTempToken2FA(authResponse.tempToken);
+        setIs2FAOpen(true);
+        return;
+      }
 
       if (authResponse.user) {
         redirectByRole(authResponse.user.rol);
@@ -118,9 +122,9 @@ export const LoginPage: React.FC = () => {
       <main id="main-content" className="w-full max-w-md space-y-4 relative z-10 py-6">
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-sky-700 transition px-2 py-1 rounded-md hover:bg-white/60"
+          className="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-slate-700 hover:text-sky-800 transition px-3 py-1.5 rounded-xl hover:bg-white/80 shadow-xs"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4.5 w-4.5" />
           <span>Volver al inicio</span>
         </Link>
 
@@ -277,16 +281,30 @@ export const LoginPage: React.FC = () => {
           </form>
         </div>
 
-        <p className="text-center text-xs text-slate-600 font-medium">
+        <p className="text-center text-sm sm:text-[15px] text-slate-700 font-medium pt-1">
           ¿No tienes una cuenta de paciente?{' '}
           <Link
             to={redirectUrl ? `/registro?redirect=${encodeURIComponent(redirectUrl)}` : '/registro'}
-            className="font-bold text-sky-700 hover:underline"
+            className="font-bold text-sky-700 hover:text-sky-900 underline underline-offset-2"
           >
             Regístrate aquí
           </Link>
         </p>
       </main>
+
+      <TwoFactorChallengeModal
+        isOpen={is2FAOpen}
+        tempToken={tempToken2FA}
+        onSuccess={(rol) => {
+          setIs2FAOpen(false);
+          setTempToken2FA('');
+          redirectByRole(rol);
+        }}
+        onCancel={() => {
+          setIs2FAOpen(false);
+          setTempToken2FA('');
+        }}
+      />
     </div>
   );
 };

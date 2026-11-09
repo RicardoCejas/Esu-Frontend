@@ -1,5 +1,5 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
-import { tokenStorage } from './tokenStorage';
+import { tokenStorage, refreshSingleFlight } from './tokenStorage';
 import { getCsrfTokenFromCookie } from '@/lib/sanitizer';
 import { authBroadcast } from '@/lib/authBroadcast';
 
@@ -92,15 +92,21 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshResponse = await axios.post<{ accessToken?: string; token?: string }>(
-          `${BASE_URL}/auth/refresh`,
-          {},
-          { withCredentials: true }
-        );
+        const newAccessToken = await refreshSingleFlight.run(async () => {
+          const refreshResponse = await axios.post<{ accessToken?: string; token?: string }>(
+            `${BASE_URL}/auth/refresh`,
+            {},
+            { withCredentials: true }
+          );
 
-        const newAccessToken = refreshResponse.data.accessToken || refreshResponse.data.token;
+          const extracted = refreshResponse.data.accessToken || refreshResponse.data.token || null;
+          if (extracted) {
+            tokenStorage.setAccessToken(extracted);
+          }
+          return extracted;
+        });
+
         if (newAccessToken) {
-          tokenStorage.setAccessToken(newAccessToken);
           processQueue(null, newAccessToken);
 
           if (originalRequest.headers) {

@@ -1,7 +1,11 @@
-export type UserRole = 'PACIENTE' | 'MEDICO' | 'RECEPCIONISTA' | 'ADMIN';
+export type BackendUserRole = 'PACIENTE' | 'PROFESIONAL' | 'RECEPCIONISTA' | 'ADMIN';
+export type UserRole = 'PACIENTE' | 'MEDICO' | 'PROFESIONAL' | 'RECEPCIONISTA' | 'ADMIN';
 
 export interface User {
   id: string;
+  usuarioId?: string;
+  pacienteId?: string;
+  profesionalId?: string;
   nombre: string;
   apellido: string;
   email: string;
@@ -211,19 +215,29 @@ export interface ConsultaMedica {
   pacienteNombre: string;
   profesionalId: string;
   profesionalNombre: string;
+  profesionalMatricula?: string;
+  especialidadNombre?: string;
   centroSaludId?: string | number;
   centroSaludNombre?: string;
   fecha: string;
   motivo: string;
   diagnostico: string;
+  codigoCie10?: string;
+  descripcionCie10?: string;
   tratamiento: string;
   signosVitales?: {
     presionArterial?: string;
     frecuenciaCardiaca?: string;
     temperatura?: string;
     peso?: string;
+    talla?: string;
+    imc?: string;
   };
   receta?: RecetaDigital;
+  recetaId?: string | number;
+  hashIntegridad?: string;
+  adendas?: string[];
+  pdfUrl?: string;
 }
 
 export interface RecetaDigital {

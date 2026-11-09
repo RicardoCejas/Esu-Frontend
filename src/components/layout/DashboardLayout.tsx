@@ -20,11 +20,32 @@ export const DashboardLayout: React.FC = () => {
   const estaVerificado = esPacienteDniVerificado(user);
   const accesoBloqueado = user?.rol === 'PACIENTE' && esRutaSensible && !estaVerificado;
 
+  const tieneTelefonoValido = Boolean(
+    user?.telefono &&
+    user.telefono.trim().length >= 6 &&
+    user.telefono !== 'Sin especificar' &&
+    user.telefono !== '3549000000'
+  );
+
+  // Detectar si el usuario requiere completar sus datos de paciente (ej. al ingresar con Google)
+  const necesitaCompletarDatos =
+    user?.rol === 'PACIENTE' &&
+    (!user.dni ||
+      user.dni.startsWith('DNI-') ||
+      user.dni.startsWith('PENDIENTE') ||
+      user.dni.startsWith('G-') ||
+      !tieneTelefonoValido ||
+      !user.nombre ||
+      user.nombre === 'Paciente Registrado' ||
+      !estaVerificado);
+
   useEffect(() => {
-    if (accesoBloqueado) {
+    if (accesoBloqueado || necesitaCompletarDatos) {
       setModalDniAbierto(true);
+    } else {
+      setModalDniAbierto(false);
     }
-  }, [accesoBloqueado, location.pathname]);
+  }, [accesoBloqueado, necesitaCompletarDatos, location.pathname]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground transition-colors duration-200">

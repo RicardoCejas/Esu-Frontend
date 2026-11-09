@@ -1,12 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import {
   ShieldCheck,
   HeartPulse,
   Users,
   Building2,
-  Calendar,
-  ArrowRight,
 } from 'lucide-react';
 
 export const QuienesSomosSection: React.FC = () => {
@@ -33,17 +30,6 @@ export const QuienesSomosSection: React.FC = () => {
           <p className="text-base sm:text-lg text-slate-700 leading-relaxed max-w-2xl mx-auto font-normal">
             Históricamente, los vecinos de Cruz del Eje debían acudir presencialmente de madrugada a cada hospital, dispensario o clínica para consultar disponibilidad. Con <strong>Luvia</strong>, unificamos la agenda para que puedas conocer qué turnos hay disponibles y asegurar tu consulta desde tu celular.
           </p>
-
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              to="/turnero"
-              className="inline-flex items-center justify-center gap-3 rounded-full bg-[#005a87] px-9 py-4 text-base sm:text-lg font-bold text-white shadow-md hover:bg-[#00486c] hover:shadow-lg active:scale-[0.99] transition-all cursor-pointer"
-            >
-              <Calendar className="h-5 w-5" />
-              <span>Sacar Turno Ahora</span>
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-          </div>
         </div>
 
         {/* 4 Pillars Grid with Solid Professional Clinical Styling */}

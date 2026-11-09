@@ -90,7 +90,8 @@ export const GestionTurnosAdminPage: React.FC = () => {
       t.pacienteNombre.toLowerCase().includes(busqueda.toLowerCase()) ||
       t.profesionalNombre.toLowerCase().includes(busqueda.toLowerCase()) ||
       t.centroSaludNombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      t.codigoVerificacion.toLowerCase().includes(busqueda.toLowerCase());
+      (t.codigoVerificacion ? t.codigoVerificacion.toLowerCase().includes(busqueda.toLowerCase()) : false) ||
+      t.id.includes(busqueda);
 
     const matchEstado = filtroEstado === 'TODOS' || t.estado === filtroEstado;
 
@@ -238,7 +239,7 @@ export const GestionTurnosAdminPage: React.FC = () => {
                         <span className="text-muted-foreground font-mono">({t.hora} hs)</span>
                       </div>
                     </td>
-                    <td className="p-4 font-mono text-primary font-bold">{t.codigoVerificacion}</td>
+                    <td className="p-4 font-mono text-primary font-bold">{t.codigoVerificacion || `#${t.id}`}</td>
                     <td className="p-4 font-medium text-foreground">{t.pacienteNombre}</td>
                     <td className="p-4">{t.profesionalNombre}</td>
                     <td className="p-4 text-muted-foreground">{t.centroSaludNombre}</td>
@@ -325,7 +326,7 @@ export const GestionTurnosAdminPage: React.FC = () => {
             <div className="rounded-xl bg-muted/40 p-3.5 text-xs space-y-1">
               <div><strong className="text-foreground">Paciente:</strong> {turnoAReagendar.pacienteNombre}</div>
               <div><strong className="text-foreground">Profesional:</strong> {turnoAReagendar.profesionalNombre}</div>
-              <div><strong className="text-foreground">Código de Turno:</strong> {turnoAReagendar.codigoVerificacion}</div>
+              <div><strong className="text-foreground">Código de Turno:</strong> {turnoAReagendar.codigoVerificacion || `#${turnoAReagendar.id}`}</div>
             </div>
 
             <form onSubmit={handleConfirmarReagendamiento} className="space-y-4 text-xs">

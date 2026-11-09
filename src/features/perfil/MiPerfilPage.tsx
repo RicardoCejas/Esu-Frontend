@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { pacientesService } from '@/api/pacientesService';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import { AuditoriaSesionesSection } from './components/AuditoriaSesionesSection';
 import { CambiarPasswordSection } from './components/CambiarPasswordSection';
+import { TwoFactorSetupModal } from '@/features/auth/TwoFactorSetupModal';
 import { ValidacionDniModal } from '@/components/auth/ValidacionDniModal';
 import { esPacienteDniVerificado } from '@/lib/identityValidation';
 import {
@@ -61,10 +63,50 @@ const BARRIOS_CRUZ_DEL_EJE = [
 const GRUPOS_SANGUINEOS = ['0+', '0-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
 const CENTROS_SALUD = [
+  'Hospital Provincial Dr. Aurelio Crespo',
   'Hospital Regional Aurelio Crespo',
   'Clínica Privada Cabrera',
+  'Sanatorio María Isabel',
+  'Centro de Diagnóstico por Imágenes Cruz del Eje',
   'Centro de Diagnóstico Cruz del Eje',
 ];
+
+function isPlaceholderValue(val?: string): boolean {
+  if (!val) return true;
+  const clean = val.trim();
+  return (
+    clean === '' ||
+    clean === 'Sin especificar' ||
+    clean === '3549000000' ||
+    clean === 'Paciente Registrado' ||
+    clean === 'Registrado' ||
+    clean.startsWith('DNI-') ||
+    clean.startsWith('PENDIENTE') ||
+    clean.startsWith('G-') ||
+    clean.startsWith('AF-') ||
+    clean.startsWith('GGL-')
+  );
+}
+
+function formatFechaNacimientoConEdad(raw?: string): string {
+  if (!raw) return 'Sin especificar';
+  const clean = raw.trim().slice(0, 10);
+  const isoMatch = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!isoMatch) return raw;
+  const year = Number(isoMatch[1]);
+  const month = Number(isoMatch[2]);
+  const day = Number(isoMatch[3]);
+  if (!year || !month || !day) return raw;
+
+  const today = new Date();
+  let edad = today.getFullYear() - year;
+  const mDiff = today.getMonth() + 1 - month;
+  if (mDiff < 0 || (mDiff === 0 && today.getDate() < day)) {
+    edad--;
+  }
+  const fechaFormateada = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+  return edad >= 0 ? `${fechaFormateada} (${edad} años)` : fechaFormateada;
+}
 
 export const MiPerfilPage: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
@@ -80,23 +122,23 @@ export const MiPerfilPage: React.FC = () => {
 
   // Datos editables del perfil del paciente
   const [formData, setFormData] = useState<PatientProfileData>({
-    telefonoPrincipal: user?.telefono || '3549-551122',
-    telefonoAlternativo: '3549-421000',
-    email: user?.email || 'lucas.ramirez@email.com',
-    calle: 'Av. Sarmiento 840',
+    telefonoPrincipal: !isPlaceholderValue(user?.telefono) ? (user?.telefono || '') : '',
+    telefonoAlternativo: '',
+    email: user?.email || '',
+    calle: '',
     barrio: 'Barrio Centro',
     ciudad: 'Cruz del Eje',
     codigoPostal: '5280',
-    obraSocial: user?.obraSocial || 'APROSS',
-    nroAfiliado: user?.nroAfiliado || '20-38123456-01',
-    plan: 'Plan Integral Familiar',
+    obraSocial: !isPlaceholderValue(user?.obraSocial) ? (user?.obraSocial || 'Particular') : 'Particular',
+    nroAfiliado: !isPlaceholderValue(user?.nroAfiliado) ? (user?.nroAfiliado || '') : '',
+    plan: '',
     grupoSanguineo: user?.grupoSanguineo || '0+',
-    contactoEmergenciaNombre: 'Marta Elena Gómez',
-    contactoEmergenciaVinculo: 'Madre',
-    contactoEmergenciaTelefono: '3549-408899',
-    alergias: 'Penicilina, Betalactámicos',
-    condicionesCronicas: 'Ninguna conocida',
-    centroReferencia: 'Hospital Regional Aurelio Crespo',
+    contactoEmergenciaNombre: '',
+    contactoEmergenciaVinculo: '',
+    contactoEmergenciaTelefono: '',
+    alergias: '',
+    condicionesCronicas: '',
+    centroReferencia: user?.centroSaludNombre || 'Hospital Provincial Dr. Aurelio Crespo',
   });
 
   const [guardando, setGuardando] = useState(false);
@@ -104,6 +146,7 @@ export const MiPerfilPage: React.FC = () => {
   const [dniInput, setDniInput] = useState(user?.dni || '');
   const [isEditingDni, setIsEditingDni] = useState(false);
   const [mostrarModalValidacionDni, setMostrarModalValidacionDni] = useState(false);
+  const [is2FAOpen, setIs2FAOpen] = useState(false);
 
   useEffect(() => {
     if (user?.dni) {
@@ -120,13 +163,35 @@ export const MiPerfilPage: React.FC = () => {
     setGuardando(true);
     setMensajeExito(null);
     try {
-      if (user?.id) {
-        await pacientesService.updateContacto(user.id, {
+      const targetId = user?.pacienteId || user?.usuarioId || user?.id;
+      if (targetId) {
+        await pacientesService.updateContacto(targetId, {
           dni: cleanDni,
           telefono: formData.telefonoPrincipal,
           obraSocial: formData.obraSocial,
           nroAfiliado: formData.nroAfiliado,
         });
+      }
+      if (typeof window !== 'undefined' && user) {
+        const emailKey = user.email?.trim().toLowerCase();
+        const keys = Array.from(
+          new Set(
+            [
+              user.pacienteId ? `esu_paciente_data_${user.pacienteId}` : null,
+              user.id ? `esu_paciente_data_${user.id}` : null,
+              emailKey ? `esu_paciente_data_${emailKey}` : null,
+            ].filter(Boolean) as string[]
+          )
+        );
+        for (const k of keys) {
+          try {
+            const raw = localStorage.getItem(k);
+            const existing = raw ? (JSON.parse(raw) as Record<string, string>) : {};
+            localStorage.setItem(k, JSON.stringify({ ...existing, dni: cleanDni }));
+          } catch {
+            // Ignorar error de almacenamiento
+          }
+        }
       }
       updateUser({ dni: cleanDni });
       setIsEditingDni(false);
@@ -134,25 +199,101 @@ export const MiPerfilPage: React.FC = () => {
       success('DNI actualizado con éxito.');
       setTimeout(() => setMensajeExito(null), 4000);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al actualizar el DNI.';
-      toastError(msg);
+      toastError(extractApiErrorMessage(err, 'Error al actualizar el DNI.'));
     } finally {
       setGuardando(false);
     }
   };
 
-  // Cargar datos guardados previamente en el equipo
+  // Cargar datos guardados previamente en el equipo y sincronizar con el usuario autenticado
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('esu_patient_profile_data');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setFormData((prev) => ({ ...prev, ...parsed }));
+    const profileKeys = Array.from(
+      new Set(
+        [
+          user?.pacienteId ? `esu_patient_profile_data_${user.pacienteId}` : null,
+          user?.id ? `esu_patient_profile_data_${user.id}` : null,
+        ].filter(Boolean) as string[]
+      )
+    );
+    let parsedProfile: Partial<PatientProfileData> = {};
+    for (const k of profileKeys) {
+      try {
+        const saved = localStorage.getItem(k);
+        if (saved) {
+          parsedProfile = JSON.parse(saved) as Partial<PatientProfileData>;
+          break;
+        }
+      } catch {
+        // Ignorar error de parsing
       }
-    } catch {
-      // Ignorar error de parsing
     }
-  }, []);
+
+    let parsedPacienteData: Record<string, string> = {};
+    if (typeof window !== 'undefined' && user) {
+      const emailKey = user.email?.trim().toLowerCase();
+      const dataKeys = Array.from(
+        new Set(
+          [
+            user.pacienteId ? `esu_paciente_data_${user.pacienteId}` : null,
+            user.id ? `esu_paciente_data_${user.id}` : null,
+            emailKey ? `esu_paciente_data_${emailKey}` : null,
+          ].filter(Boolean) as string[]
+        )
+      );
+      for (const k of dataKeys) {
+        try {
+          const raw = localStorage.getItem(k);
+          if (raw) {
+            parsedPacienteData = JSON.parse(raw) as Record<string, string>;
+            break;
+          }
+        } catch {
+          // Ignorar error de parsing
+        }
+      }
+    }
+
+    setFormData((prev) => {
+      const telAutoritativo = !isPlaceholderValue(user?.telefono)
+        ? user!.telefono!.trim()
+        : (!isPlaceholderValue(parsedPacienteData.telefono)
+            ? parsedPacienteData.telefono!.trim()
+            : (!isPlaceholderValue(parsedProfile.telefonoPrincipal) ? parsedProfile.telefonoPrincipal!.trim() : prev.telefonoPrincipal));
+
+      const obraAutoritativa = !isPlaceholderValue(user?.obraSocial)
+        ? user!.obraSocial!.trim()
+        : (!isPlaceholderValue(parsedPacienteData.obraSocial)
+            ? parsedPacienteData.obraSocial!.trim()
+            : (!isPlaceholderValue(parsedProfile.obraSocial) ? parsedProfile.obraSocial!.trim() : prev.obraSocial));
+
+      const afiliadoAutoritativo = !isPlaceholderValue(user?.nroAfiliado)
+        ? user!.nroAfiliado!.trim()
+        : (!isPlaceholderValue(parsedPacienteData.nroAfiliado)
+            ? parsedPacienteData.nroAfiliado!.trim()
+            : (!isPlaceholderValue(parsedProfile.nroAfiliado) ? parsedProfile.nroAfiliado!.trim() : prev.nroAfiliado));
+
+      return {
+        ...prev,
+        ...parsedProfile,
+        email: user?.email || parsedProfile.email || prev.email,
+        telefonoPrincipal: telAutoritativo,
+        obraSocial: obraAutoritativa,
+        nroAfiliado: afiliadoAutoritativo,
+        grupoSanguineo: user?.grupoSanguineo || parsedProfile.grupoSanguineo || prev.grupoSanguineo || '0+',
+        centroReferencia: user?.centroSaludNombre || parsedProfile.centroReferencia || prev.centroReferencia || 'Hospital Provincial Dr. Aurelio Crespo',
+      };
+    });
+  }, [
+    user,
+    user?.id,
+    user?.pacienteId,
+    user?.email,
+    user?.telefono,
+    user?.obraSocial,
+    user?.nroAfiliado,
+    user?.grupoSanguineo,
+    user?.centroSaludNombre,
+  ]);
 
   const handleChange = (campo: keyof PatientProfileData, valor: string) => {
     setFormData((prev) => ({ ...prev, [campo]: valor }));
@@ -163,31 +304,84 @@ export const MiPerfilPage: React.FC = () => {
     setMensajeExito(null);
 
     try {
-      localStorage.setItem('esu_patient_profile_data', JSON.stringify(formData));
-      if (user?.id) {
-        try {
-          await pacientesService.updateContacto(user.id, {
-            dni: user.dni,
-            telefono: formData.telefonoPrincipal,
-            obraSocial: formData.obraSocial,
-            nroAfiliado: formData.nroAfiliado,
-          });
-        } catch (e) {
-          console.warn('Sincronización con backend:', e);
+      const targetId = user?.pacienteId || user?.usuarioId || user?.id;
+      let updatedBackendUser = null;
+      if (targetId && user?.rol === 'PACIENTE') {
+        updatedBackendUser = await pacientesService.updateContacto(targetId, {
+          dni: user.dni,
+          telefono: formData.telefonoPrincipal,
+          obraSocial: formData.obraSocial,
+          nroAfiliado: formData.nroAfiliado,
+          grupoSanguineo: formData.grupoSanguineo,
+          centroSaludReferenciaNombre: formData.centroReferencia,
+        });
+      }
+
+      const finalTel =
+        updatedBackendUser?.telefono && !isPlaceholderValue(updatedBackendUser.telefono)
+          ? updatedBackendUser.telefono
+          : formData.telefonoPrincipal;
+      const finalObra =
+        updatedBackendUser?.obraSocial && !isPlaceholderValue(updatedBackendUser.obraSocial)
+          ? updatedBackendUser.obraSocial
+          : formData.obraSocial;
+      const finalAfiliado =
+        updatedBackendUser?.nroAfiliado && !isPlaceholderValue(updatedBackendUser.nroAfiliado)
+          ? updatedBackendUser.nroAfiliado
+          : formData.nroAfiliado;
+      const finalGrupo = updatedBackendUser?.grupoSanguineo || formData.grupoSanguineo;
+      const finalCentro = updatedBackendUser?.centroSaludNombre || formData.centroReferencia;
+
+      const scopedKey = (user?.pacienteId || user?.id)
+        ? `esu_patient_profile_data_${user?.pacienteId || user?.id}`
+        : 'esu_patient_profile_data';
+      localStorage.setItem(scopedKey, JSON.stringify(formData));
+
+      if (typeof window !== 'undefined' && user) {
+        const emailKey = user.email?.trim().toLowerCase();
+        const keys = Array.from(
+          new Set(
+            [
+              user.pacienteId ? `esu_paciente_data_${user.pacienteId}` : null,
+              user.id ? `esu_paciente_data_${user.id}` : null,
+              updatedBackendUser?.id ? `esu_paciente_data_${updatedBackendUser.id}` : null,
+              emailKey ? `esu_paciente_data_${emailKey}` : null,
+            ].filter(Boolean) as string[]
+          )
+        );
+        for (const k of keys) {
+          try {
+            const raw = localStorage.getItem(k);
+            const existing = raw ? (JSON.parse(raw) as Record<string, string>) : {};
+            localStorage.setItem(
+              k,
+              JSON.stringify({
+                ...existing,
+                telefono: finalTel,
+                obraSocial: finalObra,
+                nroAfiliado: finalAfiliado,
+              })
+            );
+          } catch {
+            // Ignorar error de almacenamiento
+          }
         }
       }
+
       updateUser({
-        telefono: formData.telefonoPrincipal,
-        obraSocial: formData.obraSocial,
-        nroAfiliado: formData.nroAfiliado,
-        grupoSanguineo: formData.grupoSanguineo,
+        ...(updatedBackendUser?.id ? { pacienteId: updatedBackendUser.id } : {}),
+        telefono: finalTel,
+        obraSocial: finalObra,
+        nroAfiliado: finalAfiliado,
+        grupoSanguineo: finalGrupo,
+        centroSaludNombre: finalCentro,
       });
 
       setMensajeExito(`Los datos de ${seccion} se actualizaron correctamente.`);
       success(`Datos de ${seccion} guardados.`);
       setTimeout(() => setMensajeExito(null), 4000);
-    } catch {
-      toastError('No se pudieron guardar los cambios.');
+    } catch (err: unknown) {
+      toastError(extractApiErrorMessage(err, 'No se pudieron guardar los cambios en el servidor.'));
     } finally {
       setGuardando(false);
     }
@@ -213,26 +407,32 @@ export const MiPerfilPage: React.FC = () => {
     navigate('/login');
   };
 
+  const fechaNacMostrar = formatFechaNacimientoConEdad(user?.fechaNacimiento);
+  const cuilMostrar =
+    user?.dni && /^\d{7,8}$/.test(user.dni.trim()) ? `20-${user.dni.trim()}-7` : 'Sin especificar';
+  const hcDniMostrar =
+    user?.dni && !isPlaceholderValue(user.dni) ? user.dni.trim() : 'PENDIENTE';
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
       {/* Encabezado Principal de Identidad */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-sky-100 bg-white p-5 shadow-xs">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sky-700 text-xl font-black text-white shadow-sm font-heading">
-            {user?.nombre?.charAt(0) || 'L'}
-            {user?.apellido?.charAt(0) || 'R'}
+            {user?.nombre?.charAt(0) || 'P'}
+            {user?.apellido?.charAt(0) || ''}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-black tracking-tight text-slate-900 font-heading">
-                {user?.nombre || 'Lucas'} {user?.apellido || 'Ramírez'}
+                {user?.nombre || 'Paciente'} {user?.apellido || ''}
               </h1>
               <span className="rounded-full bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
                 Padrón Activo
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Historia Clínica N° <strong className="text-slate-700 font-mono">HC-{user?.dni || '38123456'}-CDE</strong> • Sistema Único de Salud de Cruz del Eje
+              Historia Clínica N° <strong className="text-slate-700 font-mono">HC-{hcDniMostrar}-CDE</strong> • Sistema Único de Salud de Cruz del Eje
             </p>
           </div>
         </div>
@@ -378,7 +578,7 @@ export const MiPerfilPage: React.FC = () => {
                   <input
                     type="text"
                     disabled
-                    value="14/08/1993 (33 años)"
+                    value={fechaNacMostrar}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-3 py-2 text-xs font-medium text-slate-700 cursor-not-allowed"
                   />
                 </div>
@@ -388,7 +588,7 @@ export const MiPerfilPage: React.FC = () => {
                 <input
                   type="text"
                   disabled
-                  value="Masculino"
+                  value="Sin especificar"
                   className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-700 cursor-not-allowed"
                 />
               </div>
@@ -400,7 +600,7 @@ export const MiPerfilPage: React.FC = () => {
                 <input
                   type="text"
                   disabled
-                  value={`20-${user?.dni || '38123456'}-7`}
+                  value={cuilMostrar}
                   className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs sm:text-sm font-mono text-slate-700 cursor-not-allowed"
                 />
               </div>
@@ -715,7 +915,7 @@ export const MiPerfilPage: React.FC = () => {
                 onChange={(e) => handleChange('centroReferencia', e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition cursor-pointer"
               >
-                {CENTROS_SALUD.map((c) => (
+                {Array.from(new Set([formData.centroReferencia, ...CENTROS_SALUD].filter(Boolean))).map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -792,6 +992,29 @@ export const MiPerfilPage: React.FC = () => {
       </div>
 
       {/* Cambio de Contraseña y Seguridad de Cuenta */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+            <ShieldAlert className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Autenticación en dos pasos</h2>
+            <p className="mt-1 text-xs text-slate-600">
+              {user?.twoFactorEnabled
+                ? '2FA está activo. Podés revisar la configuración o desactivarlo con tu contraseña.'
+                : 'Sumá una capa extra de seguridad con una aplicación autenticadora TOTP.'}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIs2FAOpen(true)}
+          className="shrink-0 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-bold text-sky-800 hover:bg-sky-100 transition cursor-pointer"
+        >
+          {user?.twoFactorEnabled ? 'Gestionar 2FA' : 'Activar 2FA'}
+        </button>
+      </div>
+
       <CambiarPasswordSection />
 
       {/* HU-72: Auditoría de Seguridad y Sesiones Activas */}
@@ -898,6 +1121,17 @@ export const MiPerfilPage: React.FC = () => {
         onClose={() => setMostrarModalValidacionDni(false)}
         onSuccess={() => setMostrarModalValidacionDni(false)}
         isMandatory={false}
+      />
+
+      <TwoFactorSetupModal
+        isOpen={is2FAOpen}
+        enabled={Boolean(user?.twoFactorEnabled)}
+        onClose={() => setIs2FAOpen(false)}
+        onStatusChange={(enabled) => updateUser({ twoFactorEnabled: enabled })}
+        onDisabled={async () => {
+          await logout();
+          navigate('/login');
+        }}
       />
     </div>
   );

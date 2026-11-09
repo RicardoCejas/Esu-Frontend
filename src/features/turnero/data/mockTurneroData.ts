@@ -75,7 +75,7 @@ export const MOCK_CENTERS: HealthCenter[] = [
     neighborhood: 'Centro',
     city: 'Cruz del Eje',
     phone: '03549 42-1550',
-    specialtiesCount: 0,
+    specialtiesCount: 4,
     availableSpecialtyIds: [],
     permiteConsultas: false,
     permiteEstudios: true,
