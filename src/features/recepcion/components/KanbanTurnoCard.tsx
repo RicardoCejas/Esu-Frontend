@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, Flame, Volume2, CheckCircle2 } from 'lucide-react';
 import type { Turno } from '@/types';
+import { TiempoEsperaBadge } from './TiempoEsperaBadge';
 
 interface KanbanTurnoCardProps {
   turno: Turno;
@@ -62,6 +63,16 @@ export const KanbanTurnoCard: React.FC<KanbanTurnoCardProps> = ({
           <span>Presente en Sala</span>
           <ArrowRight className="h-3 w-3" />
         </button>
+      )}
+
+      {columna === 'enEspera' && (
+        <div className="pt-1">
+          <TiempoEsperaBadge
+            horaCheckIn={turno.horaCheckIn}
+            horaTurno={turno.hora}
+            className="w-full justify-center"
+          />
+        </div>
       )}
 
       {columna === 'enEspera' && onLlamar && (
