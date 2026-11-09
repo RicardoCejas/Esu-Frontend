@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
     byId: (id: string | number) => `/centros-salud/${id}`,
     consultorios: '/centros-salud/consultorios',
     consultorioById: (id: string | number) => `/centros-salud/consultorios/${id}`,
+    consultoriosPorCentro: (centroId: string | number) => `/centros-salud/${centroId}/consultorios`,
   },
   especialidades: {
     base: '/especialidades',
@@ -82,6 +83,8 @@ export const API_ENDPOINTS = {
     reservarPublico: '/turnos/publico/reservar',
     mostrador: '/turnos/mostrador',
     miAgenda: '/turnos/mi-agenda',
+    hoyCentro: (centroId: string | number) => `/turnos/centro/${centroId}/hoy`,
+    kanbanCentro: (centroId: string | number) => `/turnos/centro/${centroId}/kanban`,
     byId: (id: string | number) => `/turnos/obtener/${id}`,
     byPaciente: (pacienteId: string | number) => `/turnos/paciente/${pacienteId}`,
     byProfesional: (profesionalId: string | number) => `/turnos/profesional/${profesionalId}`,

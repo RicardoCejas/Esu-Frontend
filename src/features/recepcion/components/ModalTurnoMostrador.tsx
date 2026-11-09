@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { CalendarPlus, X, AlertCircle } from 'lucide-react';
 import { turnosService } from '@/api/turnosService';
 import { extractApiErrorMessage } from '@/api/endpoints';
@@ -21,9 +22,10 @@ export const ModalTurnoMostrador: React.FC<ModalTurnoMostradorProps> = ({
   profesionales,
   onTurnoCreado,
 }) => {
+  const { user } = useAuth();
   const [pacienteId, setPacienteId] = useState(pacientes[0]?.id || '');
-  const [centroSaludId, setCentroSaludId] = useState(centros[0]?.id || '1');
-  const [profesionalId, setProfesionalId] = useState(profesionales[0]?.id || '1');
+  const [centroSaludId, setCentroSaludId] = useState(user?.centroSaludId || centros[0]?.id || '');
+  const [profesionalId, setProfesionalId] = useState(profesionales[0]?.id || '');
   const [hora, setHora] = useState('10:00');
   const [motivoConsulta, setMotivoConsulta] = useState('Demanda espontánea en mostrador / Consulta del día');
   const [obraSocial, setObraSocial] = useState('APROSS');

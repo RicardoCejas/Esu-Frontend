@@ -5,6 +5,7 @@ import { ActivityMonitor } from '@/components/auth/ActivityMonitor';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AuthGuard } from './AuthGuard';
 import { RoleGuard } from './RoleGuard';
+import { RequireCentroSaludGuard } from './RequireCentroSaludGuard';
 
 // Lazy loading de rutas secundarias para optimización de bundle
 const TurneroContainer = React.lazy(() => import('@/features/turnero/TurneroContainer').then(m => ({ default: m.TurneroContainer })));
@@ -120,16 +121,18 @@ export const AppRoutes: React.FC = () => {
                 <Route path="medico/atencion" element={<AtencionConsultaPage />} />
               </Route>
 
-              {/* Módulo Recepción y Sala de Espera (HU-53, HU-54, HU-55) */}
+              {/* Módulo Recepción y Sala de Espera (HU-53, HU-54, HU-55, HU-99) */}
               <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA', 'MEDICO', 'ADMIN']} />}>
-                <Route path="recepcion" element={<RecepcionPage />} />
-                <Route path="recepcion/kanban" element={<SalasEsperaKanbanPage />} />
-                <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
-                <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
-                <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
-                <Route path="recepcion/medicos" element={<MedicosCentroPage />} />
-                <Route path="recepcion/medicos/nuevo" element={<NuevoMedicoPage />} />
-                <Route path="recepcion/especialidades" element={<EspecialidadesCentroPage />} />
+                <Route element={<RequireCentroSaludGuard />}>
+                  <Route path="recepcion" element={<RecepcionPage />} />
+                  <Route path="recepcion/kanban" element={<SalasEsperaKanbanPage />} />
+                  <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
+                  <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
+                  <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
+                  <Route path="recepcion/medicos" element={<MedicosCentroPage />} />
+                  <Route path="recepcion/medicos/nuevo" element={<NuevoMedicoPage />} />
+                  <Route path="recepcion/especialidades" element={<EspecialidadesCentroPage />} />
+                </Route>
               </Route>
 
               {/* Módulo Administrador (HU-56 & HU-70) */}

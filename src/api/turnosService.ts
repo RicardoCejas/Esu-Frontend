@@ -77,6 +77,35 @@ export const turnosService = {
     }
   },
 
+  
+  async getTurnosHoyCentro(centroId: string | number): Promise<Turno[]> {
+    try {
+      const numId = toNumericId(centroId, 'centroSaludId');
+      const response = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.turnos.hoyCentro(numId)
+      );
+      return Array.isArray(response.data)
+        ? response.data.map(normalizeTurno)
+        : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los turnos del día para el centro de salud.'), { cause: err });
+    }
+  },
+
+  async getTurnosKanbanCentro(centroId: string | number): Promise<Turno[]> {
+    try {
+      const numId = toNumericId(centroId, 'centroSaludId');
+      const response = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.turnos.kanbanCentro(numId)
+      );
+      return Array.isArray(response.data)
+        ? response.data.map(normalizeTurno)
+        : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo cargar el tablero de salas de espera del centro.'), { cause: err });
+    }
+  },
+
   async getAll(): Promise<Turno[]> {
     try {
       const response = await apiClient.get<Record<string, unknown>[]>(

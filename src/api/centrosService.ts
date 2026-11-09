@@ -135,7 +135,13 @@ export const centrosService = {
   async createConsultorio(data: Omit<ConsultorioItem, 'id'>): Promise<ConsultorioItem> {
     try {
       const payload = {
-        centroSaludId: Number(String(data.centroSaludId).replace(/\D/g, '') || 1),
+        centroSaludId: (() => {
+        const id = Number(String(data.centroSaludId).replace(/\D/g, ''));
+        if (!Number.isFinite(id) || id <= 0) {
+          throw new Error('Debe especificar un centro de salud válido para crear el consultorio.');
+        }
+        return id;
+      })(),
         numero: data.numero,
         planta: data.planta,
         especialidadAsignada: data.especialidadAsignada,

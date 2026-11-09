@@ -33,6 +33,8 @@ interface BackendAuthData {
   usuarioId?: string | number;
   pacienteId?: string | number;
   profesionalId?: string | number;
+  centroSaludId?: string | number;
+  centroSaludNombre?: string;
   email?: string;
   rol?: string;
   nombre?: string;

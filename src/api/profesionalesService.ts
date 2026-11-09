@@ -38,7 +38,7 @@ function normalizeProfesional(d: Record<string, unknown>): Profesional {
   const especialidadNombre = String(
     espObj?.nombre ?? espArr?.nombre ?? d.especialidadNombre ?? 'Medicina General'
   );
-  const rawCentros = Array.isArray(d.centrosSaludIds) ? d.centrosSaludIds : [1];
+  const rawCentros = Array.isArray(d.centrosSaludIds) ? d.centrosSaludIds : [];
   const centrosSaludIds = rawCentros.map((c) => String(c).replace(/^c/, ''));
 
   return {
@@ -48,7 +48,7 @@ function normalizeProfesional(d: Record<string, unknown>): Profesional {
     matricula: String(d.matricula ?? ''),
     especialidadId,
     especialidadNombre,
-    centrosSaludIds: centrosSaludIds.length > 0 ? centrosSaludIds : ['1'],
+    centrosSaludIds,
     diasAtencion: Array.isArray(d.diasAtencion)
       ? (d.diasAtencion as string[])
       : ['Lunes', 'Miércoles', 'Viernes'],
@@ -163,7 +163,7 @@ export const profesionalesService = {
         matricula: data.matricula,
         especialidadId: toNumericId(data.especialidadId),
         especialidadIds: [toNumericId(data.especialidadId)],
-        centrosSaludIds: (data.centrosSaludIds || ['1']).map((c) => toNumericId(c)),
+        centrosSaludIds: (data.centrosSaludIds || []).map((c) => toNumericId(c)),
         email: data.email,
         password: data.password,
         telefono: data.telefono,
