@@ -167,7 +167,6 @@ export const EspecialidadesSection: React.FC<EspecialidadesSectionProps> = ({
               ? esp.descripcion
               : getFallbackSpecialtyDescription(nombreEsp);
             const design = getSpecialtyDesign(esp.id, nombreEsp);
-            const IconComponent = design.Icon;
             const imageUrl = getSpecialtyImage(nombreEsp);
 
             // Médicos asociados a la especialidad
@@ -216,12 +215,8 @@ export const EspecialidadesSection: React.FC<EspecialidadesSectionProps> = ({
                     <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-white" />
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white via-white/90 to-transparent" />
 
-                    {/* Fila Superior Flotante: Icono de especialidad + Badges de Centros y Médicos */}
-                    <div className="absolute top-4 left-5 right-5 z-10 flex items-center justify-between gap-2">
-                      <div className="h-11 w-11 rounded-2xl bg-white/95 backdrop-blur-xs border border-slate-100/90 shadow-sm flex items-center justify-center shrink-0">
-                        <IconComponent className={`h-6 w-6 stroke-[2.2] ${design.iconColor}`} />
-                      </div>
-
+                    {/* Fila Superior Flotante: Badges de Centros y Médicos */}
+                    <div className="absolute top-4 left-5 right-5 z-10 flex items-center justify-end gap-2">
                       <div className="flex flex-wrap items-center gap-1.5 justify-end">
                         <span className="inline-flex items-center gap-1 text-xs font-bold text-sky-800 bg-sky-50/95 backdrop-blur-xs border border-sky-200/80 px-2.5 py-1 rounded-full shadow-2xs">
                           <Building2 className="h-3 w-3 text-sky-600" />
