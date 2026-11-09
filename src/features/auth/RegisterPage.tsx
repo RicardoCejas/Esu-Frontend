@@ -154,9 +154,9 @@ export const RegisterPage: React.FC = () => {
       <main id="main-content" className="w-full max-w-lg space-y-3 relative z-10 py-4">
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-sky-700 transition px-2 py-1 rounded-md hover:bg-white/60"
+          className="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-slate-700 hover:text-sky-800 transition px-3 py-1.5 rounded-xl hover:bg-white/80 shadow-xs"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4.5 w-4.5" />
           <span>Volver al inicio</span>
         </Link>
 
@@ -385,9 +385,9 @@ export const RegisterPage: React.FC = () => {
           </form>
         </div>
 
-        <p className="text-center text-[11px] text-slate-600 font-medium mt-2">
+        <p className="text-center text-sm sm:text-[15px] text-slate-700 font-medium mt-3">
           ¿Ya tienes cuenta registrada?{' '}
-          <Link to="/login" className="font-bold text-sky-700 hover:underline">
+          <Link to="/login" className="font-bold text-sky-700 hover:text-sky-900 underline underline-offset-2">
             Inicia sesión aquí
           </Link>
         </p>

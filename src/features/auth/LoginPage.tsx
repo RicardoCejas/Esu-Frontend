@@ -118,9 +118,9 @@ export const LoginPage: React.FC = () => {
       <main id="main-content" className="w-full max-w-md space-y-4 relative z-10 py-6">
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-sky-700 transition px-2 py-1 rounded-md hover:bg-white/60"
+          className="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-slate-700 hover:text-sky-800 transition px-3 py-1.5 rounded-xl hover:bg-white/80 shadow-xs"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4.5 w-4.5" />
           <span>Volver al inicio</span>
         </Link>
 
@@ -277,11 +277,11 @@ export const LoginPage: React.FC = () => {
           </form>
         </div>
 
-        <p className="text-center text-xs text-slate-600 font-medium">
+        <p className="text-center text-sm sm:text-[15px] text-slate-700 font-medium pt-1">
           ¿No tienes una cuenta de paciente?{' '}
           <Link
             to={redirectUrl ? `/registro?redirect=${encodeURIComponent(redirectUrl)}` : '/registro'}
-            className="font-bold text-sky-700 hover:underline"
+            className="font-bold text-sky-700 hover:text-sky-900 underline underline-offset-2"
           >
             Regístrate aquí
           </Link>
