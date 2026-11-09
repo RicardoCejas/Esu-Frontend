@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { turnosService } from '@/api/turnosService';
 import { centrosService } from '@/api/centrosService';
@@ -107,7 +107,8 @@ export const RecepcionPage: React.FC = () => {
         !debouncedBusqueda ||
         t.pacienteDni.includes(debouncedBusqueda) ||
         t.pacienteNombre.toLowerCase().includes(debouncedBusqueda.toLowerCase()) ||
-        t.codigoVerificacion.toLowerCase().includes(debouncedBusqueda.toLowerCase());
+        (t.codigoVerificacion ? t.codigoVerificacion.toLowerCase().includes(debouncedBusqueda.toLowerCase()) : false) ||
+        t.id.includes(debouncedBusqueda);
 
       const matchCentro = filtroCentro === 'TODOS' || t.centroSaludId === filtroCentro;
       const matchProf = filtroProfesional === 'TODOS' || t.profesionalId === filtroProfesional;

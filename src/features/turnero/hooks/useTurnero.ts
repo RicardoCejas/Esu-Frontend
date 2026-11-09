@@ -2,6 +2,8 @@ import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAvailability } from './useAvailability'
 import { formatLocalDate, isBookableSlot } from '../availability'
+import { centrosService } from '@/api/centrosService'
+import { profesionalesService } from '@/api/profesionalesService'
 import {
   canSelectCenter,
   canSelectSpecialty,
@@ -20,14 +22,11 @@ import type {
   TipoAtencionTurno,
   DiagnosticStudy,
 } from '../types'
-import {
-  MOCK_CENTERS,
-  MOCK_SPECIALTIES,
-  MOCK_DOCTORS,
-  MOCK_DIAGNOSTIC_STUDIES,
-  MOCK_MORNING_SLOTS,
-  MOCK_AFTERNOON_SLOTS,
-} from '../data/mockTurneroData'
+import type {
+  CentroSalud,
+  Especialidad as EspecialidadApi,
+  Profesional as ProfesionalApi,
+} from '@/types'
 
 const INITIAL_PATIENT_FORM: PatientBookingForm = {
   dni: '',
@@ -38,6 +37,63 @@ const INITIAL_PATIENT_FORM: PatientBookingForm = {
   healthInsurance: 'Particular (Sin cobertura)',
   affiliateNumber: '',
   notes: '',
+}
+
+function mapCenterType(tipo: CentroSalud['tipo']): CenterType {
+  if (tipo === 'DISPENSARIO') return 'CAPS'
+  if (tipo === 'CONSULTORIO_PRIVADO') return 'CONSULTORIO'
+  return tipo
+}
+
+function mapCenter(centro: CentroSalud, profesionales: ProfesionalApi[]): HealthCenter {
+  const centerDoctors = profesionales.filter((profesional) =>
+    profesional.centrosSaludIds.includes(String(centro.id))
+  )
+  const specialtyIds = [...new Set(centerDoctors.map((profesional) => profesional.especialidadId))]
+
+  return {
+    id: String(centro.id),
+    name: centro.nombre,
+    type: mapCenterType(centro.tipo),
+    address: centro.direccion || '',
+    neighborhood: centro.ciudad || '',
+    city: centro.ciudad || 'Cruz del Eje',
+    phone: centro.telefono || '',
+    specialtiesCount: specialtyIds.length,
+    availableSpecialtyIds: specialtyIds,
+    permiteConsultas: centro.permiteConsultas !== false,
+    permiteEstudios: false,
+    estudiosDisponibles: [],
+  }
+}
+
+function mapSpecialty(especialidad: EspecialidadApi, profesionales: ProfesionalApi[]): MedicalSpecialty {
+  return {
+    id: String(especialidad.id),
+    name: especialidad.nombre,
+    description: especialidad.descripcion || 'Atención médica especializada.',
+    iconName: 'Stethoscope',
+    totalDoctors: profesionales.filter(
+      (profesional) => profesional.especialidadId === String(especialidad.id)
+    ).length,
+  }
+}
+
+function mapDoctor(profesional: ProfesionalApi): MedicalDoctor {
+  const nombre = profesional.nombre?.trim() || ''
+  const apellido = profesional.apellido?.trim() || ''
+  const tratamiento = /a$/i.test(nombre) ? 'Dra.' : 'Dr.'
+
+  return {
+    id: String(profesional.id),
+    name: `${tratamiento} ${nombre} ${apellido}`.replace(/\s+/g, ' ').trim(),
+    specialtyId: String(profesional.especialidadId),
+    centerIds: profesional.centrosSaludIds.map(String),
+    licenseNumber: profesional.matricula,
+    consultationType: 'PRESENCIAL',
+    availableDays: profesional.diasAtencion || [],
+    nextAvailableDate: '',
+  }
 }
 
 export function useTurnero() {
@@ -67,58 +123,100 @@ export function useTurnero() {
   const [patientForm, setPatientForm] = useState<PatientBookingForm>(INITIAL_PATIENT_FORM)
   const [bookingError, setBookingError] = useState<string | null>(null)
 
+  // Catálogo real: centros, especialidades y profesionales
+  const [centros, setCentros] = useState<HealthCenter[]>([])
+  const [especialidades, setEspecialidades] = useState<MedicalSpecialty[]>([])
+  const [profesionales, setProfesionales] = useState<MedicalDoctor[]>([])
+  const [catalogLoading, setCatalogLoading] = useState(true)
+  const [catalogError, setCatalogError] = useState<string | null>(null)
+  const [catalogVersion, setCatalogVersion] = useState(0)
+
+  useEffect(() => {
+    let active = true
+    setCatalogLoading(true)
+    setCatalogError(null)
+
+    Promise.all([
+      centrosService.getAll(),
+      profesionalesService.getEspecialidades(),
+      profesionalesService.getAll(),
+    ])
+      .then(([centrosApi, especialidadesApi, profesionalesApi]) => {
+        if (!active) return
+        setCentros(centrosApi.map((centro) => mapCenter(centro, profesionalesApi)))
+        setEspecialidades(especialidadesApi.map((especialidad) => mapSpecialty(especialidad, profesionalesApi)))
+        setProfesionales(profesionalesApi.map(mapDoctor))
+      })
+      .catch((error: unknown) => {
+        if (!active) return
+        setCentros([])
+        setEspecialidades([])
+        setProfesionales([])
+        setCatalogError(
+          error instanceof Error
+            ? error.message
+            : 'No se pudo cargar el catálogo de centros, especialidades y profesionales.'
+        )
+      })
+      .finally(() => {
+        if (active) setCatalogLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [catalogVersion])
+
+  const retryCatalog = useCallback(() => setCatalogVersion((version) => version + 1), [])
+
   // Preselección automática si el paciente ingresa desde URL
   useEffect(() => {
+    if (catalogLoading || centros.length === 0 || profesionales.length === 0 || especialidades.length === 0) {
+      return
+    }
+
     const profId = searchParams.get('profesionalId') || searchParams.get('doctorId')
     const espId = searchParams.get('especialidadId')
     const centerId = searchParams.get('centroSaludId')
 
     if (profId) {
-      const matchedDoctor =
-        MOCK_DOCTORS.find(
-          (d) => d.id === profId || d.id.includes(profId) || profId.includes(d.id)
-        ) || MOCK_DOCTORS[0]
+      const matchedDoctor = profesionales.find(
+        (doctor) => doctor.id === profId || doctor.id.includes(profId) || profId.includes(doctor.id)
+      )
 
-      if (matchedDoctor) {
-        const targetCenterId = centerId || matchedDoctor.centerIds?.[0] || 'cde-hosp-crespo'
-        const matchedCenter =
-          MOCK_CENTERS.find((c) => c.id === targetCenterId) || MOCK_CENTERS[0]
+      if (!matchedDoctor) return
 
-        const targetSpecId = espId || matchedDoctor.specialtyId
-        const matchedSpec =
-          MOCK_SPECIALTIES.find((s) => s.id === targetSpecId) ||
-          MOCK_SPECIALTIES.find((s) => s.id === matchedDoctor.specialtyId) ||
-          MOCK_SPECIALTIES[0]
+      const targetCenterId = centerId || matchedDoctor.centerIds[0]
+      const matchedCenter = centros.find((center) => center.id === targetCenterId)
+      if (!matchedCenter) return
 
-        setSelectedCenter(matchedCenter)
-        setTipoAtencion('CONSULTA')
-        setSelectedSpecialty(matchedSpec)
-        setSelectedDoctor(matchedDoctor)
-        setCurrentStep(4)
-      }
+      const targetSpecId = espId || matchedDoctor.specialtyId
+      const matchedSpec = especialidades.find((specialty) => specialty.id === targetSpecId)
+      if (!matchedSpec) return
+
+      setSelectedCenter(matchedCenter)
+      setTipoAtencion('CONSULTA')
+      setSelectedSpecialty(matchedSpec)
+      setSelectedDoctor(matchedDoctor)
+      setCurrentStep(4)
     } else if (centerId) {
-      const matchedCenter =
-        MOCK_CENTERS.find((c) => c.id === centerId || c.name.toLowerCase().includes(centerId.toLowerCase())) ||
-        (centerId.includes('crespo') ? MOCK_CENTERS.find(c => c.id.includes('crespo')) : null) ||
-        (centerId.includes('cabrera') ? MOCK_CENTERS.find(c => c.id.includes('cabrera')) : null) ||
-        (centerId.includes('diag') ? MOCK_CENTERS.find(c => c.id.includes('diag')) : null) ||
-        (centerId.includes('isabel') ? MOCK_CENTERS.find(c => c.id.includes('isabel')) : null)
+      const matchedCenter = centros.find(
+        (center) =>
+          center.id === centerId ||
+          center.name.toLowerCase().includes(centerId.toLowerCase())
+      )
 
-      if (matchedCenter) {
-        setSelectedCenter(matchedCenter)
-        if (!matchedCenter.permiteConsultas && matchedCenter.permiteEstudios) {
-          setTipoAtencion('ESTUDIO')
-        } else {
-          setTipoAtencion('CONSULTA')
-        }
-        setCurrentStep(2)
-      }
+      if (!matchedCenter) return
+
+      setSelectedCenter(matchedCenter)
+      setTipoAtencion('CONSULTA')
+      setCurrentStep(2)
     }
-  }, [searchParams])
+  }, [searchParams, catalogLoading, centros, profesionales, especialidades])
 
   // Filtered Centers
   const filteredCenters = useMemo(() => {
-    return MOCK_CENTERS.filter((center) => {
+    return centros.filter((center) => {
       const matchesSearch =
         center.name.toLowerCase().includes(centerSearch.toLowerCase()) ||
         center.neighborhood.toLowerCase().includes(centerSearch.toLowerCase()) ||
@@ -127,64 +225,45 @@ export function useTurnero() {
       const matchesType = centerTypeFilter === 'ALL' || center.type === centerTypeFilter
       return matchesSearch && matchesType
     })
-  }, [centerSearch, centerTypeFilter])
+  }, [centros, centerSearch, centerTypeFilter])
 
   // Available Specialties for Selected Center
   const availableSpecialties = useMemo(() => {
     if (!selectedCenter || !selectedCenter.permiteConsultas) return []
-    return MOCK_SPECIALTIES.filter((specialty) => {
-      const isAvailableInCenter = selectedCenter.availableSpecialtyIds?.includes(specialty.id)
+    return especialidades.filter((specialty) => {
+      const isAvailableInCenter = selectedCenter.availableSpecialtyIds.includes(specialty.id)
       const matchesSearch =
         specialty.name.toLowerCase().includes(specialtySearch.toLowerCase()) ||
         specialty.description.toLowerCase().includes(specialtySearch.toLowerCase())
       return isAvailableInCenter && matchesSearch
     })
-  }, [selectedCenter, specialtySearch])
+  }, [selectedCenter, especialidades, specialtySearch])
 
-  // Available Diagnostic Studies for Selected Center
-  const availableStudies = useMemo(() => {
-    if (!selectedCenter || !selectedCenter.permiteEstudios) return []
-    return MOCK_DIAGNOSTIC_STUDIES.filter((study) => {
-      const isAvailableInCenter = selectedCenter.estudiosDisponibles?.includes(study.name)
-      const matchesSearch =
-        study.name.toLowerCase().includes(specialtySearch.toLowerCase()) ||
-        study.description.toLowerCase().includes(specialtySearch.toLowerCase())
-      return isAvailableInCenter && matchesSearch
-    })
-  }, [selectedCenter, specialtySearch])
+  // Estudios públicos: el backend aún no expone disponibilidad por centro sin profesional.
+  const availableStudies = useMemo<DiagnosticStudy[]>(() => [], [])
 
   // Available Doctors for Selected Center & Specialty
   const availableDoctors = useMemo(() => {
     if (!selectedCenter || !selectedSpecialty || tipoAtencion === 'ESTUDIO') return []
-    return MOCK_DOCTORS.filter((doctor) => {
-      const matchesCenter = doctor.centerIds?.includes(selectedCenter.id)
+    return profesionales.filter((doctor) => {
+      const matchesCenter = doctor.centerIds.includes(selectedCenter.id)
       const matchesSpecialty = doctor.specialtyId === selectedSpecialty.id
       return matchesCenter && matchesSpecialty
     })
-  }, [selectedCenter, selectedSpecialty, tipoAtencion])
+  }, [profesionales, selectedCenter, selectedSpecialty, tipoAtencion])
 
   const morningSlots = useMemo(() => {
-    if (tipoAtencion === 'ESTUDIO') {
-      return MOCK_MORNING_SLOTS.filter(s => isBookableSlot(s, selectedDate))
-    }
-    const backendMorning = availability.slots.filter((slot) => slot.period === 'MORNING')
-    if (backendMorning.length > 0) {
-      return backendMorning
-    }
-    // Si no hay turnos de backend o es un profesional con agenda de guardia/simulada, asegurar horarios de atención
-    return MOCK_MORNING_SLOTS.filter((s) => isBookableSlot(s, selectedDate))
+    if (tipoAtencion === 'ESTUDIO') return []
+    return availability.slots.filter(
+      (slot) => slot.period === 'MORNING' && isBookableSlot(slot, selectedDate)
+    )
   }, [tipoAtencion, availability.slots, selectedDate])
 
   const afternoonSlots = useMemo(() => {
-    if (tipoAtencion === 'ESTUDIO') {
-      return MOCK_AFTERNOON_SLOTS.filter(s => isBookableSlot(s, selectedDate))
-    }
-    const backendAfternoon = availability.slots.filter((slot) => slot.period === 'AFTERNOON')
-    if (backendAfternoon.length > 0) {
-      return backendAfternoon
-    }
-    // Si no hay turnos de backend o es un profesional con agenda de guardia/simulada, asegurar horarios de atención
-    return MOCK_AFTERNOON_SLOTS.filter((s) => isBookableSlot(s, selectedDate))
+    if (tipoAtencion === 'ESTUDIO') return []
+    return availability.slots.filter(
+      (slot) => slot.period === 'AFTERNOON' && isBookableSlot(slot, selectedDate)
+    )
   }, [tipoAtencion, availability.slots, selectedDate])
 
   const effectiveSlots = useMemo(() => {
@@ -199,7 +278,7 @@ export function useTurnero() {
 
   // Navigation handlers
   const handleSelectCenter = useCallback((center: HealthCenter, autoAdvance: boolean = true, preferredCategory?: TipoAtencionTurno) => {
-    if (!canSelectCenter(center, MOCK_CENTERS)) return
+    if (!canSelectCenter(center, centros)) return
     setSelectedCenter((prev) => {
       if (prev?.id !== center.id) {
         setSelectedSpecialty(null)
@@ -222,7 +301,7 @@ export function useTurnero() {
       setCurrentStep(2)
       if (typeof window !== 'undefined') window.scrollTo(0, 0)
     }
-  }, [])
+  }, [centros])
 
   const handleSelectCategory = useCallback((category: TipoAtencionTurno) => {
     setTipoAtencion(category)
@@ -356,6 +435,9 @@ export function useTurnero() {
 
   return {
     currentStep,
+    catalogLoading,
+    catalogError,
+    retryCatalog,
     selectedCenter,
     tipoAtencion,
     setTipoAtencion: handleSelectCategory,

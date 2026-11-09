@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { isAxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { pacientesService } from '@/api/pacientesService';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import { AuditoriaSesionesSection } from './components/AuditoriaSesionesSection';
 import { CambiarPasswordSection } from './components/CambiarPasswordSection';
+import { TwoFactorSetupModal } from '@/features/auth/TwoFactorSetupModal';
 import { ValidacionDniModal } from '@/components/auth/ValidacionDniModal';
 import { esPacienteDniVerificado } from '@/lib/identityValidation';
 import {
@@ -145,6 +146,7 @@ export const MiPerfilPage: React.FC = () => {
   const [dniInput, setDniInput] = useState(user?.dni || '');
   const [isEditingDni, setIsEditingDni] = useState(false);
   const [mostrarModalValidacionDni, setMostrarModalValidacionDni] = useState(false);
+  const [is2FAOpen, setIs2FAOpen] = useState(false);
 
   useEffect(() => {
     if (user?.dni) {
@@ -161,8 +163,9 @@ export const MiPerfilPage: React.FC = () => {
     setGuardando(true);
     setMensajeExito(null);
     try {
-      if (user?.id) {
-        await pacientesService.updateContacto(user.id, {
+      const targetId = user?.pacienteId || user?.usuarioId || user?.id;
+      if (targetId) {
+        await pacientesService.updateContacto(targetId, {
           dni: cleanDni,
           telefono: formData.telefonoPrincipal,
           obraSocial: formData.obraSocial,
@@ -171,10 +174,15 @@ export const MiPerfilPage: React.FC = () => {
       }
       if (typeof window !== 'undefined' && user) {
         const emailKey = user.email?.trim().toLowerCase();
-        const keys = [
-          user.id ? `esu_paciente_data_${user.id}` : null,
-          emailKey ? `esu_paciente_data_${emailKey}` : null,
-        ].filter(Boolean) as string[];
+        const keys = Array.from(
+          new Set(
+            [
+              user.pacienteId ? `esu_paciente_data_${user.pacienteId}` : null,
+              user.id ? `esu_paciente_data_${user.id}` : null,
+              emailKey ? `esu_paciente_data_${emailKey}` : null,
+            ].filter(Boolean) as string[]
+          )
+        );
         for (const k of keys) {
           try {
             const raw = localStorage.getItem(k);
@@ -191,8 +199,7 @@ export const MiPerfilPage: React.FC = () => {
       success('DNI actualizado con éxito.');
       setTimeout(() => setMensajeExito(null), 4000);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al actualizar el DNI.';
-      toastError(msg);
+      toastError(extractApiErrorMessage(err, 'Error al actualizar el DNI.'));
     } finally {
       setGuardando(false);
     }
@@ -200,24 +207,39 @@ export const MiPerfilPage: React.FC = () => {
 
   // Cargar datos guardados previamente en el equipo y sincronizar con el usuario autenticado
   useEffect(() => {
-    const scopedKey = user?.id ? `esu_patient_profile_data_${user.id}` : 'esu_patient_profile_data';
+    const profileKeys = Array.from(
+      new Set(
+        [
+          user?.pacienteId ? `esu_patient_profile_data_${user.pacienteId}` : null,
+          user?.id ? `esu_patient_profile_data_${user.id}` : null,
+        ].filter(Boolean) as string[]
+      )
+    );
     let parsedProfile: Partial<PatientProfileData> = {};
-    try {
-      const saved = localStorage.getItem(scopedKey);
-      if (saved) {
-        parsedProfile = JSON.parse(saved) as Partial<PatientProfileData>;
+    for (const k of profileKeys) {
+      try {
+        const saved = localStorage.getItem(k);
+        if (saved) {
+          parsedProfile = JSON.parse(saved) as Partial<PatientProfileData>;
+          break;
+        }
+      } catch {
+        // Ignorar error de parsing
       }
-    } catch {
-      // Ignorar error de parsing
     }
 
     let parsedPacienteData: Record<string, string> = {};
     if (typeof window !== 'undefined' && user) {
       const emailKey = user.email?.trim().toLowerCase();
-      const dataKeys = [
-        user.id ? `esu_paciente_data_${user.id}` : null,
-        emailKey ? `esu_paciente_data_${emailKey}` : null,
-      ].filter(Boolean) as string[];
+      const dataKeys = Array.from(
+        new Set(
+          [
+            user.pacienteId ? `esu_paciente_data_${user.pacienteId}` : null,
+            user.id ? `esu_paciente_data_${user.id}` : null,
+            emailKey ? `esu_paciente_data_${emailKey}` : null,
+          ].filter(Boolean) as string[]
+        )
+      );
       for (const k of dataKeys) {
         try {
           const raw = localStorage.getItem(k);
@@ -262,7 +284,9 @@ export const MiPerfilPage: React.FC = () => {
       };
     });
   }, [
+    user,
     user?.id,
+    user?.pacienteId,
     user?.email,
     user?.telefono,
     user?.obraSocial,
@@ -280,30 +304,17 @@ export const MiPerfilPage: React.FC = () => {
     setMensajeExito(null);
 
     try {
-      const scopedKey = user?.id ? `esu_patient_profile_data_${user.id}` : 'esu_patient_profile_data';
-      localStorage.setItem(scopedKey, JSON.stringify(formData));
-
+      const targetId = user?.pacienteId || user?.usuarioId || user?.id;
       let updatedBackendUser = null;
-      if (user?.id && user.rol === 'PACIENTE') {
-        try {
-          updatedBackendUser = await pacientesService.updateContacto(user.id, {
-            dni: user.dni,
-            telefono: formData.telefonoPrincipal,
-            obraSocial: formData.obraSocial,
-            nroAfiliado: formData.nroAfiliado,
-            grupoSanguineo: formData.grupoSanguineo,
-            centroSaludReferenciaNombre: formData.centroReferencia,
-          });
-        } catch (apiErr: unknown) {
-          const cause = apiErr instanceof Error ? (apiErr as { cause?: unknown }).cause : undefined;
-          const hasServerResponse =
-            (isAxiosError(apiErr) && Boolean(apiErr.response)) ||
-            (isAxiosError(cause) && Boolean(cause.response));
-          if (hasServerResponse) {
-            throw apiErr;
-          }
-          console.warn('Sincronización con backend omitida temporalmente:', apiErr);
-        }
+      if (targetId && user?.rol === 'PACIENTE') {
+        updatedBackendUser = await pacientesService.updateContacto(targetId, {
+          dni: user.dni,
+          telefono: formData.telefonoPrincipal,
+          obraSocial: formData.obraSocial,
+          nroAfiliado: formData.nroAfiliado,
+          grupoSanguineo: formData.grupoSanguineo,
+          centroSaludReferenciaNombre: formData.centroReferencia,
+        });
       }
 
       const finalTel =
@@ -321,13 +332,23 @@ export const MiPerfilPage: React.FC = () => {
       const finalGrupo = updatedBackendUser?.grupoSanguineo || formData.grupoSanguineo;
       const finalCentro = updatedBackendUser?.centroSaludNombre || formData.centroReferencia;
 
+      const scopedKey = (user?.pacienteId || user?.id)
+        ? `esu_patient_profile_data_${user?.pacienteId || user?.id}`
+        : 'esu_patient_profile_data';
+      localStorage.setItem(scopedKey, JSON.stringify(formData));
+
       if (typeof window !== 'undefined' && user) {
         const emailKey = user.email?.trim().toLowerCase();
-        const keys = [
-          user.id ? `esu_paciente_data_${user.id}` : null,
-          updatedBackendUser?.id ? `esu_paciente_data_${updatedBackendUser.id}` : null,
-          emailKey ? `esu_paciente_data_${emailKey}` : null,
-        ].filter(Boolean) as string[];
+        const keys = Array.from(
+          new Set(
+            [
+              user.pacienteId ? `esu_paciente_data_${user.pacienteId}` : null,
+              user.id ? `esu_paciente_data_${user.id}` : null,
+              updatedBackendUser?.id ? `esu_paciente_data_${updatedBackendUser.id}` : null,
+              emailKey ? `esu_paciente_data_${emailKey}` : null,
+            ].filter(Boolean) as string[]
+          )
+        );
         for (const k of keys) {
           try {
             const raw = localStorage.getItem(k);
@@ -348,6 +369,7 @@ export const MiPerfilPage: React.FC = () => {
       }
 
       updateUser({
+        ...(updatedBackendUser?.id ? { pacienteId: updatedBackendUser.id } : {}),
         telefono: finalTel,
         obraSocial: finalObra,
         nroAfiliado: finalAfiliado,
@@ -359,8 +381,7 @@ export const MiPerfilPage: React.FC = () => {
       success(`Datos de ${seccion} guardados.`);
       setTimeout(() => setMensajeExito(null), 4000);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'No se pudieron guardar los cambios.';
-      toastError(msg);
+      toastError(extractApiErrorMessage(err, 'No se pudieron guardar los cambios en el servidor.'));
     } finally {
       setGuardando(false);
     }
@@ -971,6 +992,29 @@ export const MiPerfilPage: React.FC = () => {
       </div>
 
       {/* Cambio de Contraseña y Seguridad de Cuenta */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+            <ShieldAlert className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Autenticación en dos pasos</h2>
+            <p className="mt-1 text-xs text-slate-600">
+              {user?.twoFactorEnabled
+                ? '2FA está activo. Podés revisar la configuración o desactivarlo con tu contraseña.'
+                : 'Sumá una capa extra de seguridad con una aplicación autenticadora TOTP.'}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIs2FAOpen(true)}
+          className="shrink-0 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-bold text-sky-800 hover:bg-sky-100 transition cursor-pointer"
+        >
+          {user?.twoFactorEnabled ? 'Gestionar 2FA' : 'Activar 2FA'}
+        </button>
+      </div>
+
       <CambiarPasswordSection />
 
       {/* HU-72: Auditoría de Seguridad y Sesiones Activas */}
@@ -1077,6 +1121,17 @@ export const MiPerfilPage: React.FC = () => {
         onClose={() => setMostrarModalValidacionDni(false)}
         onSuccess={() => setMostrarModalValidacionDni(false)}
         isMandatory={false}
+      />
+
+      <TwoFactorSetupModal
+        isOpen={is2FAOpen}
+        enabled={Boolean(user?.twoFactorEnabled)}
+        onClose={() => setIs2FAOpen(false)}
+        onStatusChange={(enabled) => updateUser({ twoFactorEnabled: enabled })}
+        onDisabled={async () => {
+          await logout();
+          navigate('/login');
+        }}
       />
     </div>
   );

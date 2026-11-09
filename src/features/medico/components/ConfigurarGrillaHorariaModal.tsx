@@ -60,11 +60,15 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
   const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
 
   const cargarDatos = async () => {
+    if (!profesionalId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [c, d] = await Promise.all([
         centrosService.getAll(),
-        profesionalesService.getDisponibilidad(profesionalId || 'p1'),
+        profesionalesService.getDisponibilidad(profesionalId),
       ]);
       setCentros(c);
       if (c.length > 0 && !centroSaludId) {
@@ -131,10 +135,15 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
       return;
     }
 
+    if (!profesionalId) {
+      error('Identificador de profesional no disponible en la sesión.');
+      return;
+    }
+
     setGuardando(true);
     try {
       const guardada = await profesionalesService.guardarDisponibilidad({
-        profesionalId: profesionalId || 'p1',
+        profesionalId,
         diaSemana,
         horaInicio,
         horaFin,

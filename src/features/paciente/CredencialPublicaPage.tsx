@@ -28,7 +28,7 @@ export const CredencialPublicaPage: React.FC = () => {
   const centroParam = searchParams.get('centro') || 'Hospital Provincial Dr. Aurelio Crespo';
   const hashParam =
     searchParams.get('hash') ||
-    'ESU-' + Math.random().toString(36).substring(2, 10).toUpperCase() + '-VALID';
+    `ESU-${dniParam.replace(/\D/g, '') || 'PACIENTE'}-VALID`;
 
   const [fechaConsulta, setFechaConsulta] = useState('');
 

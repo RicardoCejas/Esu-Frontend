@@ -37,6 +37,7 @@ export const CarnetDigitalModal: React.FC<CarnetDigitalModalProps> = ({
   if (typeof window !== 'undefined') {
     const emailKey = user?.email?.trim().toLowerCase();
     const dataKeys = [
+      user?.pacienteId ? `esu_paciente_data_${user.pacienteId}` : null,
       user?.id ? `esu_paciente_data_${user.id}` : null,
       emailKey ? `esu_paciente_data_${emailKey}` : null,
     ].filter(Boolean) as string[];
@@ -54,6 +55,7 @@ export const CarnetDigitalModal: React.FC<CarnetDigitalModalProps> = ({
     }
 
     const profKeys = [
+      user?.pacienteId ? `esu_patient_profile_data_${user.pacienteId}` : null,
       user?.id ? `esu_patient_profile_data_${user.id}` : null,
       'esu_patient_profile_data',
     ].filter(Boolean) as string[];

@@ -40,6 +40,9 @@ export const esPacienteDniVerificado = (user: User | null): boolean => {
   }
 
   if (typeof window !== 'undefined') {
+    if (user.pacienteId && localStorage.getItem(`esu_dni_verified_${user.pacienteId}`) === 'true') {
+      return true;
+    }
     if (localStorage.getItem(`esu_dni_verified_${user.id}`) === 'true') {
       return true;
     }

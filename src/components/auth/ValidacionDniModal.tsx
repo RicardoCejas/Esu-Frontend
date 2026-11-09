@@ -91,10 +91,15 @@ export const ValidacionDniModal: React.FC<ValidacionDniModalProps> = ({
 
     let cached: Record<string, string> | null = null;
     if (typeof window !== 'undefined') {
-      const keys = [
-        user.id ? `esu_paciente_data_${user.id}` : null,
-        user.email ? `esu_paciente_data_${user.email.trim().toLowerCase()}` : null,
-      ].filter(Boolean) as string[];
+      const keys = Array.from(
+        new Set(
+          [
+            user.pacienteId ? `esu_paciente_data_${user.pacienteId}` : null,
+            user.id ? `esu_paciente_data_${user.id}` : null,
+            user.email ? `esu_paciente_data_${user.email.trim().toLowerCase()}` : null,
+          ].filter(Boolean) as string[]
+        )
+      );
       for (const k of keys) {
         try {
           const raw = localStorage.getItem(k);
@@ -139,7 +144,9 @@ export const ValidacionDniModal: React.FC<ValidacionDniModalProps> = ({
     setErrorLocal(null);
   }, [
     isOpen,
+    user,
     user?.id,
+    user?.pacienteId,
     user?.email,
     user?.nombre,
     user?.apellido,
@@ -186,10 +193,11 @@ export const ValidacionDniModal: React.FC<ValidacionDniModalProps> = ({
   ) => {
     try {
       let backendUser: User | null = null;
+      const targetId = user?.pacienteId || user?.usuarioId || user?.id;
 
-      if (user?.id) {
+      if (targetId) {
         try {
-          backendUser = await pacientesService.updateContacto(user.id, {
+          backendUser = await pacientesService.updateContacto(targetId, {
             nombre: nombreVal,
             apellido: apellidoVal,
             telefono: telefonoVal,
@@ -218,7 +226,7 @@ export const ValidacionDniModal: React.FC<ValidacionDniModalProps> = ({
         }
       }
 
-      const finalId = backendUser?.id || user?.id;
+      const resolvedPacienteId = backendUser?.id || user?.pacienteId;
       const finalNombre = backendUser?.nombre || nombreVal;
       const finalApellido = backendUser?.apellido || apellidoVal;
       const finalTelefono =
@@ -235,8 +243,9 @@ export const ValidacionDniModal: React.FC<ValidacionDniModalProps> = ({
         const storageKeys = Array.from(
           new Set(
             [
+              user?.pacienteId,
               user?.id,
-              finalId,
+              resolvedPacienteId,
               user?.email ? user.email.trim().toLowerCase() : null,
             ].filter(Boolean) as string[]
           )
@@ -258,7 +267,7 @@ export const ValidacionDniModal: React.FC<ValidacionDniModalProps> = ({
       }
 
       updateUser({
-        ...(finalId ? { id: finalId } : {}),
+        ...(resolvedPacienteId ? { pacienteId: resolvedPacienteId } : {}),
         nombre: finalNombre,
         apellido: finalApellido,
         telefono: finalTelefono,

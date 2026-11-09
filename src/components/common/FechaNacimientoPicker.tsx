@@ -105,7 +105,7 @@ export const FechaNacimientoPicker: React.FC<FechaNacimientoPickerProps> = ({
   // Manejo de cambio de texto manual
   const handleTextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/[^\d]/g, '').slice(0, 8);
-    let formatted = '';
+    let formatted: string;
     if (raw.length <= 2) {
       formatted = raw;
     } else if (raw.length <= 4) {

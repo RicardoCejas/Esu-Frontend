@@ -83,6 +83,7 @@ export const MisEstudiosPage: React.FC = () => {
       if (typeof window !== 'undefined') {
         const emailKey = user?.email?.trim().toLowerCase();
         const keys = [
+          user?.pacienteId ? `esu_paciente_data_${user.pacienteId}` : null,
           user?.id ? `esu_paciente_data_${user.id}` : null,
           emailKey ? `esu_paciente_data_${emailKey}` : null,
         ].filter(Boolean) as string[];
