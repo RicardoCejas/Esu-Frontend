@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
-import { ModalConfirmacion } from '@/components/ui/ModalConfirmacion';
+import { ModalCancelarMostrador } from './components/ModalCancelarMostrador';
 import { useGestionTurnosAdmin } from './hooks/useGestionTurnosAdmin';
 import { TurnosFiltersBar } from './components/TurnosFiltersBar';
 import { TurnosAdminTable } from './components/TurnosAdminTable';
@@ -30,7 +30,7 @@ export const GestionTurnosAdminPage: React.FC = () => {
     setTurnoACancelar,
     cargarTurnos,
     limpiarFiltros,
-    handleConfirmarCancelacion,
+    handleTurnoCancelado,
     handleConfirmarReagendamiento,
     esRecepcionista,
     centroSaludNombre,
@@ -105,20 +105,11 @@ export const GestionTurnosAdminPage: React.FC = () => {
         />
       )}
 
-      <ModalConfirmacion
+      <ModalCancelarMostrador
+        turno={turnoACancelar}
         isOpen={Boolean(turnoACancelar)}
         onClose={() => setTurnoACancelar(null)}
-        onConfirm={handleConfirmarCancelacion}
-        title="Cancelar Turno Administrativamente"
-        description={
-          turnoACancelar
-            ? `¿Desea cancelar el turno de ${turnoACancelar.pacienteNombre ?? 'el paciente'} para el día ${turnoACancelar.fecha ?? ''} a las ${turnoACancelar.hora ?? ''} hs? Esta acción anulará la reserva en el sistema.`
-            : '¿Desea cancelar este turno?'
-        }
-        confirmText="Confirmar Cancelación"
-        cancelText="Volver"
-        variant="danger"
-        isLoading={isProcessing}
+        onCancelado={handleTurnoCancelado}
       />
     </div>
   );

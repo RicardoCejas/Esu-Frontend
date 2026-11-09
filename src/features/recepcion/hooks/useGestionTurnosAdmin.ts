@@ -30,6 +30,7 @@ export interface UseGestionTurnosAdminReturn {
   cargarTurnos: () => Promise<void>;
   limpiarFiltros: () => void;
   handleConfirmarCancelacion: () => Promise<void>;
+  handleTurnoCancelado: (id: string, motivo: string) => void;
   handleConfirmarReagendamiento: (e: React.FormEvent) => Promise<void>;
   esRecepcionista: boolean;
   centroSaludNombre?: string;
@@ -101,6 +102,17 @@ export function useGestionTurnosAdmin(): UseGestionTurnosAdminReturn {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleTurnoCancelado = (id: string, motivo: string) => {
+    setTurnos((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? { ...t, estado: 'CANCELADO', justificativoCancelacion: motivo }
+          : t
+      )
+    );
+    setTurnoACancelar(null);
   };
 
   const handleConfirmarReagendamiento = async (e: React.FormEvent) => {
@@ -191,6 +203,7 @@ export function useGestionTurnosAdmin(): UseGestionTurnosAdminReturn {
     cargarTurnos,
     limpiarFiltros,
     handleConfirmarCancelacion,
+    handleTurnoCancelado,
     handleConfirmarReagendamiento,
     esRecepcionista,
     centroSaludNombre,
