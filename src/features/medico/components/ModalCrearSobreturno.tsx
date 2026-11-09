@@ -35,7 +35,7 @@ export const ModalCrearSobreturno: React.FC<ModalCrearSobreturnoProps> = ({
   isOpen,
   onClose,
   profesionalId,
-  centroSaludId = '1',
+  centroSaludId,
   fecha = new Date().toLocaleDateString('en-CA'),
   sobreturnosHoyCount,
   onSobreturnoCreado,
@@ -87,6 +87,11 @@ export const ModalCrearSobreturno: React.FC<ModalCrearSobreturnoProps> = ({
 
     if (cupoAlcanzado) {
       warning('No se pueden asignar más sobreturnos: cupo máximo de 3 alcanzado.');
+      return;
+    }
+
+    if (!centroSaludId) {
+      warning('El centro de salud es obligatorio para registrar un sobreturno.');
       return;
     }
 
