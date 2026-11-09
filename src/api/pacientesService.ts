@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { apiClient } from './apiClient.ts';
 import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints.ts';
 import type { User, ConsultaMedica, TimelineItem } from '@/types';
@@ -103,16 +104,33 @@ export const pacientesService = {
 
   async updateContacto(
     pacienteId: string | number,
-    data: { telefono?: string; email?: string; obraSocial?: string; nroAfiliado?: string; dni?: string; fechaNacimiento?: string; nroTramite?: string; nombre?: string; apellido?: string }
+    data: {
+      telefono?: string;
+      email?: string;
+      obraSocial?: string;
+      nroAfiliado?: string;
+      dni?: string;
+      fechaNacimiento?: string;
+      nroTramite?: string;
+      nombre?: string;
+      apellido?: string;
+      grupoSanguineo?: string;
+      centroSaludReferenciaNombre?: string;
+    }
   ): Promise<User> {
     try {
-      // 1. Intentar actualizar por endpoint de perfil autenticado
+      // 1. Actualizar por endpoint de perfil autenticado (PACIENTE / ADMIN / DEV)
       try {
         const resPerfil = await apiClient.put<Record<string, unknown>>('/pacientes/mi-perfil', data);
         if (resPerfil.data) return normalizePaciente(resPerfil.data);
-      } catch {
-        // Fallback a endpoint con ID numérico
+      } catch (err: unknown) {
+        const status = isAxiosError(err) ? err.response?.status : undefined;
+        // Solo hacer fallback al endpoint administrativo por ID cuando /mi-perfil no aplica por rol o ruta
+        if (status !== 403 && status !== 404) {
+          throw err;
+        }
       }
+
       const numId = toNumericId(pacienteId);
       const res = await apiClient.put<Record<string, unknown>>(
         API_ENDPOINTS.pacientes.contacto(numId),

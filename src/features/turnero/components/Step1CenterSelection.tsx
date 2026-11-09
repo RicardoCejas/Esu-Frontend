@@ -179,7 +179,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
 
       {/* Grid or List Display */}
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 xl:gap-4.5">
           {centers.map((center, index) => {
             const isSelected = selectedCenter?.id === center.id
             const isTealTheme = index % 2 === 1
@@ -222,47 +222,47 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                 {/* Franja superior intercalada */}
                 <div className={`h-2 w-full transition-all duration-300 ${theme.stripe}`} />
 
-                <CardContent className="flex h-full flex-col justify-between p-6 sm:p-7 space-y-5">
+                <CardContent className="flex h-full flex-col justify-between p-4 sm:p-5 space-y-3.5">
                   <div className="space-y-4">
                     <div className="flex items-start gap-4">
                       {/* Icono con degradado intercalado */}
-                      <div className={`flex size-14 shrink-0 items-center justify-center rounded-2xl group-hover:scale-110 group-hover:rotate-2 transition-all duration-300 ${theme.iconBg}`}>
-                        <Building2 className="size-7 text-white" />
+                      <div className={`flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-xl group-hover:scale-105 transition-all duration-300 ${theme.iconBg}`}>
+                        <Building2 className="size-5 sm:size-6 text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-bold text-slate-900 text-lg sm:text-xl font-heading leading-snug min-h-[3rem] line-clamp-2 group-hover:text-[#005a87] transition-colors">
+                          <h3 className="font-bold text-slate-900 text-sm sm:text-base font-heading leading-tight min-h-[2.5rem] line-clamp-2 group-hover:text-[#005a87] transition-colors">
                             {center.name}
                           </h3>
                         </div>
                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                          <span className={`inline-block text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg border ${theme.badge}`}>
+                          <span className={`inline-block text-[11px] sm:text-xs font-bold px-2 py-0.5 rounded-md border ${theme.badge}`}>
                             {typeInfo.label}
                           </span>
                           {isSelected && (
                             <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg shadow-xs ${theme.selectedBadge}`}>
-                              <Check className="size-3.5" /> Seleccionado
+                              <Check className="size-3" /> Elegido
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-2 text-sm sm:text-base text-slate-600 pt-3 border-t border-slate-100">
+                    <div className="space-y-1.5 text-xs text-slate-600 pt-2.5 border-t border-slate-100">
                       <div className="flex items-center gap-2.5">
-                        <MapPin className={`size-4 shrink-0 ${theme.pinColor}`} />
+                        <MapPin className={`size-3.5 shrink-0 ${theme.pinColor}`} />
                         <span className="line-clamp-1">{center.address}, {center.neighborhood}</span>
                       </div>
                       <div className="flex items-center gap-2.5">
-                        <Phone className={`size-4 shrink-0 ${theme.phoneColor}`} />
+                        <Phone className={`size-3.5 shrink-0 ${theme.phoneColor}`} />
                         <span>{center.phone}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-                    <span className="text-sm sm:text-base font-bold text-slate-700">
-                      {center.specialtiesCount} especialidades
+                    <span className="text-xs sm:text-[13px] font-bold text-slate-700">
+                      {center.permiteConsultas === false ? `${center.estudiosDisponibles?.length || center.specialtiesCount || 4} estudios y prácticas` : `${center.specialtiesCount} especialidades`}
                     </span>
                     <Button
                       type="button"
@@ -271,14 +271,14 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                         e.stopPropagation()
                         handleCardClick(center)
                       }}
-                      className={`h-10 sm:h-11 cursor-pointer gap-2 px-4 sm:px-5 text-xs sm:text-sm font-bold rounded-xl transition-all ${
+                      className={`h-8 sm:h-9 cursor-pointer gap-1.5 px-3 text-xs font-bold rounded-xl transition-all ${
                         isSelected
                           ? `${theme.buttonSelected} hover:opacity-95`
                           : `${theme.buttonUnselected} bg-white`
                       }`}
                     >
                       <span>Elegir Centro</span>
-                      <ChevronRight className="size-4 group-hover:translate-x-1 transition-transform" />
+                      <ChevronRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </Button>
                   </div>
                 </CardContent>
@@ -341,8 +341,8 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-5 shrink-0 pl-14 sm:pl-0">
-                    <span className="text-sm sm:text-base font-bold text-slate-700">
-                      {center.specialtiesCount} especialidades
+                    <span className="text-xs sm:text-[13px] font-bold text-slate-700">
+                      {center.permiteConsultas === false ? `${center.estudiosDisponibles?.length || center.specialtiesCount || 4} estudios y prácticas` : `${center.specialtiesCount} especialidades`}
                     </span>
                     <Button
                       type="button"
@@ -450,7 +450,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                       </p>
                       {modalCategory === 'CONSULTA' && (
                         <span className="text-[11px] font-bold text-[#005a87] flex items-center gap-1">
-                          <Check className="size-3.5" /> Seleccionado
+                          <Check className="size-3" /> Elegido
                         </span>
                       )}
                     </button>
@@ -475,7 +475,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                       </p>
                       {modalCategory === 'ESTUDIO' && (
                         <span className="text-[11px] font-bold text-[#00a896] flex items-center gap-1">
-                          <Check className="size-3.5" /> Seleccionado
+                          <Check className="size-3" /> Elegido
                         </span>
                       )}
                     </button>

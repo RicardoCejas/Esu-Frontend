@@ -41,10 +41,6 @@ export const TurneroHeader: React.FC<TurneroHeaderProps> = ({
                   <ChevronLeft className="size-3.5 text-[#00486c]" />
                   <span>Volver al Inicio</span>
                 </Link>
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 px-2.5 sm:px-3 py-0.5 text-[11px] sm:text-xs font-semibold text-white shadow-xs">
-                  <span className="size-2 rounded-full bg-[#2dd4bf] animate-pulse" />
-                  <span>Padrón Unificado • Cruz del Eje</span>
-                </div>
               </div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight font-heading text-white drop-shadow-xs">
                 Reserva de Turnos Médicos Online
