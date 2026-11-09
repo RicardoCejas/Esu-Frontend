@@ -11,4 +11,9 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
+  server: {
+    watch: {
+      ignored: ['**/.git/**', '**/.agents/**', '**/.agent/**', '**/node_modules/**'],
+    },
+  },
 })
