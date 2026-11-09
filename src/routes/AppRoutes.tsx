@@ -22,6 +22,7 @@ const MiHistorialPage = React.lazy(() => import('@/features/paciente/MiHistorial
 const MisRecetasPage = React.lazy(() => import('@/features/paciente/MisRecetasPage').then(m => ({ default: m.MisRecetasPage })));
 const MisEstudiosPage = React.lazy(() => import('@/features/paciente/MisEstudiosPage').then(m => ({ default: m.MisEstudiosPage })));
 const CentrosSaludPacientePage = React.lazy(() => import('@/features/paciente/CentrosSaludPacientePage').then(m => ({ default: m.CentrosSaludPacientePage })));
+const CredencialPublicaPage = React.lazy(() => import('@/features/paciente/CredencialPublicaPage').then(m => ({ default: m.CredencialPublicaPage })));
 
 // Vistas Médico
 const AgendaMedicaPage = React.lazy(() => import('@/features/medico/AgendaMedicaPage').then(m => ({ default: m.AgendaMedicaPage })));
@@ -93,6 +94,11 @@ export const AppRoutes: React.FC = () => {
           {/* HU-55: Pantalla Pública Tótem / TV de Turnos */}
           <Route path="/pantalla-turnos" element={<PantallaTurnosTVPage />} />
           <Route path="/totem" element={<Navigate to="/pantalla-turnos" replace />} />
+
+          {/* Credencial Digital Pública Escaneable con Celular */}
+          <Route path="/credencial-digital" element={<CredencialPublicaPage />} />
+          <Route path="/credencial" element={<Navigate to="/credencial-digital" replace />} />
+          <Route path="/validar-credencial" element={<CredencialPublicaPage />} />
 
           {/* Rutas Protegidas del Dashboard con Layout Unificado y AuthGuard */}
           <Route element={<AuthGuard />}>

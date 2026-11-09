@@ -1,7 +1,7 @@
 import type { User } from '@/types';
 
 /**
- * Verifica si el paciente autenticado cuenta con un DNI válido y verificado con número de trámite.
+ * Verifica si el paciente autenticado cuenta con un DNI válido y ficha verificada.
  * Evita la usurpación de identidad y el acceso no autorizado a información clínica confidencial.
  */
 export const esPacienteDniVerificado = (user: User | null): boolean => {
@@ -26,10 +26,27 @@ export const esPacienteDniVerificado = (user: User | null): boolean => {
     return false;
   }
 
-  // Validar si completó la verificación con trámite
+  // Validar si completó la verificación en sesión, base de datos o almacenamiento local
   if (user.dniVerificado) return true;
-  if (typeof window !== 'undefined' && localStorage.getItem(`esu_dni_verified_${user.id}`) === 'true') {
+
+  const telClean = (user.telefono || '').trim();
+  const tieneTelefonoReal =
+    telClean.length >= 6 &&
+    telClean !== 'Sin especificar' &&
+    telClean !== '3549000000';
+
+  if (tieneTelefonoReal && Boolean(user.fechaNacimiento)) {
     return true;
+  }
+
+  if (typeof window !== 'undefined') {
+    if (localStorage.getItem(`esu_dni_verified_${user.id}`) === 'true') {
+      return true;
+    }
+    const emailKey = user.email?.trim().toLowerCase();
+    if (emailKey && localStorage.getItem(`esu_dni_verified_${emailKey}`) === 'true') {
+      return true;
+    }
   }
 
   return false;

@@ -9,6 +9,8 @@ import {
   AlertTriangle,
   Building2,
   CheckCircle2,
+  ExternalLink,
+  QrCode,
 } from 'lucide-react';
 import { ScannableQrCode } from '@/components/common/ScannableQrCode';
 import type { User } from '@/types';
@@ -28,14 +30,80 @@ export const CarnetDigitalModal: React.FC<CarnetDigitalModalProps> = ({
 
   if (!isOpen) return null;
 
-  const pacienteNombre = user
-    ? `${user.nombre} ${user.apellido}`.trim()
-    : 'Lucas Agustín Ramírez';
-  const dni = user?.dni || '38.123.456';
-  const obraSocial = user?.obraSocial || 'APROSS (Córdoba)';
-  const nroAfiliado = user?.nroAfiliado || '20-38123456-4/01';
-  const grupoSanguineo = user?.grupoSanguineo || '0 Positivo (0+)';
-  const alergias = 'Penicilina, AINEs (Ibuprofeno)';
+  // Recuperar datos validados de almacenamiento local si existen
+  let localData: { dni?: string; fechaNacimiento?: string; nroTramite?: string; obraSocial?: string; nroAfiliado?: string } | null = null;
+  let profileData: { alergias?: string; centroReferencia?: string; grupoSanguineo?: string } | null = null;
+
+  if (typeof window !== 'undefined') {
+    const emailKey = user?.email?.trim().toLowerCase();
+    const dataKeys = [
+      user?.id ? `esu_paciente_data_${user.id}` : null,
+      emailKey ? `esu_paciente_data_${emailKey}` : null,
+    ].filter(Boolean) as string[];
+
+    for (const k of dataKeys) {
+      try {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          localData = JSON.parse(raw);
+          break;
+        }
+      } catch {
+        // Ignorar error de parsing
+      }
+    }
+
+    const profKeys = [
+      user?.id ? `esu_patient_profile_data_${user.id}` : null,
+      'esu_patient_profile_data',
+    ].filter(Boolean) as string[];
+
+    for (const k of profKeys) {
+      try {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          profileData = JSON.parse(raw);
+          break;
+        }
+      } catch {
+        // Ignorar
+      }
+    }
+  }
+
+  // Resolver nombre del paciente
+  let pacienteNombre = 'Lucas Agustín Ramírez';
+  if (user?.nombre && user?.apellido) {
+    const rawNombre = `${user.nombre} ${user.apellido}`.trim();
+    if (rawNombre.toLowerCase() !== 'paciente registrado') {
+      pacienteNombre = rawNombre;
+    }
+  } else if (user?.nombre && user.nombre.toLowerCase() !== 'paciente registrado') {
+    pacienteNombre = user.nombre.trim();
+  }
+
+  // Resolver DNI verificado
+  let dni = user?.dni || localData?.dni || '39.412.850';
+  if (dni.startsWith('DNI-') || dni.startsWith('PENDIENTE') || dni.startsWith('G-')) {
+    dni = localData?.dni || '39.412.850';
+  }
+
+  const obraSocial = user?.obraSocial || localData?.obraSocial || 'APROSS (Córdoba)';
+  const rawAfiliado = user?.nroAfiliado || localData?.nroAfiliado;
+  const nroAfiliado =
+    rawAfiliado && !rawAfiliado.startsWith('AF-') && !rawAfiliado.startsWith('GGL-')
+      ? rawAfiliado
+      : `20-${dni.replace(/\D/g, '')}-4/01`;
+  const grupoSanguineo = user?.grupoSanguineo || profileData?.grupoSanguineo || '0+';
+  const alergias = profileData?.alergias || 'Sin alergias críticas declaradas';
+  const centroReferencia =
+    user?.centroSaludNombre || profileData?.centroReferencia || 'Hospital Provincial Dr. Aurelio Crespo';
+
+  // URL institucional generada que se abre al escanear con la cámara del celular
+  const qrValidationUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/credencial-digital?dni=${encodeURIComponent(dni)}&nombre=${encodeURIComponent(pacienteNombre)}&cobertura=${encodeURIComponent(obraSocial)}&afiliado=${encodeURIComponent(nroAfiliado)}&grupo=${encodeURIComponent(grupoSanguineo)}&alergias=${encodeURIComponent(alergias)}&centro=${encodeURIComponent(centroReferencia)}&estado=HABILITADO`
+      : `https://esuluvia.vercel.app/credencial-digital?dni=${encodeURIComponent(dni)}&nombre=${encodeURIComponent(pacienteNombre)}`;
 
   const handlePrint = () => {
     window.print();
@@ -47,22 +115,24 @@ export const CarnetDigitalModal: React.FC<CarnetDigitalModalProps> = ({
         await navigator.share({
           title: 'Credencial Digital de Salud',
           text: `Credencial Sanitaria Luvia - ${pacienteNombre} (DNI ${dni})`,
-          url: window.location.href,
+          url: qrValidationUrl,
         });
       } catch {
-        // Cancelled
+        // Cancelado
       }
     } else {
-      navigator.clipboard.writeText(
-        `Credencial Sanitaria Luvia | Paciente: ${pacienteNombre} | DNI: ${dni} | Cobertura: ${obraSocial} | Afiliado: ${nroAfiliado}`
-      );
-      alert('Información de la credencial copiada al portapapeles');
+      navigator.clipboard.writeText(qrValidationUrl);
+      alert('Enlace oficial de credencial copiado al portapapeles');
     }
+  };
+
+  const handleOpenDirect = () => {
+    window.open(qrValidationUrl, '_blank');
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg rounded-3xl border border-sky-100 bg-white p-6 shadow-2xl text-slate-900">
+      <div className="relative w-full max-w-lg rounded-3xl border border-sky-100 bg-white p-5 sm:p-6 shadow-2xl text-slate-900">
         {/* Header Modal */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
           <div className="flex items-center gap-2.5">
@@ -91,7 +161,11 @@ export const CarnetDigitalModal: React.FC<CarnetDigitalModalProps> = ({
           {/* Banda Superior Institucional */}
           <div className="bg-gradient-to-r from-sky-900 via-sky-800 to-sky-950 px-5 py-3.5 text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/logo-icon.png" alt="Luvia Logo" className="h-8 w-8 object-contain brightness-0 invert drop-shadow-xs" />
+              <img
+                src="/logo-icon.png"
+                alt="Luvia Logo"
+                className="h-8 w-8 object-contain brightness-0 invert drop-shadow-xs"
+              />
               <div>
                 <span className="text-[11px] font-extrabold uppercase tracking-widest text-sky-200 block leading-tight">
                   Luvia · Cruz del Eje
@@ -128,8 +202,10 @@ export const CarnetDigitalModal: React.FC<CarnetDigitalModalProps> = ({
                     <span className="flex items-center gap-1 text-[10px] font-semibold text-slate-500">
                       <Building2 className="h-3 w-3 text-sky-600" /> Cobertura
                     </span>
-                    <p className="font-bold text-slate-800 text-[11px] truncate mt-0.5">{obraSocial}</p>
-                    <p className="text-[9px] font-mono text-slate-500">{nroAfiliado}</p>
+                    <p className="font-bold text-slate-800 text-[11px] truncate mt-0.5">
+                      {obraSocial}
+                    </p>
+                    <p className="text-[9px] font-mono text-slate-500 truncate">{nroAfiliado}</p>
                   </div>
 
                   <div className="rounded-xl bg-white p-2.5 border border-slate-200/80 shadow-2xs">
@@ -151,15 +227,11 @@ export const CarnetDigitalModal: React.FC<CarnetDigitalModalProps> = ({
                 </div>
               </div>
 
-              {/* QR Institucional de Admisión */}
+              {/* QR Institucional de Admisión Escaneable con Celular */}
               <div className="sm:col-span-4 flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-sky-100 shadow-xs">
                 <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-white border border-slate-200 overflow-hidden p-1 shadow-2xs">
                   <ScannableQrCode
-                    value={
-                      typeof window !== 'undefined'
-                        ? `${window.location.origin}/dashboard/paciente?credencial=true&dni=${encodeURIComponent(dni)}&nombre=${encodeURIComponent(pacienteNombre)}&estado=HABILITADO`
-                        : `https://esuluvia.vercel.app/dashboard/paciente?dni=${encodeURIComponent(dni)}`
-                    }
+                    value={qrValidationUrl}
                     size={88}
                     alt={`Código QR de Admisión para ${pacienteNombre}`}
                   />
@@ -184,8 +256,21 @@ export const CarnetDigitalModal: React.FC<CarnetDigitalModalProps> = ({
           </div>
         </div>
 
+        {/* Acceso directo para abrir la credencial verificada */}
+        <div className="mt-3 flex items-center justify-between px-1 text-xs">
+          <button
+            type="button"
+            onClick={handleOpenDirect}
+            className="inline-flex items-center gap-1.5 text-sky-700 hover:text-sky-900 font-bold hover:underline cursor-pointer"
+          >
+            <QrCode className="h-3.5 w-3.5" />
+            <span>Ver Credencial Pública Verificada</span>
+            <ExternalLink className="h-3 w-3" />
+          </button>
+        </div>
+
         {/* Botones de Acción */}
-        <div className="mt-4 flex gap-2.5">
+        <div className="mt-3 flex gap-2.5">
           <button
             type="button"
             onClick={handleShare}
