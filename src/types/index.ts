@@ -1,6 +1,48 @@
 export type BackendUserRole = 'PACIENTE' | 'PROFESIONAL' | 'RECEPCIONISTA' | 'ADMIN';
 export type UserRole = 'PACIENTE' | 'MEDICO' | 'PROFESIONAL' | 'RECEPCIONISTA' | 'ADMIN';
 
+export type PermissionCode =
+  | 'TURNOS_VER'
+  | 'TURNOS_CREAR'
+  | 'TURNOS_CANCELAR'
+  | 'TURNOS_REAGENDAR'
+  | 'SOBRETURNOS_CREAR'
+  | 'SALA_ESPERA_GESTIONAR'
+  | 'PACIENTES_VER'
+  | 'PACIENTES_REGISTRAR'
+  | 'PACIENTES_FUSIONAR'
+  | 'CONSULTORIOS_VER'
+  | 'CONSULTORIOS_ADMINISTRAR'
+  | 'MEDICOS_VER'
+  | 'MEDICOS_ASIGNAR_CONSULTORIO'
+  | 'REPORTES_VER'
+  | 'USUARIOS_ADMINISTRAR';
+
+export const DEFAULT_PERMISSIONS_BY_ROLE: Record<string, PermissionCode[]> = {
+  ADMIN: [
+    'TURNOS_VER', 'TURNOS_CREAR', 'TURNOS_CANCELAR', 'TURNOS_REAGENDAR', 'SOBRETURNOS_CREAR',
+    'SALA_ESPERA_GESTIONAR', 'PACIENTES_VER', 'PACIENTES_REGISTRAR', 'PACIENTES_FUSIONAR',
+    'CONSULTORIOS_VER', 'CONSULTORIOS_ADMINISTRAR', 'MEDICOS_VER', 'MEDICOS_ASIGNAR_CONSULTORIO',
+    'REPORTES_VER', 'USUARIOS_ADMINISTRAR',
+  ],
+  RECEPCIONISTA: [
+    'TURNOS_VER', 'TURNOS_CREAR', 'TURNOS_CANCELAR', 'TURNOS_REAGENDAR', 'SOBRETURNOS_CREAR',
+    'SALA_ESPERA_GESTIONAR', 'PACIENTES_VER', 'PACIENTES_REGISTRAR', 'CONSULTORIOS_VER',
+    'MEDICOS_VER', 'MEDICOS_ASIGNAR_CONSULTORIO',
+  ],
+  MEDICO: ['TURNOS_VER', 'PACIENTES_VER', 'CONSULTORIOS_VER', 'MEDICOS_VER'],
+  PROFESIONAL: ['TURNOS_VER', 'PACIENTES_VER', 'CONSULTORIOS_VER', 'MEDICOS_VER'],
+  PACIENTE: [],
+};
+
+export interface Permiso {
+  id: number;
+  codigo: PermissionCode;
+  nombre: string;
+  modulo: string;
+  descripcion?: string;
+}
+
 export interface User {
   id: string;
   usuarioId?: string;
@@ -25,6 +67,7 @@ export interface User {
   isDeveloper?: boolean;
   fechaNacimiento?: string;
   dniVerificado?: boolean;
+  permisos?: PermissionCode[];
 }
 
 export interface CentroSalud {

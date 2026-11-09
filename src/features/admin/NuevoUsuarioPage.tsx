@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { usuariosService } from '@/api/usuariosService';
 import { centrosService } from '@/api/centrosService';
+import { permisosService } from '@/api/permisosService';
+import { PermisosMatrixSelector, DEFAULT_PERMISSIONS_BY_ROLE } from './components/PermisosMatrixSelector';
+import type { Permiso, PermissionCode } from '@/types';
 import { extractApiErrorMessage } from '@/api/endpoints';
 import type { CentroSalud, BackendUserRole } from '@/types';
 import { UserPlus, ArrowLeft, Save, Shield, AlertCircle } from 'lucide-react';
@@ -15,6 +18,8 @@ export const NuevoUsuarioPage: React.FC = () => {
 
   const [centros, setCentros] = useState<CentroSalud[]>([]);
   const [loadingCentros, setLoadingCentros] = useState(false);
+  const [catalogoPermisos, setCatalogoPermisos] = useState<Permiso[]>([]);
+  const [selectedPermisos, setSelectedPermisos] = useState<PermissionCode[]>(DEFAULT_PERMISSIONS_BY_ROLE['RECEPCIONISTA'] ?? []);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -42,6 +47,13 @@ export const NuevoUsuarioPage: React.FC = () => {
         if (isMounted) setLoadingCentros(false);
       });
 
+    permisosService
+      .getCatalogo()
+      .then((data) => {
+        if (isMounted) setCatalogoPermisos(data);
+      })
+      .catch(() => {});
+
     return () => {
       isMounted = false;
     };
@@ -50,6 +62,10 @@ export const NuevoUsuarioPage: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'rol') {
+      const preset = DEFAULT_PERMISSIONS_BY_ROLE[value] ?? [];
+      setSelectedPermisos(preset);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,6 +98,7 @@ export const NuevoUsuarioPage: React.FC = () => {
         apellido: formData.apellido.trim() || undefined,
         dni: formData.dni.trim() || undefined,
         centroSaludId: formData.centroSaludId || undefined,
+        permisos: selectedPermisos,
       });
 
       success(`Usuario ${nuevoUsuario.email} (${nuevoUsuario.rol}) creado exitosamente.`);
@@ -282,6 +299,17 @@ export const NuevoUsuarioPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Selector de Permisos Granulares */}
+        {catalogoPermisos.length > 0 && (
+          <PermisosMatrixSelector
+            catalogo={catalogoPermisos}
+            selectedPermisos={selectedPermisos}
+            onChange={setSelectedPermisos}
+            rolBase={formData.rol}
+            disabled={isSubmitting}
+          />
+        )}
 
         {/* Acciones */}
         <div className="flex items-center gap-3 pt-3 border-t border-border">

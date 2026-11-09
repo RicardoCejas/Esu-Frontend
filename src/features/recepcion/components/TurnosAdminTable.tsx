@@ -8,6 +8,8 @@ export interface TurnosAdminTableProps {
   isProcessing: boolean;
   onReagendar: (t: Turno) => void;
   onCancelar: (t: Turno) => void;
+  canCancelar?: boolean;
+  canReagendar?: boolean;
 }
 
 export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
@@ -16,6 +18,8 @@ export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
   isProcessing,
   onReagendar,
   onCancelar,
+  canCancelar = true,
+  canReagendar = true,
 }) => {
   const getBadgeClass = (estado: string) => {
     switch (estado) {
@@ -87,7 +91,7 @@ export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      {t.estado !== 'CANCELADO' && t.estado !== 'COMPLETADO' && (
+                      {t.estado !== 'CANCELADO' && t.estado !== 'COMPLETADO' && canReagendar && (
                         <button
                           type="button"
                           disabled={isProcessing}
@@ -100,7 +104,7 @@ export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
                         </button>
                       )}
 
-                      {t.estado !== 'CANCELADO' && (
+                      {t.estado !== 'CANCELADO' && canCancelar && (
                         <button
                           type="button"
                           disabled={isProcessing}

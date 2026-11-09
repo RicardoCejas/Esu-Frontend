@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useSalasEsperaKanban } from './hooks/useSalasEsperaKanban';
+import { usePermissions } from '@/hooks/usePermissions';
 import { KanbanColumn } from './components/KanbanColumn';
 import { ModalCrearSobreturno } from '@/features/medico/components/ModalCrearSobreturno';
 import { soundNotification } from '@/lib/soundNotification';
@@ -10,6 +11,7 @@ import { Building2, Volume2, MonitorPlay, Flame, Plus } from 'lucide-react';
 export const SalasEsperaKanbanPage: React.FC = () => {
   const { user } = useAuth();
   const kanban = useSalasEsperaKanban(user?.centroSaludId);
+  const { can } = usePermissions();
   const [isModalSobreturnoOpen, setIsModalSobreturnoOpen] = useState(false);
 
   return (
@@ -32,10 +34,16 @@ export const SalasEsperaKanbanPage: React.FC = () => {
             <span className="font-mono text-xs font-black">{kanban.countSobreturnos}/3</span>
           </div>
 
-          <button type="button" onClick={() => setIsModalSobreturnoOpen(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-2 text-xs shadow-xs transition">
-            <Plus className="h-4 w-4" />
-            <span>+ Agregar Sobreturno</span>
-          </button>
+          {can('SOBRETURNOS_CREAR') && (
+            <button
+              type="button"
+              onClick={() => setIsModalSobreturnoOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-2 text-xs shadow-xs transition"
+            >
+              <Plus className="h-4 w-4" />
+              <span>+ Agregar Sobreturno</span>
+            </button>
+          )}
 
           <button type="button" onClick={() => soundNotification.playChime()} className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition">
             <Volume2 className="h-4 w-4 text-sky-600" />

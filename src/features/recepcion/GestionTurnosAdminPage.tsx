@@ -5,6 +5,7 @@ import { useGestionTurnosAdmin } from './hooks/useGestionTurnosAdmin';
 import { TurnosFiltersBar } from './components/TurnosFiltersBar';
 import { TurnosAdminTable } from './components/TurnosAdminTable';
 import { ReagendarTurnoModal } from './components/ReagendarTurnoModal';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export const GestionTurnosAdminPage: React.FC = () => {
   const {
@@ -35,6 +36,7 @@ export const GestionTurnosAdminPage: React.FC = () => {
     esRecepcionista,
     centroSaludNombre,
   } = useGestionTurnosAdmin();
+  const { can } = usePermissions();
 
   return (
     <div className="space-y-6">
@@ -90,6 +92,8 @@ export const GestionTurnosAdminPage: React.FC = () => {
           setNuevaHora(t.hora ?? '');
         }}
         onCancelar={(t) => setTurnoACancelar(t)}
+        canCancelar={can('TURNOS_CANCELAR')}
+        canReagendar={can('TURNOS_REAGENDAR')}
       />
 
       {turnoAReagendar && (

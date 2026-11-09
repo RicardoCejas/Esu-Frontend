@@ -5,7 +5,7 @@ import { authBroadcast } from '@/lib/authBroadcast';
 import { sanitizeFormData } from '@/lib/sanitizer';
 import { API_ENDPOINTS, extractApiErrorMessage, isDemoModeEnabled } from './endpoints';
 import { toFrontendRole, toBackendRole } from '@/lib/roles';
-import type { User, UserRole } from '@/types';
+import type { User, UserRole, PermissionCode } from '@/types';
 
 export interface LoginCredentials {
   email?: string;
@@ -47,6 +47,7 @@ interface BackendAuthData {
   tempToken?: string;
   user?: User;
   message?: string;
+  permisos?: string[];
 }
 
 interface PacienteMeResponse {
@@ -274,6 +275,7 @@ export const authService = {
         twoFactorEnabled: false,
         emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
         isDeveloper: Boolean(import.meta.env.DEV && emailLower === 'dev@esu.gob.ar'),
+        permisos: ((response.data.permisos as unknown as PermissionCode[]) ?? []),
       };
 
       tokenStorage.setAccessToken(token);
@@ -355,6 +357,7 @@ export const authService = {
         twoFactorEnabled: false,
         emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
         isDeveloper: false,
+        permisos: ((response.data.permisos as unknown as PermissionCode[]) ?? []),
       };
 
       tokenStorage.setAccessToken(token);
@@ -518,6 +521,7 @@ export const authService = {
           activo: boolean;
           verificado: boolean;
           twoFactorEnabled?: boolean;
+          permisos?: string[];
         }>(API_ENDPOINTS.auth.me);
 
         if (res.data) {
@@ -540,6 +544,7 @@ export const authService = {
             emailVerified: res.data.verificado !== false,
             twoFactorEnabled: res.data.twoFactorEnabled ?? currentSessionUser?.twoFactorEnabled ?? false,
             isDeveloper: import.meta.env.DEV && res.data.email?.toLowerCase() === 'dev@esu.gob.ar',
+            permisos: (res.data.permisos as unknown as PermissionCode[]) ?? currentSessionUser?.permisos ?? [],
           };
 
           let hydratedUser = baseUser;
@@ -717,6 +722,7 @@ export const authService = {
       activo: true,
       twoFactorEnabled: true,
       emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
+      permisos: ((response.data.permisos as unknown as PermissionCode[]) ?? []),
     };
 
     tokenStorage.setAccessToken(token);
