@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { turnosService } from '@/api/turnosService';
 import { centrosService } from '@/api/centrosService';
-import { soundNotification } from '@/lib/soundNotification';
+import { audioSpeechService } from '@/lib/audioSpeechService';
 import type { Turno, CentroSalud } from '@/types';
 
 export function useSalasEsperaKanban(centroId?: string | number) {
@@ -78,7 +78,10 @@ export function useSalasEsperaKanban(centroId?: string | number) {
 
   const handleLlamarAConsultorio = async (turno: Turno) => {
     try {
-      soundNotification.playChime();
+      audioSpeechService.anunciarLlamado(
+        turno.pacienteNombre,
+        turno.consultorioNumero || consultorioSeleccionado
+      );
       const updated = await turnosService.llamarPaciente(
         turno.id,
         turno.consultorioNumero || consultorioSeleccionado

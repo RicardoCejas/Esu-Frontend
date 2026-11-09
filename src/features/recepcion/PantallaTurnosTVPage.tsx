@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { turnosService } from '@/api/turnosService';
 import { centrosService } from '@/api/centrosService';
-import { soundNotification } from '@/lib/soundNotification';
+import { useQueueAudioAnnouncement } from './hooks/useQueueAudioAnnouncement';
 import { getFechaLocalHoy } from '@/lib/dateUtils';
 import type { Turno, CentroSalud } from '@/types';
 import {
@@ -19,7 +19,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
   const [centros, setCentros] = useState<CentroSalud[]>([]);
   const [filtroCentro, setFiltroCentro] = useState<string>('TODOS');
   const [horaActual, setHoraActual] = useState(new Date());
-  const [sonidoHabilitado, setSonidoHabilitado] = useState(true);
+  const { sonidoHabilitado, toggleSonido, anunciarLlamado } = useQueueAudioAnnouncement();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [ultimoLlamadoId, setUltimoLlamadoId] = useState<string | null>(null);
 
@@ -72,10 +72,10 @@ export const PantallaTurnosTVPage: React.FC = () => {
     if (llamadoDestacado && llamadoDestacado.id !== ultimoLlamadoId) {
       setUltimoLlamadoId(llamadoDestacado.id);
       if (sonidoHabilitado) {
-        soundNotification.playChime();
+        anunciarLlamado(llamadoDestacado.pacienteNombre, llamadoDestacado.consultorioNumero);
       }
     }
-  }, [llamadoDestacado, ultimoLlamadoId, sonidoHabilitado]);
+  }, [llamadoDestacado, ultimoLlamadoId, anunciarLlamado]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -130,10 +130,10 @@ export const PantallaTurnosTVPage: React.FC = () => {
 
           {/* Botón de Sonido */}
           <button
-            onClick={() => {
-              setSonidoHabilitado(!sonidoHabilitado);
-              if (!sonidoHabilitado) soundNotification.playChime();
-            }}
+            onClick={toggleSonido}
+
+
+
             className={`p-2 rounded-xl border transition ${
               sonidoHabilitado
                 ? 'border-sky-600 bg-sky-700 text-white'
