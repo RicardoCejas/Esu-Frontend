@@ -1,6 +1,6 @@
 import { isAxiosError } from 'axios';
 import { apiClient } from './apiClient';
-import { tokenStorage } from './tokenStorage';
+import { tokenStorage, refreshSingleFlight } from './tokenStorage';
 import { authBroadcast } from '@/lib/authBroadcast';
 import { sanitizeFormData } from '@/lib/sanitizer';
 import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
@@ -33,8 +33,24 @@ interface BackendAuthData {
   message?: string;
 }
 
+interface PacienteMeResponse {
+  id?: number | string;
+  dni?: string;
+  nombre?: string;
+  apellido?: string;
+  telefono?: string;
+  email?: string;
+  obraSocial?: string;
+  nroAfiliado?: string;
+  grupoSanguineo?: string;
+  fechaNacimiento?: string | number[];
+  centroSaludReferenciaId?: number | string;
+  centroSaludReferenciaNombre?: string;
+}
+
 // Almacenamiento seguro en memoria del perfil de usuario actual
 let currentSessionUser: User | null = null;
+let refreshSessionInFlight: Promise<User | null> | null = null;
 
 function normalizeUserRole(rawRole?: string): UserRole {
   const upper = (rawRole || 'PACIENTE').toUpperCase();
@@ -44,12 +60,125 @@ function normalizeUserRole(rawRole?: string): UserRole {
   return 'PACIENTE';
 }
 
+function normalizeFechaNacimiento(raw?: string | number[]): string | undefined {
+  if (!raw) return undefined;
+  if (Array.isArray(raw) && raw.length >= 3) {
+    const [y, m, d] = raw;
+    if (y && m && d) {
+      return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+    return undefined;
+  }
+  if (typeof raw === 'string') {
+    const clean = raw.trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+      return clean.slice(0, 10);
+    }
+    const dmy = clean.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (dmy) {
+      return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+    }
+  }
+  return undefined;
+}
+
+function isRealPhone(tel?: string): boolean {
+  if (!tel) return false;
+  const clean = tel.trim();
+  return clean.length >= 6 && clean !== 'Sin especificar' && clean !== '3549000000';
+}
+
+function readLocalPacienteCache(id?: string, email?: string): Record<string, string> | null {
+  if (typeof window === 'undefined') return null;
+  const keys = [
+    id ? `esu_paciente_data_${id}` : null,
+    email ? `esu_paciente_data_${email.trim().toLowerCase()}` : null,
+  ].filter(Boolean) as string[];
+
+  for (const k of keys) {
+    try {
+      const raw = localStorage.getItem(k);
+      if (raw) {
+        return JSON.parse(raw) as Record<string, string>;
+      }
+    } catch {
+      // Ignorar cache corrupta
+    }
+  }
+  return null;
+}
+
+function isDniMarkedVerifiedInStorage(id?: string, email?: string): boolean {
+  if (typeof window === 'undefined') return false;
+  if (id && localStorage.getItem(`esu_dni_verified_${id}`) === 'true') return true;
+  const emailLower = email?.trim().toLowerCase();
+  if (emailLower && localStorage.getItem(`esu_dni_verified_${emailLower}`) === 'true') return true;
+  return false;
+}
+
+function mergePacienteProfile(user: User, perfil?: PacienteMeResponse | null): User {
+  const merged: User = { ...user };
+  const usuarioIdFallback = merged.id;
+
+  if (perfil) {
+    if (perfil.id !== undefined && perfil.id !== null) merged.id = String(perfil.id);
+    if (perfil.dni && perfil.dni.trim()) merged.dni = perfil.dni.trim();
+    if (perfil.nombre && perfil.nombre.trim()) merged.nombre = perfil.nombre.trim();
+    if (perfil.apellido && perfil.apellido.trim()) merged.apellido = perfil.apellido.trim();
+    if (isRealPhone(perfil.telefono)) merged.telefono = perfil.telefono!.trim();
+    if (perfil.obraSocial && perfil.obraSocial.trim()) merged.obraSocial = perfil.obraSocial.trim();
+    if (perfil.nroAfiliado && perfil.nroAfiliado.trim()) merged.nroAfiliado = perfil.nroAfiliado.trim();
+    if (perfil.grupoSanguineo && perfil.grupoSanguineo.trim()) merged.grupoSanguineo = perfil.grupoSanguineo.trim();
+    const fn = normalizeFechaNacimiento(perfil.fechaNacimiento);
+    if (fn) merged.fechaNacimiento = fn;
+    if (perfil.centroSaludReferenciaId !== undefined && perfil.centroSaludReferenciaId !== null) {
+      merged.centroSaludId = String(perfil.centroSaludReferenciaId);
+    }
+    if (perfil.centroSaludReferenciaNombre && perfil.centroSaludReferenciaNombre.trim()) {
+      merged.centroSaludNombre = perfil.centroSaludReferenciaNombre.trim();
+    }
+  }
+
+  // Respaldo de campos locales complementarios si no vinieron en el DTO
+  const cached = readLocalPacienteCache(merged.id, merged.email) || readLocalPacienteCache(usuarioIdFallback, merged.email);
+  if (cached) {
+    if (!isRealPhone(merged.telefono) && isRealPhone(cached.telefono)) {
+      merged.telefono = cached.telefono.trim();
+    }
+    if (!merged.fechaNacimiento && cached.fechaNacimiento) {
+      merged.fechaNacimiento = normalizeFechaNacimiento(cached.fechaNacimiento);
+    }
+    if (!merged.obraSocial && cached.obraSocial) {
+      merged.obraSocial = cached.obraSocial;
+    }
+    if (!merged.nroAfiliado && cached.nroAfiliado) {
+      merged.nroAfiliado = cached.nroAfiliado;
+    }
+  }
+
+  const hasValidDni = Boolean(merged.dni && /^\d{7,8}$/.test(merged.dni.trim()));
+  const hasCompleteIdentity = hasValidDni && isRealPhone(merged.telefono) && Boolean(merged.fechaNacimiento);
+  const verifiedStorage =
+    isDniMarkedVerifiedInStorage(merged.id, merged.email) ||
+    isDniMarkedVerifiedInStorage(usuarioIdFallback, merged.email);
+
+  if (hasValidDni && (hasCompleteIdentity || verifiedStorage)) {
+    merged.dniVerificado = true;
+    if (typeof window !== 'undefined' && merged.id) {
+      localStorage.setItem(`esu_dni_verified_${merged.id}`, 'true');
+      if (merged.email) {
+        localStorage.setItem(`esu_dni_verified_${merged.email.trim().toLowerCase()}`, 'true');
+      }
+    }
+  }
+
+  return merged;
+}
+
 export const authService = {
   /**
    * Inicio de sesión seguro: almacena token en memoria volátil (HU-41)
    * Sanitiza entradas contra XSS (HU-44)
-   * En producción requiere autenticación real contra el backend.
-   * En desarrollo permite cuenta de prueba dev@esu.gob.ar.
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const cleanCredentials = sanitizeFormData(credentials);
@@ -74,7 +203,7 @@ export const authService = {
         throw new Error('El servidor no retornó un token de acceso válido.');
       }
 
-      const user: User = {
+      let user: User = {
         id: String(response.data.usuarioId || Date.now()),
         nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
         apellido: response.data.apellido || '',
@@ -96,24 +225,17 @@ export const authService = {
 
       if (user.rol === 'PACIENTE') {
         try {
-          const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
-          if (perfilRes.data?.id) {
-            user.id = String(perfilRes.data.id);
-            if (perfilRes.data.dni) user.dni = perfilRes.data.dni;
-            if (perfilRes.data.nombre) user.nombre = perfilRes.data.nombre;
-            if (perfilRes.data.apellido) user.apellido = perfilRes.data.apellido;
-            currentSessionUser = user;
-          }
+          const perfilRes = await apiClient.get<PacienteMeResponse>('/pacientes/me');
+          user = mergePacienteProfile(user, perfilRes.data);
         } catch {
-          // Mantener usuarioId como fallback
+          user = mergePacienteProfile(user, null);
         }
+        currentSessionUser = user;
       }
 
       authBroadcast.postMessage({ type: 'LOGIN', userId: user.id });
       return { token, user };
     } catch (error: unknown) {
-      
-
       if (isAxiosError<BackendAuthData>(error)) {
         const extracted = extractApiErrorMessage(error);
         if (extracted && extracted !== 'Error de comunicación con el servidor.') {
@@ -158,7 +280,7 @@ export const authService = {
         throw new Error('El servidor no retornó un token de acceso válido.');
       }
 
-      const user: User = {
+      let user: User = {
         id: String(response.data.usuarioId || Date.now()),
         nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
         apellido: response.data.apellido || '',
@@ -177,17 +299,12 @@ export const authService = {
 
       if (user.rol === 'PACIENTE') {
         try {
-          const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
-          if (perfilRes.data?.id) {
-            user.id = String(perfilRes.data.id);
-            if (perfilRes.data.dni) user.dni = perfilRes.data.dni;
-            if (perfilRes.data.nombre) user.nombre = perfilRes.data.nombre;
-            if (perfilRes.data.apellido) user.apellido = perfilRes.data.apellido;
-            currentSessionUser = user;
-          }
+          const perfilRes = await apiClient.get<PacienteMeResponse>('/pacientes/me');
+          user = mergePacienteProfile(user, perfilRes.data);
         } catch {
-          // Mantener usuarioId como fallback
+          user = mergePacienteProfile(user, null);
         }
+        currentSessionUser = user;
       }
 
       authBroadcast.postMessage({ type: 'LOGIN', userId: user.id });
@@ -238,12 +355,12 @@ export const authService = {
 
       const token = response.data.accessToken || response.data.token || '';
 
-      const user: User = {
+      let user: User = {
         id: String(response.data.usuarioId || Date.now()),
         nombre: cleanData.nombre,
         apellido: cleanData.apellido,
         email,
-        dni: cleanData.dni,
+        dni: response.data.dni || cleanData.dni || '',
         rol: 'PACIENTE',
         activo: true,
         emailVerified: true,
@@ -253,6 +370,13 @@ export const authService = {
         tokenStorage.setAccessToken(token);
         currentSessionUser = user;
         sessionStorage.setItem('esu_session_active', '1');
+        try {
+          const perfilRes = await apiClient.get<PacienteMeResponse>('/pacientes/me');
+          user = mergePacienteProfile(user, perfilRes.data);
+          currentSessionUser = user;
+        } catch {
+          // Mantener datos de registro
+        }
       }
 
       return {
@@ -291,57 +415,75 @@ export const authService = {
   },
 
   /**
-   * Renovación silenciosa de sesión vía Refresh Token seguro
+   * Renovación silenciosa de sesión vía Refresh Token seguro con single-flight deduplicado
    */
   async refreshSession(): Promise<User | null> {
-    try {
-      const refreshRes = await apiClient.post<BackendAuthData>(API_ENDPOINTS.auth.refresh);
-      const newToken = refreshRes.data.accessToken || refreshRes.data.token;
-      if (newToken) {
-        tokenStorage.setAccessToken(newToken);
-      }
+    if (refreshSessionInFlight) {
+      return refreshSessionInFlight;
+    }
 
-      const res = await apiClient.get<{ id: number; email: string; rol: string; activo: boolean; verificado: boolean }>(
-        API_ENDPOINTS.auth.me
-      );
-      if (res.data) {
-        const userRol = normalizeUserRole(res.data.rol);
-        let targetId = String(res.data.id);
-        let dni = String(res.data.id);
-        let nombre = res.data.email ? res.data.email.split('@')[0] : 'Usuario';
-        let apellido = '';
-
-        if (userRol === 'PACIENTE') {
-          try {
-            const perfilRes = await apiClient.get<{ id?: number | string; dni?: string; nombre?: string; apellido?: string }>('/pacientes/me');
-            if (perfilRes.data?.id) {
-              targetId = String(perfilRes.data.id);
-              if (perfilRes.data.dni) dni = perfilRes.data.dni;
-              if (perfilRes.data.nombre) nombre = perfilRes.data.nombre;
-              if (perfilRes.data.apellido) apellido = perfilRes.data.apellido;
-            }
-          } catch {
-            // Fallback
+    refreshSessionInFlight = (async () => {
+      try {
+        const activeToken = await refreshSingleFlight.run(async () => {
+          const refreshRes = await apiClient.post<BackendAuthData>(API_ENDPOINTS.auth.refresh);
+          const extracted = refreshRes.data.accessToken || refreshRes.data.token || null;
+          if (extracted) {
+            tokenStorage.setAccessToken(extracted);
           }
+          return extracted;
+        });
+
+        const tokenInMemory = activeToken || tokenStorage.getAccessToken();
+        if (!tokenInMemory) {
+          return null;
         }
 
-        const refreshedUser: User = {
-          id: targetId,
-          nombre,
-          apellido,
-          email: res.data.email,
-          dni,
-          rol: userRol,
-          activo: res.data.activo !== false,
-          emailVerified: res.data.verificado !== false,
-        };
-        currentSessionUser = refreshedUser;
-        return refreshedUser;
+        const res = await apiClient.get<{ id: number; email: string; rol: string; activo: boolean; verificado: boolean }>(
+          API_ENDPOINTS.auth.me
+        );
+        if (res.data) {
+          const userRol = normalizeUserRole(res.data.rol);
+          const baseUser: User = {
+            id: String(res.data.id),
+            nombre: res.data.email ? res.data.email.split('@')[0] : 'Usuario',
+            apellido: '',
+            email: res.data.email,
+            dni: '',
+            rol: userRol,
+            activo: res.data.activo !== false,
+            emailVerified: res.data.verificado !== false,
+            isDeveloper: import.meta.env.DEV && res.data.email?.toLowerCase() === 'dev@esu.gob.ar',
+          };
+
+          let hydratedUser = baseUser;
+          if (userRol === 'PACIENTE') {
+            try {
+              const perfilRes = await apiClient.get<PacienteMeResponse>('/pacientes/me');
+              hydratedUser = mergePacienteProfile(baseUser, perfilRes.data);
+            } catch {
+              hydratedUser = mergePacienteProfile(baseUser, null);
+            }
+          }
+
+          currentSessionUser = hydratedUser;
+          return hydratedUser;
+        }
+        return null;
+      } catch (err: unknown) {
+        if (isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403)) {
+          tokenStorage.clearToken();
+          currentSessionUser = null;
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('esu_session_active');
+          }
+        }
+        return null;
+      } finally {
+        refreshSessionInFlight = null;
       }
-      return null;
-    } catch {
-      return null;
-    }
+    })();
+
+    return refreshSessionInFlight;
   },
 
   /**

@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { apiClient } from './apiClient';
 import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
 import type { User, ConsultaMedica } from '@/types';
@@ -9,18 +10,48 @@ function toNumericId(raw: string | number | undefined, fallback = 1): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function normalizeFechaNacimiento(raw: unknown): string | undefined {
+  if (!raw) return undefined;
+  if (Array.isArray(raw) && raw.length >= 3) {
+    const [y, m, d] = raw;
+    if (y && m && d) {
+      return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+  }
+  if (typeof raw === 'string') {
+    const clean = raw.trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+      return clean.slice(0, 10);
+    }
+  }
+  return undefined;
+}
+
 function normalizePaciente(d: Record<string, unknown>): User {
+  const dni = String(d.dni ?? '').trim();
+  const telefono = typeof d.telefono === 'string' && d.telefono.trim() ? d.telefono.trim() : undefined;
+  const fechaNacimiento = normalizeFechaNacimiento(d.fechaNacimiento);
+  const telReal = Boolean(telefono && telefono.length >= 6 && telefono !== 'Sin especificar' && telefono !== '3549000000');
+
   return {
     id: String(d.id ?? ''),
     nombre: String(d.nombre ?? ''),
     apellido: String(d.apellido ?? ''),
-    dni: String(d.dni ?? ''),
+    dni,
     email: String(d.email ?? `${d.dni ?? 'paciente'}@esu.gob.ar`),
-    telefono: typeof d.telefono === 'string' ? d.telefono : undefined,
+    telefono,
     rol: 'PACIENTE',
     obraSocial: typeof d.obraSocial === 'string' ? d.obraSocial : undefined,
     nroAfiliado: typeof d.nroAfiliado === 'string' ? d.nroAfiliado : undefined,
     grupoSanguineo: typeof d.grupoSanguineo === 'string' ? d.grupoSanguineo : undefined,
+    fechaNacimiento,
+    centroSaludId: d.centroSaludReferenciaId !== undefined && d.centroSaludReferenciaId !== null
+      ? String(d.centroSaludReferenciaId)
+      : undefined,
+    centroSaludNombre: typeof d.centroSaludReferenciaNombre === 'string'
+      ? d.centroSaludReferenciaNombre
+      : undefined,
+    dniVerificado: /^\d{7,8}$/.test(dni) && telReal && Boolean(fechaNacimiento),
     activo: true,
   };
 }
@@ -122,16 +153,33 @@ export const pacientesService = {
 
   async updateContacto(
     pacienteId: string | number,
-    data: { telefono?: string; email?: string; obraSocial?: string; nroAfiliado?: string; dni?: string; fechaNacimiento?: string; nroTramite?: string; nombre?: string; apellido?: string }
+    data: {
+      telefono?: string;
+      email?: string;
+      obraSocial?: string;
+      nroAfiliado?: string;
+      dni?: string;
+      fechaNacimiento?: string;
+      nroTramite?: string;
+      nombre?: string;
+      apellido?: string;
+      grupoSanguineo?: string;
+      centroSaludReferenciaNombre?: string;
+    }
   ): Promise<User> {
     try {
-      // 1. Intentar actualizar por endpoint de perfil autenticado
+      // 1. Actualizar por endpoint de perfil autenticado (PACIENTE / ADMIN / DEV)
       try {
         const resPerfil = await apiClient.put<Record<string, unknown>>('/pacientes/mi-perfil', data);
         if (resPerfil.data) return normalizePaciente(resPerfil.data);
-      } catch {
-        // Fallback a endpoint con ID numérico
+      } catch (err: unknown) {
+        const status = isAxiosError(err) ? err.response?.status : undefined;
+        // Solo hacer fallback al endpoint administrativo por ID cuando /mi-perfil no aplica por rol o ruta
+        if (status !== 403 && status !== 404) {
+          throw err;
+        }
       }
+
       const numId = toNumericId(pacienteId);
       const res = await apiClient.put<Record<string, unknown>>(
         API_ENDPOINTS.pacientes.contacto(numId),
