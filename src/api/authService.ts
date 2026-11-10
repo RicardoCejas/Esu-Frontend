@@ -229,6 +229,8 @@ export const authService = {
         const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
         const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
         const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
+        const centroSaludId = response.data.centroSaludId != null ? String(response.data.centroSaludId) : undefined;
+        const centroSaludNombre = response.data.centroSaludNombre || undefined;
         const challengeUser: User = {
           id: usuarioId || '',
           usuarioId,
@@ -238,6 +240,8 @@ export const authService = {
           apellido: response.data.apellido || '',
           email: response.data.email || payload.email,
           dni: response.data.dni || cleanCredentials.dni || '',
+        centroSaludId,
+        centroSaludNombre,
           rol: normalizeUserRole(response.data.rol),
           activo: true,
           twoFactorEnabled: true,
@@ -260,6 +264,8 @@ export const authService = {
       const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
       const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
       const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
+      const centroSaludId = response.data.centroSaludId != null ? String(response.data.centroSaludId) : undefined;
+      const centroSaludNombre = response.data.centroSaludNombre || undefined;
       const allowSimulatedRole = Boolean((import.meta.env.DEV || isDemoModeEnabled()) && credentials.rolSimulado);
       let user: User = {
         id: usuarioId || String(Date.now()),
@@ -270,6 +276,8 @@ export const authService = {
         apellido: response.data.apellido || '',
         email: response.data.email || payload.email,
         dni: response.data.dni || cleanCredentials.dni || '',
+        centroSaludId,
+        centroSaludNombre,
         rol: allowSimulatedRole ? credentials.rolSimulado! : normalizeUserRole(response.data.rol),
         activo: true,
         twoFactorEnabled: false,
@@ -343,6 +351,8 @@ export const authService = {
       }
 
       const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
+      const centroSaludId = response.data.centroSaludId != null ? String(response.data.centroSaludId) : undefined;
+      const centroSaludNombre = response.data.centroSaludNombre || undefined;
       let user: User = {
         id: usuarioId || String(Date.now()),
         usuarioId,
@@ -352,6 +362,8 @@ export const authService = {
         apellido: response.data.apellido || '',
         email: response.data.email || '',
         dni: response.data.dni || '',
+        centroSaludId,
+        centroSaludNombre,
         rol: normalizeUserRole(response.data.rol),
         activo: true,
         twoFactorEnabled: false,
@@ -521,6 +533,8 @@ export const authService = {
           activo: boolean;
           verificado: boolean;
           twoFactorEnabled?: boolean;
+          centroSaludId?: number | string | null;
+          centroSaludNombre?: string | null;
           permisos?: string[];
         }>(API_ENDPOINTS.auth.me);
 
@@ -529,6 +543,8 @@ export const authService = {
           const pacienteId = res.data.pacienteId != null ? String(res.data.pacienteId) : undefined;
           const profesionalId = res.data.profesionalId != null ? String(res.data.profesionalId) : undefined;
           const authUserId = String(res.data.usuarioId || res.data.id);
+          const centroSaludId = res.data.centroSaludId != null ? String(res.data.centroSaludId) : currentSessionUser?.centroSaludId;
+          const centroSaludNombre = res.data.centroSaludNombre || currentSessionUser?.centroSaludNombre;
 
           const baseUser: User = {
             id: authUserId,
@@ -539,6 +555,8 @@ export const authService = {
             apellido: res.data.apellido || '',
             email: res.data.email,
             dni: res.data.dni || (userRol === 'PACIENTE' ? '' : authUserId),
+            centroSaludId,
+            centroSaludNombre,
             rol: userRol,
             activo: res.data.activo !== false,
             emailVerified: res.data.verificado !== false,
@@ -709,6 +727,8 @@ export const authService = {
     const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
     const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
     const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
+    const centroSaludId = response.data.centroSaludId != null ? String(response.data.centroSaludId) : undefined;
+    const centroSaludNombre = response.data.centroSaludNombre || undefined;
     let user: User = {
       id: usuarioId || String(Date.now()),
       usuarioId,
@@ -718,6 +738,8 @@ export const authService = {
       apellido: response.data.apellido || '',
       email: response.data.email || '',
       dni: response.data.dni || '',
+      centroSaludId,
+      centroSaludNombre,
       rol: normalizeUserRole(response.data.rol),
       activo: true,
       twoFactorEnabled: true,

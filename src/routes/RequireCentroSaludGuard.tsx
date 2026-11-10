@@ -1,58 +1,68 @@
 import React from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Building2, AlertTriangle, LogOut } from 'lucide-react';
+import { Building2, AlertTriangle, LogOut, ArrowLeft } from 'lucide-react';
 
 export const RequireCentroSaludGuard: React.FC = () => {
   const { user, logout } = useAuth();
   const isDev = Boolean(import.meta.env.DEV && (user?.isDeveloper || user?.email === 'dev@esu.gob.ar'));
 
-  // Si es recepcionista y no tiene sede médica asignada, bloquear navegación fail-closed (HU-Frontend-99)
+  // Bloquear recepcionistas sin centro de salud asignado (fail-closed)
   if (user && user.rol === 'RECEPCIONISTA' && !user.centroSaludId && !isDev) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center p-6 bg-slate-50">
-        <div className="max-w-lg w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center space-y-6">
-          <div className="mx-auto w-16 h-16 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center ring-8 ring-amber-50">
-            <AlertTriangle className="w-8 h-8" />
+      <div className="flex items-center justify-center py-8 px-4 sm:px-6">
+        <section
+          role="alert"
+          aria-labelledby="guard-title"
+          aria-describedby="guard-desc"
+          className="max-w-lg w-full rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xs text-center space-y-6"
+        >
+          <div
+            className="mx-auto w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-700 dark:text-amber-400 flex items-center justify-center border border-amber-500/20"
+            aria-hidden="true"
+          >
+            <AlertTriangle className="w-7 h-7" aria-hidden="true" />
           </div>
 
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold text-slate-900">
-              Cuenta Institucional Sin Sede Asignada
-            </h2>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Su cuenta de recepcionista no cuenta con un <span className="font-semibold text-slate-900">Centro de Salud</span> vinculado.
-              Por políticas de seguridad y aislamiento multi-tenancy, no puede operar la recepción ni acceder a datos clínicos sin una sede asignada.
+          <header className="space-y-2">
+            <h1 id="guard-title" className="text-xl font-bold tracking-tight text-foreground">
+              Cuenta de Recepción Sin Sede Asignada
+            </h1>
+            <p id="guard-desc" className="text-sm text-muted-foreground leading-relaxed">
+              Para resguardar los datos clínicos de los pacientes y organizar las salas de espera, cada cuenta de recepción debe pertenecer al centro de salud donde prestás servicio.
             </p>
-          </div>
+          </header>
 
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-left text-xs text-slate-600 space-y-2">
-            <div className="flex items-center gap-2 font-medium text-slate-700">
-              <Building2 className="w-4 h-4 text-sky-600" />
-              <span>Pasos de resolución requeridos:</span>
+          <div className="rounded-xl border border-border/80 bg-muted/40 p-4 text-left text-xs text-foreground space-y-2">
+            <div className="flex items-center gap-2 font-semibold text-foreground">
+              <Building2 className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
+              <span>Pasos para habilitar tu acceso:</span>
             </div>
-            <p>1. Contacte al administrador del centro o de la red de salud de Cruz del Eje.</p>
-            <p>2. Solicite la asignación explícita de su centro de salud en la nómina de usuarios.</p>
-            <p>3. Vuelva a iniciar sesión para actualizar sus credenciales institucionales.</p>
+            <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground pl-1">
+              <li>Contactá al administrador del centro o de la red de salud de Cruz del Eje.</li>
+              <li>Solicitá que asocien tu usuario a la sede correspondiente.</li>
+              <li>Volvé a iniciar sesión para ingresar a tu mostrador de atención.</li>
+            </ol>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
               type="button"
               onClick={() => logout()}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-slate-400"
+              className="flex-1 min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-input bg-background text-sm font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
             >
-              <LogOut className="w-4 h-4" />
-              Cerrar Sesión
+              <LogOut className="w-4 h-4" aria-hidden="true" />
+              <span>Cerrar Sesión</span>
             </button>
             <Link
               to="/portal"
-              className="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-medium hover:bg-sky-700 transition-colors shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
+              className="flex-1 min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              Ir al Inicio
+              <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+              <span>Ir al Portal</span>
             </Link>
           </div>
-        </div>
+        </section>
       </div>
     );
   }
