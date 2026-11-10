@@ -152,6 +152,7 @@ export const API_ENDPOINTS = {
     eliminar: (id: string | number) => `/usuarios/eliminar/${id}`,
     preferencias: '/usuarios/preferencias',
     cambiarEstado: (id: string | number) => `/usuarios/${id}/estado`,
+    actualizarAsignacion: (id: string | number) => `/usuarios/${id}/asignacion`,
     revocarMisSesiones: '/usuarios/me/revocar-sesiones',
     revocarSesionesUsuario: (id: string | number) => `/usuarios/${id}/revocar-sesiones`,
   },

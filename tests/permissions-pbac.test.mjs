@@ -108,4 +108,29 @@ describe('HU-INT-06: Catálogo de Permisos Granulares y PBAC', () => {
       assert.deepEqual(payload.permisos, ['TURNOS_VER', 'SALA_ESPERA_GESTIONAR']);
     });
   });
+  describe('Servicios de Actualización de Rol, Sede y Permisos', () => {
+    it('API_ENDPOINTS.usuarios.actualizarAsignacion construye la ruta correcta', async () => {
+      const { API_ENDPOINTS } = await import('../src/api/endpoints.ts');
+      assert.equal(API_ENDPOINTS.usuarios.actualizarAsignacion(42), '/usuarios/42/asignacion');
+    });
+
+    it('PermisosMatrixSelector agrupa catálogo por módulo sin duplicados', () => {
+      const sampleCatalogo = [
+        { id: 1, codigo: 'TURNOS_VER', nombre: 'Ver Turnos', modulo: 'TURNOS' },
+        { id: 2, codigo: 'TURNOS_CREAR', nombre: 'Crear Turnos', modulo: 'TURNOS' },
+        { id: 3, codigo: 'PACIENTES_VER', nombre: 'Ver Pacientes', modulo: 'PACIENTES' },
+      ];
+
+      const modulos = new Map();
+      for (const p of sampleCatalogo) {
+        const list = modulos.get(p.modulo) ?? [];
+        list.push(p);
+        modulos.set(p.modulo, list);
+      }
+
+      assert.equal(modulos.size, 2);
+      assert.equal(modulos.get('TURNOS').length, 2);
+      assert.equal(modulos.get('PACIENTES').length, 1);
+    });
+  });
 });

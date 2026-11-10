@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { usuariosService } from '@/api/usuariosService';
 import { centrosService } from '@/api/centrosService';
 import { extractApiErrorMessage } from '@/api/endpoints';
-import type { CentroSalud, User } from '@/types';
+import type { CentroSalud, User, Permiso } from '@/types';
+import { permisosService } from '@/api/permisosService';
+import { ModalGestionarPermisosUsuario } from './components/ModalGestionarPermisosUsuario';
 import {
   Users,
   UserPlus,
@@ -32,6 +34,8 @@ export const AdminUsuariosPage: React.FC = () => {
   const [filtroEstado, setFiltroEstado] = useState<'TODOS' | 'ACTIVO' | 'INACTIVO'>('TODOS');
   const [cuentaAToggle, setCuentaAToggle] = useState<User | null>(null);
   const [cuentaAEliminar, setCuentaAEliminar] = useState<User | null>(null);
+  const [cuentaAPermisos, setCuentaAPermisos] = useState<User | null>(null);
+  const [catalogoPermisos, setCatalogoPermisos] = useState<Permiso[]>([]);
 
   const cargarDatos = useCallback(async () => {
     setIsLoading(true);
@@ -68,6 +72,7 @@ export const AdminUsuariosPage: React.FC = () => {
 
   useEffect(() => {
     cargarDatos();
+    permisosService.getCatalogo().then((data) => setCatalogoPermisos(data)).catch(() => {});
   }, [cargarDatos]);
 
   const handleConfirmarToggle = async () => {
@@ -339,8 +344,18 @@ export const AdminUsuariosPage: React.FC = () => {
                 <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
                   <button
                     type="button"
+                    onClick={() => setCuentaAPermisos(cuenta)}
+                    className="inline-flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg text-xs font-semibold border border-input bg-background hover:bg-muted text-foreground transition cursor-pointer"
+                    title="Asignar rol y permisos granulares"
+                  >
+                    <Shield className="h-3.5 w-3.5 text-primary" />
+                    <span>Permisos</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => setCuentaAToggle(cuenta)}
-                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition cursor-pointer border ${
+                    className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold transition cursor-pointer border text-center ${
                       cuenta.activo !== false
                         ? 'border-rose-200 text-rose-700 hover:bg-rose-50'
                         : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
@@ -450,6 +465,21 @@ export const AdminUsuariosPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      {cuentaAPermisos && (
+        <ModalGestionarPermisosUsuario
+          usuario={cuentaAPermisos}
+          isOpen={Boolean(cuentaAPermisos)}
+          onClose={() => setCuentaAPermisos(null)}
+          onGuardado={(actualizado) => {
+            setUsuarios((prev) =>
+              prev.map((u) => (u.id === actualizado.id ? { ...u, ...actualizado } : u))
+            );
+            success(`Rol y permisos de ${actualizado.email} actualizados exitosamente.`);
+          }}
+          catalogoPermisos={catalogoPermisos}
+          centros={centros}
+        />
       )}
     </div>
   );
