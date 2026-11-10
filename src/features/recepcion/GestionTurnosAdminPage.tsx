@@ -34,7 +34,6 @@ export const GestionTurnosAdminPage: React.FC = () => {
     handleTurnoCancelado,
     handleConfirmarReagendamiento,
     esRecepcionista,
-    centroSaludNombre,
   } = useGestionTurnosAdmin();
   const { can } = usePermissions();
 
@@ -42,9 +41,7 @@ export const GestionTurnosAdminPage: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          {esRecepcionista && centroSaludNombre
-            ? `Gestión de Turnos — ${centroSaludNombre}`
-            : 'Gestión Central de Turnos'}
+          {esRecepcionista ? 'Gestión de Turnos' : 'Gestión Central de Turnos'}
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
           {esRecepcionista

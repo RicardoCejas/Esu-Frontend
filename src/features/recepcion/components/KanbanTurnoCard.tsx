@@ -22,7 +22,7 @@ export const KanbanTurnoCard: React.FC<KanbanTurnoCardProps> = ({
     <div
       className={`rounded-xl border p-3 shadow-xs space-y-2 transition ${
         turno.esSobreturno
-          ? 'border-amber-400 bg-amber-50/20 border-l-4 border-l-amber-500'
+          ? 'border-amber-400 bg-amber-50/20 dark:bg-amber-950/20'
           : 'border-border bg-card hover:border-sky-500/50'
       }`}
     >

@@ -60,8 +60,16 @@ export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
               </tr>
             ) : turnos.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                  No se encontraron turnos con los criterios de filtro especificados.
+                <td colSpan={7} className="p-12 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <Calendar className="h-8 w-8 text-muted-foreground/40" />
+                    <p className="text-sm font-semibold text-foreground">
+                      No se encontraron turnos registrados
+                    </p>
+                    <p className="text-xs text-muted-foreground max-w-sm">
+                      No hay citas que coincidan con los filtros de búsqueda o el rango de fechas actual.
+                    </p>
+                  </div>
                 </td>
               </tr>
             ) : (

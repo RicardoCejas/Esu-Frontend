@@ -32,30 +32,40 @@ export const RecepcionPage: React.FC = () => {
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Panel de Recepción (Daily Board)</h1>
-            <span className="rounded-full bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-0.5 text-[11px] font-semibold">
-              {user?.centroSaludNombre || 'Sede Central'}
-            </span>
-          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Panel de Recepción</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Admisión presencial, acreditación y control de salas de espera.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <button onClick={() => setIsModalAltaOpen(true)} className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card hover:bg-muted px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs transition">
-            <UserPlus className="h-3.5 w-3.5 text-sky-600" />
+          <button
+            type="button"
+            onClick={() => setIsModalAltaOpen(true)}
+            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-input bg-background hover:bg-muted px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+          >
+            <UserPlus className="h-4 w-4 text-primary" aria-hidden="true" />
             <span>Alta Rápida Paciente</span>
           </button>
-          <button onClick={() => setIsModalTurnoMostradorOpen(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition">
-            <CalendarPlus className="h-3.5 w-3.5" />
+          <button
+            type="button"
+            onClick={() => setIsModalTurnoMostradorOpen(true)}
+            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-primary hover:bg-primary/90 px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+          >
+            <CalendarPlus className="h-4 w-4" aria-hidden="true" />
             <span>Turno de Mostrador</span>
           </button>
-          <Link to="/dashboard/recepcion/kanban" className="inline-flex items-center gap-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 px-3 py-2 text-xs font-semibold text-white transition">
-            <Layers className="h-3.5 w-3.5" />
+          <Link
+            to="/dashboard/recepcion/kanban"
+            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
+          >
+            <Layers className="h-4 w-4" aria-hidden="true" />
             <span>Tablero Kanban</span>
           </Link>
-          <Link to="/pantalla-turnos" target="_blank" className="inline-flex items-center gap-1.5 rounded-xl border border-sky-300 bg-sky-50 hover:bg-sky-100 px-3 py-2 text-xs font-semibold text-sky-700 transition">
-            <MonitorPlay className="h-3.5 w-3.5" />
+          <Link
+            to="/pantalla-turnos"
+            target="_blank"
+            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-input bg-background hover:bg-muted px-3.5 py-2 text-xs font-semibold text-foreground transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <MonitorPlay className="h-4 w-4 text-sky-600" aria-hidden="true" />
             <span>Pantalla TV</span>
           </Link>
         </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { pacientesService } from '@/api/pacientesService';
-import { UserPlus, ArrowLeft, Save, ShieldCheck } from 'lucide-react';
+import { UserPlus, ArrowLeft, Save } from 'lucide-react';
 
 export const NuevoPacientePage: React.FC = () => {
   const navigate = useNavigate();
@@ -43,40 +43,34 @@ export const NuevoPacientePage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-3xl space-y-6">
       {/* Encabezado y Navegación de Regreso */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Link
-            to="/dashboard/recepcion/pacientes"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-input bg-background text-muted-foreground hover:bg-accent hover:text-foreground transition cursor-pointer"
-            title="Volver al Padrón de Pacientes"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <UserPlus className="h-6 w-6 text-primary" />
-              <span>Registrar Nuevo Paciente</span>
-            </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Alta asistencial en el padrón unificado de efectores de Cruz del Eje.
-            </p>
-          </div>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-1.5 rounded-md bg-slate-900 text-white dark:bg-slate-800 px-3 py-1 text-xs font-semibold">
-          <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-          <span>Ley 25.326</span>
+      <div className="flex items-center gap-3">
+        <Link
+          to="/dashboard/recepcion/pacientes"
+          className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+          title="Volver al Padrón de Pacientes"
+          aria-label="Volver al Padrón de Pacientes"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <UserPlus className="h-6 w-6 text-primary" aria-hidden="true" />
+            <span>Registrar Nuevo Paciente</span>
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Alta asistencial en el padrón unificado de efectores de Cruz del Eje.
+          </p>
         </div>
       </div>
 
       {/* Formulario Clínico de Alta */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-xs">
-        <form onSubmit={handleSubmit} className="space-y-5 text-xs">
+      <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+        <form onSubmit={handleSubmit} className="space-y-6 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label htmlFor="nombre" className="font-semibold text-foreground">
+              <label htmlFor="nombre" className="font-semibold text-foreground text-xs">
                 Nombre <span className="text-rose-600">*</span>
               </label>
               <input
@@ -87,12 +81,12 @@ export const NuevoPacientePage: React.FC = () => {
                 value={formData.nombre}
                 onChange={handleChange}
                 placeholder="Ej. Lucas"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="apellido" className="font-semibold text-foreground">
+              <label htmlFor="apellido" className="font-semibold text-foreground text-xs">
                 Apellido <span className="text-rose-600">*</span>
               </label>
               <input
@@ -103,14 +97,14 @@ export const NuevoPacientePage: React.FC = () => {
                 value={formData.apellido}
                 onChange={handleChange}
                 placeholder="Ej. Ramírez"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label htmlFor="dni" className="font-semibold text-foreground">
+              <label htmlFor="dni" className="font-semibold text-foreground text-xs">
                 DNI / Documento <span className="text-rose-600">*</span>
               </label>
               <input
@@ -121,12 +115,12 @@ export const NuevoPacientePage: React.FC = () => {
                 value={formData.dni}
                 onChange={handleChange}
                 placeholder="Ej. 38123456"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="telefono" className="font-semibold text-foreground">
+              <label htmlFor="telefono" className="font-semibold text-foreground text-xs">
                 Teléfono de Contacto
               </label>
               <input
@@ -136,14 +130,14 @@ export const NuevoPacientePage: React.FC = () => {
                 value={formData.telefono}
                 onChange={handleChange}
                 placeholder="Ej. 3549-421111"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label htmlFor="email" className="font-semibold text-foreground">
+              <label htmlFor="email" className="font-semibold text-foreground text-xs">
                 Correo Electrónico <span className="text-rose-600">*</span>
               </label>
               <input
@@ -154,12 +148,12 @@ export const NuevoPacientePage: React.FC = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="lucas.ramirez@correo.com"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="obraSocial" className="font-semibold text-foreground">
+              <label htmlFor="obraSocial" className="font-semibold text-foreground text-xs">
                 Obra Social / Cobertura
               </label>
               <select
@@ -167,7 +161,7 @@ export const NuevoPacientePage: React.FC = () => {
                 name="obraSocial"
                 value={formData.obraSocial}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition"
               >
                 <option value="APROSS">APROSS (Córdoba)</option>
                 <option value="PAMI">PAMI</option>
@@ -178,19 +172,19 @@ export const NuevoPacientePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/70">
+          <div className="flex items-center justify-end gap-3 pt-5 border-t border-border">
             <Link
               to="/dashboard/recepcion/pacientes"
-              className="rounded-lg border border-input bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
+              className="min-h-[40px] inline-flex items-center justify-center rounded-xl border border-input bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
             >
               Cancelar
             </Link>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition shadow-xs cursor-pointer disabled:opacity-50"
+              className="min-h-[40px] inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer disabled:opacity-50"
             >
-              <Save className="h-3.5 w-3.5" />
+              <Save className="h-4 w-4" aria-hidden="true" />
               <span>{isSubmitting ? 'Guardando...' : 'Guardar Paciente en Padrón'}</span>
             </button>
           </div>

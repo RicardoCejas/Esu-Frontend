@@ -15,12 +15,7 @@ export const EspecialidadesCentroPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Especialidades y Consultorios</h1>
-            <span className="rounded-full bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-0.5 text-[11px] font-semibold">
-              {user?.centroSaludNombre || 'Sede Médica'}
-            </span>
-          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Especialidades y Consultorios</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Control de servicios médicos habilitados e infraestructura física de consultorios.</p>
         </div>
 

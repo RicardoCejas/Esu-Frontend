@@ -1,5 +1,16 @@
 import React from 'react';
-import { Layers, Users, ChevronRight } from 'lucide-react';
+import {
+  Heart,
+  Baby,
+  Stethoscope,
+  Eye,
+  Smile,
+  Activity,
+  Brain,
+  Users,
+  ChevronRight,
+  type LucideIcon,
+} from 'lucide-react';
 import type { Especialidad, Profesional } from '@/types';
 
 interface EspecialidadesGridProps {
@@ -7,6 +18,17 @@ interface EspecialidadesGridProps {
   getMedicosPorEspecialidad: (espId: string) => Profesional[];
   onSeleccionar: (esp: Especialidad) => void;
 }
+
+const getSpecialtyIcon = (nombre: string): LucideIcon => {
+  const n = nombre.toLowerCase();
+  if (n.includes('cardio')) return Heart;
+  if (n.includes('pedia')) return Baby;
+  if (n.includes('oftalmo') || n.includes('ojo')) return Eye;
+  if (n.includes('odonto') || n.includes('dental')) return Smile;
+  if (n.includes('neuro') || n.includes('psiqu') || n.includes('psico')) return Brain;
+  if (n.includes('trauma') || n.includes('kine')) return Activity;
+  return Stethoscope;
+};
 
 export const EspecialidadesGrid: React.FC<EspecialidadesGridProps> = ({
   especialidades,
@@ -17,17 +39,18 @@ export const EspecialidadesGrid: React.FC<EspecialidadesGridProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {especialidades.map((esp) => {
         const medicosAsignados = getMedicosPorEspecialidad(esp.id);
+        const IconComponent = getSpecialtyIcon(esp.nombre);
 
         return (
           <div
             key={esp.id}
-            className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-3 hover:border-sky-500/50 transition flex flex-col justify-between"
+            className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-3 hover:border-primary/50 transition flex flex-col justify-between"
           >
             <div className="space-y-2">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-sky-50 text-sky-700 rounded-xl">
-                    <Layers className="h-5 w-5" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40 text-primary">
+                    <IconComponent className="h-4 w-4" />
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-foreground">{esp.nombre}</h3>
@@ -44,12 +67,13 @@ export const EspecialidadesGrid: React.FC<EspecialidadesGridProps> = ({
             </div>
 
             <div className="pt-3 border-t border-border flex items-center justify-between">
-              <span className="text-[11px] font-mono font-medium text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md">
+              <span className="text-[10px] font-mono font-bold text-white bg-slate-800 px-2 py-0.5 rounded shadow-xs">
                 Habilitada en sede
               </span>
               <button
+                type="button"
                 onClick={() => onSeleccionar(esp)}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 hover:text-sky-700"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer"
               >
                 <span>Ver Médicos</span>
                 <ChevronRight className="h-3.5 w-3.5" />

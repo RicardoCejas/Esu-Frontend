@@ -6,7 +6,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { KanbanColumn } from './components/KanbanColumn';
 import { ModalCrearSobreturno } from '@/features/medico/components/ModalCrearSobreturno';
 import { soundNotification } from '@/lib/soundNotification';
-import { Building2, Volume2, MonitorPlay, Flame, Plus } from 'lucide-react';
+import { Volume2, MonitorPlay, Flame, Plus } from 'lucide-react';
 
 export const SalasEsperaKanbanPage: React.FC = () => {
   const { user } = useAuth();
@@ -18,18 +18,19 @@ export const SalasEsperaKanbanPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Tablero Kanban de Salas de Espera</h1>
-            <span className="rounded-full bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-0.5 text-[11px] font-semibold">
-              {user?.centroSaludNombre || 'Sede Asignada'}
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground">Control de flujo de pacientes en tiempo real: de recepción a consultorio y salida.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Tablero de Salas de Espera</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Control de flujo de pacientes en tiempo real: de recepción a consultorio y salida.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold border transition ${kanban.countSobreturnos >= 3 ? 'border-rose-300 bg-rose-50 text-rose-800' : 'border-amber-300 bg-amber-50 text-amber-900'}`}>
-            <Flame className="h-4 w-4 text-amber-600 shrink-0" />
+          <div
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition shadow-xs ${
+              kanban.countSobreturnos >= 3
+                ? 'bg-rose-700 text-white'
+                : 'bg-slate-800 text-white'
+            }`}
+          >
+            <Flame className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
             <span>Sobreturnos en Sala:</span>
             <span className="font-mono text-xs font-black">{kanban.countSobreturnos}/3</span>
           </div>
@@ -38,34 +39,43 @@ export const SalasEsperaKanbanPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsModalSobreturnoOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-2 text-xs shadow-xs transition"
+              className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-2 text-xs shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 cursor-pointer"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4" aria-hidden="true" />
               <span>+ Agregar Sobreturno</span>
             </button>
           )}
 
-          <button type="button" onClick={() => soundNotification.playChime()} className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition">
-            <Volume2 className="h-4 w-4 text-sky-600" />
+          <button
+            type="button"
+            onClick={() => soundNotification.playChime()}
+            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-input bg-background px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+          >
+            <Volume2 className="h-4 w-4 text-sky-600" aria-hidden="true" />
             <span>Probar Sonido</span>
           </button>
 
-          <Link to="/pantalla-turnos" target="_blank" className="inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-sky-700 transition shadow-xs">
-            <MonitorPlay className="h-4 w-4" />
-            <span>Abrir Modo TV</span>
+          <Link
+            to="/pantalla-turnos"
+            target="_blank"
+            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <MonitorPlay className="h-4 w-4" aria-hidden="true" />
+            <span>Abrir Pantalla TV</span>
           </Link>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs flex flex-wrap items-center justify-between gap-4">
+      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-xs flex items-center justify-between gap-4">
+        <span className="text-xs font-semibold text-foreground">Filtro de Ubicación:</span>
         <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-sky-600" />
-          <span className="text-xs font-medium text-foreground">{user?.centroSaludNombre || 'Sede Asignada'}</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground font-semibold">Planta / Piso:</span>
-          <select value={kanban.filtroPlanta} onChange={(e) => kanban.setFiltroPlanta(e.target.value)} className="rounded-xl border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-medium">
+          <label htmlFor="filtro-planta" className="text-xs text-muted-foreground font-medium">Planta / Piso:</label>
+          <select
+            id="filtro-planta"
+            value={kanban.filtroPlanta}
+            onChange={(e) => kanban.setFiltroPlanta(e.target.value)}
+            className="rounded-xl border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-medium text-foreground"
+          >
             <option value="TODOS">Todas las Plantas</option>
             <option value="Planta Baja">Planta Baja</option>
             <option value="1° Piso">1° Piso</option>

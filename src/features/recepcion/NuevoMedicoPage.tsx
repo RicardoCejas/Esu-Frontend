@@ -117,10 +117,7 @@ export const NuevoMedicoPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 rounded-full bg-sky-50 border border-sky-200 px-3 py-1 text-xs font-bold text-sky-800">
-          <Building2 className="h-3.5 w-3.5 text-sky-700" />
-          <span className="truncate max-w-[140px] sm:max-w-none">{centroNombre}</span>
-        </div>
+
       </div>
 
       {submitError && (
@@ -132,8 +129,8 @@ export const NuevoMedicoPage: React.FC = () => {
 
       {/* Formulario */}
       <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-4 text-xs">
-        <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-3.5 text-xs text-sky-950 flex items-center gap-2.5">
-          <Building2 className="h-4 w-4 text-sky-700 shrink-0" />
+        <div className="rounded-xl border border-border bg-muted/30 p-3.5 text-xs text-foreground flex items-center gap-2.5">
+          <Building2 className="h-4 w-4 text-primary shrink-0" />
           <div>
             <span>Centro médico asignado: <strong>{centroNombre}</strong></span>
             <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -202,9 +199,9 @@ export const NuevoMedicoPage: React.FC = () => {
         </div>
 
         {/* Credenciales de Acceso para el Médico */}
-        <div className="rounded-xl border border-sky-200/80 bg-sky-50/50 p-4 space-y-3">
-          <h3 className="font-bold text-xs text-sky-950 flex items-center gap-1.5">
-            <Shield className="h-3.5 w-3.5 text-sky-700" />
+        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
+          <h3 className="font-bold text-xs text-foreground flex items-center gap-1.5">
+            <Shield className="h-3.5 w-3.5 text-primary" />
             <span>Credenciales de Inicio de Sesión del Médico</span>
           </h3>
 
@@ -220,7 +217,7 @@ export const NuevoMedicoPage: React.FC = () => {
                 placeholder="ej: carlos.bustos@esu.salud.gob.ar"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
               />
             </div>
 
@@ -235,7 +232,7 @@ export const NuevoMedicoPage: React.FC = () => {
                 placeholder="Mínimo 8 caracteres"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
               />
             </div>
           </div>

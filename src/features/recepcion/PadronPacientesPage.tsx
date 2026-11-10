@@ -6,12 +6,10 @@ import {
   Search,
   UserPlus,
   Phone,
-  Mail,
   Lock,
-  UserCheck,
-  CreditCard,
   X,
   Eye,
+  Users,
 } from 'lucide-react';
 
 export const PadronPacientesPage: React.FC = () => {
@@ -23,11 +21,24 @@ export const PadronPacientesPage: React.FC = () => {
     pacientesService.getAll().then(setPacientes);
   }, []);
 
+  // Bloquear scroll al abrir modal (Regla 7.2 SSOT)
+  useEffect(() => {
+    if (pacienteSeleccionado) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [pacienteSeleccionado]);
+
+  const term = busqueda.trim().toLowerCase();
   const pacientesFiltrados = pacientes.filter(
     (p) =>
-      p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      p.apellido.toLowerCase().includes(busqueda.toLowerCase()) ||
-      p.dni.includes(busqueda)
+      p.nombre.toLowerCase().includes(term) ||
+      p.apellido.toLowerCase().includes(term) ||
+      p.dni.includes(term)
   );
 
   return (
@@ -45,25 +56,23 @@ export const PadronPacientesPage: React.FC = () => {
 
         <Link
           to="/dashboard/recepcion/pacientes/nuevo"
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition self-start sm:self-auto cursor-pointer"
+          className="min-h-[40px] inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer self-start sm:self-auto"
         >
-          <UserPlus className="h-4 w-4" />
+          <UserPlus className="h-4 w-4" aria-hidden="true" />
           <span>Registrar Nuevo Paciente</span>
         </Link>
       </div>
 
-      {/* Banner de Protección Legal de Datos Médicos (Ley 25.326 y 26.529) */}
-      <div className="rounded-2xl border border-sky-200 bg-sky-50/70 p-4 shadow-xs text-xs sm:text-sm">
+      {/* Banner Informativo de Confidencialidad */}
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs text-xs sm:text-sm">
         <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white shadow-2xs mt-0.5">
-            <Lock className="h-4 w-4" />
-          </div>
+          <Lock className="h-5 w-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
           <div className="space-y-1">
-            <span className="font-bold text-sky-950 text-sm">
-              Protección de Datos Sensibles y Confidencialidad Asistencial
+            <span className="font-bold text-foreground text-sm block">
+              Protección de Datos Personales y Confidencialidad
             </span>
-            <p className="text-sky-800 text-xs leading-relaxed">
-              El personal administrativo del centro de salud tiene acceso regulado únicamente a datos demográficos, contacto y cobertura social para asignación de turnos. Por resguardo del secreto médico legal (Ley 25.326 y 26.529), las <strong>historias clínicas, evoluciones, diagnósticos y prescripciones</strong> son confidenciales e inaccesibles desde este módulo.
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              El personal de recepción accede exclusivamente a datos de filiación, contacto y cobertura social para otorgar turnos. Por secreto médico legal (Ley 25.326 y 26.529), las <strong>historias clínicas y recetas</strong> son confidenciales e inaccesibles desde este módulo.
             </p>
           </div>
         </div>
@@ -72,103 +81,121 @@ export const PadronPacientesPage: React.FC = () => {
       {/* Buscador de Padrón */}
       <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-xs">
         <div className="relative">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
           <input
             type="text"
+            aria-label="Buscar por nombre, apellido o DNI"
             placeholder="Buscar por Nombre, Apellido o número de DNI..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full rounded-xl border border-input bg-background pl-10 pr-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full rounded-xl border border-input bg-background pl-10 pr-4 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary font-mono text-foreground placeholder:text-muted-foreground"
           />
         </div>
       </div>
 
-      {/* Lista / Grid de Pacientes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {pacientesFiltrados.map((paciente) => (
-          <div
-            key={paciente.id}
-            onClick={() => setPacienteSeleccionado(paciente)}
-            className="group rounded-2xl border border-border bg-card p-5 shadow-xs space-y-3.5 hover:border-primary/60 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-800 font-bold text-sm group-hover:bg-primary group-hover:text-white transition-colors">
-                    {paciente.nombre.charAt(0)}{paciente.apellido.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm sm:text-base text-foreground font-heading group-hover:text-primary transition-colors">
-                      {paciente.nombre} {paciente.apellido}
-                    </h3>
-                    <span className="font-mono text-xs font-bold text-sky-700 block">
-                      DNI: {paciente.dni}
+      {/* Tabla Médica Asistencial */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs" aria-label="Listado de pacientes empadronados">
+            <thead className="border-b border-border bg-muted/40 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">
+              <tr>
+                <th scope="col" className="p-4">DNI</th>
+                <th scope="col" className="p-4">Paciente</th>
+                <th scope="col" className="p-4">Contacto</th>
+                <th scope="col" className="p-4">Cobertura</th>
+                <th scope="col" className="p-4 text-center">Estado</th>
+                <th scope="col" className="p-4 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {pacientesFiltrados.map((paciente) => (
+                <tr key={paciente.id} className="hover:bg-muted/30 transition">
+                  <td className="p-4 font-mono font-bold text-foreground text-sm">
+                    {paciente.dni}
+                  </td>
+                  <td className="p-4 font-semibold text-foreground">
+                    <div>{paciente.nombre} {paciente.apellido}</div>
+                    <div className="text-[11px] text-muted-foreground font-normal">{paciente.email}</div>
+                  </td>
+                  <td className="p-4 text-muted-foreground font-mono">
+                    <div className="flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden="true" />
+                      <span>{paciente.telefono || '3549-420000'}</span>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <span className="font-medium text-foreground">
+                      {paciente.obraSocial || 'APROSS / Particular'}
                     </span>
-                  </div>
-                </div>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="inline-flex items-center rounded-md bg-emerald-700 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-2xs">
+                      ACTIVO
+                    </span>
+                  </td>
+                  <td className="p-4 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setPacienteSeleccionado(paciente)}
+                      className="min-h-[36px] inline-flex items-center gap-1.5 rounded-lg border border-input bg-background hover:bg-muted px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+                    >
+                      <Eye className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                      <span>Ver Ficha</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
 
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold">
-                  <UserCheck className="h-3 w-3" /> Padrón Activo
-                </span>
-              </div>
-
-              <div className="space-y-1.5 text-xs text-muted-foreground pt-2.5 border-t border-border/60">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-3.5 w-3.5 text-sky-600 shrink-0" />
-                  <span className="truncate">{paciente.email}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-3.5 w-3.5 text-sky-600 shrink-0" />
-                  <span>{paciente.telefono || '3549-420000'}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-3.5 w-3.5 text-sky-600 shrink-0" />
-                  <span className="font-semibold text-slate-700">APROSS / Particular</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2.5 border-t border-border/60 flex items-center justify-between text-xs text-primary font-bold">
-              <span>Ficha Administrativa</span>
-              <Eye className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
-            </div>
-          </div>
-        ))}
+              {pacientesFiltrados.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="p-12 text-center text-muted-foreground">
+                    <Users className="h-10 w-10 mx-auto mb-2 opacity-30 text-muted-foreground" aria-hidden="true" />
+                    <p className="font-semibold text-foreground text-sm">No se encontraron pacientes registrados</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Verificá los términos ingresados o registrá un nuevo paciente en el padrón.
+                    </p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* MODAL: Ficha Administrativa de Paciente (Sin vulnerar historia clínica) */}
+      {/* Modal Ficha Administrativa */}
       {pacienteSeleccionado && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+        >
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-start justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-sky-800 font-bold text-base">
-                  {pacienteSeleccionado.nombre.charAt(0)}{pacienteSeleccionado.apellido.charAt(0)}
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-foreground font-heading">
-                    {pacienteSeleccionado.nombre} {pacienteSeleccionado.apellido}
-                  </h2>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    DNI: <strong>{pacienteSeleccionado.dni}</strong> • Padrón Cruz del Eje
-                  </p>
-                </div>
+              <div>
+                <h2 id="modal-title" className="text-lg font-bold text-foreground font-heading">
+                  {pacienteSeleccionado.nombre} {pacienteSeleccionado.apellido}
+                </h2>
+                <p className="text-xs text-muted-foreground font-mono">
+                  DNI: <strong>{pacienteSeleccionado.dni}</strong> • Padrón Cruz del Eje
+                </p>
               </div>
               <button
                 type="button"
+                aria-label="Cerrar ficha"
                 onClick={() => setPacienteSeleccionado(null)}
-                className="rounded-full p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition cursor-pointer"
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition cursor-pointer"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
 
-            <div className="space-y-3.5 text-xs sm:text-sm">
-              <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-4 space-y-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-sky-950 block">
+            <div className="space-y-4 text-xs sm:text-sm">
+              <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-foreground block">
                   Datos de Contacto y Residencia
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-muted-foreground block">Teléfono Principal:</span>
                     <strong className="text-foreground">{pacienteSeleccionado.telefono || '3549-420000'}</strong>
@@ -179,7 +206,7 @@ export const PadronPacientesPage: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-muted-foreground block">Localidad y Domicilio:</span>
-                    <strong className="text-foreground">Sarmiento 340, Cruz del Eje</strong>
+                    <strong className="text-foreground">Cruz del Eje, Córdoba</strong>
                   </div>
                   <div>
                     <span className="text-muted-foreground block">Cobertura / Obra Social:</span>
@@ -189,11 +216,11 @@ export const PadronPacientesPage: React.FC = () => {
               </div>
 
               {/* Protección de Historia Clínica */}
-              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-900 flex items-start gap-2.5">
-                <Lock className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3.5 text-xs text-foreground flex items-start gap-2.5">
+                <Lock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" aria-hidden="true" />
                 <div className="space-y-0.5">
                   <span className="font-bold">Privacidad Clínica Garantizada</span>
-                  <p className="text-amber-800 text-[11px] leading-relaxed">
+                  <p className="text-muted-foreground text-[11px] leading-relaxed">
                     Las evoluciones médicas, antecedentes y recetas son de acceso exclusivo en el consultorio del médico tratante y no son visibles por personal de recepción.
                   </p>
                 </div>
@@ -203,7 +230,7 @@ export const PadronPacientesPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setPacienteSeleccionado(null)}
-                  className="rounded-xl bg-slate-800 text-white px-5 py-2 text-xs font-bold hover:bg-slate-700 transition cursor-pointer"
+                  className="min-h-[40px] rounded-xl bg-primary text-primary-foreground px-5 py-2 text-xs font-bold hover:bg-primary/90 transition shadow-xs cursor-pointer"
                 >
                   Cerrar Ficha
                 </button>

@@ -16,15 +16,10 @@ export const MedicosCentroPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Cuerpo Médico de la Institución</h1>
-            <span className="rounded-full bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-0.5 text-[11px] font-semibold">
-              {user?.centroSaludNombre || 'Sede Médica'}
-            </span>
-          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Cuerpo Médico de la Institución</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Gestión de profesionales activos, agendas de atención y vinculación de consultorios.</p>
         </div>
-        <Link to="/dashboard/recepcion/medicos/nuevo" className="inline-flex items-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-xl shadow-xs transition">
+        <Link to="/dashboard/recepcion/medicos/nuevo" className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-xl shadow-xs transition">
           <PlusCircle className="h-4 w-4" />
           <span>Vincular Nuevo Médico</span>
         </Link>
@@ -57,7 +52,10 @@ export const MedicosCentroPage: React.FC = () => {
                   <h3 className="font-bold text-sm text-foreground">Dr. {med.nombre} {med.apellido}</h3>
                   <p className="text-xs text-sky-700 font-medium">{med.especialidadNombre}</p>
                 </div>
-                <span className="p-2 bg-sky-50 text-sky-700 rounded-xl"><UserCheck className="h-4 w-4" /></span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
+                  <UserCheck className="h-3 w-3" />
+                  <span>Activo</span>
+                </span>
               </div>
               <div className="text-[11px] text-muted-foreground space-y-1">
                 <p>Matrícula: <span className="font-mono font-semibold text-foreground">{med.matricula}</span></p>

@@ -22,7 +22,7 @@ export const RecepcionDailySummaryCards: React.FC<RecepcionDailySummaryCardsProp
         <p className="text-[11px] text-muted-foreground">Programados para esta fecha</p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-muted/40 p-4 shadow-xs">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
         <div className="flex items-center justify-between text-muted-foreground">
           <span className="text-xs font-semibold">En Sala de Espera</span>
           <Clock className="h-4 w-4 text-amber-600" />
@@ -31,7 +31,7 @@ export const RecepcionDailySummaryCards: React.FC<RecepcionDailySummaryCardsProp
         <p className="text-[11px] text-muted-foreground">Acreditados listos para llamado</p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-muted/40 p-4 shadow-xs">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
         <div className="flex items-center justify-between text-muted-foreground">
           <span className="text-xs font-semibold">En Consultorio</span>
           <Activity className="h-4 w-4 text-sky-600" />
@@ -40,7 +40,7 @@ export const RecepcionDailySummaryCards: React.FC<RecepcionDailySummaryCardsProp
         <p className="text-[11px] text-muted-foreground">Atención médica en curso</p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-muted/40 p-4 shadow-xs">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
         <div className="flex items-center justify-between text-muted-foreground">
           <span className="text-xs font-semibold">Atendidos / Salida</span>
           <UserCheck className="h-4 w-4 text-emerald-600" />
