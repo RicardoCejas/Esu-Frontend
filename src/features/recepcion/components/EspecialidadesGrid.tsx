@@ -67,7 +67,7 @@ export const EspecialidadesGrid: React.FC<EspecialidadesGridProps> = ({
             </div>
 
             <div className="pt-3 border-t border-border flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold text-white bg-slate-800 px-2 py-0.5 rounded shadow-xs">
+              <span className="text-[10px] font-mono font-bold text-white bg-emerald-700 px-2 py-0.5 rounded shadow-xs">
                 Habilitada en sede
               </span>
               <button

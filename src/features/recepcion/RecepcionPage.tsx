@@ -73,25 +73,27 @@ export const RecepcionPage: React.FC = () => {
 
       <RecepcionDailySummaryCards kpis={board.kpis} />
 
-      <RecepcionFiltersBar
-        busqueda={board.busqueda}
-        onBusquedaChange={board.setBusqueda}
-        filtroProfesional={board.filtroProfesional}
-        onFiltroProfesionalChange={board.setFiltroProfesional}
-        filtroConsultorio={board.filtroConsultorio}
-        onFiltroConsultorioChange={board.setFiltroConsultorio}
-        profesionales={board.profesionales}
-        consultorios={board.consultoriosDisponibles}
-        centroNombre={user?.centroSaludNombre}
-      />
+      <div className="shadow-xs rounded-xl overflow-hidden">
+        <RecepcionFiltersBar
+          busqueda={board.busqueda}
+          onBusquedaChange={board.setBusqueda}
+          filtroProfesional={board.filtroProfesional}
+          onFiltroProfesionalChange={board.setFiltroProfesional}
+          filtroConsultorio={board.filtroConsultorio}
+          onFiltroConsultorioChange={board.setFiltroConsultorio}
+          profesionales={board.profesionales}
+          consultorios={board.consultoriosDisponibles}
+          centroNombre={user?.centroSaludNombre}
+        />
 
-      <RecepcionTurnosTable
-        turnos={board.turnosFiltrados}
-        loading={board.loading}
-        onCheckIn={board.handleCheckIn}
-        onOpenCopago={(t) => setTurnoParaCopago(t)}
-        onOpenCancelar={(t) => setTurnoParaCancelar(t)}
-      />
+        <RecepcionTurnosTable
+          turnos={board.turnosFiltrados}
+          loading={board.loading}
+          onCheckIn={board.handleCheckIn}
+          onOpenCopago={(t) => setTurnoParaCopago(t)}
+          onOpenCancelar={(t) => setTurnoParaCancelar(t)}
+        />
+      </div>
 
       <ModalAltaRapidaPaciente isOpen={isModalAltaOpen} onClose={() => setIsModalAltaOpen(false)} onPacienteCreado={(p) => { board.setPacientes((prev) => [p, ...prev]); board.mostrarAlerta(`Paciente ${p.nombre} registrado con éxito.`); }} />
       <ModalVerificarCoberturaCopago turno={turnoParaCopago} isOpen={!!turnoParaCopago} onClose={() => setTurnoParaCopago(null)} onCopagoRegistrado={(t) => { board.setTurnos((prev) => prev.map((item) => (item.id === t.id ? t : item))); board.mostrarAlerta(`Copago registrado para ${t.pacienteNombre}.`); }} />

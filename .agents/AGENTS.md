@@ -111,6 +111,7 @@ Todo componente o vista interactiva que supere ~150 líneas DEBE desacoplarse:
 | Contexto | Skill | ¿Cuándo cargar? (OBLIGATORIO) | Ubicación |
 |---|---|---|---|
 | **Diseño / Edición UI/UX** | `anti-vibecoded` | **MANDATORIA** antes de crear/editar componentes, tablas, modales o vistas | `.agents/skills/anti-vibecoded/SKILL.md` |
+| **Craft UI y Jerarquía de Producto** | `interface-design` | **MANDATORIA** al estructurar dashboards, paneles de administración, jerarquía y espaciado | `.agents/skills/interface-design/SKILL.md` |
 | **Leyes de UX y Usabilidad** | `ux-laws` | **MANDATORIA** al estructurar flujos, ergonomía visual, layout y jerarquía | `.agents/skills/ux-laws/SKILL.md` |
 | **Accesibilidad Web (WCAG 2.2)** | `accessibility` | **MANDATORIA** al diseñar contraste, roles semánticos, aria y navegación | `.agents/skills/accessibility/SKILL.md` |
 | **Craft Visual y Microinteracciones** | `impeccable` | Al pulir jerarquía visual, espaciados, tipografía y responsive | `.agents/skills/impeccable/SKILL.md` |

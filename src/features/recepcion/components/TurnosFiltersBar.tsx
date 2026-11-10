@@ -25,7 +25,7 @@ export const TurnosFiltersBar: React.FC<TurnosFiltersBarProps> = ({
   onLimpiarFiltros,
 }) => {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-xs space-y-3">
+    <div className="rounded-t-xl border border-border bg-card p-4 space-y-3 border-b-0">
       <div className="relative">
         <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
         <input

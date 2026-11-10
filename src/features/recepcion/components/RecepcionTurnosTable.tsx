@@ -27,7 +27,7 @@ export const RecepcionTurnosTable: React.FC<RecepcionTurnosTableProps> = ({
 
   if (turnos.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
+      <div className="rounded-b-xl border border-border border-t-0 bg-card p-12 text-center">
         <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-40" />
         <h3 className="text-sm font-bold text-foreground">No se encontraron turnos para los filtros seleccionados</h3>
         <p className="text-xs text-muted-foreground mt-1">
@@ -38,7 +38,7 @@ export const RecepcionTurnosTable: React.FC<RecepcionTurnosTableProps> = ({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
+    <div className="rounded-b-xl border border-border border-t-0 bg-card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="border-b border-border bg-muted/40 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">

@@ -37,7 +37,7 @@ export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
+    <div className="rounded-b-xl border border-border border-t-0 bg-card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="border-b border-border bg-muted/40 font-semibold text-muted-foreground">

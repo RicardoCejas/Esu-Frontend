@@ -67,31 +67,33 @@ export const GestionTurnosAdminPage: React.FC = () => {
         </div>
       )}
 
-      <TurnosFiltersBar
-        busqueda={busqueda}
-        onBusquedaChange={setBusqueda}
-        filtroEstado={filtroEstado}
-        onFiltroEstadoChange={setFiltroEstado}
-        fechaDesde={fechaDesde}
-        onFechaDesdeChange={setFechaDesde}
-        fechaHasta={fechaHasta}
-        onFechaHastaChange={setFechaHasta}
-        onLimpiarFiltros={limpiarFiltros}
-      />
+      <div className="shadow-xs rounded-xl overflow-hidden">
+        <TurnosFiltersBar
+          busqueda={busqueda}
+          onBusquedaChange={setBusqueda}
+          filtroEstado={filtroEstado}
+          onFiltroEstadoChange={setFiltroEstado}
+          fechaDesde={fechaDesde}
+          onFechaDesdeChange={setFechaDesde}
+          fechaHasta={fechaHasta}
+          onFechaHastaChange={setFechaHasta}
+          onLimpiarFiltros={limpiarFiltros}
+        />
 
-      <TurnosAdminTable
-        turnos={turnosFiltrados}
-        isLoading={isLoading}
-        isProcessing={isProcessing}
-        onReagendar={(t) => {
-          setTurnoAReagendar(t);
-          setNuevaFecha(t.fecha ?? '');
-          setNuevaHora(t.hora ?? '');
-        }}
-        onCancelar={(t) => setTurnoACancelar(t)}
-        canCancelar={can('TURNOS_CANCELAR')}
-        canReagendar={can('TURNOS_REAGENDAR')}
-      />
+        <TurnosAdminTable
+          turnos={turnosFiltrados}
+          isLoading={isLoading}
+          isProcessing={isProcessing}
+          onReagendar={(t) => {
+            setTurnoAReagendar(t);
+            setNuevaFecha(t.fecha ?? '');
+            setNuevaHora(t.hora ?? '');
+          }}
+          onCancelar={(t) => setTurnoACancelar(t)}
+          canCancelar={can('TURNOS_CANCELAR')}
+          canReagendar={can('TURNOS_REAGENDAR')}
+        />
+      </div>
 
       {turnoAReagendar && (
         <ReagendarTurnoModal

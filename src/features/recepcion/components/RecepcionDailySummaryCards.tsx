@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Activity, UserCheck } from 'lucide-react';
+import { Clock, Activity, UserCheck, Users } from 'lucide-react';
 
 interface RecepcionDailySummaryCardsProps {
   kpis: {
@@ -12,41 +12,73 @@ interface RecepcionDailySummaryCardsProps {
 
 export const RecepcionDailySummaryCards: React.FC<RecepcionDailySummaryCardsProps> = ({ kpis }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* 1. Total Programados */}
+      <div className="rounded-xl border border-border/70 bg-card p-4 transition hover:border-border">
         <div className="flex items-center justify-between text-muted-foreground">
-          <span className="text-xs font-semibold">Total Turnos Hoy</span>
-          <Clock className="h-4 w-4 text-sky-600" />
+          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            Total Hoy
+          </span>
+          <Clock className="h-4 w-4 text-muted-foreground/70" />
         </div>
-        <div className="text-2xl font-black text-foreground mt-1">{kpis.total}</div>
-        <p className="text-[11px] text-muted-foreground">Programados para esta fecha</p>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground font-mono">
+            {kpis.total}
+          </span>
+          <span className="text-[11px] text-muted-foreground">turnos</span>
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">Programados para esta fecha</p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span className="text-xs font-semibold">En Sala de Espera</span>
-          <Clock className="h-4 w-4 text-amber-600" />
+      {/* 2. En Sala de Espera (Métrica Clave del Mostrador) */}
+      <div className="rounded-xl border border-amber-300/80 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-950/20 p-4 transition">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200">
+            En Sala de Espera
+          </span>
+          <Users className="h-4 w-4 text-amber-600 dark:text-amber-400" />
         </div>
-        <div className="text-2xl font-black text-amber-600 mt-1">{kpis.enSalaDeEspera}</div>
-        <p className="text-[11px] text-muted-foreground">Acreditados listos para llamado</p>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-amber-700 dark:text-amber-300 font-mono">
+            {kpis.enSalaDeEspera}
+          </span>
+          <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400">pacientes</span>
+        </div>
+        <p className="mt-1 text-[11px] text-amber-800/80 dark:text-amber-400/80">Listos para ser llamados</p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
+      {/* 3. En Consultorio */}
+      <div className="rounded-xl border border-border/70 bg-card p-4 transition hover:border-border">
         <div className="flex items-center justify-between text-muted-foreground">
-          <span className="text-xs font-semibold">En Consultorio</span>
-          <Activity className="h-4 w-4 text-sky-600" />
+          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            En Consultorio
+          </span>
+          <Activity className="h-4 w-4 text-sky-600 dark:text-sky-400" />
         </div>
-        <div className="text-2xl font-black text-sky-600 mt-1">{kpis.enConsulta}</div>
-        <p className="text-[11px] text-muted-foreground">Atención médica en curso</p>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground font-mono">
+            {kpis.enConsulta}
+          </span>
+          <span className="text-[11px] text-muted-foreground">en curso</span>
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">Atención médica activa</p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
+      {/* 4. Atendidos / Salida */}
+      <div className="rounded-xl border border-border/70 bg-card p-4 transition hover:border-border">
         <div className="flex items-center justify-between text-muted-foreground">
-          <span className="text-xs font-semibold">Atendidos / Salida</span>
-          <UserCheck className="h-4 w-4 text-emerald-600" />
+          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            Completados
+          </span>
+          <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
         </div>
-        <div className="text-2xl font-black text-emerald-600 mt-1">{kpis.atendidosHoy}</div>
-        <p className="text-[11px] text-muted-foreground">Consultas completadas hoy</p>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground font-mono">
+            {kpis.atendidosHoy}
+          </span>
+          <span className="text-[11px] text-muted-foreground">egresos</span>
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">Consultas finalizadas</p>
       </div>
     </div>
   );

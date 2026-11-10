@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Stethoscope } from 'lucide-react';
+import { Search, Stethoscope, DoorOpen } from 'lucide-react';
 import type { Profesional } from '@/types';
 
 interface RecepcionFiltersBarProps {
@@ -25,7 +25,7 @@ export const RecepcionFiltersBar: React.FC<RecepcionFiltersBarProps> = ({
   consultorios,
 }) => {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
+    <div className="rounded-t-xl border border-border bg-card p-3 sm:p-4 border-b-0">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {/* Buscador reactivo */}
         <div className="relative">
@@ -36,7 +36,7 @@ export const RecepcionFiltersBar: React.FC<RecepcionFiltersBarProps> = ({
             placeholder="Buscar por DNI o nombre de paciente..."
             value={busqueda}
             onChange={(e) => onBusquedaChange(e.target.value)}
-            className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-mono text-foreground placeholder:text-muted-foreground"
+            className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-mono text-foreground placeholder:text-muted-foreground"
           />
         </div>
 
@@ -47,24 +47,25 @@ export const RecepcionFiltersBar: React.FC<RecepcionFiltersBarProps> = ({
             aria-label="Filtrar por médico"
             value={filtroProfesional}
             onChange={(e) => onFiltroProfesionalChange(e.target.value)}
-            className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+            className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary text-foreground cursor-pointer"
           >
             <option value="TODOS">Todos los Médicos</option>
             {profesionales.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.nombre} {p.apellido} ({p.especialidadNombre.split('/')[0]})
+                Dr. {p.nombre} {p.apellido} ({p.especialidadNombre.split('/')[0]})
               </option>
             ))}
           </select>
         </div>
 
         {/* Filtro Consultorio */}
-        <div>
+        <div className="relative">
+          <DoorOpen className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
           <select
             aria-label="Filtrar por consultorio"
             value={filtroConsultorio}
             onChange={(e) => onFiltroConsultorioChange(e.target.value)}
-            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+            className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary text-foreground cursor-pointer"
           >
             <option value="TODOS">Todos los Consultorios</option>
             {consultorios.map((c) => (
