@@ -7,7 +7,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  DoorOpen,
   MapPin,
   Phone,
   Clock,
@@ -39,10 +38,7 @@ export const AdminSedesPage: React.FC = () => {
     disponibleGuardia: false,
   });
 
-
-  const [centroSeleccionadoId, setCentroSeleccionadoId] = useState<string>('TODOS');
   const [sedeAEliminar, setSedeAEliminar] = useState<CentroSalud | null>(null);
-  const [consultorioAEliminar, setConsultorioAEliminar] = useState<ConsultorioItem | null>(null);
 
   const cargarDatos = useCallback(async () => {
     setLoading(true);
@@ -129,25 +125,7 @@ export const AdminSedesPage: React.FC = () => {
   };
 
 
-  const handleConfirmarEliminarConsultorio = async () => {
-    if (!consultorioAEliminar) return;
-    setIsSaving(true);
-    try {
-      await centrosService.deleteConsultorio(consultorioAEliminar.id);
-      success(`Consultorio "${consultorioAEliminar.numero}" dado de baja correctamente.`);
-      setConsultorioAEliminar(null);
-      cargarDatos();
-    } catch (err: unknown) {
-      toastError(extractApiErrorMessage(err, 'No se pudo dar de baja el consultorio.'));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const consultoriosFiltrados = consultorios.filter((cs) =>
-    centroSeleccionadoId === 'TODOS' ? true : cs.centroSaludId === centroSeleccionadoId
-  );
-
+  
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -267,93 +245,6 @@ export const AdminSedesPage: React.FC = () => {
             })}
           </div>
         )}
-      </div>
-
-      {/* SECCIÓN 2: Administración de Consultorios Físicos */}
-      <div className="space-y-4 pt-4 border-t border-border">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <DoorOpen className="h-4 w-4 text-primary" />
-            <span>Consultorios Físicos ({consultoriosFiltrados.length})</span>
-          </h2>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Filtrar por Sede:</span>
-            <select
-              value={centroSeleccionadoId}
-              onChange={(e) => setCentroSeleccionadoId(e.target.value)}
-              className="rounded-xl border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
-            >
-              <option value="TODOS">Todas las Sedes</option>
-              {centros.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
-
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
-          {consultoriosFiltrados.length === 0 ? (
-            <div className="p-8 text-center text-xs text-muted-foreground">
-              No hay consultorios registrados para la sede seleccionada.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-muted/50 text-muted-foreground font-semibold border-b border-border">
-                  <tr>
-                    <th className="p-3">Sede / Establecimiento</th>
-                    <th className="p-3">Consultorio / Box</th>
-                    <th className="p-3">Ubicación / Planta</th>
-                    <th className="p-3">Especialidad Destinada</th>
-                    <th className="p-3">Estado</th>
-                    <th className="p-3 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {consultoriosFiltrados.map((cs) => {
-                    const centroPertenece = centros.find((c) => c.id === cs.centroSaludId);
-                    return (
-                      <tr key={cs.id} className="hover:bg-muted/30 transition">
-                        <td className="p-3 font-semibold text-foreground">
-                          {centroPertenece?.nombre || 'Sede No Identificada'}
-                        </td>
-                        <td className="p-3 font-mono font-bold text-primary">{cs.numero}</td>
-                        <td className="p-3 text-muted-foreground">{cs.planta}</td>
-                        <td className="p-3">
-                          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                            {cs.especialidadAsignada}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                              cs.activo ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800'
-                            }`}
-                          >
-                            {cs.activo ? 'Operativo' : 'Inactivo / Mantenimiento'}
-                          </span>
-                        </td>
-                        <td className="p-3 text-right">
-                          <button
-                            onClick={() => setConsultorioAEliminar(cs)}
-                            className="p-1 rounded-lg text-muted-foreground hover:bg-rose-50 hover:text-rose-700 transition cursor-pointer"
-                            title="Eliminar consultorio"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Modal Sede (Crear / Editar) */}
@@ -513,47 +404,6 @@ export const AdminSedesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Confirmación Eliminar Consultorio */}
-      {consultorioAEliminar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-2xl border border-rose-200 bg-card p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="h-6 w-6 text-rose-600 shrink-0" />
-              <div>
-                <h3 className="text-base font-bold text-foreground">
-                  Dar de Baja Consultorio
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Box / Consultorio: {consultorioAEliminar.numero} ({consultorioAEliminar.planta})
-                </p>
-              </div>
-            </div>
-
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              ¿Estás seguro de que deseas eliminar este consultorio físico?
-            </p>
-
-            <div className="flex gap-2.5 pt-2">
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={() => setConsultorioAEliminar(null)}
-                className="flex-1 rounded-xl border border-input py-2 text-xs font-semibold hover:bg-accent transition disabled:opacity-50 cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={handleConfirmarEliminarConsultorio}
-                className="flex-1 rounded-xl py-2 text-xs font-bold text-white bg-rose-700 hover:bg-rose-800 transition disabled:opacity-50 cursor-pointer"
-              >
-                {isSaving ? 'Eliminando...' : 'Eliminar Consultorio'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
   );
 };

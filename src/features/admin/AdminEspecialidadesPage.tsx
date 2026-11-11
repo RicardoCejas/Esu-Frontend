@@ -80,7 +80,6 @@ export const AdminEspecialidadesPage: React.FC = () => {
   const [subPestanaSede, setSubPestanaSede] = useState<'especialidades' | 'medicos' | 'pacientes'>('especialidades');
 
   // Filtros de búsqueda
-  const [busquedaEspecialidad, setBusquedaEspecialidad] = useState('');
   const [busquedaPacienteSede, setBusquedaPacienteSede] = useState('');
   const [busquedaMedicoSede, setBusquedaMedicoSede] = useState('');
 
@@ -401,16 +400,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
     );
   }, [pacientesDeSedeActiva, busquedaPacienteSede]);
 
-  // Búsqueda en catálogo general de especialidades
-  const especialidadesFiltradas = useMemo(() => {
-    const q = busquedaEspecialidad.toLowerCase().trim();
-    if (!q) return especialidades;
-    return especialidades.filter(
-      (esp) =>
-        esp.nombre.toLowerCase().includes(q) ||
-        (esp.descripcion || '').toLowerCase().includes(q)
-    );
-  }, [especialidades, busquedaEspecialidad]);
+  
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12">
@@ -904,64 +894,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
           </div>
 
           {/* ============================================================== */}
-          {/* CATÁLOGO GENERAL DE TODAS LAS ESPECIALIDADES                   */}
-          {/* ============================================================== */}
-          <div className="space-y-4 pt-6 border-t-2 border-border">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2 font-heading">
-                  <Stethoscope className="h-5 w-5 text-primary" />
-                  <span>Catálogo General de Especialidades Médicas ({especialidadesFiltradas.length})</span>
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                  Vademécum completo de ramas de la salud homologadas en Cruz del Eje.
-                </p>
-              </div>
-
-              {/* Buscador en tiempo real */}
-              <div className="relative min-w-[280px]">
-                <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Buscar en el catálogo general..."
-                  value={busquedaEspecialidad}
-                  onChange={(e) => setBusquedaEspecialidad(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-card pl-10 pr-4 py-2.5 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-primary focus:outline-none shadow-2xs"
-                />
-              </div>
-            </div>
-
-            {especialidadesFiltradas.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                No se encontraron especialidades que coincidan con &quot;{busquedaEspecialidad}&quot;.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {especialidadesFiltradas.map((esp) => (
-                  <div
-                    key={esp.id}
-                    className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-2xs hover:border-primary/50 transition-all space-y-2.5"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
-                          <Stethoscope className="h-4 w-4" />
-                        </div>
-                        <h3 className="font-bold text-sm sm:text-base text-foreground leading-snug">
-                          {esp.nombre}
-                        </h3>
-                      </div>
-                    </div>
-
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                      {esp.descripcion || 'Atención médica especializada según protocolos clínicos vigentes.'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
+          </>
       )}
     </div>
   );
