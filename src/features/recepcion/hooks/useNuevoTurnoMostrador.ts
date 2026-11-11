@@ -1,23 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { extractApiErrorMessage } from '@/api/endpoints';
 import { centrosService, type ConsultorioItem } from '@/api/centrosService';
-import { pacientesService } from '@/api/pacientesService';
 import { profesionalesService } from '@/api/profesionalesService';
 import { turnosService } from '@/api/turnosService';
+import { usePacienteSearch } from './usePacienteSearch';
 import type { CentroSalud, Profesional, User } from '@/types';
 
-const extractSlotHHmm = (raw: string): string => {
-  const clean = String(raw ?? '').trim();
-  return clean.includes('T') ? (clean.split('T')[1]?.slice(0, 5) ?? clean.slice(0, 5)) : clean.slice(0, 5);
-};
+import { CONVENIOS_POPULARES, extractSlotHHmm } from '../utils/mostradorConstants';
+export { CONVENIOS_POPULARES };
 
-/**
- * Coordinates counter walk-in/same-day appointment creation scoped to the receptionist's center,
- * fetching real center doctors, rooms, and available slots.
- */
 export function useNuevoTurnoMostrador() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -31,11 +25,26 @@ export function useNuevoTurnoMostrador() {
   const [centro, setCentro] = useState<CentroSalud | null>(null);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [consultorios, setConsultorios] = useState<ConsultorioItem[]>([]);
+  const [filtroEspecialidad, setFiltroEspecialidad] = useState('TODAS');
 
-  const [dniBusqueda, setDniBusqueda] = useState(initialDni);
-  const [paciente, setPaciente] = useState<User | null>(null);
-  const [buscandoDni, setBuscandoDni] = useState(false);
-  const [dniError, setDniError] = useState<string | null>(null);
+  const [obraSocial, setObraSocial] = useState('Particular / Sin Obra Social');
+  const [otraObraSocial, setOtraObraSocial] = useState('');
+  const [copagoMonto, setCopagoMonto] = useState('0');
+  const [numeroBono, setNumeroBono] = useState('');
+  const [motivoConsulta, setMotivoConsulta] = useState('Consulta presencial de mostrador');
+
+  const handlePatientSelect = useCallback((p: User) => {
+    if (p.obraSocial) {
+      if (CONVENIOS_POPULARES.includes(p.obraSocial)) {
+        setObraSocial(p.obraSocial);
+      } else {
+        setObraSocial('Otra');
+        setOtraObraSocial(p.obraSocial);
+      }
+    }
+  }, []);
+
+  const patientSearch = usePacienteSearch(initialDni, handlePatientSelect);
 
   const [profesionalId, setProfesionalId] = useState('');
   const [consultorioNumero, setConsultorioNumero] = useState('');
@@ -45,43 +54,12 @@ export function useNuevoTurnoMostrador() {
   const [slotsDisponibles, setSlotsDisponibles] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const [obraSocial, setObraSocial] = useState('Particular / Sin Obra Social');
-  const [copagoMonto, setCopagoMonto] = useState('0');
-  const [numeroBono, setNumeroBono] = useState('');
-  const [motivoConsulta, setMotivoConsulta] = useState('Consulta presencial de mostrador');
-
   const [loadingContext, setLoadingContext] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const buscarPorDni = useCallback(async (rawDni?: string) => {
-    const clean = (rawDni ?? dniBusqueda).replace(/\D/g, '');
-    if (clean.length < 7) {
-      setDniError('Ingresá al menos 7 dígitos del DNI para buscar en el padrón.');
-      setPaciente(null);
-      return;
-    }
-
-    setBuscandoDni(true);
-    setDniError(null);
-    try {
-      const found = await pacientesService.getByDni(clean);
-      if (found) {
-        setPaciente(found);
-        setObraSocial(found.obraSocial || 'Particular / Sin Obra Social');
-      } else {
-        setPaciente(null);
-        setDniError(`No encontramos ningún paciente con DNI ${clean}. Podés darlo de alta ahora.`);
-      }
-    } catch (err) {
-      setPaciente(null);
-      setDniError(extractApiErrorMessage(err, 'Error al consultar el padrón de pacientes.'));
-    } finally {
-      setBuscandoDni(false);
-    }
-  }, [dniBusqueda]);
-
   useEffect(() => {
+    let active = true;
     const loadCenterContext = async () => {
       setLoadingContext(true);
       try {
@@ -95,6 +73,7 @@ export function useNuevoTurnoMostrador() {
             : Promise.resolve([] as ConsultorioItem[]),
         ]);
 
+        if (!active) return;
         const activeProfs = profsData.filter((p) => p.activo !== false);
         const activeCons = consData.filter((c) => c.activo !== false);
 
@@ -105,45 +84,62 @@ export function useNuevoTurnoMostrador() {
         if (activeProfs[0]) setProfesionalId(activeProfs[0].id);
         if (activeCons[0]) setConsultorioNumero(activeCons[0].numero);
       } finally {
-        setLoadingContext(false);
+        if (active) setLoadingContext(false);
       }
     };
 
     void loadCenterContext();
+    return () => {
+      active = false;
+    };
   }, [scopedCentroId]);
 
-  useEffect(() => {
-    if (initialDni.length >= 7) {
-      void buscarPorDni(initialDni);
+  const especialidades = useMemo(() => {
+    const set = new Set<string>();
+    profesionales.forEach((p) => {
+      if (p.especialidadNombre) set.add(p.especialidadNombre);
+    });
+    return Array.from(set).sort();
+  }, [profesionales]);
+
+  const profesionalesFiltrados = useMemo(() => {
+    if (filtroEspecialidad === 'TODAS') return profesionales;
+    return profesionales.filter((p) => p.especialidadNombre === filtroEspecialidad);
+  }, [profesionales, filtroEspecialidad]);
+
+  const handleCambiarEspecialidad = useCallback((esp: string) => {
+    setFiltroEspecialidad(esp);
+    const validos = esp === 'TODAS' ? profesionales : profesionales.filter((p) => p.especialidadNombre === esp);
+    if (validos.length > 0 && !validos.some((p) => p.id === profesionalId)) {
+      setProfesionalId(validos[0]?.id ?? '');
     }
-    // Run only when prefilled via query string on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialDni]);
+  }, [profesionales, profesionalId]);
 
   useEffect(() => {
+    let cancelled = false;
     if (!profesionalId || !fecha) {
-      setSlotsDisponibles([]);
       return;
     }
 
-    let cancelled = false;
-    setLoadingSlots(true);
-    turnosService
-      .getDisponibles(profesionalId, fecha)
-      .then((raw) => {
+    const fetchSlots = async () => {
+      setLoadingSlots(true);
+      try {
+        const raw = await turnosService.getDisponibles(profesionalId, fecha);
         if (cancelled) return;
         const normalized = Array.from(new Set(raw.map(extractSlotHHmm).filter(Boolean)));
         setSlotsDisponibles(normalized);
         setHora((prev) => (normalized.includes(prev) ? prev : normalized[0] ?? ''));
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setSlotsDisponibles([]);
-        setHora('');
-      })
-      .finally(() => {
+      } catch {
+        if (!cancelled) {
+          setSlotsDisponibles([]);
+          setHora('');
+        }
+      } finally {
         if (!cancelled) setLoadingSlots(false);
-      });
+      }
+    };
+
+    void fetchSlots();
 
     return () => {
       cancelled = true;
@@ -155,8 +151,8 @@ export function useNuevoTurnoMostrador() {
       setSubmitError('Tu usuario no tiene un centro de salud asignado.');
       return false;
     }
-    if (!paciente) {
-      setSubmitError('Buscá y seleccioná un paciente empadronado por DNI antes de confirmar.');
+    if (!patientSearch.paciente) {
+      setSubmitError('Buscá y seleccioná un paciente empadronado antes de confirmar.');
       return false;
     }
     const prof = profesionales.find((p) => p.id === profesionalId);
@@ -171,6 +167,7 @@ export function useNuevoTurnoMostrador() {
     }
 
     const consObj = consultorios.find((c) => c.numero === consultorioNumero);
+    const resolvedObraSocial = obraSocial === 'Otra' ? (otraObraSocial.trim() || 'Particular') : obraSocial;
 
     setSaving(true);
     setSubmitError(null);
@@ -178,16 +175,16 @@ export function useNuevoTurnoMostrador() {
       const nuevo = await turnosService.crearTurnoMostrador({
         fecha,
         hora: effectiveHora,
-        pacienteId: paciente.id,
-        pacienteNombre: `${paciente.nombre} ${paciente.apellido}`.trim(),
-        pacienteDni: paciente.dni,
-        pacienteTelefono: paciente.telefono || 'Sin especificar',
-        obraSocial,
+        pacienteId: patientSearch.paciente.id,
+        pacienteNombre: `${patientSearch.paciente.nombre} ${patientSearch.paciente.apellido}`.trim(),
+        pacienteDni: patientSearch.paciente.dni,
+        pacienteTelefono: patientSearch.paciente.telefono || 'Sin especificar',
+        obraSocial: resolvedObraSocial,
         copagoMonto: Number(copagoMonto) || 0,
         numeroBono: numeroBono.trim() || undefined,
         esPrimeraVez: false,
-        consultorioNumero: consObj?.numero || consultorioNumero || '101',
-        planta: consObj?.planta || 'Planta Baja',
+        consultorioNumero: consObj?.numero || consultorioNumero || '',
+        planta: consObj?.planta || (consultorios.length === 0 ? 'Sin consultorio asignado' : 'Planta Baja'),
         profesionalId: prof.id,
         profesionalNombre: `${prof.nombre} ${prof.apellido}`.trim(),
         especialidadNombre: prof.especialidadNombre,
@@ -212,13 +209,12 @@ export function useNuevoTurnoMostrador() {
   return {
     centroNombre: centro?.nombre ?? user?.centroSaludNombre ?? 'Sede Actual',
     hoy,
-    profesionales,
+    profesionales: profesionalesFiltrados,
     consultorios,
-    dniBusqueda,
-    setDniBusqueda,
-    paciente,
-    buscandoDni,
-    dniError,
+    especialidades,
+    filtroEspecialidad,
+    setFiltroEspecialidad: handleCambiarEspecialidad,
+    patientSearch,
     profesionalId,
     setProfesionalId,
     consultorioNumero,
@@ -233,6 +229,8 @@ export function useNuevoTurnoMostrador() {
     loadingSlots,
     obraSocial,
     setObraSocial,
+    otraObraSocial,
+    setOtraObraSocial,
     copagoMonto,
     setCopagoMonto,
     numeroBono,
@@ -242,7 +240,6 @@ export function useNuevoTurnoMostrador() {
     loadingContext,
     saving,
     submitError,
-    buscarPorDni,
     handleSubmit,
   };
 }

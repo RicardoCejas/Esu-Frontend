@@ -1,18 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Building2, CalendarCheck, Search, UserPlus } from 'lucide-react';
-import { useNuevoTurnoMostrador } from './hooks/useNuevoTurnoMostrador';
-
-const OBRA_SOCIAL_OPTIONS = [
-  'Particular / Sin Obra Social',
-  'APROSS',
-  'PAMI',
-  'OSDE',
-  'Swiss Medical',
-  'OSPE',
-  'OSECAC',
-  'Otra',
-];
+import { ArrowLeft, Building2, CalendarCheck, AlertTriangle } from 'lucide-react';
+import { useNuevoTurnoMostrador, CONVENIOS_POPULARES } from './hooks/useNuevoTurnoMostrador';
+import { MostradorPacienteSelector } from './components/MostradorPacienteSelector';
 
 export const NuevoTurnoMostradorPage: React.FC = () => {
   const {
@@ -20,11 +10,10 @@ export const NuevoTurnoMostradorPage: React.FC = () => {
     hoy,
     profesionales,
     consultorios,
-    dniBusqueda,
-    setDniBusqueda,
-    paciente,
-    buscandoDni,
-    dniError,
+    especialidades,
+    filtroEspecialidad,
+    setFiltroEspecialidad,
+    patientSearch,
     profesionalId,
     setProfesionalId,
     consultorioNumero,
@@ -39,6 +28,8 @@ export const NuevoTurnoMostradorPage: React.FC = () => {
     loadingSlots,
     obraSocial,
     setObraSocial,
+    otraObraSocial,
+    setOtraObraSocial,
     copagoMonto,
     setCopagoMonto,
     numeroBono,
@@ -48,7 +39,6 @@ export const NuevoTurnoMostradorPage: React.FC = () => {
     loadingContext,
     saving,
     submitError,
-    buscarPorDni,
     handleSubmit,
   } = useNuevoTurnoMostrador();
 
@@ -96,72 +86,16 @@ export const NuevoTurnoMostradorPage: React.FC = () => {
         </div>
       )}
 
-      <section className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-xs">
-        <h2 className="text-base font-bold text-foreground border-b border-border pb-2">
-          1. Identificación del Paciente
-        </h2>
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="flex-1">
-            <label htmlFor="tm-dni" className="block text-xs font-semibold text-foreground mb-1.5">
-              Buscar paciente por DNI <span className="text-rose-700">*</span>
-            </label>
-            <input
-              id="tm-dni"
-              type="text"
-              inputMode="numeric"
-              placeholder="Ej: 38445123"
-              value={dniBusqueda}
-              onChange={(e) => setDniBusqueda(e.target.value.replace(/\D/g, ''))}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  void buscarPorDni();
-                }
-              }}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground tabular-nums focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
-            />
-          </div>
-          <button
-            type="button"
-            disabled={buscandoDni}
-            onClick={() => void buscarPorDni()}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-900 disabled:opacity-50 cursor-pointer"
-          >
-            <Search className="h-3.5 w-3.5" aria-hidden="true" />
-            {buscandoDni ? 'Buscando...' : 'Buscar DNI'}
-          </button>
-          <Link
-            to={`/dashboard/recepcion/pacientes/nuevo?returnTo=turno${dniBusqueda ? `&dni=${dniBusqueda}` : ''}`}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3.5 py-2 text-xs font-semibold text-sky-700 hover:bg-muted transition"
-          >
-            <UserPlus className="h-3.5 w-3.5" aria-hidden="true" />
-            Alta Rápida Paciente
-          </Link>
-        </div>
-
-        {dniError && (
-          <p role="alert" className="text-xs font-medium text-rose-700">
-            {dniError}
-          </p>
-        )}
-
-        {paciente && (
-          <div className="rounded-lg border border-emerald-300 bg-muted/40 p-3.5 text-xs flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="font-bold text-foreground">
-                {paciente.apellido}, {paciente.nombre}
-              </p>
-              <p className="text-muted-foreground tabular-nums">
-                DNI {paciente.dni} · Tel: {paciente.telefono || 'Sin especificar'}
-              </p>
-            </div>
-            <span className="rounded-md bg-emerald-700 px-2.5 py-0.5 text-[11px] font-bold text-white">
-              Paciente seleccionado
-            </span>
-          </div>
-        )}
-      </section>
+      <MostradorPacienteSelector
+        terminoBusqueda={patientSearch.terminoBusqueda}
+        onTerminoChange={patientSearch.setTerminoBusqueda}
+        onBuscar={() => void patientSearch.buscarPaciente()}
+        buscando={patientSearch.buscandoPaciente}
+        paciente={patientSearch.paciente}
+        pacientesSugeridos={patientSearch.pacientesSugeridos}
+        onSeleccionar={patientSearch.seleccionarPaciente}
+        error={patientSearch.pacienteError}
+      />
 
       <form
         noValidate
@@ -174,6 +108,25 @@ export const NuevoTurnoMostradorPage: React.FC = () => {
           </legend>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <label htmlFor="tm-especialidad" className="block text-xs font-semibold text-foreground mb-1.5">
+                Filtrar por Especialidad
+              </label>
+              <select
+                id="tm-especialidad"
+                value={filtroEspecialidad}
+                onChange={(e) => setFiltroEspecialidad(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+              >
+                <option value="TODAS">Todas las Especialidades ({especialidades.length})</option>
+                {especialidades.map((esp) => (
+                  <option key={esp} value={esp}>
+                    {esp}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="sm:col-span-2">
               <label htmlFor="tm-profesional" className="block text-xs font-semibold text-foreground mb-1.5">
                 Profesional Médico de la Sede <span className="text-rose-700">*</span>
@@ -185,7 +138,7 @@ export const NuevoTurnoMostradorPage: React.FC = () => {
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
               >
                 {profesionales.length === 0 && (
-                  <option value="">No hay médicos activos en esta sede</option>
+                  <option value="">No hay médicos disponibles para la especialidad seleccionada</option>
                 )}
                 {profesionales.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -195,23 +148,37 @@ export const NuevoTurnoMostradorPage: React.FC = () => {
               </select>
             </div>
 
-            <div>
+            <div className="sm:col-span-3">
               <label htmlFor="tm-consultorio" className="block text-xs font-semibold text-foreground mb-1.5">
-                Consultorio / Box
+                Consultorio / Box Físico
               </label>
-              <select
-                id="tm-consultorio"
-                value={consultorioNumero}
-                onChange={(e) => setConsultorioNumero(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
-              >
-                {consultorios.length === 0 && <option value="101">Consultorio 101 (Planta Baja)</option>}
-                {consultorios.map((c) => (
-                  <option key={c.id} value={c.numero}>
-                    Cons. {c.numero} ({c.planta})
-                  </option>
-                ))}
-              </select>
+              {consultorios.length === 0 ? (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-700 shrink-0" />
+                    <span>Esta sede no tiene consultorios registrados. Se creará sin consultorio físico asignado.</span>
+                  </div>
+                  <Link
+                    to="/dashboard/recepcion/consultorios/nuevo"
+                    className="font-bold underline text-amber-950 shrink-0 hover:text-amber-900"
+                  >
+                    Registrar consultorio
+                  </Link>
+                </div>
+              ) : (
+                <select
+                  id="tm-consultorio"
+                  value={consultorioNumero}
+                  onChange={(e) => setConsultorioNumero(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                >
+                  {consultorios.map((c) => (
+                    <option key={c.id} value={c.numero}>
+                      Consultorio {c.numero} ({c.planta})
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div>
@@ -290,7 +257,7 @@ export const NuevoTurnoMostradorPage: React.FC = () => {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label htmlFor="tm-obra-social" className="block text-xs font-semibold text-foreground mb-1.5">
-                Obra Social
+                Obra Social / Cobertura
               </label>
               <select
                 id="tm-obra-social"
@@ -298,13 +265,29 @@ export const NuevoTurnoMostradorPage: React.FC = () => {
                 onChange={(e) => setObraSocial(e.target.value)}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
               >
-                {OBRA_SOCIAL_OPTIONS.map((os) => (
+                {CONVENIOS_POPULARES.map((os) => (
                   <option key={os} value={os}>
                     {os}
                   </option>
                 ))}
               </select>
             </div>
+
+            {obraSocial === 'Otra' && (
+              <div>
+                <label htmlFor="tm-otra-os" className="block text-xs font-semibold text-foreground mb-1.5">
+                  Nombre de Otra Obra Social
+                </label>
+                <input
+                  id="tm-otra-os"
+                  type="text"
+                  placeholder="Ej: Galeno, Nobis, etc."
+                  value={otraObraSocial}
+                  onChange={(e) => setOtraObraSocial(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </div>
+            )}
 
             <div>
               <label htmlFor="tm-copago" className="block text-xs font-semibold text-foreground mb-1.5">
@@ -358,7 +341,7 @@ export const NuevoTurnoMostradorPage: React.FC = () => {
           </Link>
           <button
             type="submit"
-            disabled={saving || !paciente || profesionales.length === 0}
+            disabled={saving || !patientSearch.paciente || profesionales.length === 0}
             className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-5 py-2 text-xs font-semibold text-white hover:bg-sky-800 disabled:opacity-50 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
           >
             <CalendarCheck className="h-4 w-4" aria-hidden="true" />
