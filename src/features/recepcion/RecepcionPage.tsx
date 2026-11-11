@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { turnosService } from '@/api/turnosService';
 import { centrosService } from '@/api/centrosService';
@@ -103,11 +103,17 @@ export const RecepcionPage: React.FC = () => {
 
   const turnosFiltrados = useMemo(() => {
     return turnosHoy.filter((t) => {
+      const q = debouncedBusqueda.toLowerCase().trim();
       const matchBusqueda =
-        !debouncedBusqueda ||
-        t.pacienteDni.includes(debouncedBusqueda) ||
-        t.pacienteNombre.toLowerCase().includes(debouncedBusqueda.toLowerCase()) ||
-        t.codigoVerificacion.toLowerCase().includes(debouncedBusqueda.toLowerCase());
+        !q ||
+        (t.pacienteDni && t.pacienteDni.toLowerCase().includes(q)) ||
+        (t.pacienteNombre && t.pacienteNombre.toLowerCase().includes(q)) ||
+        (t.codigoVerificacion && t.codigoVerificacion.toLowerCase().includes(q)) ||
+        (t.centroSaludNombre && t.centroSaludNombre.toLowerCase().includes(q)) ||
+        (t.profesionalNombre && t.profesionalNombre.toLowerCase().includes(q)) ||
+        (t.especialidadNombre && t.especialidadNombre.toLowerCase().includes(q)) ||
+        (t.consultorioNumero && t.consultorioNumero.toLowerCase().includes(q)) ||
+        (t.consultorioNumero && `consultorio ${t.consultorioNumero}`.toLowerCase().includes(q));
 
       const matchCentro = filtroCentro === 'TODOS' || t.centroSaludId === filtroCentro;
       const matchProf = filtroProfesional === 'TODOS' || t.profesionalId === filtroProfesional;
@@ -232,7 +238,7 @@ export const RecepcionPage: React.FC = () => {
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Buscar DNI o Paciente (300ms)..."
+              placeholder="Buscar por Médico, Sede, Consultorio, Paciente o DNI..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-mono"
