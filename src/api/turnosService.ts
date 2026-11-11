@@ -437,4 +437,25 @@ export const turnosService = {
         ), { cause: err });
     }
   },
+
+  async eliminarTurno(id: string): Promise<boolean> {
+    try {
+      const numId = toNumericId(id);
+      await apiClient.delete(API_ENDPOINTS.turnos.eliminar(numId));
+      return true;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar el turno.'), { cause: err });
+    }
+  },
+
+  async purgarCancelados(profesionalId?: string): Promise<number> {
+    try {
+      const res = await apiClient.delete<{ eliminados: number }>(API_ENDPOINTS.turnos.purgarCancelados, {
+        params: profesionalId ? { profesionalId } : undefined,
+      });
+      return res.data?.eliminados || 0;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron purgar los turnos cancelados.'), { cause: err });
+    }
+  },
 };

@@ -14,7 +14,8 @@ import {
   Lock,
   Building2,
   MapPin,
-  DoorClosed
+  DoorClosed,
+  Trash2
 } from 'lucide-react';
 import { ConfigurarGrillaHorariaModal } from './components/ConfigurarGrillaHorariaModal';
 import { BloquearAgendaModal } from './components/BloquearAgendaModal';
@@ -50,7 +51,16 @@ export const AgendaMedicaPage: React.FC = () => {
         centrosService.getAll()
       ]);
 
-      setTurnos(turnosData);
+      const turnosAsignados = (turnosData || []).filter(
+        (t) =>
+          t.estado !== 'DISPONIBLE' &&
+          Boolean(
+            t.pacienteNombre?.trim() ||
+            t.pacienteDni?.trim() ||
+            (t.pacienteId && t.pacienteId !== 'undefined' && t.pacienteId !== 'null' && t.pacienteId !== '')
+          )
+      );
+      setTurnos(turnosAsignados);
       setBloqueos(bloqueosData);
       setCentros(centrosData);
     } finally {
@@ -83,6 +93,18 @@ export const AgendaMedicaPage: React.FC = () => {
         turno.pacienteNombre
       )}&pacienteDni=${turno.pacienteDni}`
     );
+  };
+
+  const handleEliminarTurno = async (id: string) => {
+    if (!window.confirm('¿Desea eliminar definitivamente este turno cancelado de su agenda?')) {
+      return;
+    }
+    try {
+      await turnosService.eliminarTurno(id);
+      setTurnos((prev) => prev.filter((t) => t.id !== id));
+    } catch (err: unknown) {
+      console.error(err);
+    }
   };
 
   const getEstadoBadge = (turno: Turno) => {
@@ -121,6 +143,13 @@ export const AgendaMedicaPage: React.FC = () => {
   };
 
   const turnosFiltrados = turnos.filter((t) => {
+    // 0. Excluir turnos libres sin paciente asignado
+    if (
+      t.estado === 'DISPONIBLE' ||
+      (!t.pacienteNombre?.trim() && !t.pacienteDni?.trim() && (!t.pacienteId || t.pacienteId === 'undefined' || t.pacienteId === 'null'))
+    ) {
+      return false;
+    }
     // 1. Filtro por centro
     if (filtroCentroId !== 'TODOS' && t.centroSaludId !== filtroCentroId) {
       return false;
@@ -467,6 +496,18 @@ export const AgendaMedicaPage: React.FC = () => {
                 {/* Estado y Botones de Atención */}
                 <div className="flex items-center gap-2 self-end sm:self-center">
                   {getEstadoBadge(turno)}
+
+                  {isBloqueadoOCancelado && (
+                    <button
+                      type="button"
+                      onClick={() => handleEliminarTurno(turno.id)}
+                      className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition cursor-pointer shadow-2xs flex items-center gap-1.5"
+                      title="Eliminar turno cancelado"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Eliminar</span>
+                    </button>
+                  )}
 
                   {turno.estado === 'CONFIRMADO' && (
                     <button

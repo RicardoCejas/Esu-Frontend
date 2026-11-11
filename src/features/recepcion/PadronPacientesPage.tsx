@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { pacientesService } from '@/api/pacientesService';
+import { useAuth } from '@/context/AuthContext';
 import type { User } from '@/types';
 import {
   Search,
@@ -12,16 +13,39 @@ import {
   CreditCard,
   X,
   Eye,
+  Stethoscope,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 
 export const PadronPacientesPage: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [pacientes, setPacientes] = useState<User[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const isMedico = user?.rol === 'MEDICO' || user?.rol === 'PROFESIONAL';
+
+  const cargarPacientes = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await pacientesService.getAll();
+      setPacientes(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo cargar el padrón de pacientes.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    pacientesService.getAll().then(setPacientes);
-  }, []);
+    cargarPacientes();
+  }, [cargarPacientes]);
 
   const pacientesFiltrados = pacientes.filter(
     (p) =>
@@ -43,13 +67,25 @@ export const PadronPacientesPage: React.FC = () => {
           </p>
         </div>
 
-        <Link
-          to="/dashboard/recepcion/pacientes/nuevo"
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition self-start sm:self-auto cursor-pointer"
-        >
-          <UserPlus className="h-4 w-4" />
-          <span>Registrar Nuevo Paciente</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={cargarPacientes}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-input bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
+            title="Actualizar padrón"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Actualizar</span>
+          </button>
+
+          <Link
+            to="/dashboard/recepcion/pacientes/nuevo"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition self-start sm:self-auto cursor-pointer"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>Registrar Nuevo Paciente</span>
+          </Link>
+        </div>
       </div>
 
       {/* Banner de Protección Legal de Datos Médicos (Ley 25.326 y 26.529) */}
@@ -83,58 +119,133 @@ export const PadronPacientesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Lista / Grid de Pacientes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {pacientesFiltrados.map((paciente) => (
-          <div
-            key={paciente.id}
-            onClick={() => setPacienteSeleccionado(paciente)}
-            className="group rounded-2xl border border-border bg-card p-5 shadow-xs space-y-3.5 hover:border-primary/60 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-800 font-bold text-sm group-hover:bg-primary group-hover:text-white transition-colors">
-                    {paciente.nombre.charAt(0)}{paciente.apellido.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm sm:text-base text-foreground font-heading group-hover:text-primary transition-colors">
-                      {paciente.nombre} {paciente.apellido}
-                    </h3>
-                    <span className="font-mono text-xs font-bold text-sky-700 block">
-                      DNI: {paciente.dni}
-                    </span>
-                  </div>
-                </div>
+      {/* Estado de Carga */}
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm font-medium">Cargando padrón asistencial de pacientes...</p>
+        </div>
+      )}
 
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold">
-                  <UserCheck className="h-3 w-3" /> Padrón Activo
-                </span>
-              </div>
-
-              <div className="space-y-1.5 text-xs text-muted-foreground pt-2.5 border-t border-border/60">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-3.5 w-3.5 text-sky-600 shrink-0" />
-                  <span className="truncate">{paciente.email}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-3.5 w-3.5 text-sky-600 shrink-0" />
-                  <span>{paciente.telefono || '3549-420000'}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-3.5 w-3.5 text-sky-600 shrink-0" />
-                  <span className="font-semibold text-slate-700">APROSS / Particular</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2.5 border-t border-border/60 flex items-center justify-between text-xs text-primary font-bold">
-              <span>Ficha Administrativa</span>
-              <Eye className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
-            </div>
+      {/* Estado de Error */}
+      {!isLoading && error && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center space-y-3">
+          <AlertCircle className="h-8 w-8 text-rose-600 mx-auto" />
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-rose-900">Error al cargar pacientes</h3>
+            <p className="text-xs text-rose-700">{error}</p>
           </div>
-        ))}
-      </div>
+          <button
+            type="button"
+            onClick={cargarPacientes}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 text-white px-4 py-2 text-xs font-semibold hover:bg-rose-700 transition"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      )}
+
+      {/* Estado Vacío */}
+      {!isLoading && !error && pacientesFiltrados.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center space-y-3">
+          <Search className="h-10 w-10 text-muted-foreground/50 mx-auto" />
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-foreground">No se encontraron pacientes</h3>
+            <p className="text-xs text-muted-foreground">
+              {busqueda
+                ? `No hay resultados para "${busqueda}". Verifique el documento o apellido.`
+                : 'Aún no hay pacientes dados de alta en el padrón asistencial.'}
+            </p>
+          </div>
+          <Link
+            to="/dashboard/recepcion/pacientes/nuevo"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-xs"
+          >
+            <UserPlus className="h-3.5 w-3.5" />
+            <span>Dar de Alta Nuevo Paciente</span>
+          </Link>
+        </div>
+      )}
+
+      {/* Lista / Grid de Pacientes */}
+      {!isLoading && !error && pacientesFiltrados.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {pacientesFiltrados.map((paciente) => (
+            <div
+              key={paciente.id}
+              className="group rounded-2xl border border-border bg-card p-5 shadow-xs space-y-3.5 hover:border-primary/60 hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="space-y-3 cursor-pointer" onClick={() => setPacienteSeleccionado(paciente)}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-800 font-bold text-sm group-hover:bg-primary group-hover:text-white transition-colors">
+                      {paciente.nombre.charAt(0)}{paciente.apellido.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm sm:text-base text-foreground font-heading group-hover:text-primary transition-colors">
+                        {paciente.nombre} {paciente.apellido}
+                      </h3>
+                      <span className="font-mono text-xs font-bold text-sky-700 block">
+                        DNI: {paciente.dni}
+                      </span>
+                    </div>
+                  </div>
+
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold">
+                    <UserCheck className="h-3 w-3" /> Padrón Activo
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 text-xs text-muted-foreground pt-2.5 border-t border-border/60">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-3.5 w-3.5 text-sky-600 shrink-0" />
+                    <span className="truncate">{paciente.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-3.5 w-3.5 text-sky-600 shrink-0" />
+                    <span>{paciente.telefono || '3549-420000'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-3.5 w-3.5 text-sky-600 shrink-0" />
+                    <span className="font-semibold text-slate-700">{paciente.obraSocial || 'APROSS / Particular'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de Acción */}
+              <div className="pt-2.5 border-t border-border/60 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPacienteSeleccionado(paciente)}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-semibold transition cursor-pointer"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  <span>Ver Ficha</span>
+                </button>
+
+                {isMedico && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(
+                        `/dashboard/medico/atencion?pacienteId=${paciente.id}&pacienteNombre=${encodeURIComponent(
+                          `${paciente.nombre} ${paciente.apellido}`
+                        )}`
+                      );
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 text-white px-3 py-1.5 text-xs font-bold hover:bg-indigo-700 transition shadow-xs cursor-pointer"
+                  >
+                    <Stethoscope className="h-3.5 w-3.5" />
+                    <span>Atender en Consultorio</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* MODAL: Ficha Administrativa de Paciente (Sin vulnerar historia clínica) */}
       {pacienteSeleccionado && (
@@ -183,7 +294,7 @@ export const PadronPacientesPage: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-muted-foreground block">Cobertura / Obra Social:</span>
-                    <strong className="text-foreground">APROSS • Plan Integral</strong>
+                    <strong className="text-foreground">{pacienteSeleccionado.obraSocial || 'APROSS • Plan Integral'}</strong>
                   </div>
                 </div>
               </div>
@@ -199,7 +310,28 @@ export const PadronPacientesPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-2 flex justify-end">
+              <div className="pt-2 flex items-center justify-between gap-3">
+                {isMedico ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sel = pacienteSeleccionado;
+                      setPacienteSeleccionado(null);
+                      navigate(
+                        `/dashboard/medico/atencion?pacienteId=${sel.id}&pacienteNombre=${encodeURIComponent(
+                          `${sel.nombre} ${sel.apellido}`
+                        )}`
+                      );
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 text-white px-4 py-2 text-xs font-bold hover:bg-indigo-700 transition cursor-pointer"
+                  >
+                    <Stethoscope className="h-3.5 w-3.5" />
+                    <span>Iniciar Atención Clínica</span>
+                  </button>
+                ) : (
+                  <div></div>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setPacienteSeleccionado(null)}

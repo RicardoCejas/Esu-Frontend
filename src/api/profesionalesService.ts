@@ -75,7 +75,12 @@ function normalizeDisponibilidad(d: Record<string, unknown>): DisponibilidadProf
     diaSemana,
     horaInicio: String(d.horaInicio ?? '08:00'),
     horaFin: String(d.horaFin ?? '12:00'),
-    intervaloMinutos: typeof d.duracionMinutos === 'number' ? d.duracionMinutos : 20,
+    intervaloMinutos:
+      typeof d.intervaloMinutos === 'number'
+        ? d.intervaloMinutos
+        : typeof d.duracionMinutos === 'number'
+          ? d.duracionMinutos
+          : 20,
     activo: d.activo !== false,
   };
 }
@@ -283,6 +288,7 @@ export const profesionalesService = {
         diaSemana: diaNormalized,
         horaInicio: req.horaInicio.length === 5 ? `${req.horaInicio}:00` : req.horaInicio,
         horaFin: req.horaFin.length === 5 ? `${req.horaFin}:00` : req.horaFin,
+        intervaloMinutos: req.intervaloMinutos,
         duracionMinutos: req.intervaloMinutos,
         activo: true,
       };
@@ -326,11 +332,17 @@ export const profesionalesService = {
   async bloquearAgenda(profesionalId: string, req: BloqueoRequest & { centroSaludId?: string }): Promise<BloqueoAgenda> {
     try {
       const numProfId = toNumericId(profesionalId);
+      const startIso = req.fechaInicio.includes('T')
+        ? req.fechaInicio
+        : `${req.fechaInicio}T${req.horaInicio ? (req.horaInicio.length === 5 ? `${req.horaInicio}:00` : req.horaInicio) : '00:00:00'}`;
+      const endIso = req.fechaFin.includes('T')
+        ? req.fechaFin
+        : `${req.fechaFin}T${req.horaFin ? (req.horaFin.length === 5 ? `${req.horaFin}:00` : req.horaFin) : '23:59:59'}`;
       const payload = {
         profesionalId: numProfId,
         centroSaludId: req.centroSaludId ? toNumericId(req.centroSaludId) : null,
-        fechaInicio: req.fechaInicio,
-        fechaFin: req.fechaFin,
+        fechaInicio: startIso,
+        fechaFin: endIso,
         horaInicio: req.horaInicio ? (req.horaInicio.length === 5 ? `${req.horaInicio}:00` : req.horaInicio) : null,
         horaFin: req.horaFin ? (req.horaFin.length === 5 ? `${req.horaFin}:00` : req.horaFin) : null,
         motivo: req.motivo,

@@ -21,6 +21,7 @@ import {
   MapPin,
   Phone,
   Clock,
+  PlusCircle,
   Search,
   AlertCircle,
   RefreshCw,
@@ -142,18 +143,53 @@ export const AdminEspecialidadesPage: React.FC = () => {
     // Escuchar eventos de actualización de usuarios para refrescar sedes
     const onUserUpdate = () => cargarDatos();
     window.addEventListener('esu_usuarios_updated', onUserUpdate);
-    window.addEventListener('storage', onUserUpdate);
-    return () => {
-      window.removeEventListener('esu_usuarios_updated', onUserUpdate);
-      window.removeEventListener('storage', onUserUpdate);
-    };
+    return () => window.removeEventListener('esu_usuarios_updated', onUserUpdate);
   }, [cargarDatos]);
 
   const centroActivo = useMemo(() => {
     return centros.find((c) => String(c.id) === String(centroSeleccionadoId)) || centros[0];
   }, [centros, centroSeleccionadoId]);
 
-  // 1. Médicos asignados a la sede activa (entrelazado con profesionales y usuarios asignados en Admin)
+  // Especialidades habilitadas en la sede activa
+  const especialidadesDeSedeActiva = useMemo(() => {
+    if (!centroActivo) return [];
+    const id = String(centroActivo.id);
+
+    // 1. Especialidades por profesionales asignados a este centro
+    const medicosDelCentro = profesionales.filter((p) =>
+      Array.isArray(p.centrosSaludIds) && p.centrosSaludIds.some((cid) => String(cid) === id)
+    );
+
+    // 2. Especialidades por turnos registrados en este centro
+    const turnosDelCentro = turnos.filter((t) => String(t.centroSaludId) === id);
+    const nombresEspecialidadesTurnos = new Set(turnosDelCentro.map((t) => t.especialidadNombre?.toLowerCase()));
+
+    return especialidades.map((esp) => {
+      const nombreNorm = esp.nombre.toLowerCase();
+      const medicosAsignados = medicosDelCentro.filter(
+        (m) =>
+          String(m.especialidadId) === String(esp.id) ||
+          m.especialidadNombre?.toLowerCase() === nombreNorm
+      );
+
+      const tieneTurnos = nombresEspecialidadesTurnos.has(nombreNorm);
+      const estaHabilitada = medicosAsignados.length > 0 || tieneTurnos || (
+        // Garantizar al menos las esenciales según el tipo de efector
+        (centroActivo.tipo === 'HOSPITAL' && ['clínica médica', 'pediatría', 'cardiología', 'traumatología'].some(k => nombreNorm.includes(k))) ||
+        (centroActivo.tipo === 'CLINICA' && ['clínica médica', 'cardiología', 'ginecología'].some(k => nombreNorm.includes(k))) ||
+        (centroActivo.tipo === 'CONSULTORIO_PRIVADO' && ['diagnóstico por imágenes', 'ecografía'].some(k => nombreNorm.includes(k)))
+      );
+
+      return {
+        ...esp,
+        habilitadaEnSede: estaHabilitada,
+        medicosEnSede: medicosAsignados,
+        totalMedicos: medicosAsignados.length,
+      };
+    }).filter((esp) => esp.habilitadaEnSede);
+  }, [centroActivo, profesionales, especialidades, turnos]);
+
+  // Médicos asignados a la sede activa
   const medicosDeSedeActiva = useMemo<MedicoSedeItem[]>(() => {
     if (!centroActivo) return [];
     const id = String(centroActivo.id);
@@ -161,14 +197,10 @@ export const AdminEspecialidadesPage: React.FC = () => {
 
     const medicosMap = new Map<string, MedicoSedeItem>();
 
-    // A. Médicos de la lista oficial de profesionales con ese centro asignado
+    // 1. Médicos de la lista oficial de profesionales con ese centro asignado
     profesionales.forEach((p) => {
-      const pOverride = overrides[p.id] || {};
-      const centroAsignado = pOverride.centroSaludId !== undefined
-        ? String(pOverride.centroSaludId)
-        : (Array.isArray(p.centrosSaludIds) && p.centrosSaludIds.some((cid) => String(cid) === id) ? id : null);
-
-      if (centroAsignado === id) {
+      const tieneCentro = Array.isArray(p.centrosSaludIds) && p.centrosSaludIds.some((cid) => String(cid) === id);
+      if (tieneCentro) {
         medicosMap.set(p.id, {
           id: p.id,
           nombreCompleto: `Dr/a. ${p.nombre} ${p.apellido}`,
@@ -179,16 +211,15 @@ export const AdminEspecialidadesPage: React.FC = () => {
       }
     });
 
-    // B. Médicos del padrón de usuarios (incluyendo asignaciones hechas en Administración de Usuarios)
+    // 2. Médicos del padrón de usuarios (incluyendo overrides del botón Editar y asignaciones inteligentes)
     usuarios.forEach((u) => {
-      const userOverride = overrides[u.id] || {};
-      const effectiveRol = userOverride.rol || u.rol;
-      const isMedico = effectiveRol === 'MEDICO' || (effectiveRol as string) === 'PROFESIONAL';
+      const isMedico = u.rol === 'MEDICO' || (u.rol as string) === 'PROFESIONAL';
       if (!isMedico) return;
 
+      const userOverride = overrides[u.id] || {};
       const effectiveCentroId = userOverride.centroSaludId !== undefined
-        ? String(userOverride.centroSaludId)
-        : (u.centroSaludId ? String(u.centroSaludId) : null);
+        ? userOverride.centroSaludId
+        : u.centroSaludId;
 
       // Inferencia por email si no tiene sede explícita
       const emailLower = (u.email || '').toLowerCase();
@@ -198,7 +229,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
         (id === '4' && (emailLower.includes('isabel') || emailLower.includes('gonzalez'))) ||
         (id === '3' && (emailLower.includes('imagen') || emailLower.includes('diagnostico')));
 
-      if (effectiveCentroId === id || (!effectiveCentroId && matchCentroEmail)) {
+      if (String(effectiveCentroId) === id || (!effectiveCentroId && matchCentroEmail)) {
         const key = u.id || u.email;
         if (!medicosMap.has(key)) {
           const nombreCompleto =
@@ -206,7 +237,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
           medicosMap.set(key, {
             id: u.id,
             nombreCompleto,
-            especialidad: (u as unknown as { especialidad?: string }).especialidad || (userOverride as unknown as { especialidad?: string }).especialidad || 'Clínica Médica / Medicina General',
+            especialidad: (u as unknown as { especialidad?: string }).especialidad || 'Clínica Médica / Medicina General',
             matricula: u.dni ? `MP-${u.dni.slice(0, 5)}` : 'MP-89211',
             email: u.email,
             telefono: u.telefono,
@@ -216,7 +247,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
       }
     });
 
-    // Fallback garantizado para que cada sede inicial tenga su cuerpo médico de muestra si está vacía
+    // Fallback garantizado para que cada sede siempre tenga su cuerpo médico de muestra
     if (medicosMap.size === 0) {
       if (id === '1') {
         medicosMap.set('crespo-1', {
@@ -253,7 +284,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
           email: 'dra.gonzalez@sanatorionariaisabel.com',
           diasAtencion: ['Lunes a Jueves'],
         });
-      } else if (id === '3') {
+      } else {
         medicosMap.set('diag-1', {
           id: 'diag-1',
           nombreCompleto: 'Dr. Fernando Romero',
@@ -268,46 +299,6 @@ export const AdminEspecialidadesPage: React.FC = () => {
     return Array.from(medicosMap.values());
   }, [centroActivo, profesionales, usuarios]);
 
-  // 2. Especialidades habilitadas en la sede activa (vinculadas a los médicos asignados)
-  const especialidadesDeSedeActiva = useMemo(() => {
-    if (!centroActivo) return [];
-    const id = String(centroActivo.id);
-
-    // Especialidades presentes según los médicos asignados a esta sede
-    const especialidadesMedicos = new Set(
-      medicosDeSedeActiva.map((m) => m.especialidad.toLowerCase().trim())
-    );
-
-    // Especialidades por turnos registrados en este centro
-    const turnosDelCentro = turnos.filter((t) => String(t.centroSaludId) === id);
-    const nombresEspecialidadesTurnos = new Set(turnosDelCentro.map((t) => t.especialidadNombre?.toLowerCase().trim()));
-
-    return especialidades.map((esp) => {
-      const nombreNorm = esp.nombre.toLowerCase().trim();
-      const medicosAsignados = medicosDeSedeActiva.filter(
-        (m) =>
-          m.especialidad.toLowerCase().includes(nombreNorm) ||
-          nombreNorm.includes(m.especialidad.toLowerCase()) ||
-          String((m as unknown as { especialidadId?: string }).especialidadId) === String(esp.id)
-      );
-
-      const tieneMedicos = medicosAsignados.length > 0 || especialidadesMedicos.has(nombreNorm);
-      const tieneTurnos = nombresEspecialidadesTurnos.has(nombreNorm);
-      const estaHabilitada = tieneMedicos || tieneTurnos || (
-        (centroActivo.tipo === 'HOSPITAL' && ['clínica médica', 'pediatría', 'cardiología', 'traumatología'].some(k => nombreNorm.includes(k))) ||
-        (centroActivo.tipo === 'CLINICA' && ['clínica médica', 'cardiología', 'ginecología'].some(k => nombreNorm.includes(k))) ||
-        (centroActivo.tipo === 'CONSULTORIO_PRIVADO' && ['diagnóstico por imágenes', 'ecografía'].some(k => nombreNorm.includes(k)))
-      );
-
-      return {
-        ...esp,
-        habilitadaEnSede: estaHabilitada,
-        medicosEnSede: medicosAsignados,
-        totalMedicos: medicosAsignados.length,
-      };
-    }).filter((esp) => esp.habilitadaEnSede);
-  }, [centroActivo, medicosDeSedeActiva, especialidades, turnos]);
-
   // Filtro de búsqueda de médicos de esta sede
   const medicosFiltrados = useMemo(() => {
     const q = busquedaMedicoSede.toLowerCase().trim();
@@ -321,15 +312,14 @@ export const AdminEspecialidadesPage: React.FC = () => {
     );
   }, [medicosDeSedeActiva, busquedaMedicoSede]);
 
-  // 3. Pacientes de la sede activa (entrelazado con usuarios, padrón y turnos)
+  // Pacientes de la sede activa
   const pacientesDeSedeActiva = useMemo<PacienteSedeItem[]>(() => {
     if (!centroActivo) return [];
     const id = String(centroActivo.id);
-    const overrides = getStoredUserOverrides();
 
     const pacientesMap = new Map<string, PacienteSedeItem>();
 
-    // A. Pacientes con turnos en esta sede
+    // 1. Pacientes con turnos en esta sede
     const turnosSede = turnos.filter((t) => String(t.centroSaludId) === id);
     turnosSede.forEach((t) => {
       const key = t.pacienteDni || t.pacienteId || t.id;
@@ -352,7 +342,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
       }
     });
 
-    // B. Pacientes empadronados directamente con este centro de salud
+    // 2. Pacientes empadronados directamente con este centro de salud
     const pacientesEmpadronados = pacientes.filter((p) => String(p.centroSaludId) === id);
     pacientesEmpadronados.forEach((p) => {
       const key = p.dni || p.id;
@@ -373,39 +363,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
       }
     });
 
-    // C. Pacientes del padrón de usuarios con esta sede asignada (asignados vía "Editar" en Administración de Usuarios)
-    usuarios.forEach((u) => {
-      const userOverride = overrides[u.id] || {};
-      const effectiveRol = userOverride.rol || u.rol;
-      const isPaciente = effectiveRol === 'PACIENTE';
-      if (!isPaciente) return;
-
-      const effectiveCentroId = userOverride.centroSaludId !== undefined
-        ? String(userOverride.centroSaludId)
-        : (u.centroSaludId ? String(u.centroSaludId) : null);
-
-      if (effectiveCentroId === id) {
-        const key = u.dni || u.id || u.email;
-        if (!pacientesMap.has(key)) {
-          pacientesMap.set(key, {
-            id: u.id,
-            nombre: u.nombre || '',
-            apellido: u.apellido || '',
-            nombreCompleto: u.nombre && u.apellido ? `${u.nombre} ${u.apellido}` : (u.email ? u.email.split('@')[0] : 'Paciente Registrado'),
-            dni: u.dni || 'Sin DNI',
-            email: u.email,
-            telefono: u.telefono,
-            obraSocial: 'APROSS (Córdoba)',
-            ultimaEspecialidad: 'Consulta General Ambulatoria',
-            medicoTratante: medicosDeSedeActiva[0]?.nombreCompleto || 'Equipo de Guardia / Planta',
-            fechaTurno: 'Asignado a Sede',
-            estadoTurno: 'ACTIVO',
-          });
-        }
-      }
-    });
-
-    // Fallback garantizado si no hubiera turnos en esa sede específica
+    // Fallback enriquecido si no hubiera turnos en esa sede específica
     if (pacientesMap.size === 0) {
       MOCK_TURNOS.slice(0, 4).forEach((t, idx) => {
         const key = `fallback-${id}-${idx}`;
@@ -417,7 +375,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
           dni: t.pacienteDni || `3${idx}123456`,
           obraSocial: t.obraSocial || 'APROSS (Córdoba)',
           ultimaEspecialidad: t.especialidadNombre || 'Clínica Médica',
-          medicoTratante: medicosDeSedeActiva[0]?.nombreCompleto || t.profesionalNombre || 'Dr. Carlos Martínez',
+          medicoTratante: t.profesionalNombre || 'Dr. Carlos Martínez',
           fechaTurno: t.fecha,
           horaTurno: t.hora,
           estadoTurno: t.estado,
@@ -426,7 +384,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
     }
 
     return Array.from(pacientesMap.values());
-  }, [centroActivo, turnos, pacientes, usuarios, medicosDeSedeActiva]);
+  }, [centroActivo, turnos, pacientes]);
 
   // Filtro de búsqueda de pacientes en la sede
   const pacientesFiltrados = useMemo(() => {
@@ -457,6 +415,14 @@ export const AdminEspecialidadesPage: React.FC = () => {
             Gestión detallada de cada sede asistencial: especialidades habilitadas, médicos asignados y nómina de pacientes.
           </p>
         </div>
+
+        <Link
+          to="/dashboard/admin/especialidades/nueva"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition cursor-pointer self-start sm:self-auto"
+        >
+          <PlusCircle className="h-4 w-4" />
+          <span>+ Nueva Especialidad Médica</span>
+        </Link>
       </div>
 
       {loading ? (
@@ -669,7 +635,7 @@ export const AdminEspecialidadesPage: React.FC = () => {
                                   {esp.medicosEnSede.map((m) => (
                                     <div key={m.id} className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                                       <Stethoscope className="h-3.5 w-3.5 text-primary shrink-0" />
-                                      <span>{m.nombreCompleto}</span>
+                                      <span>Dr/a. {m.nombre} {m.apellido}</span>
                                       {m.matricula && (
                                         <span className="text-[10px] text-muted-foreground font-mono">
                                           ({m.matricula})

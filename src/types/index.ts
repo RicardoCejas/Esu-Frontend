@@ -146,7 +146,8 @@ export type EstadoTurno =
   | 'COMPLETADO'
   | 'CANCELADO'
   | 'CANCELADO_POR_MEDICO'
-  | 'AUSENTE';
+  | 'AUSENTE'
+  | 'DISPONIBLE';
 
 export interface ConsultorioFisico {
   id: string;

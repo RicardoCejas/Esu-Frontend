@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { pacientesService } from '@/api/pacientesService';
-import { UserPlus, ArrowLeft, Save, ShieldCheck } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
+import { extractApiErrorMessage } from '@/api/endpoints';
+import { UserPlus, ArrowLeft, Save, ShieldCheck, AlertCircle } from 'lucide-react';
 
 export const NuevoPacientePage: React.FC = () => {
   const navigate = useNavigate();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
@@ -18,15 +22,18 @@ export const NuevoPacientePage: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errorMessage) setErrorMessage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nombre.trim() || !formData.apellido.trim() || !formData.dni.trim()) {
+      setErrorMessage('Por favor complete todos los campos obligatorios (*).');
       return;
     }
 
     setIsSubmitting(true);
+    setErrorMessage(null);
     try {
       await pacientesService.createPaciente({
         nombre: formData.nombre.trim(),
@@ -36,8 +43,12 @@ export const NuevoPacientePage: React.FC = () => {
         telefono: formData.telefono.trim() || undefined,
         obraSocial: formData.obraSocial || undefined,
       });
+      toastSuccess(`Paciente ${formData.nombre.trim()} ${formData.apellido.trim()} (DNI: ${formData.dni.trim()}) registrado con éxito.`);
       navigate('/dashboard/recepcion/pacientes');
-    } catch {
+    } catch (err: unknown) {
+      const msg = extractApiErrorMessage(err, 'No se pudo dar de alta al paciente en el padrón.');
+      setErrorMessage(msg);
+      toastError(msg);
       setIsSubmitting(false);
     }
   };
@@ -70,6 +81,14 @@ export const NuevoPacientePage: React.FC = () => {
           <span>Ley 25.326</span>
         </div>
       </div>
+
+      {/* Banner de Error si falla la validación o el backend */}
+      {errorMessage && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-800 flex items-start gap-2.5 animate-in fade-in">
+          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
 
       {/* Formulario Clínico de Alta */}
       <div className="rounded-xl border border-border bg-card p-6 shadow-xs">
