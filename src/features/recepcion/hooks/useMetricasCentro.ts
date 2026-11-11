@@ -1,20 +1,73 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { metricasService, type DashboardMetricas } from '@/api/metricasService';
+import { reportesService } from '@/api/reportesService';
+import { centrosService } from '@/api/centrosService';
+import { profesionalesService } from '@/api/profesionalesService';
 import { extractApiErrorMessage } from '@/api/endpoints';
-import { exportarAcsv } from '@/lib/exportCsv';
+import { exportarMetricasCsvCompleto } from '../utils/metricasExportUtils';
 import { getFechaLocalHoy, getFechaLocalDiasAtras, formatHoraLocal } from '@/lib/dateUtils';
+
+export interface OpcionMedicoMetricas {
+  id: number;
+  nombreCompleto: string;
+}
 
 export function useMetricasCentro(centroId?: string | number) {
   const [fechaDesde, setFechaDesde] = useState<string>(getFechaLocalDiasAtras(30));
   const [fechaHasta, setFechaHasta] = useState<string>(getFechaLocalHoy());
   const [especialidad, setEspecialidad] = useState<string>('TODOS');
+  const [profesionalId, setProfesionalId] = useState<string>('TODOS');
+  const [consultorio, setConsultorio] = useState<string>('TODOS');
+
   const [especialidadesConocidas, setEspecialidadesConocidas] = useState<string[]>([]);
+  const [medicosOpciones, setMedicosOpciones] = useState<OpcionMedicoMetricas[]>([]);
+  const [consultoriosOpciones, setConsultoriosOpciones] = useState<string[]>([]);
 
   const [metricas, setMetricas] = useState<DashboardMetricas | null>(null);
   const [cargando, setCargando] = useState<boolean>(true);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [horaActualizacion, setHoraActualizacion] = useState<string>('');
   const [vistaTabular, setVistaTabular] = useState<boolean>(false);
+
+  const [exportandoOficial, setExportandoOficial] = useState<boolean>(false);
+  const [errorExportacion, setErrorExportacion] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!centroId) return;
+    let isSubscribed = true;
+    const idStr = String(centroId);
+
+    Promise.allSettled([
+      centrosService.getEspecialidadesPorCentro(idStr),
+      profesionalesService.getByCentro(idStr),
+      centrosService.getConsultorios(idStr),
+    ]).then(([espsRes, profsRes, consRes]) => {
+      if (!isSubscribed) return;
+
+      if (espsRes.status === 'fulfilled' && Array.isArray(espsRes.value)) {
+        const nombres = espsRes.value.map((e) => e.nombre).filter(Boolean);
+        setEspecialidadesConocidas((prev) => Array.from(new Set([...prev, ...nombres])).sort());
+      }
+
+      if (profsRes.status === 'fulfilled' && Array.isArray(profsRes.value)) {
+        setMedicosOpciones(
+          profsRes.value.map((p) => ({
+            id: Number(p.id),
+            nombreCompleto: `Dr(a). ${p.nombre} ${p.apellido}`.trim(),
+          }))
+        );
+      }
+
+      if (consRes.status === 'fulfilled' && Array.isArray(consRes.value)) {
+        const nums = consRes.value.map((c) => String(c.numero)).filter(Boolean);
+        setConsultoriosOpciones(Array.from(new Set(nums)).sort());
+      }
+    });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [centroId]);
 
   const cargarDatos = useCallback(async () => {
     if (!centroId) {
@@ -30,6 +83,8 @@ export function useMetricasCentro(centroId?: string | number) {
         hasta: fechaHasta || undefined,
         centroId: String(centroId),
         especialidad: especialidad !== 'TODOS' ? especialidad : undefined,
+        profesionalId: profesionalId !== 'TODOS' ? profesionalId : undefined,
+        consultorio: consultorio !== 'TODOS' ? consultorio : undefined,
       });
 
       setMetricas(data);
@@ -53,10 +108,10 @@ export function useMetricasCentro(centroId?: string | number) {
     } finally {
       setCargando(false);
     }
-  }, [centroId, fechaDesde, fechaHasta, especialidad]);
+  }, [centroId, fechaDesde, fechaHasta, especialidad, profesionalId, consultorio]);
 
   useEffect(() => {
-    cargarDatos();
+    void cargarDatos();
   }, [cargarDatos]);
 
   const demandaSemanalGrafico = useMemo(
@@ -100,35 +155,40 @@ export function useMetricasCentro(centroId?: string | number) {
   );
 
   const exportarCSV = useCallback(() => {
-    if (!metricas) return;
-
-    const headers = [
-      'Agrupamiento / Día',
-      'Turnos Atendidos',
-      'Ausencias Registradas',
-      'Cancelaciones',
-      'Total Demandado',
-      'Tasa Asistencia (%)',
-      'Tasa Ausentismo (%)',
-    ];
-
-    const rows = (metricas.demandaSemanal ?? []).map((d) => {
-      const denom = d.atendidos + d.ausentes;
-      const pctAsist = denom > 0 ? Math.round((d.atendidos / denom) * 100) : 0;
-      const pctAus = denom > 0 ? Math.round((d.ausentes / denom) * 100) : 0;
-      return [
-        d.label,
-        d.atendidos,
-        d.ausentes,
-        d.cancelados,
-        d.total,
-        `${pctAsist}%`,
-        `${pctAus}%`,
-      ];
-    });
-
-    exportarAcsv(`metricas_centro_${getFechaLocalHoy()}`, headers, rows);
+    if (metricas) exportarMetricasCsvCompleto(metricas);
   }, [metricas]);
+
+  const descargarExcelOficial = useCallback(async () => {
+    setExportandoOficial(true);
+    setErrorExportacion(null);
+    try {
+      await reportesService.exportarTurnosExcel({
+        desde: fechaDesde,
+        hasta: fechaHasta,
+        centroSaludId: centroId,
+      });
+    } catch (err: unknown) {
+      setErrorExportacion(extractApiErrorMessage(err, 'No se pudo generar el reporte oficial en Excel.'));
+    } finally {
+      setExportandoOficial(false);
+    }
+  }, [fechaDesde, fechaHasta, centroId]);
+
+  const descargarPdfOficial = useCallback(async () => {
+    setExportandoOficial(true);
+    setErrorExportacion(null);
+    try {
+      await reportesService.exportarTurnosPdf({
+        desde: fechaDesde,
+        hasta: fechaHasta,
+        centroSaludId: centroId,
+      });
+    } catch (err: unknown) {
+      setErrorExportacion(extractApiErrorMessage(err, 'No se pudo generar el reporte oficial en PDF.'));
+    } finally {
+      setExportandoOficial(false);
+    }
+  }, [fechaDesde, fechaHasta, centroId]);
 
   return {
     fechaDesde,
@@ -137,7 +197,13 @@ export function useMetricasCentro(centroId?: string | number) {
     setFechaHasta,
     especialidad,
     setEspecialidad,
+    profesionalId,
+    setProfesionalId,
+    consultorio,
+    setConsultorio,
     especialidadesConocidas,
+    medicosOpciones,
+    consultoriosOpciones,
     metricas,
     cargando,
     errorCarga,
@@ -150,5 +216,9 @@ export function useMetricasCentro(centroId?: string | number) {
     trendLineData,
     cargarDatos,
     exportarCSV,
+    descargarExcelOficial,
+    descargarPdfOficial,
+    exportandoOficial,
+    errorExportacion,
   };
 }

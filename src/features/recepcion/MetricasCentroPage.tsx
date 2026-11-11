@@ -9,6 +9,7 @@ import { MetricasCentroFiltersBar } from './components/MetricasCentroFiltersBar'
 import { MetricasCentroKpiGrid } from './components/MetricasCentroKpiGrid';
 import { MetricasCentroDemandaPanel } from './components/MetricasCentroDemandaPanel';
 import { MetricasCentroOcupacionPanel } from './components/MetricasCentroOcupacionPanel';
+import { MetricasCentroEstadoBreakdown } from './components/MetricasCentroEstadoBreakdown';
 
 export const MetricasCentroPage: React.FC = () => {
   const { user } = useAuth();
@@ -28,6 +29,9 @@ export const MetricasCentroPage: React.FC = () => {
         activeTab={activeTab}
         onTabChange={(tab) => setSearchParams({ tab }, { replace: true })}
         onExportCsv={state.exportarCSV}
+        onDescargarExcelOficial={state.descargarExcelOficial}
+        onDescargarPdfOficial={state.descargarPdfOficial}
+        exportandoOficial={state.exportandoOficial}
         onRefresh={state.cargarDatos}
       />
 
@@ -39,11 +43,24 @@ export const MetricasCentroPage: React.FC = () => {
         especialidad={state.especialidad}
         onEspecialidadChange={state.setEspecialidad}
         especialidadesOpciones={state.especialidadesConocidas}
+        profesionalId={state.profesionalId}
+        onProfesionalIdChange={state.setProfesionalId}
+        medicosOpciones={state.medicosOpciones}
+        consultorio={state.consultorio}
+        onConsultorioChange={state.setConsultorio}
+        consultoriosOpciones={state.consultoriosOpciones}
         periodoDescripcion={state.metricas?.periodoDescripcion}
         horaActualizacion={state.horaActualizacion}
         vistaTabular={state.vistaTabular}
         onToggleVistaTabular={() => state.setVistaTabular((v) => !v)}
       />
+
+      {state.errorExportacion && (
+        <div className="rounded-xl border border-rose-300 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/30 p-3 text-xs text-rose-900 dark:text-rose-200 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" aria-hidden="true" />
+          <span>{state.errorExportacion}</span>
+        </div>
+      )}
 
       {state.errorCarga && (
         <div className="rounded-xl border border-rose-300 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/30 p-4 text-xs text-rose-900 dark:text-rose-200 flex items-center justify-between gap-3">
@@ -71,6 +88,12 @@ export const MetricasCentroPage: React.FC = () => {
       {state.metricas && (
         <>
           <MetricasCentroKpiGrid metricas={state.metricas} />
+
+          <MetricasCentroEstadoBreakdown
+            desglose={state.metricas.desglosePorEstado}
+            totalTurnos={state.metricas.totalTurnos}
+          />
+
           {activeTab === 'resumen' ? (
             <MetricasCentroDemandaPanel
               metricas={state.metricas}

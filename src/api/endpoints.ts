@@ -150,6 +150,10 @@ export const API_ENDPOINTS = {
     resumenTurnos: '/reportes/turnos/resumen',
     csvTurnos: '/reportes/turnos/csv',
     pdfTurnos: '/reportes/turnos/pdf',
+    excelTurnos: '/reportes/turnos/excel',
+    exportarTurnos: '/admin/reportes/turnos/exportar',
+    exportarPacientes: '/admin/reportes/pacientes/exportar',
+    pacientesCsv: '/reportes/pacientes/csv',
   },
   metricasSanitarias: {
     dashboard: '/metricas/dashboard',

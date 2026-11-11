@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, RefreshCw, CalendarPlus, Flame, Building2 } from 'lucide-react';
+import { AlertCircle, RefreshCw, CalendarPlus, Flame, Building2, FileSpreadsheet, FileText } from 'lucide-react';
 import { ModalCancelarMostrador } from './components/ModalCancelarMostrador';
 import { useGestionTurnosAdmin } from './hooks/useGestionTurnosAdmin';
 import { TurnosFiltersBar } from './components/TurnosFiltersBar';
 import { TurnosAdminTable } from './components/TurnosAdminTable';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useToast } from '@/context/ToastContext';
+import { reportesService } from '@/api/reportesService';
 
 export const GestionTurnosAdminPage: React.FC = () => {
   const {
@@ -32,6 +34,38 @@ export const GestionTurnosAdminPage: React.FC = () => {
     centroSaludNombre,
   } = useGestionTurnosAdmin();
   const { can } = usePermissions();
+  const { success, error: toastError } = useToast();
+  const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null);
+
+  const handleDescargarExcel = async () => {
+    setIsExporting('excel');
+    try {
+      await reportesService.exportarTurnosExcel({
+        desde: fechaDesde || undefined,
+        hasta: fechaHasta || undefined,
+      });
+      success('Reporte Excel de turnos descargado exitosamente.');
+    } catch (err: unknown) {
+      toastError(err instanceof Error ? err.message : 'Error al exportar reporte Excel.');
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
+  const handleDescargarPdf = async () => {
+    setIsExporting('pdf');
+    try {
+      await reportesService.exportarTurnosPdf({
+        desde: fechaDesde || undefined,
+        hasta: fechaHasta || undefined,
+      });
+      success('Reporte PDF de turnos descargado exitosamente.');
+    } catch (err: unknown) {
+      toastError(err instanceof Error ? err.message : 'Error al exportar reporte PDF.');
+    } finally {
+      setIsExporting(null);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
@@ -56,6 +90,31 @@ export const GestionTurnosAdminPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {can('REPORTES_VER') && (
+            <>
+              <button
+                type="button"
+                onClick={handleDescargarExcel}
+                disabled={isExporting !== null}
+                title="Descargar listado oficial en Excel"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 text-xs font-semibold transition shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:opacity-50 cursor-pointer"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>{isExporting === 'excel' ? 'Generando...' : 'Excel'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDescargarPdf}
+                disabled={isExporting !== null}
+                title="Descargar listado oficial en PDF"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white px-3.5 py-2 text-xs font-semibold transition shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-600 disabled:opacity-50 cursor-pointer"
+              >
+                <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>{isExporting === 'pdf' ? 'Generando...' : 'PDF'}</span>
+              </button>
+            </>
+          )}
+
           {can('SOBRETURNOS_CREAR') && (
             <Link
               to="/dashboard/recepcion/turnos/sobreturno"

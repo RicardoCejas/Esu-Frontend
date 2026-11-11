@@ -13,7 +13,7 @@ export const MetricasCentroKpiGrid: React.FC<MetricasCentroKpiGridProps> = ({ me
   const ausentes = metricas.turnosAusentes ?? 0;
   const tasaAsistencia = metricas.tasaAsistencia ?? 0;
   const tasaAusentismo = metricas.tasaAusentismo ?? 0;
-  const tiempoPromedio = metricas.tiempoPromedioConsultaMinutos ?? 20;
+  const tiempoPromedio = metricas.tiempoPromedioConsultaMinutos;
   const especialidadTop = metricas.especialidadMasDemandada || 'Sin datos';
   const totalEspTop = metricas.totalEspecialidadMasDemandada ?? 0;
 
@@ -73,10 +73,14 @@ export const MetricasCentroKpiGrid: React.FC<MetricasCentroKpiGridProps> = ({ me
           <Clock className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-extrabold text-foreground tabular-nums">{tiempoPromedio} min</span>
+          <span className="text-3xl font-extrabold text-foreground tabular-nums">
+            {tiempoPromedio != null && tiempoPromedio > 0 ? `${tiempoPromedio} min` : 'Sin datos'}
+          </span>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Tiempo promedio estimado por consulta ambulatoria
+          {tiempoPromedio != null && tiempoPromedio > 0
+            ? 'Tiempo promedio registrado por consulta médica'
+            : 'Sin tiempos de consulta registrados en el período'}
         </p>
       </div>
     </div>

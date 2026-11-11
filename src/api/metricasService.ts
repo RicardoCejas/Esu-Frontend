@@ -32,6 +32,9 @@ export interface DashboardMetricas {
   centroId?: number | string | null;
   centroNombre?: string;
   especialidad?: string | null;
+  profesionalId?: number | string | null;
+  profesionalNombre?: string | null;
+  consultorio?: string | null;
   fechaActualizacion: string;
   respuestaIncompleta: boolean;
   periodoDescripcion: string;
@@ -48,7 +51,7 @@ export interface DashboardMetricas {
   tasaAsistencia: number;
   tasaAusentismo: number;
   tasaCancelacion: number;
-  tiempoPromedioConsultaMinutos: number;
+  tiempoPromedioConsultaMinutos: number | null;
 
   especialidadMasDemandada: string;
   totalEspecialidadMasDemandada: number;
@@ -78,6 +81,8 @@ export const metricasService = {
     hasta?: string;
     centroId?: number | string;
     especialidad?: string;
+    profesionalId?: number | string;
+    consultorio?: string;
   }): Promise<DashboardMetricas> {
     const res = await apiClient.get<DashboardMetricas>('/metricas/dashboard', {
       params: {
@@ -85,6 +90,18 @@ export const metricasService = {
         hasta: params?.hasta || undefined,
         centroId: params?.centroId && params.centroId !== 'TODOS' ? params.centroId : undefined,
         especialidad: params?.especialidad && params.especialidad !== 'TODOS' ? params.especialidad : undefined,
+        profesionalId: params?.profesionalId && params.profesionalId !== 'TODOS' ? params.profesionalId : undefined,
+        consultorio: params?.consultorio && params.consultorio !== 'TODOS' ? params.consultorio : undefined,
+      },
+    });
+    return res.data;
+  },
+
+  async getAusentismoPorProfesional(profesionalId: number | string, params?: { desde?: string; hasta?: string }): Promise<unknown> {
+    const res = await apiClient.get(`/metricas/ausentismo/profesional/${profesionalId}`, {
+      params: {
+        desde: params?.desde || undefined,
+        hasta: params?.hasta || undefined,
       },
     });
     return res.data;

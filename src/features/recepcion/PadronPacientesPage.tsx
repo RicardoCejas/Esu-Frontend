@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { pacientesService } from '@/api/pacientesService';
+import { reportesService } from '@/api/reportesService';
 import type { User } from '@/types';
 import {
   Search,
@@ -15,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  Download,
 } from 'lucide-react';
 
 const PACIENTES_POR_PAGINA = 10;
@@ -32,6 +34,18 @@ export const PadronPacientesPage: React.FC = () => {
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<'TODOS' | 'ACTIVOS' | 'INACTIVOS'>('TODOS');
   const [paginaActual, setPaginaActual] = useState(1);
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
+
+  const handleExportarPadron = async () => {
+    setIsExportingCsv(true);
+    try {
+      await reportesService.exportarPacientesCsv(user?.centroSaludId);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al exportar el padrón de pacientes.');
+    } finally {
+      setIsExportingCsv(false);
+    }
+  };
 
   const cargarPacientes = async () => {
     setLoading(true);
@@ -116,15 +130,30 @@ export const PadronPacientesPage: React.FC = () => {
           </div>
         </div>
 
-        {canRegistrarPaciente && (
-          <Link
-            to="/dashboard/recepcion/pacientes/nuevo"
-            className="min-h-[40px] inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer self-start sm:self-auto"
-          >
-            <UserPlus className="h-4 w-4" aria-hidden="true" />
-            <span>Registrar Nuevo Paciente</span>
-          </Link>
-        )}
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {can('REPORTES_VER') && (
+            <button
+              type="button"
+              onClick={handleExportarPadron}
+              disabled={isExportingCsv}
+              title="Descargar padrón asistencial en formato CSV oficial"
+              className="min-h-[40px] inline-flex items-center gap-2 rounded-xl bg-slate-700 hover:bg-slate-800 text-white px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-600 disabled:opacity-50 cursor-pointer"
+            >
+              <Download className="h-4 w-4" aria-hidden="true" />
+              <span>{isExportingCsv ? 'Exportando...' : 'Exportar CSV'}</span>
+            </button>
+          )}
+
+          {canRegistrarPaciente && (
+            <Link
+              to="/dashboard/recepcion/pacientes/nuevo"
+              className="min-h-[40px] inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+            >
+              <UserPlus className="h-4 w-4" aria-hidden="true" />
+              <span>Registrar Nuevo Paciente</span>
+            </Link>
+          )}
+        </div>
       </div>
 
       {error && (
