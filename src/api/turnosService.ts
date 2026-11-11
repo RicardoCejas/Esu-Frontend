@@ -141,7 +141,7 @@ export const turnosService = {
     }
   },
 
-  async getByPaciente(pacienteId: string): Promise<Turno[]> {
+  async getByPaciente(pacienteId: string | number): Promise<Turno[]> {
     try {
       const numId = toNumericId(pacienteId);
       const response = await apiClient.get<Record<string, unknown>[]>(

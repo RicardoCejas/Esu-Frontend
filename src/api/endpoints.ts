@@ -60,6 +60,12 @@ export const API_ENDPOINTS = {
     byId: (id: string | number) => `/pacientes/${id}`,
     byDni: (dni: string) => `/pacientes/dni/${encodeURIComponent(dni.trim())}`,
     contacto: (id: string | number) => `/pacientes/${id}/contacto`,
+    paginado: '/pacientes/paginado',
+    carnetDigital: (id: string | number) => `/pacientes/${id}/carnet-digital`,
+    verificarCarnet: '/pacientes/verificar-carnet',
+    familiares: (id: string | number) => `/pacientes/${id}/familiares`,
+    familiarById: (titularId: string | number, vinculoId: string | number) =>
+      `/pacientes/${titularId}/familiares/${vinculoId}`,
     fusionar: '/pacientes/fusionar',
     resumenClinico: (id: string | number) => `/pacientes/${id}/resumen-clinico`,
     alergias: (id: string | number) => `/pacientes/${id}/alergias`,

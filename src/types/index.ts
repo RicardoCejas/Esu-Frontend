@@ -534,3 +534,53 @@ export interface RecetaDigitalDto {
   fechaAnulacion?: string;
   medicamentos: MedicamentoRecetaDto[];
 }
+
+export interface CarnetDigital {
+  pacienteId: number | string;
+  nombreCompleto: string;
+  dni: string;
+  nroAfiliado: string;
+  obraSocial: string;
+  grupoSanguineo?: string;
+  fechaEmision: string;
+  estadoActivo: boolean;
+  tokenVerificacion: string;
+  qrPayload: string;
+}
+
+export interface Familiar {
+  id: string | number;
+  titularId: string | number;
+  nombre: string;
+  apellido: string;
+  dni: string;
+  tipoVinculo: string;
+  obraSocial?: string;
+  nroAfiliado?: string;
+  fechaCreacion?: string;
+}
+
+export interface FamiliarRequest {
+  nombre: string;
+  apellido: string;
+  dni: string;
+  tipoVinculo: string;
+  obraSocial?: string;
+  nroAfiliado?: string;
+}
+
+export interface PacienteFormValues {
+  nombre: string;
+  apellido: string;
+  dni: string;
+  telefono: string;
+  email: string;
+  obraSocial: string;
+  otraObraSocial: string;
+  nroAfiliado: string;
+  grupoSanguineo: string;
+  fechaNacimiento: string;
+  activo: boolean;
+}
+
+export type PacienteFormErrors = Partial<Record<keyof PacienteFormValues, string>>;

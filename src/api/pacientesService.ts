@@ -1,7 +1,7 @@
 import { isAxiosError } from 'axios';
 import { apiClient } from './apiClient.ts';
 import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints.ts';
-import type { User, ConsultaMedica, TimelineItem } from '@/types';
+import type { User, ConsultaMedica, TimelineItem, CarnetDigital, Familiar, FamiliarRequest } from '@/types';
 import {
   normalizePaciente,
   normalizeConsulta,
@@ -97,7 +97,7 @@ export const pacientesService = {
     }
   },
 
-  async createPaciente(paciente: Omit<User, 'id' | 'rol'>): Promise<User> {
+  async createPaciente(paciente: Omit<User, 'id' | 'rol' | 'email'> & { email?: string }): Promise<User> {
     try {
       const payload = {
         nombre: paciente.nombre,
@@ -118,6 +118,104 @@ export const pacientesService = {
     }
   },
 
+  async getPaginado(
+    page = 0,
+    size = 10
+  ): Promise<{ content: User[]; totalElements: number; totalPages: number }> {
+    try {
+      const res = await apiClient.get<{ content: Record<string, unknown>[]; totalElements: number; totalPages: number }>(
+        API_ENDPOINTS.pacientes.paginado,
+        { params: { page, size } }
+      );
+      const items = Array.isArray(res.data?.content) ? res.data.content.map(normalizePaciente) : [];
+      return {
+        content: items,
+        totalElements: res.data?.totalElements ?? items.length,
+        totalPages: res.data?.totalPages ?? 1,
+      };
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el padrón paginado.'), { cause: err });
+    }
+  },
+
+  async actualizarCompleto(
+    pacienteId: string | number,
+    data: Record<string, unknown>
+  ): Promise<User> {
+    try {
+      const numId = toNumericId(pacienteId);
+      const res = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.pacientes.byId(numId),
+        data
+      );
+      return normalizePaciente(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar la información del paciente.'), { cause: err });
+    }
+  },
+
+  async getCarnetDigital(pacienteId: string | number): Promise<CarnetDigital> {
+    try {
+      const numId = toNumericId(pacienteId);
+      const res = await apiClient.get<CarnetDigital>(API_ENDPOINTS.pacientes.carnetDigital(numId));
+      return res.data;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo emitir el carnet digital.'), { cause: err });
+    }
+  },
+
+  async verificarCarnet(qrPayload: string): Promise<boolean> {
+    try {
+      const res = await apiClient.post<boolean>(
+        API_ENDPOINTS.pacientes.verificarCarnet,
+        null,
+        { params: { qrPayload } }
+      );
+      return Boolean(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'Error al verificar carnet digital.'), { cause: err });
+    }
+  },
+
+  async getFamiliares(pacienteId: string | number): Promise<Familiar[]> {
+    try {
+      const numId = toNumericId(pacienteId);
+      const res = await apiClient.get<Familiar[]>(API_ENDPOINTS.pacientes.familiares(numId));
+      return Array.isArray(res.data) ? res.data : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el grupo familiar.'), { cause: err });
+    }
+  },
+
+  async vincularFamiliar(
+    pacienteId: string | number,
+    request: FamiliarRequest
+  ): Promise<Familiar> {
+    try {
+      const numId = toNumericId(pacienteId);
+      const res = await apiClient.post<Familiar>(
+        API_ENDPOINTS.pacientes.familiares(numId),
+        request
+      );
+      return res.data;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo vincular el familiar.'), { cause: err });
+    }
+  },
+
+  async desvincularFamiliar(
+    titularId: string | number,
+    vinculoId: string | number
+  ): Promise<void> {
+    try {
+      const numTitular = toNumericId(titularId, 'titularId');
+      const numVinculo = toNumericId(vinculoId, 'vinculoId');
+      await apiClient.delete(API_ENDPOINTS.pacientes.familiarById(numTitular, numVinculo));
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo desvincular al familiar.'), { cause: err });
+    }
+  },
+
   async updateContacto(
     pacienteId: string | number,
     data: {
@@ -135,19 +233,22 @@ export const pacientesService = {
     }
   ): Promise<User> {
     try {
-      // 1. Actualizar por endpoint de perfil autenticado (PACIENTE / ADMIN / DEV)
+      // 1. Si es recepción o admin editando por ID, llamar a actualizarCompleto
+      const numId = toNumericId(pacienteId);
       try {
-        const resPerfil = await apiClient.put<Record<string, unknown>>('/pacientes/mi-perfil', data);
-        if (resPerfil.data) return normalizePaciente(resPerfil.data);
+        const resAdmin = await apiClient.put<Record<string, unknown>>(
+          API_ENDPOINTS.pacientes.byId(numId),
+          data
+        );
+        if (resAdmin.data) return normalizePaciente(resAdmin.data);
       } catch (err: unknown) {
         const status = isAxiosError(err) ? err.response?.status : undefined;
-        // Solo hacer fallback al endpoint administrativo por ID cuando /mi-perfil no aplica por rol o ruta
         if (status !== 403 && status !== 404) {
           throw err;
         }
       }
 
-      const numId = toNumericId(pacienteId);
+      // 2. Fallback a endpoint de contacto por ID
       const res = await apiClient.put<Record<string, unknown>>(
         API_ENDPOINTS.pacientes.contacto(numId),
         data

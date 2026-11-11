@@ -47,7 +47,7 @@ export function normalizePaciente(d: Record<string, unknown>): User {
     centroSaludNombre:
       typeof d.centroSaludReferenciaNombre === 'string' ? d.centroSaludReferenciaNombre : undefined,
     dniVerificado: isValidDniFormat(dni) && telReal && Boolean(fechaNacimiento),
-    activo: true,
+    activo: d.activo !== undefined && d.activo !== null ? Boolean(d.activo) : true,
   };
 }
 
