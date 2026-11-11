@@ -124,8 +124,21 @@ export const AdminUsuariosPage: React.FC = () => {
 
       const overrides = getStoredUserOverrides();
 
+      // Combinar con usuarios personalizados/de recepción creados en Sedes
+      let combinados = [...usuariosList];
+      try {
+        const customUsers: User[] = JSON.parse(localStorage.getItem('esu_custom_users') || '[]');
+        for (const cu of customUsers) {
+          if (!combinados.some((u) => u.email.toLowerCase() === cu.email.toLowerCase())) {
+            combinados.push(cu);
+          }
+        }
+      } catch {
+        // no-op
+      }
+
       // Mapear cada usuario con inferencia inteligente y persistencia local
-      const mapped: User[] = usuariosList.map((u) => {
+      const mapped: User[] = combinados.map((u) => {
         const userOverride = overrides[u.id] || {};
         const effectiveCentroId = userOverride.centroSaludId !== undefined
           ? userOverride.centroSaludId

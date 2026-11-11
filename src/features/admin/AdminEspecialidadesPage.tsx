@@ -21,7 +21,6 @@ import {
   MapPin,
   Phone,
   Clock,
-  PlusCircle,
   Search,
   AlertCircle,
   RefreshCw,
@@ -415,14 +414,6 @@ export const AdminEspecialidadesPage: React.FC = () => {
             Gestión detallada de cada sede asistencial: especialidades habilitadas, médicos asignados y nómina de pacientes.
           </p>
         </div>
-
-        <Link
-          to="/dashboard/admin/especialidades/nueva"
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition cursor-pointer self-start sm:self-auto"
-        >
-          <PlusCircle className="h-4 w-4" />
-          <span>+ Nueva Especialidad Médica</span>
-        </Link>
       </div>
 
       {loading ? (

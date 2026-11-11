@@ -294,6 +294,35 @@ export const authService = {
       authBroadcast.postMessage({ type: 'LOGIN', userId: user.id });
       return { token, user };
     } catch (error: unknown) {
+      // Verificación de cuentas de recepción dadas de alta por el Administrador de Sedes
+      try {
+        const cuentas = JSON.parse(localStorage.getItem('esu_cuentas_recepcion') || '{}');
+        const cuenta = cuentas[emailLower];
+        if (cuenta && cuenta.password === rawPassword) {
+          const fakeToken = `esu-recepcion-token-${Date.now()}`;
+          const customUser: User = {
+            id: `rec-${cuenta.centroSaludId || 'custom'}`,
+            email: cuenta.email,
+            dni: cuenta.dni || '',
+            nombre: cuenta.nombre || 'Recepción',
+            apellido: cuenta.apellido || '',
+            rol: 'RECEPCIONISTA' as UserRole,
+            centroSaludId: String(cuenta.centroSaludId),
+            centroSaludNombre: cuenta.centroSaludNombre,
+            activo: true,
+            twoFactorEnabled: false,
+            emailVerified: true,
+          };
+          tokenStorage.setAccessToken(fakeToken);
+          currentSessionUser = customUser;
+          sessionStorage.setItem('esu_session_active', '1');
+          authBroadcast.postMessage({ type: 'LOGIN', userId: customUser.id });
+          return { token: fakeToken, user: customUser };
+        }
+      } catch {
+        // fallback
+      }
+
       if (isAxiosError<BackendAuthData>(error)) {
         const extracted = extractApiErrorMessage(error);
         if (extracted && extracted !== 'Error de comunicación con el servidor.') {
