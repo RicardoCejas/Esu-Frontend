@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { turnosService } from '@/api/turnosService';
 import { centrosService } from '@/api/centrosService';
 import { useQueueAudioAnnouncement } from './hooks/useQueueAudioAnnouncement';
@@ -11,17 +12,25 @@ import {
   Minimize2,
   Building2,
   Clock,
-  ArrowRight
+  ArrowRight,
 } from 'lucide-react';
 
+const STORAGE_KEY_TV_CENTRO = 'esu_pantalla_tv_centro_id';
+
 export const PantallaTurnosTVPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryCentroId = searchParams.get('centroId') || '';
+
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [centros, setCentros] = useState<CentroSalud[]>([]);
-  const [filtroCentro, setFiltroCentro] = useState<string>('TODOS');
+  const [filtroCentro, setFiltroCentro] = useState<string>(() => {
+    return queryCentroId || localStorage.getItem(STORAGE_KEY_TV_CENTRO) || 'TODOS';
+  });
+
   const [horaActual, setHoraActual] = useState(new Date());
   const { sonidoHabilitado, toggleSonido, anunciarLlamado } = useQueueAudioAnnouncement();
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [ultimoLlamadoId, setUltimoLlamadoId] = useState<string | null>(null);
+  const ultimoLlamadoIdRef = useRef<string | null>(null);
 
   // Reloj en tiempo real
   useEffect(() => {
@@ -29,26 +38,71 @@ export const PantallaTurnosTVPage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Polling automático cada 4 segundos para simular tiempo real en pantalla TV
+  // Actualizar localStorage y query params cuando cambia filtroCentro
+  const handleCambioCentro = useCallback((nuevoId: string) => {
+    setFiltroCentro(nuevoId);
+    if (nuevoId && nuevoId !== 'TODOS') {
+      localStorage.setItem(STORAGE_KEY_TV_CENTRO, nuevoId);
+      setSearchParams({ centroId: nuevoId });
+    } else {
+      localStorage.removeItem(STORAGE_KEY_TV_CENTRO);
+      setSearchParams({});
+    }
+  }, [setSearchParams]);
+
+  // Cargar sedes inicialmente
   useEffect(() => {
+    let isSubscribed = true;
+    centrosService.getAll().then((data) => {
+      if (isSubscribed) setCentros(data ?? []);
+    }).catch(() => {});
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
+
+  // Polling automático cada 4 segundos de cartelera pública o turnos del centro
+  useEffect(() => {
+    let isSubscribed = true;
+
     const fetchData = async () => {
-      const [t, c] = await Promise.all([turnosService.getAll(), centrosService.getAll()]);
-      setTurnos(t);
-      setCentros(c);
+      try {
+        let t: Turno[] = [];
+        if (filtroCentro && filtroCentro !== 'TODOS') {
+          // Intentar obtener cartelera pública optimizada para TV
+          t = await turnosService.getTurnosCarteleraPublica(filtroCentro).catch(async () => {
+            return turnosService.getTurnosKanbanCentro(filtroCentro).catch(() => [] as Turno[]);
+          });
+        } else {
+          t = await turnosService.getAll().catch(() => [] as Turno[]);
+        }
+
+        if (isSubscribed) {
+          setTurnos(t ?? []);
+        }
+      } catch {
+        // En caso de corte momentáneo de red, no borrar la pantalla
+      }
     };
 
-    fetchData();
+    void fetchData();
     const interval = setInterval(fetchData, 4000);
-    return () => clearInterval(interval);
-  }, []);
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
+  }, [filtroCentro]);
 
   const hoyStr = getFechaLocalHoy();
 
   // Turnos del día filtrados por sede
   const turnosHoy = useMemo(() => {
     return turnos.filter((t) => {
-      if (t.fecha !== hoyStr) return false;
-      if (filtroCentro !== 'TODOS' && t.centroSaludId !== filtroCentro) return false;
+      if (t.fecha && t.fecha !== hoyStr) return false;
+      if (filtroCentro !== 'TODOS' && t.centroSaludId && String(t.centroSaludId) !== String(filtroCentro)) {
+        return false;
+      }
       return true;
     });
   }, [turnos, hoyStr, filtroCentro]);
@@ -67,15 +121,15 @@ export const PantallaTurnosTVPage: React.FC = () => {
 
   const llamadoDestacado = turnosEnLlamado[0] || null;
 
-  // Efecto de sonido y animación cuando cambia el paciente llamado
+  // Efecto de sonido y anuncio por voz cuando cambia el paciente llamado
   useEffect(() => {
-    if (llamadoDestacado && llamadoDestacado.id !== ultimoLlamadoId) {
-      setUltimoLlamadoId(llamadoDestacado.id);
+    if (llamadoDestacado && llamadoDestacado.id !== ultimoLlamadoIdRef.current) {
+      ultimoLlamadoIdRef.current = llamadoDestacado.id;
       if (sonidoHabilitado) {
-        anunciarLlamado(llamadoDestacado.pacienteNombre, llamadoDestacado.consultorioNumero);
+        anunciarLlamado(llamadoDestacado.pacienteNombre, llamadoDestacado.consultorioNumero || '1');
       }
     }
-  }, [llamadoDestacado, ultimoLlamadoId, anunciarLlamado]);
+  }, [llamadoDestacado, anunciarLlamado, sonidoHabilitado]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -88,7 +142,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
   const nombreCentroActual =
     filtroCentro === 'TODOS'
       ? 'Red de Salud Cruz del Eje'
-      : centros.find((c) => c.id === filtroCentro)?.nombre || 'Centro de Salud';
+      : centros.find((c) => String(c.id) === String(filtroCentro))?.nombre || 'Centro de Salud';
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-primary selection:text-white font-sans overflow-hidden">
@@ -96,7 +150,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
       <header className="px-8 py-5 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-2xl bg-sky-700 flex items-center justify-center shadow-lg shadow-sky-600/30">
-            <span className="text-xl font-black tracking-wider">ESU</span>
+            <span className="text-xl font-black tracking-wider text-white">ESU</span>
           </div>
           <div>
             <h1 className="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
@@ -116,12 +170,12 @@ export const PantallaTurnosTVPage: React.FC = () => {
             <Building2 className="h-4 w-4 text-sky-400" />
             <select
               value={filtroCentro}
-              onChange={(e) => setFiltroCentro(e.target.value)}
+              onChange={(e) => handleCambioCentro(e.target.value)}
               className="bg-transparent text-slate-200 font-medium focus:outline-none"
             >
               <option value="TODOS" className="bg-slate-900">Todas las Sedes</option>
               {centros.map((c) => (
-                <option key={c.id} value={c.id} className="bg-slate-900">
+                <option key={c.id} value={String(c.id)} className="bg-slate-900">
                   {c.nombre}
                 </option>
               ))}
@@ -130,25 +184,26 @@ export const PantallaTurnosTVPage: React.FC = () => {
 
           {/* Botón de Sonido */}
           <button
+            type="button"
             onClick={toggleSonido}
-
-
-
-            className={`p-2 rounded-xl border transition ${
+            className={`p-2 rounded-xl border transition cursor-pointer ${
               sonidoHabilitado
                 ? 'border-sky-600 bg-sky-700 text-white'
                 : 'border-slate-800 bg-slate-900 text-slate-500'
             }`}
             title={sonidoHabilitado ? 'Silenciar sonido' : 'Activar sonido'}
+            aria-label={sonidoHabilitado ? 'Silenciar sonido' : 'Activar sonido'}
           >
             {sonidoHabilitado ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
           </button>
 
           {/* Botón Pantalla Completa */}
           <button
+            type="button"
             onClick={toggleFullscreen}
-            className="p-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition"
+            className="p-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer"
             title="Pantalla Completa (F11)"
+            aria-label="Alternar Pantalla Completa"
           >
             {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
           </button>
@@ -168,7 +223,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
       {/* Contenido Central Dividido */}
       <main className="flex-1 p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch overflow-hidden">
         {/* PANEL PRINCIPAL: Último llamado médico (Destacado Gigante) */}
-        <section className="lg:col-span-8 flex flex-col justify-center">
+        <section className="lg:col-span-8 flex flex-col justify-center" aria-live="polite">
           {llamadoDestacado ? (
             <div className="relative rounded-3xl border-2 border-sky-500/50 bg-slate-900 p-8 lg:p-12 shadow-2xl shadow-sky-950/50 flex flex-col justify-between animate-in zoom-in-95 duration-300 ring-4 ring-sky-500/20">
               <div className="flex items-center justify-between pb-6 border-b border-slate-800">
@@ -209,11 +264,11 @@ export const PantallaTurnosTVPage: React.FC = () => {
                         Por favor dirigirse a:
                       </span>
                       <div className="text-3xl sm:text-5xl font-black text-white tracking-tight tabular-nums">
-                        CONSULTORIO {llamadoDestacado.consultorioNumero || '102'}
+                        CONSULTORIO {llamadoDestacado.consultorioNumero || 'ASIGNADO'}
                       </div>
                       {llamadoDestacado.planta && (
                         <div className="text-sm font-semibold text-sky-300 mt-0.5">
-                          Ubicación: {llamadoDestacado.planta}
+                          Ubicación: Planta {llamadoDestacado.planta}
                         </div>
                       )}
                     </div>
@@ -264,7 +319,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <span className="rounded-lg bg-sky-700 text-white px-2 py-1 text-xs tabular-nums font-black">
-                      Cons. {t.consultorioNumero || '102'}
+                      Cons. {t.consultorioNumero || 'S/N'}
                     </span>
                     <div className="text-[10px] text-slate-500 mt-1 tabular-nums">{t.horaLlamado || t.hora} hs</div>
                   </div>
