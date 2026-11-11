@@ -39,15 +39,6 @@ export const AdminSedesPage: React.FC = () => {
     disponibleGuardia: false,
   });
 
-  // Modal Consultorio
-  const [modalConsultorioOpen, setModalConsultorioOpen] = useState(false);
-  const [consultorioForm, setConsultorioForm] = useState({
-    centroSaludId: '',
-    numero: '',
-    planta: 'Planta Baja',
-    especialidadAsignada: 'Clínica Médica / Medicina General',
-    activo: true,
-  });
 
   const [centroSeleccionadoId, setCentroSeleccionadoId] = useState<string>('TODOS');
   const [sedeAEliminar, setSedeAEliminar] = useState<CentroSalud | null>(null);
@@ -137,22 +128,6 @@ export const AdminSedesPage: React.FC = () => {
     }
   };
 
-  const handleGuardarConsultorio = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!consultorioForm.centroSaludId) return;
-
-    setIsSaving(true);
-    try {
-      await centrosService.createConsultorio(consultorioForm);
-      success(`Consultorio "${consultorioForm.numero}" registrado con éxito.`);
-      setModalConsultorioOpen(false);
-      cargarDatos();
-    } catch (err: unknown) {
-      toastError(extractApiErrorMessage(err, 'No se pudo registrar el consultorio.'));
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handleConfirmarEliminarConsultorio = async () => {
     if (!consultorioAEliminar) return;
@@ -317,23 +292,6 @@ export const AdminSedesPage: React.FC = () => {
               ))}
             </select>
 
-            <button
-              onClick={() => {
-                setConsultorioForm({
-                  centroSaludId: centros[0]?.id || '',
-                  numero: '',
-                  planta: 'Planta Baja',
-                  especialidadAsignada: 'Clínica Médica / Medicina General',
-                  activo: true,
-                });
-                setModalConsultorioOpen(true);
-              }}
-              disabled={centros.length === 0}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition cursor-pointer disabled:opacity-50"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Nuevo Consultorio</span>
-            </button>
           </div>
         </div>
 
@@ -506,99 +464,6 @@ export const AdminSedesPage: React.FC = () => {
                   className="rounded-xl bg-primary px-5 py-2 font-semibold text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-50"
                 >
                   {isSaving ? 'Guardando...' : 'Guardar Sede'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Consultorio */}
-      {modalConsultorioOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <h3 className="font-bold text-sm text-foreground">Asignar Nuevo Consultorio Físico</h3>
-              <button
-                onClick={() => setModalConsultorioOpen(false)}
-                className="p-1 rounded-lg text-muted-foreground hover:bg-muted cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleGuardarConsultorio} className="mt-4 space-y-3 text-xs">
-              <div>
-                <label className="block font-semibold mb-1">Sede / Centro *</label>
-                <select
-                  required
-                  value={consultorioForm.centroSaludId}
-                  onChange={(e) => setConsultorioForm({ ...consultorioForm, centroSaludId: e.target.value })}
-                  className="w-full rounded-xl border border-input bg-background p-2 focus:ring-2 focus:ring-primary cursor-pointer"
-                >
-                  {centros.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold mb-1">Número o Código *</label>
-                  <input
-                    type="text"
-                    required
-                    value={consultorioForm.numero}
-                    onChange={(e) => setConsultorioForm({ ...consultorioForm, numero: e.target.value })}
-                    placeholder="Ej. 104 o Box A"
-                    className="w-full rounded-xl border border-input bg-background p-2 font-mono focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold mb-1">Planta / Piso</label>
-                  <select
-                    value={consultorioForm.planta}
-                    onChange={(e) => setConsultorioForm({ ...consultorioForm, planta: e.target.value })}
-                    className="w-full rounded-xl border border-input bg-background p-2 focus:ring-2 focus:ring-primary cursor-pointer"
-                  >
-                    <option value="Planta Baja">Planta Baja</option>
-                    <option value="1° Piso">1° Piso</option>
-                    <option value="2° Piso">2° Piso</option>
-                    <option value="Planta Única">Planta Única</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">Especialidad Principal Asignada</label>
-                <input
-                  type="text"
-                  value={consultorioForm.especialidadAsignada}
-                  onChange={(e) =>
-                    setConsultorioForm({ ...consultorioForm, especialidadAsignada: e.target.value })
-                  }
-                  placeholder="Ej. Cardiología, Pediatría..."
-                  className="w-full rounded-xl border border-input bg-background p-2 focus:ring-2 focus:ring-primary"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t border-border mt-4">
-                <button
-                  type="button"
-                  disabled={isSaving}
-                  onClick={() => setModalConsultorioOpen(false)}
-                  className="rounded-xl border border-border px-4 py-2 font-semibold text-muted-foreground hover:bg-muted cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="rounded-xl bg-primary px-5 py-2 font-semibold text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-50"
-                >
-                  {isSaving ? 'Registrando...' : 'Registrar Consultorio'}
                 </button>
               </div>
             </form>
