@@ -23,8 +23,9 @@ export interface UseGestionTurnosAdminReturn {
   setTurnoACancelar: (t: Turno | null) => void;
   cargarTurnos: () => Promise<void>;
   limpiarFiltros: () => void;
-  handleConfirmarCancelacion: () => Promise<void>;
   handleTurnoCancelado: (id: string, motivo: string) => void;
+  handleCheckIn: (t: Turno) => Promise<void>;
+  handleMarcarAusente: (t: Turno) => Promise<void>;
   esRecepcionista: boolean;
   centroSaludNombre?: string;
 }
@@ -57,38 +58,82 @@ export function useGestionTurnosAdmin(): UseGestionTurnosAdminReturn {
     try {
       let data: Turno[] = [];
       if (esRecepcionista && centroSaludId) {
-        data = await turnosService.getTurnosHoyCentro(centroSaludId);
+        data = await turnosService.getTurnosCentro(centroSaludId, {
+          desde: fechaDesde.trim() || undefined,
+          hasta: fechaHasta.trim() || undefined,
+          estado: filtroEstado !== 'TODOS' ? filtroEstado : undefined,
+        });
       } else {
         data = await turnosService.getAll();
       }
       setTurnos(data);
     } catch (err: unknown) {
-      setLoadError(
-        extractApiErrorMessage(err, 'No se pudieron cargar los turnos del sistema.')
-      );
+      setLoadError(extractApiErrorMessage(err, 'No se pudieron cargar los turnos del sistema.'));
     } finally {
       setIsLoading(false);
     }
-  }, [esRecepcionista, centroSaludId]);
+  }, [esRecepcionista, centroSaludId, fechaDesde, fechaHasta, filtroEstado]);
 
   useEffect(() => {
-    cargarTurnos();
-  }, [cargarTurnos]);
+    let isSubscribed = true;
+    const fetchInitial = async () => {
+      try {
+        let data: Turno[] = [];
+        if (esRecepcionista && centroSaludId) {
+          data = await turnosService.getTurnosCentro(centroSaludId, {
+            desde: fechaDesde.trim() || undefined,
+            hasta: fechaHasta.trim() || undefined,
+            estado: filtroEstado !== 'TODOS' ? filtroEstado : undefined,
+          });
+        } else {
+          data = await turnosService.getAll();
+        }
+        if (isSubscribed) {
+          setTurnos(data);
+          setLoadError(null);
+        }
+      } catch (err: unknown) {
+        if (isSubscribed) {
+          setLoadError(extractApiErrorMessage(err, 'No se pudieron cargar los turnos del sistema.'));
+        }
+      } finally {
+        if (isSubscribed) {
+          setIsLoading(false);
+        }
+      }
+    };
 
-  const handleConfirmarCancelacion = async () => {
-    if (!turnoACancelar) return;
+    void fetchInitial();
+    return () => {
+      isSubscribed = false;
+    };
+  }, [esRecepcionista, centroSaludId, fechaDesde, fechaHasta, filtroEstado]);
+
+  const handleCheckIn = async (turno: Turno) => {
     setIsProcessing(true);
     try {
-      await turnosService.cancelarTurno(turnoACancelar.id);
+      const updated = await turnosService.checkIn(turno.id);
       setTurnos((prev) =>
-        prev.map((t) =>
-          t.id === turnoACancelar.id ? { ...t, estado: 'CANCELADO' } : t
-        )
+        prev.map((t) => (t.id === turno.id ? (updated ?? { ...t, estado: 'EN_ESPERA' }) : t))
       );
-      success('Turno cancelado exitosamente.');
-      setTurnoACancelar(null);
-    } catch (err: unknown) {
-      toastError(extractApiErrorMessage(err, 'No se pudo cancelar el turno.'));
+      success(`Paciente ${turno.pacienteNombre} ingresó a Sala de Espera.`);
+    } catch (err) {
+      toastError(extractApiErrorMessage(err, 'No se pudo realizar el check-in del paciente.'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleMarcarAusente = async (turno: Turno) => {
+    setIsProcessing(true);
+    try {
+      const updated = await turnosService.marcarAusente(turno.id);
+      setTurnos((prev) =>
+        prev.map((t) => (t.id === turno.id ? (updated ?? { ...t, estado: 'AUSENTE' }) : t))
+      );
+      success(`Turno de ${turno.pacienteNombre} marcado como Ausente.`);
+    } catch (err) {
+      toastError(extractApiErrorMessage(err, 'No se pudo marcar ausente el turno.'));
     } finally {
       setIsProcessing(false);
     }
@@ -97,12 +142,11 @@ export function useGestionTurnosAdmin(): UseGestionTurnosAdminReturn {
   const handleTurnoCancelado = (id: string, motivo: string) => {
     setTurnos((prev) =>
       prev.map((t) =>
-        t.id === id
-          ? { ...t, estado: 'CANCELADO', justificativoCancelacion: motivo }
-          : t
+        t.id === id ? { ...t, estado: 'CANCELADO', justificativoCancelacion: motivo } : t
       )
     );
     setTurnoACancelar(null);
+    success('Turno cancelado exitosamente.');
   };
 
   const limpiarFiltros = () => {
@@ -116,7 +160,6 @@ export function useGestionTurnosAdmin(): UseGestionTurnosAdminReturn {
     const term = busqueda.trim().toLowerCase();
 
     return turnos.filter((t) => {
-      // Institutional isolation check for receptionists
       if (
         esRecepcionista &&
         centroSaludId &&
@@ -129,12 +172,20 @@ export function useGestionTurnosAdmin(): UseGestionTurnosAdminReturn {
       const matchTexto =
         !term ||
         (t.pacienteNombre ?? '').toLowerCase().includes(term) ||
+        (t.pacienteDni ?? '').includes(term) ||
         (t.profesionalNombre ?? '').toLowerCase().includes(term) ||
+        (t.especialidadNombre ?? '').toLowerCase().includes(term) ||
         (t.centroSaludNombre ?? '').toLowerCase().includes(term) ||
         (t.codigoVerificacion ? t.codigoVerificacion.toLowerCase().includes(term) : false) ||
         (t.id ?? '').includes(term);
 
-      const matchEstado = filtroEstado === 'TODOS' || t.estado === filtroEstado;
+      const matchEstado =
+        filtroEstado === 'TODOS' ||
+        t.estado === filtroEstado ||
+        (filtroEstado === 'EN_ESPERA' && (t.estado === 'EN_ESPERA' || t.estado === 'EN_SALA_DE_ESPERA')) ||
+        (filtroEstado === 'CANCELADO' &&
+          (t.estado === 'CANCELADO' || t.estado === 'CANCELADO_POR_MEDICO'));
+
       const matchFechaDesde = !fechaDesde || (t.fecha ?? '') >= fechaDesde;
       const matchFechaHasta = !fechaHasta || (t.fecha ?? '') <= fechaHasta;
 
@@ -160,8 +211,9 @@ export function useGestionTurnosAdmin(): UseGestionTurnosAdminReturn {
     setTurnoACancelar,
     cargarTurnos,
     limpiarFiltros,
-    handleConfirmarCancelacion,
     handleTurnoCancelado,
+    handleCheckIn,
+    handleMarcarAusente,
     esRecepcionista,
     centroSaludNombre,
   };

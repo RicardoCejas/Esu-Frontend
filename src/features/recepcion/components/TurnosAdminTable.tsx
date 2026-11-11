@@ -1,15 +1,18 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import type { Turno } from '@/types';
-import { Calendar, RotateCcw, XCircle } from 'lucide-react';
+import { Calendar } from 'lucide-react';
+import { TurnoAdminRow } from './TurnoAdminRow';
 
 export interface TurnosAdminTableProps {
   turnos: Turno[];
   isLoading: boolean;
   isProcessing: boolean;
   onCancelar: (t: Turno) => void;
+  onCheckIn?: (t: Turno) => void;
+  onMarcarAusente?: (t: Turno) => void;
   canCancelar?: boolean;
   canReagendar?: boolean;
+  canCheckIn?: boolean;
 }
 
 export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
@@ -17,44 +20,35 @@ export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
   isLoading,
   isProcessing,
   onCancelar,
+  onCheckIn = () => {},
+  onMarcarAusente = () => {},
   canCancelar = true,
   canReagendar = true,
+  canCheckIn = true,
 }) => {
-  const getBadgeClass = (estado: string) => {
-    switch (estado) {
-      case 'CONFIRMADO':
-        return 'bg-emerald-700';
-      case 'EN_ESPERA':
-        return 'bg-amber-600';
-      case 'ATENDIENDO':
-        return 'bg-sky-700';
-      case 'CANCELADO':
-        return 'bg-rose-700';
-      default:
-        return 'bg-slate-700';
-    }
-  };
-
   return (
     <div className="rounded-b-xl border border-border border-t-0 bg-card overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
-          <thead className="border-b border-border bg-muted/40 font-semibold text-muted-foreground">
+        <table className="w-full text-left text-xs" aria-label="Listado administrativo de turnos">
+          <thead className="border-b border-border bg-muted/40 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">
             <tr>
-              <th className="p-4">Fecha & Hora</th>
-              <th className="p-4">Código</th>
-              <th className="p-4">Paciente</th>
-              <th className="p-4">Profesional</th>
-              <th className="p-4">Centro</th>
-              <th className="p-4">Estado</th>
-              <th className="p-4 text-right">Acciones</th>
+              <th scope="col" className="p-3.5">Fecha & Hora</th>
+              <th scope="col" className="p-3.5">Código</th>
+              <th scope="col" className="p-3.5">Paciente & DNI</th>
+              <th scope="col" className="p-3.5">Profesional</th>
+              <th scope="col" className="p-3.5">Consultorio / Centro</th>
+              <th scope="col" className="p-3.5">Estado</th>
+              <th scope="col" className="p-3.5 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                  Cargando turnos...
+                <td colSpan={7} className="p-10 text-center text-muted-foreground">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-700 border-t-transparent" />
+                    <span>Cargando turnos de la sede...</span>
+                  </div>
                 </td>
               </tr>
             ) : turnos.length === 0 ? (
@@ -66,64 +60,24 @@ export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
                       No se encontraron turnos registrados
                     </p>
                     <p className="text-xs text-muted-foreground max-w-sm">
-                      No hay citas que coincidan con los filtros de búsqueda o el rango de fechas actual.
+                      No hay citas médicas que coincidan con la búsqueda o el rango de fechas seleccionado.
                     </p>
                   </div>
                 </td>
               </tr>
             ) : (
               turnos.map((t) => (
-                <tr key={t.id} className="hover:bg-muted/30 transition">
-                  <td className="p-4 font-semibold text-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-primary" />
-                      <span>{t.fecha ?? ''}</span>
-                      <span className="text-muted-foreground tabular-nums">({t.hora ?? ''} hs)</span>
-                    </div>
-                  </td>
-                  <td className="p-4 tabular-nums text-primary font-bold">
-                    {t.codigoVerificacion || `#${t.id}`}
-                  </td>
-                  <td className="p-4 font-medium text-foreground">{t.pacienteNombre ?? '—'}</td>
-                  <td className="p-4">{t.profesionalNombre ?? '—'}</td>
-                  <td className="p-4 text-muted-foreground">{t.centroSaludNombre ?? '—'}</td>
-                  <td className="p-4">
-                    <span
-                      className={`inline-flex items-center rounded-md px-2.5 py-1 font-bold text-[10px] text-white shadow-xs ${getBadgeClass(
-                        t.estado
-                      )}`}
-                    >
-                      {t.estado}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      {t.estado !== 'CANCELADO' && t.estado !== 'COMPLETADO' && canReagendar && (
-                        <Link
-                          to={`/dashboard/recepcion/turnos/${t.id}/reagendar`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2.5 py-1 text-foreground hover:bg-accent transition"
-                          title="Reagendar turno"
-                        >
-                          <RotateCcw className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-                          <span>Reagendar</span>
-                        </Link>
-                      )}
-
-                      {t.estado !== 'CANCELADO' && canCancelar && (
-                        <button
-                          type="button"
-                          disabled={isProcessing}
-                          onClick={() => onCancelar(t)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-card px-2.5 py-1 text-rose-700 font-semibold hover:bg-rose-700 hover:text-white dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-200 transition cursor-pointer disabled:opacity-50"
-                          title="Cancelar cita"
-                        >
-                          <XCircle className="h-3.5 w-3.5" />
-                          <span>Cancelar</span>
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                <TurnoAdminRow
+                  key={t.id}
+                  turno={t}
+                  isProcessing={isProcessing}
+                  canCancelar={canCancelar}
+                  canReagendar={canReagendar}
+                  canCheckIn={canCheckIn}
+                  onCancelar={onCancelar}
+                  onCheckIn={onCheckIn}
+                  onMarcarAusente={onMarcarAusente}
+                />
               ))
             )}
           </tbody>
