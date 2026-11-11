@@ -18,6 +18,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ShieldAlert,
+  ShieldCheck,
   Save,
   Ambulance,
   CreditCard,
@@ -416,36 +417,68 @@ export const MiPerfilPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
       {/* Encabezado Principal de Identidad */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-sky-100 bg-white p-5 shadow-xs">
-        <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sky-700 text-xl font-black text-white shadow-sm font-heading">
-            {user?.nombre?.charAt(0) || 'P'}
-            {user?.apellido?.charAt(0) || ''}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black tracking-tight text-slate-900 font-heading">
-                {user?.nombre || 'Paciente'} {user?.apellido || ''}
-              </h1>
-              <span className="rounded-full bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
-                Padrón Activo
-              </span>
+      {user?.rol === 'ADMIN' ? (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-sky-100 bg-white p-5 shadow-xs">
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sky-800 text-xl font-black text-white shadow-sm font-heading">
+              AD
             </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Historia Clínica N° <strong className="text-slate-700 font-mono">HC-{hcDniMostrar}-CDE</strong> • Sistema Único de Salud de Cruz del Eje
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-black tracking-tight text-slate-900 font-heading">
+                  {user?.nombre || 'Administrador'} {user?.apellido || 'del Sistema'}
+                </h1>
+                <span className="rounded-full bg-sky-100 border border-sky-300 px-3 py-0.5 text-[11px] font-bold text-sky-800">
+                  🛡️ Administrador Global (RBAC)
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Cuenta Institucional de Gestión y Seguridad Sanitaria • <strong className="text-slate-700">Municipalidad de Cruz del Eje</strong>
+              </p>
+            </div>
           </div>
-        </div>
 
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition cursor-pointer self-start sm:self-auto"
-        >
-          <LogOut className="h-4 w-4" />
-          <span>Cerrar Sesión</span>
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition cursor-pointer self-start sm:self-auto"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-sky-100 bg-white p-5 shadow-xs">
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sky-700 text-xl font-black text-white shadow-sm font-heading">
+              {user?.nombre?.charAt(0) || 'P'}
+              {user?.apellido?.charAt(0) || ''}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-black tracking-tight text-slate-900 font-heading">
+                  {user?.nombre || 'Paciente'} {user?.apellido || ''}
+                </h1>
+                <span className="rounded-full bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
+                  Padrón Activo
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Historia Clínica N° <strong className="text-slate-700 font-mono">HC-{hcDniMostrar}-CDE</strong> • Sistema Único de Salud de Cruz del Eje
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition cursor-pointer self-start sm:self-auto"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
+      )}
 
       {/* Alerta de Éxito al Guardar */}
       {mensajeExito && (
@@ -474,8 +507,187 @@ export const MiPerfilPage: React.FC = () => {
         </div>
       )}
 
-      {/* Grid de Secciones del Perfil del Paciente */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Grid de Secciones según el Rol */}
+      {user?.rol === 'ADMIN' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 1. Datos Personales y de Identidad del Administrador */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+              <div className="p-2 rounded-xl bg-slate-100 text-slate-700">
+                <User className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 font-heading">
+                  Identidad y Contacto Administrativo
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Datos de contacto oficial del administrador municipal
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700">DNI / Legajo Funcionario</label>
+                  {!isEditingDni ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingDni(true)}
+                      className="text-xs font-semibold text-sky-700 hover:text-sky-800 hover:underline cursor-pointer"
+                    >
+                      Modificar DNI
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDniInput(user?.dni || '');
+                        setIsEditingDni(false);
+                      }}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                </div>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    type="text"
+                    disabled={!isEditingDni}
+                    value={dniInput}
+                    onChange={(e) => setDniInput(e.target.value.replace(/\s+/g, ''))}
+                    placeholder="Ej: 38123456"
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-mono font-bold transition ${
+                      isEditingDni
+                        ? 'border-sky-500 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600'
+                        : 'border-slate-200 bg-slate-50 text-slate-700 cursor-default'
+                    }`}
+                  />
+                  {isEditingDni && (
+                    <button
+                      type="button"
+                      onClick={handleGuardarDni}
+                      disabled={guardando}
+                      className="rounded-xl bg-sky-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-sky-800 transition cursor-pointer disabled:opacity-50"
+                    >
+                      Guardar
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700">Correo Electrónico Institucional</label>
+                <div className="mt-1 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-sky-600" />
+                    <span className="font-mono text-xs font-bold text-slate-800">{user?.email}</span>
+                  </div>
+                  <span className="rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[10px] font-bold">
+                    Verificado
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700">Teléfono Oficial de Contacto</label>
+                  <button
+                    type="button"
+                    onClick={() => handleGuardarCambios('Contacto')}
+                    disabled={guardando}
+                    className="text-xs font-bold text-sky-700 hover:text-sky-800 hover:underline cursor-pointer"
+                  >
+                    Guardar
+                  </button>
+                </div>
+                <div className="relative mt-1">
+                  <Phone className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="tel"
+                    value={formData.telefonoPrincipal}
+                    onChange={(e) => handleChange('telefonoPrincipal', e.target.value)}
+                    placeholder="ej: 3549-551122"
+                    className="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-3.5 py-2.5 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700">Jurisdicción de Cobertura</label>
+                <input
+                  type="text"
+                  disabled
+                  value="Municipalidad de Cruz del Eje • Sistema ESU"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-medium text-slate-700 cursor-not-allowed"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* 2. Privilegios y Alcance de Gestión (RBAC) */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+              <div className="p-2 rounded-xl bg-sky-50 text-sky-700">
+                <ShieldCheck className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 font-heading">
+                  Privilegios y Alcance de Gestión
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Permisos activos de administración y auditoría sanitaria
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div>
+                  <p className="font-bold text-slate-900">Sedes y Centros Sanitarios</p>
+                  <p className="text-[11px] text-slate-500">Alta y administración de efectores y mapa de Cruz del Eje</p>
+                </div>
+                <span className="rounded-md bg-emerald-100 text-emerald-800 px-2.5 py-1 text-[10px] font-bold">
+                  Control Total
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div>
+                  <p className="font-bold text-slate-900">Cuentas de Usuarios del Sistema</p>
+                  <p className="text-[11px] text-slate-500">Gestión de médicos, recepcionistas y pacientes</p>
+                </div>
+                <span className="rounded-md bg-emerald-100 text-emerald-800 px-2.5 py-1 text-[10px] font-bold">
+                  Habilitado
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div>
+                  <p className="font-bold text-slate-900">Centros y Especialidades</p>
+                  <p className="text-[11px] text-slate-500">Cartilla médica y nómina de pacientes por sede</p>
+                </div>
+                <span className="rounded-md bg-emerald-100 text-emerald-800 px-2.5 py-1 text-[10px] font-bold">
+                  Habilitado
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div>
+                  <p className="font-bold text-slate-900">Nivel de Seguridad</p>
+                  <p className="text-[11px] text-slate-500">Superadministrador (Nivel 1 - Control Total)</p>
+                </div>
+                <span className="rounded-md bg-sky-100 text-sky-800 px-2.5 py-1 text-[10px] font-bold">
+                  Activo
+                </span>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : (
+        /* Grid de Secciones del Perfil del Paciente */
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* 1. Datos Personales y Documentación Legal */}
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
@@ -990,6 +1202,7 @@ export const MiPerfilPage: React.FC = () => {
           </div>
         </section>
       </div>
+      )}
 
       {/* Cambio de Contraseña y Seguridad de Cuenta */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

@@ -48,7 +48,7 @@ const navItems: NavItem[] = [
   { title: 'Tablero Kanban Espera', path: '/dashboard/recepcion/kanban', icon: Layers, roles: ['RECEPCIONISTA', 'MEDICO'] },
   { title: 'Padrón de Pacientes', path: '/dashboard/recepcion/pacientes', icon: Users, roles: ['RECEPCIONISTA', 'MEDICO'] },
   { title: 'Gestión de Turnos', path: '/dashboard/recepcion/turnos', icon: ListOrdered, roles: ['RECEPCIONISTA'] },
-  { title: 'Médicos del Centro', path: '/dashboard/recepcion/medicos', icon: Stethoscope, roles: ['RECEPCIONISTA', 'ADMIN'] },
+  { title: 'Médicos del Centro', path: '/dashboard/recepcion/medicos', icon: Stethoscope, roles: ['RECEPCIONISTA'] },
   { title: 'Especialidades del Centro', path: '/dashboard/recepcion/especialidades', icon: Building2, roles: ['RECEPCIONISTA'] },
 
   // Rutas Administrador (HU-56 & HU-70)
