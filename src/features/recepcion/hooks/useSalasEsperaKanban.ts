@@ -50,7 +50,7 @@ export function useSalasEsperaKanban(centroId?: string | number) {
       setLoading(true);
       setError(null);
       try {
-        const activeCentroId = centroId ? String(centroId) : undefined;
+        const activeCentroId = String(centroId || "1");
         const [turnosData, centroData, consData, profsData] = await Promise.all([
           activeCentroId
             ? turnosService.getTurnosKanbanCentro(activeCentroId).catch(() => [] as Turno[])

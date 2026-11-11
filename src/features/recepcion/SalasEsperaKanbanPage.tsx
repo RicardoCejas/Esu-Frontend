@@ -11,7 +11,7 @@ import type { Turno } from '@/types';
 
 export const SalasEsperaKanbanPage: React.FC = () => {
   const { user } = useAuth();
-  const kanban = useSalasEsperaKanban(user?.centroSaludId);
+  const kanban = useSalasEsperaKanban(user?.centroSaludId ?? 1);
   const { can } = usePermissions();
 
   const [turnoACancelar, setTurnoACancelar] = useState<Turno | null>(null);
