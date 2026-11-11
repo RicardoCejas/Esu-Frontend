@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   AlertCircle,
   ExternalLink,
+  Building2,
 } from 'lucide-react';
 
 export const PantallaTurnosTVPage: React.FC = () => {
@@ -154,7 +155,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
             Esta pantalla pública de turnos debe accederse mediante el enlace institucional único correspondiente a su centro de salud para proyectar exclusivamente los llamados de su sala de espera.
           </p>
 
-          {user?.centroSaludId && (
+          {user?.centroSaludId ? (
             <div className="mt-6 pt-5 border-t border-slate-200">
               <p className="text-xs text-slate-500 mb-2">Su usuario está adscrito a:</p>
               <div className="text-sm font-bold text-slate-800 mb-4">{user.centroSaludNombre}</div>
@@ -166,9 +167,65 @@ export const PantallaTurnosTVPage: React.FC = () => {
                 <ExternalLink className="h-4 w-4" />
               </Link>
             </div>
+          ) : (
+            <div className="mt-6 pt-5 border-t border-slate-200 text-left">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 text-center">
+                Seleccionar sede para proyectar:
+              </p>
+              <div className="space-y-2">
+                <Link
+                  to="/pantalla-turnos?centroId=1"
+                  className="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-sky-500 hover:bg-sky-50/50 transition group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Building2 className="h-4 w-4 text-sky-700 shrink-0" />
+                    <span className="text-xs font-bold text-slate-800 group-hover:text-sky-900">
+                      Hospital Provincial Dr. Aurelio Crespo
+                    </span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-sky-700 transition shrink-0" />
+                </Link>
+                <Link
+                  to="/pantalla-turnos?centroId=2"
+                  className="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-sky-500 hover:bg-sky-50/50 transition group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Building2 className="h-4 w-4 text-sky-700 shrink-0" />
+                    <span className="text-xs font-bold text-slate-800 group-hover:text-sky-900">
+                      Clínica Cabrera
+                    </span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-sky-700 transition shrink-0" />
+                </Link>
+                <Link
+                  to="/pantalla-turnos?centroId=3"
+                  className="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-sky-500 hover:bg-sky-50/50 transition group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Building2 className="h-4 w-4 text-sky-700 shrink-0" />
+                    <span className="text-xs font-bold text-slate-800 group-hover:text-sky-900">
+                      Centro de Diagnóstico por Imágenes
+                    </span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-sky-700 transition shrink-0" />
+                </Link>
+                <Link
+                  to="/pantalla-turnos?centroId=5"
+                  className="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-sky-500 hover:bg-sky-50/50 transition group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Building2 className="h-4 w-4 text-sky-700 shrink-0" />
+                    <span className="text-xs font-bold text-slate-800 group-hover:text-sky-900">
+                      Sanatorio María Isabel
+                    </span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-sky-700 transition shrink-0" />
+                </Link>
+              </div>
+            </div>
           )}
 
-          <div className="mt-4">
+          <div className="mt-5 pt-3 border-t border-slate-100">
             <Link
               to="/dashboard/recepcion"
               className="text-xs text-sky-700 hover:text-sky-800 font-semibold underline underline-offset-4"
