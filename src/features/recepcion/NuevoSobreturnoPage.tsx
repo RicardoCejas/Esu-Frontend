@@ -1,14 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Flame, Search, UserPlus } from 'lucide-react';
+import { ArrowLeft, Flame, Search, UserPlus, AlertCircle, Building2 } from 'lucide-react';
 import { useNuevoSobreturno } from './hooks/useNuevoSobreturno';
 
 export const NuevoSobreturnoPage: React.FC = () => {
   const {
     limiteDiario,
     motivosDisponibles,
+    conveniosPopulares,
     profesionales,
     consultorios,
+    sinConsultorios,
     profesionalId,
     setProfesionalId,
     consultorioSeleccionado,
@@ -32,6 +34,8 @@ export const NuevoSobreturnoPage: React.FC = () => {
     setTelefono,
     obraSocial,
     setObraSocial,
+    otraObraSocial,
+    setOtraObraSocial,
     motivo,
     setMotivo,
     observacion,
@@ -91,14 +95,29 @@ export const NuevoSobreturnoPage: React.FC = () => {
         </div>
       </div>
 
+      {sinConsultorios && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4 text-xs font-medium text-amber-900 dark:text-amber-200 flex items-start gap-3">
+          <Building2 className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-bold">Esta sede no tiene consultorios físicos configurados todavía.</p>
+            <p className="mt-0.5 text-muted-foreground">
+              Podés continuar con asignación por sala o registrar consultorios con planta en{' '}
+              <Link to="/dashboard/centro-medico/consultorios/nuevo" className="underline font-semibold text-sky-700">
+                Gestión de Consultorios
+              </Link>.
+            </p>
+          </div>
+        </div>
+      )}
+
       {cupoAlcanzado && (
-        <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-900">
+        <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/30 px-4 py-3 text-sm font-semibold text-rose-900 dark:text-rose-200">
           El profesional seleccionado alcanzó el límite diario de {limiteDiario} sobreturnos. Elegí otro médico de guardia o reprogramá para otra fecha.
         </div>
       )}
 
       {submitError && (
-        <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900">
+        <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/30 px-4 py-3 text-sm font-medium text-rose-900 dark:text-rose-200">
           {submitError}
         </div>
       )}
@@ -134,7 +153,7 @@ export const NuevoSobreturnoPage: React.FC = () => {
 
             <div>
               <label htmlFor="st-consultorio" className="block text-xs font-semibold text-foreground mb-1.5">
-                Consultorio Destino
+                Consultorio Físico Destino
               </label>
               <select
                 id="st-consultorio"
@@ -143,14 +162,11 @@ export const NuevoSobreturnoPage: React.FC = () => {
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
               >
                 <option value="">Asignación automática por sala</option>
-                {consultorios.map((c) => {
-                  const label = `${c.numero} (${c.planta})`;
-                  return (
-                    <option key={c.id} value={label}>
-                      Consultorio {label}
-                    </option>
-                  );
-                })}
+                {consultorios.map((c) => (
+                  <option key={c.id ?? c.numero} value={c.numero}>
+                    Consultorio {c.numero} {c.planta ? `(${c.planta})` : ''}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -194,11 +210,14 @@ export const NuevoSobreturnoPage: React.FC = () => {
             </Link>
           </div>
 
-          {dniError && <p className="text-xs font-medium text-amber-800">{dniError}</p>}
+          {dniError && <p className="text-xs font-medium text-amber-800 dark:text-amber-300">{dniError}</p>}
 
           {pacienteEncontrado && (
-            <div className="rounded-lg border border-emerald-300 bg-muted/40 p-3 text-xs font-semibold text-foreground">
-              Paciente vinculado al padrón: {pacienteEncontrado.nombre} {pacienteEncontrado.apellido} (DNI {pacienteEncontrado.dni})
+            <div className="rounded-lg border border-emerald-300 bg-muted/40 p-3 text-xs font-semibold text-foreground flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span>
+                Paciente vinculado al padrón: {pacienteEncontrado.nombre} {pacienteEncontrado.apellido} (DNI {pacienteEncontrado.dni})
+              </span>
             </div>
           )}
 
@@ -260,18 +279,39 @@ export const NuevoSobreturnoPage: React.FC = () => {
               />
             </div>
 
-            <div className="sm:col-span-2">
-              <label htmlFor="st-obra-social" className="block text-xs font-semibold text-foreground mb-1.5">
+            <div>
+              <label htmlFor="st-obra-social-select" className="block text-xs font-semibold text-foreground mb-1.5">
                 Obra Social / Cobertura
               </label>
-              <input
-                id="st-obra-social"
-                type="text"
+              <select
+                id="st-obra-social-select"
                 value={obraSocial}
                 onChange={(e) => setObraSocial(e.target.value)}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-              />
+              >
+                {conveniosPopulares.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
             </div>
+
+            {obraSocial === 'Otra' && (
+              <div>
+                <label htmlFor="st-otra-obra-social" className="block text-xs font-semibold text-foreground mb-1.5">
+                  Nombre de Cobertura <span className="text-rose-700">*</span>
+                </label>
+                <input
+                  id="st-otra-obra-social"
+                  type="text"
+                  placeholder="Ej: OSECAC, Swiss Medical..."
+                  value={otraObraSocial}
+                  onChange={(e) => setOtraObraSocial(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </div>
+            )}
           </div>
         </fieldset>
 

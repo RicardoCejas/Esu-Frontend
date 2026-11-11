@@ -117,6 +117,7 @@ export function useSobreturnoRules({
 
     setGuardando(true);
     try {
+      const selectedCons = consultorios.find((c) => c.numero === consultorioSeleccionado);
       const nuevo = await turnosService.crearSobreturno({
         profesionalId,
         centroSaludId: String(centroSaludId),
@@ -126,6 +127,8 @@ export function useSobreturnoRules({
         pacienteDni: dni.trim(),
         pacienteTelefono: telefono.trim(),
         obraSocial,
+        consultorioNumero: selectedCons?.numero,
+        planta: selectedCons?.planta,
         motivoSobreturno: validacion.motivoCompleto,
       });
 
