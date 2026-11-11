@@ -1,19 +1,12 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, CalendarPlus, Save, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CalendarPlus, Save, ShieldCheck, QrCode } from 'lucide-react';
 import { usePacienteDetalle } from './hooks/usePacienteDetalle';
-
-const OBRA_SOCIAL_OPTIONS = [
-  'Particular / Sin Obra Social',
-  'APROSS',
-  'PAMI',
-  'OSDE',
-  'Swiss Medical',
-  'OSPE',
-  'OSECAC',
-  'SIPSSA',
-  'Otra',
-];
+import { PacienteFamiliaresSection } from './components/PacienteFamiliaresSection';
+import { PacienteTurnosHistorialSection } from './components/PacienteTurnosHistorialSection';
+import { ModalVerificarCarnetQR } from './components/ModalVerificarCarnetQR';
+import { ModalCancelarMostrador } from './components/ModalCancelarMostrador';
+import type { Turno } from '@/types';
 
 const BLOOD_GROUPS = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'];
 
@@ -23,18 +16,27 @@ export const PacienteDetallePage: React.FC = () => {
     canEdit,
     paciente,
     turnos,
+    familiares,
     values,
     errors,
     loading,
     saving,
     loadError,
     submitError,
+    conveniosPopulares,
     setField,
     loadData,
     handleSave,
+    handleAgregarFamiliar,
+    handleEliminarFamiliar,
+    handleMarcarAusente,
+    handleTurnoCancelado,
   } = usePacienteDetalle(id);
 
   const formRef = useRef<HTMLFormElement>(null);
+  const [modalQrOpen, setModalQrOpen] = useState(false);
+  const [turnoACancelar, setTurnoACancelar] = useState<Turno | null>(null);
+  const [modalCancelarOpen, setModalCancelarOpen] = useState(false);
 
   const onFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,6 +47,21 @@ export const PacienteDetallePage: React.FC = () => {
         firstInvalid?.focus();
       });
     }
+  };
+
+  const handleOpenCancelar = (t: Turno) => {
+    setTurnoACancelar(t);
+    setModalCancelarOpen(true);
+  };
+
+  const handleCloseCancelar = () => {
+    setTurnoACancelar(null);
+    setModalCancelarOpen(false);
+  };
+
+  const onCanceladoSuccess = (turnoId: string) => {
+    handleTurnoCancelado(turnoId);
+    handleCloseCancelar();
   };
 
   if (loading) {
@@ -79,10 +96,9 @@ export const PacienteDetallePage: React.FC = () => {
     );
   }
 
-  const ausentesCount = turnos.filter((t) => t.estado === 'AUSENTE').length;
-
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-10 animate-in fade-in duration-200">
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
@@ -105,21 +121,39 @@ export const PacienteDetallePage: React.FC = () => {
               <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
               {paciente.dniVerificado ? 'Identidad Verificada' : 'Contacto Incompleto'}
             </span>
+            <span
+              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-bold text-white ${
+                paciente.activo !== false ? 'bg-emerald-700' : 'bg-slate-600'
+              }`}
+            >
+              {paciente.activo !== false ? 'ACTIVO' : 'INACTIVO'}
+            </span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground tabular-nums">
             DNI {paciente.dni} · Cobertura: {paciente.obraSocial || 'Particular'}
           </p>
         </div>
 
-        {canEdit && (
-          <Link
-            to={`/dashboard/recepcion/turnos/nuevo?dni=${encodeURIComponent(paciente.dni)}`}
-            className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-4 py-2 text-xs font-semibold text-white hover:bg-sky-800 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600 self-start"
+        <div className="flex flex-wrap items-center gap-2 self-start">
+          <button
+            type="button"
+            onClick={() => setModalQrOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-input bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition cursor-pointer"
           >
-            <CalendarPlus className="h-4 w-4" aria-hidden="true" />
-            Dar Turno en Mostrador
-          </Link>
-        )}
+            <QrCode className="h-4 w-4 text-sky-600" />
+            <span>Verificar QR</span>
+          </button>
+
+          {canEdit && (
+            <Link
+              to={`/dashboard/recepcion/turnos/nuevo?dni=${encodeURIComponent(paciente.dni)}`}
+              className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-4 py-2 text-xs font-semibold text-white hover:bg-sky-800 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+            >
+              <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+              <span>Dar Turno en Mostrador</span>
+            </Link>
+          )}
+        </div>
       </div>
 
       {submitError && (
@@ -128,6 +162,7 @@ export const PacienteDetallePage: React.FC = () => {
         </div>
       )}
 
+      {/* Formulario de Filiación y Cobertura */}
       <form
         ref={formRef}
         noValidate
@@ -136,10 +171,42 @@ export const PacienteDetallePage: React.FC = () => {
       >
         <fieldset disabled={!canEdit || saving} className="space-y-4">
           <legend className="w-full border-b border-border pb-2 text-base font-bold text-foreground">
-            Contacto, Identidad y Cobertura Médica
+            Filiación, Contacto y Cobertura Médica
           </legend>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label htmlFor="pac-nombre" className="block text-xs font-semibold text-foreground mb-1.5">
+                Nombre <span className="text-rose-700">*</span>
+              </label>
+              <input
+                id="pac-nombre"
+                type="text"
+                required
+                value={values.nombre}
+                onChange={(e) => setField('nombre', e.target.value)}
+                aria-invalid={Boolean(errors.nombre)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+              />
+              {errors.nombre && <p className="mt-1 text-xs font-medium text-rose-700">{errors.nombre}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="pac-apellido" className="block text-xs font-semibold text-foreground mb-1.5">
+                Apellido <span className="text-rose-700">*</span>
+              </label>
+              <input
+                id="pac-apellido"
+                type="text"
+                required
+                value={values.apellido}
+                onChange={(e) => setField('apellido', e.target.value)}
+                aria-invalid={Boolean(errors.apellido)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+              />
+              {errors.apellido && <p className="mt-1 text-xs font-medium text-rose-700">{errors.apellido}</p>}
+            </div>
+
             <div>
               <label htmlFor="pac-dni" className="block text-xs font-semibold text-foreground mb-1.5">
                 DNI <span className="text-rose-700">*</span>
@@ -151,14 +218,9 @@ export const PacienteDetallePage: React.FC = () => {
                 value={values.dni}
                 onChange={(e) => setField('dni', e.target.value)}
                 aria-invalid={Boolean(errors.dni)}
-                aria-describedby={errors.dni ? 'pac-dni-error' : undefined}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground tabular-nums disabled:opacity-70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground tabular-nums focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
               />
-              {errors.dni && (
-                <p id="pac-dni-error" className="mt-1 text-xs font-medium text-rose-700">
-                  {errors.dni}
-                </p>
-              )}
+              {errors.dni && <p className="mt-1 text-xs font-medium text-rose-700">{errors.dni}</p>}
             </div>
 
             <div>
@@ -169,11 +231,10 @@ export const PacienteDetallePage: React.FC = () => {
                 id="pac-telefono"
                 type="tel"
                 inputMode="tel"
-                autoComplete="tel"
                 value={values.telefono}
                 onChange={(e) => setField('telefono', e.target.value)}
                 placeholder="Ej: 3549-456789"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground disabled:opacity-70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
               />
             </div>
 
@@ -184,42 +245,47 @@ export const PacienteDetallePage: React.FC = () => {
               <input
                 id="pac-email"
                 type="email"
-                autoComplete="email"
                 value={values.email}
                 onChange={(e) => setField('email', e.target.value)}
                 aria-invalid={Boolean(errors.email)}
-                aria-describedby={errors.email ? 'pac-email-error' : undefined}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground disabled:opacity-70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
               />
-              {errors.email && (
-                <p id="pac-email-error" className="mt-1 text-xs font-medium text-rose-700">
-                  {errors.email}
-                </p>
-              )}
+              {errors.email && <p className="mt-1 text-xs font-medium text-rose-700">{errors.email}</p>}
             </div>
 
             <div>
               <label htmlFor="pac-obra-social" className="block text-xs font-semibold text-foreground mb-1.5">
-                Obra Social / Prepaga
+                Obra Social / Cobertura
               </label>
               <select
                 id="pac-obra-social"
-                value={
-                  OBRA_SOCIAL_OPTIONS.includes(values.obraSocial) || !values.obraSocial
-                    ? values.obraSocial
-                    : 'Otra'
-                }
+                value={values.obraSocial}
                 onChange={(e) => setField('obraSocial', e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground disabled:opacity-70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
               >
-                <option value="">Seleccionar cobertura...</option>
-                {OBRA_SOCIAL_OPTIONS.map((os) => (
+                {conveniosPopulares.map((os) => (
                   <option key={os} value={os}>
                     {os}
                   </option>
                 ))}
               </select>
             </div>
+
+            {values.obraSocial === 'Otra' && (
+              <div>
+                <label htmlFor="pac-otra-obra-social" className="block text-xs font-semibold text-foreground mb-1.5">
+                  Nombre de Cobertura Específica
+                </label>
+                <input
+                  id="pac-otra-obra-social"
+                  type="text"
+                  placeholder="Ej: OSECAC, Medifé..."
+                  value={values.otraObraSocial}
+                  onChange={(e) => setField('otraObraSocial', e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                />
+              </div>
+            )}
 
             <div>
               <label htmlFor="pac-afiliado" className="block text-xs font-semibold text-foreground mb-1.5">
@@ -231,7 +297,7 @@ export const PacienteDetallePage: React.FC = () => {
                 value={values.nroAfiliado}
                 onChange={(e) => setField('nroAfiliado', e.target.value)}
                 placeholder="Ej: 45-123456-00"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground tabular-nums disabled:opacity-70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground tabular-nums focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
               />
             </div>
 
@@ -245,7 +311,7 @@ export const PacienteDetallePage: React.FC = () => {
                   type="date"
                   value={values.fechaNacimiento}
                   onChange={(e) => setField('fechaNacimiento', e.target.value)}
-                  className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-sm text-foreground disabled:opacity-70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                  className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
                 />
               </div>
 
@@ -257,7 +323,7 @@ export const PacienteDetallePage: React.FC = () => {
                   id="pac-sangre"
                   value={values.grupoSanguineo}
                   onChange={(e) => setField('grupoSanguineo', e.target.value)}
-                  className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-sm text-foreground disabled:opacity-70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                  className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
                 >
                   <option value="">S/D</option>
                   {BLOOD_GROUPS.filter(Boolean).map((g) => (
@@ -267,6 +333,21 @@ export const PacienteDetallePage: React.FC = () => {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="pac-activo-toggle" className="block text-xs font-semibold text-foreground mb-1.5">
+                Estado del Paciente en Padrón
+              </label>
+              <select
+                id="pac-activo-toggle"
+                value={values.activo ? 'true' : 'false'}
+                onChange={(e) => setField('activo', e.target.value === 'true')}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground font-semibold focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+              >
+                <option value="true">Activo / Habilitado</option>
+                <option value="false">Inactivo / Inhabilitado</option>
+              </select>
             </div>
           </div>
         </fieldset>
@@ -279,90 +360,40 @@ export const PacienteDetallePage: React.FC = () => {
               className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-5 py-2 text-xs font-semibold text-white hover:bg-sky-800 disabled:opacity-50 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
             >
               <Save className="h-4 w-4" aria-hidden="true" />
-              {saving ? 'Guardando...' : 'Actualizar Empadronamiento'}
+              {saving ? 'Guardando...' : 'Actualizar Ficha de Paciente'}
             </button>
           </div>
         )}
       </form>
 
-      <section className="rounded-xl border border-border bg-card p-6 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
-          <h2 className="flex items-center gap-2 text-base font-bold text-foreground">
-            <Calendar className="h-4 w-4 text-sky-700" aria-hidden="true" />
-            Historial de Turnos y Asistencia ({turnos.length})
-          </h2>
-          {ausentesCount > 0 && (
-            <span className="rounded-md bg-amber-700 px-2.5 py-0.5 text-[11px] font-bold text-white">
-              {ausentesCount} {ausentesCount === 1 ? 'ausencia registrada' : 'ausencias registradas'}
-            </span>
-          )}
-        </div>
+      {/* Sección Grupo Familiar */}
+      <PacienteFamiliaresSection
+        familiares={familiares}
+        canEdit={canEdit}
+        onAgregar={handleAgregarFamiliar}
+        onEliminar={handleEliminarFamiliar}
+      />
 
-        {turnos.length === 0 ? (
-          <p className="text-xs text-muted-foreground italic py-2">
-            Este paciente todavía no registra turnos en el sistema.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-border bg-muted/40 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="p-3">Fecha y Hora</th>
-                  <th className="p-3">Profesional / Especialidad</th>
-                  <th className="p-3">Establecimiento</th>
-                  <th className="p-3">Estado</th>
-                  {canEdit && <th className="p-3 text-right">Gestión</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {turnos.slice(0, 15).map((t) => {
-                  const canReschedule =
-                    canEdit && t.estado !== 'CANCELADO' && t.estado !== 'COMPLETADO';
-                  return (
-                    <tr key={t.id} className="hover:bg-muted/30 transition">
-                      <td className="p-3 font-semibold tabular-nums text-foreground">
-                        {t.fecha} · {t.hora} hs
-                      </td>
-                      <td className="p-3">
-                        <div className="font-semibold text-foreground">{t.profesionalNombre}</div>
-                        <div className="text-[11px] text-muted-foreground">{t.especialidadNombre}</div>
-                      </td>
-                      <td className="p-3 text-muted-foreground">{t.centroSaludNombre}</td>
-                      <td className="p-3">
-                        <span
-                          className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-bold text-white ${
-                            t.estado === 'COMPLETADO'
-                              ? 'bg-emerald-700'
-                              : t.estado === 'CANCELADO' || t.estado === 'AUSENTE'
-                              ? 'bg-rose-700'
-                              : 'bg-sky-700'
-                          }`}
-                        >
-                          {t.estado}
-                        </span>
-                      </td>
-                      {canEdit && (
-                        <td className="p-3 text-right">
-                          {canReschedule ? (
-                            <Link
-                              to={`/dashboard/recepcion/turnos/${t.id}/reagendar`}
-                              className="inline-flex items-center rounded-md border border-border px-2.5 py-1 text-[11px] font-semibold text-sky-700 hover:bg-muted"
-                            >
-                              Reagendar
-                            </Link>
-                          ) : (
-                            <span className="text-[11px] text-muted-foreground">—</span>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      {/* Sección Historial de Turnos */}
+      <PacienteTurnosHistorialSection
+        turnos={turnos}
+        canEdit={canEdit}
+        onMarcarAusente={handleMarcarAusente}
+        onCancelar={handleOpenCancelar}
+      />
+
+      {/* Modales */}
+      <ModalVerificarCarnetQR
+        isOpen={modalQrOpen}
+        onClose={() => setModalQrOpen(false)}
+      />
+
+      <ModalCancelarMostrador
+        turno={turnoACancelar}
+        isOpen={modalCancelarOpen}
+        onClose={handleCloseCancelar}
+        onCancelado={onCanceladoSuccess}
+      />
     </div>
   );
 };
