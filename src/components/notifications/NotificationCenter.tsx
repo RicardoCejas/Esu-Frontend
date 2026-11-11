@@ -166,7 +166,7 @@ export const NotificationCenter: React.FC = () => {
           {/* Header del dropdown */}
           <div className="flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3">
             <div className="flex items-center gap-2">
-              <span className="font-heading text-sm font-bold text-slate-900">
+              <span className="text-sm font-bold text-slate-900">
                 Notificaciones
               </span>
               {noLeidasCount > 0 && (

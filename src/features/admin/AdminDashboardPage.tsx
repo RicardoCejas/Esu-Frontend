@@ -133,7 +133,7 @@ export const AdminDashboardPage: React.FC = () => {
       {/* Encabezado Principal y Acciones */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Dashboard Administrativo y Métricas Gerenciales
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
@@ -383,7 +383,7 @@ export const AdminDashboardPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-mono font-semibold text-muted-foreground">
+              <span className="text-xs font-semibold text-muted-foreground">
                 Lunes a Domingo
               </span>
             </div>
@@ -472,7 +472,7 @@ export const AdminDashboardPage: React.FC = () => {
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-foreground font-heading">
+                  <h2 className="text-base font-bold text-foreground">
                     Registro de Auditoría de Accesos Clínicos
                   </h2>
                   <p className="text-xs text-muted-foreground">
@@ -514,7 +514,7 @@ export const AdminDashboardPage: React.FC = () => {
                   <tbody className="divide-y divide-border">
                     {logsAuditoria.map((log) => (
                       <tr key={log.id} className="hover:bg-muted/40">
-                        <td className="p-2.5 font-mono text-[11px]">
+                        <td className="p-2.5 tabular-nums text-[11px]">
                           {log.fechaHora ? log.fechaHora.replace('T', ' ').substring(0, 16) : '-'}
                         </td>
                         <td className="p-2.5 font-semibold">{log.usuarioEmail}</td>
@@ -523,14 +523,14 @@ export const AdminDashboardPage: React.FC = () => {
                             {log.rolUsuario}
                           </span>
                         </td>
-                        <td className="p-2.5 font-mono text-[11px] text-slate-600">
+                        <td className="p-2.5 tabular-nums text-[11px] text-slate-600">
                           {log.pacienteIdentificador}
                         </td>
                         <td className="p-2.5 font-bold">{log.accion}</td>
                         <td className="p-2.5 text-muted-foreground max-w-xs truncate" title={log.motivo}>
                           {log.motivo}
                         </td>
-                        <td className="p-2.5 font-mono text-[10px] text-muted-foreground">
+                        <td className="p-2.5 tabular-nums text-[10px] text-muted-foreground">
                           {log.ipAddress}
                         </td>
                       </tr>

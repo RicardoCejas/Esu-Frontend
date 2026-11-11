@@ -42,7 +42,7 @@ export const TurneroHeader: React.FC<TurneroHeaderProps> = ({
                   <span>Volver al Inicio</span>
                 </Link>
               </div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight font-heading text-white drop-shadow-xs">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white drop-shadow-xs">
                 Reserva de Turnos Médicos Online
               </h1>
               <p className="text-xs sm:text-sm text-sky-100 mt-0.5 max-w-2xl leading-relaxed">

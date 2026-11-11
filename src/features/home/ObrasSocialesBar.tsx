@@ -126,7 +126,7 @@ export const ObrasSocialesBar: React.FC = () => {
               <Shield className="h-3.5 w-3.5 text-sky-600" />
               <span>Convenios de Cobertura y Atención</span>
             </div>
-            <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-heading text-foreground">
+            <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
               Obras Sociales y Coberturas Aceptadas
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -156,7 +156,7 @@ export const ObrasSocialesBar: React.FC = () => {
                   <CheckCircle2 className={`h-4 w-4 ${os.textColor}`} />
                 </div>
                 <div className="pt-1">
-                  <h4 className={`text-base font-extrabold font-heading ${os.textColor}`}>
+                  <h4 className={`text-base font-extrabold ${os.textColor}`}>
                     {os.sigla}
                   </h4>
                   <p className="text-[11px] text-muted-foreground line-clamp-1">
@@ -188,7 +188,7 @@ export const ObrasSocialesBar: React.FC = () => {
                   <span className="text-[10px] uppercase font-bold text-sky-200 tracking-wider">
                     {selectedOS.tipo}
                   </span>
-                  <h3 className="text-xl font-bold font-heading">{selectedOS.sigla}</h3>
+                  <h3 className="text-xl font-bold">{selectedOS.sigla}</h3>
                   <p className="text-xs text-sky-100">{selectedOS.nombre}</p>
                 </div>
               </div>

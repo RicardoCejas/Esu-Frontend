@@ -139,7 +139,7 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
               <CalendarOff className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold font-heading">
+              <h2 className="text-lg font-bold">
                 Bloqueo de Agenda por Licencia, Vacaciones o Feriados
               </h2>
               <p className="text-xs text-slate-300">
@@ -227,7 +227,7 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
                   type="time"
                   value={horaInicio}
                   onChange={(e) => setHoraInicio(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   required={!esDiaCompleto}
                 />
               </div>
@@ -241,7 +241,7 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
                   type="time"
                   value={horaFin}
                   onChange={(e) => setHoraFin(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   required={!esDiaCompleto}
                 />
               </div>
@@ -300,9 +300,9 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
                   <div key={t.id} className="py-1.5 px-2 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-foreground">{t.pacienteNombre}</span>
-                      <span className="font-mono text-[11px] text-muted-foreground">DNI: {t.pacienteDni}</span>
+                      <span className="tabular-nums text-[11px] text-muted-foreground">DNI: {t.pacienteDni}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] font-mono text-amber-700 dark:text-amber-300 font-bold">
+                    <div className="flex items-center gap-2 text-[11px] tabular-nums text-amber-700 dark:text-amber-300 font-bold">
                       <span>{t.fecha}</span>
                       <span>{t.hora} hs</span>
                     </div>

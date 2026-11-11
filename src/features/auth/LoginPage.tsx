@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { GoogleAuthButton } from './components/GoogleAuthButton';
+import { isGoogleAuthEnabled } from './googleGsi';
 import { TwoFactorChallengeModal } from './TwoFactorChallengeModal';
 import { extractApiErrorMessage, isDemoModeEnabled } from '@/api/endpoints';
 
@@ -27,9 +28,10 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberLogin, setRememberLogin] = useState(false);
-  const googleAuthEnabled =
-    import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true' ||
-    (import.meta.env.VITE_GOOGLE_AUTH_ENABLED !== 'false' && Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID));
+  const googleAuthEnabled = isGoogleAuthEnabled({
+    VITE_GOOGLE_AUTH_ENABLED: import.meta.env.VITE_GOOGLE_AUTH_ENABLED,
+    VITE_GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+  });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [is2FAOpen, setIs2FAOpen] = useState(false);
@@ -134,7 +136,7 @@ export const LoginPage: React.FC = () => {
               <img src="/logo-icon.png" alt="Luvia Logo" width="56" height="56" className="h-14 w-14 object-contain drop-shadow-sm" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold tracking-tight font-heading text-slate-900">
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
                 Ingreso al Sistema
               </h1>
               <p className="text-xs text-slate-600 mt-0.5">

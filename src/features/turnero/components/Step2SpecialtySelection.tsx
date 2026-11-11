@@ -301,7 +301,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#005a87]">
               Institución Seleccionada
             </span>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 font-heading truncate">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">
               {selectedCenter.name}
             </h3>
             <span className="text-xs sm:text-sm text-slate-500 truncate block">
@@ -361,7 +361,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
           <div className="flex items-start gap-3">
             <div className={`w-1.5 h-10 sm:h-11 rounded-full shrink-0 mt-0.5 ${tipoAtencion === 'ESTUDIO' ? 'bg-[#00a896]' : 'bg-[#005a87]'}`} />
             <div>
-              <h2 className="text-lg sm:text-2xl font-bold text-slate-900 font-heading leading-tight">
+              <h2 className="text-lg sm:text-2xl font-bold text-slate-900 leading-tight">
                 {tipoAtencion === 'ESTUDIO'
                   ? '2. Seleccione el Estudio o Práctica Diagnóstica'
                   : '2. Seleccione la Especialidad Médica'}
@@ -472,7 +472,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
                     </span>
                   </div>
                   <div>
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900 font-heading">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900">
                       {study.name}
                     </h3>
                     <p className="text-xs text-slate-600 mt-1">
@@ -522,7 +522,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
 
               {/* Nombre de la especialidad */}
               <div className="min-w-0 flex-1">
-                <span className="font-heading font-semibold text-slate-800 text-sm group-hover:text-[#005a87] transition-colors leading-snug line-clamp-2 block">
+                <span className="font-semibold text-slate-800 text-sm group-hover:text-[#005a87] transition-colors leading-snug line-clamp-2 block">
                   {displayName}
                 </span>
               </div>
@@ -594,7 +594,7 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#005a87] bg-sky-50 px-2.5 py-0.5 rounded-md border border-sky-200/60">
                     <Sparkles className="size-3" /> Especialidad Seleccionada
                   </span>
-                  <h3 className="text-xl font-bold text-slate-900 font-heading mt-1">
+                  <h3 className="text-xl font-bold text-slate-900 mt-1">
                     {modalStudy ? modalStudy.name : modalDisplayName}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">

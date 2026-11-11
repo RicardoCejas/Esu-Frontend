@@ -55,7 +55,7 @@ export const ForgotPasswordPage: React.FC = () => {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-700 shadow-inner">
               <Mail className="h-7 w-7" />
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight font-heading text-slate-900">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
               Recuperar Contraseña
             </h1>
             <p className="text-xs text-slate-600 max-w-xs mx-auto">

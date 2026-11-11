@@ -179,7 +179,7 @@ export const CentrosHeroBannerSlider: React.FC = () => {
                 </span>
 
                 {/* Título Principal Blanco Grande y Nítido */}
-                <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight font-heading drop-shadow-md">
+                <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight drop-shadow-md">
                   {itemSlide.titleSecondary}
                 </h2>
 
@@ -259,7 +259,7 @@ export const CentrosHeroBannerSlider: React.FC = () => {
                   <p className="text-xs text-slate-300 font-medium mb-1">
                     {modalSlide.detalles.tipo}
                   </p>
-                  <h3 className="text-xl font-bold font-heading text-white">
+                  <h3 className="text-xl font-bold text-white">
                     {modalSlide.detalles.nombreCompleto}
                   </h3>
                 </div>

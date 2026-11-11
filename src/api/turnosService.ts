@@ -77,6 +77,57 @@ export const turnosService = {
     }
   },
 
+  
+  async getTurnosHoyCentro(centroId: string | number): Promise<Turno[]> {
+    try {
+      const numId = toNumericId(centroId, 'centroSaludId');
+      const response = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.turnos.hoyCentro(numId)
+      );
+      return Array.isArray(response.data)
+        ? response.data.map(normalizeTurno)
+        : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los turnos del día para el centro de salud.'), { cause: err });
+    }
+  },
+
+  async getTurnosCentro(
+    centroId: string | number,
+    filtros?: { desde?: string; hasta?: string; estado?: string }
+  ): Promise<Turno[]> {
+    try {
+      const numId = toNumericId(centroId, 'centroSaludId');
+      const params = new URLSearchParams();
+      if (filtros?.desde) params.append('desde', filtros.desde);
+      if (filtros?.hasta) params.append('hasta', filtros.hasta);
+      if (filtros?.estado) params.append('estado', filtros.estado);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      const response = await apiClient.get<Record<string, unknown>[]>(
+        `${API_ENDPOINTS.turnos.centro(numId)}${query}`
+      );
+      return Array.isArray(response.data)
+        ? response.data.map(normalizeTurno)
+        : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los turnos del centro de salud.'), { cause: err });
+    }
+  },
+
+  async getTurnosKanbanCentro(centroId: string | number): Promise<Turno[]> {
+    try {
+      const numId = toNumericId(centroId, 'centroSaludId');
+      const response = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.turnos.kanbanCentro(numId)
+      );
+      return Array.isArray(response.data)
+        ? response.data.map(normalizeTurno)
+        : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo cargar el tablero de salas de espera del centro.'), { cause: err });
+    }
+  },
+
   async getAll(): Promise<Turno[]> {
     try {
       const response = await apiClient.get<Record<string, unknown>[]>(
@@ -90,7 +141,7 @@ export const turnosService = {
     }
   },
 
-  async getByPaciente(pacienteId: string): Promise<Turno[]> {
+  async getByPaciente(pacienteId: string | number): Promise<Turno[]> {
     try {
       const numId = toNumericId(pacienteId);
       const response = await apiClient.get<Record<string, unknown>[]>(
@@ -245,6 +296,21 @@ export const turnosService = {
     }
   },
 
+  async marcarAusente(id: string | number): Promise<Turno | null> {
+    try {
+      const numId = toNumericId(id);
+      const response = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.ausente(numId)
+      );
+      return response.data ? normalizeTurno(response.data) : null;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(
+          err,
+          'No se pudo marcar el turno como ausente.'
+        ), { cause: err });
+    }
+  },
+
   async registrarCopago(
     id: string,
     data: {
@@ -294,6 +360,7 @@ export const turnosService = {
         centroSaludId: toNumericId(data.centroSaludId),
         centroSaludNombre: data.centroSaludNombre,
         consultorioNumero: data.consultorioNumero,
+        planta: data.planta,
         motivoTurno: data.motivoConsulta,
         copagoMonto: data.copagoMonto,
         numeroBono: data.numeroBono,
@@ -380,6 +447,8 @@ export const turnosService = {
         centroSaludId: toNumericId(data.centroSaludId),
         fecha: data.fecha,
         hora: data.hora,
+        consultorioNumero: data.consultorioNumero,
+        planta: data.planta,
         motivoSobreturno: data.motivoSobreturno,
       };
       const response = await apiClient.post<Record<string, unknown>>(
@@ -435,6 +504,55 @@ export const turnosService = {
           err,
           'No se pudo llamar al paciente a consultorio.'
         ), { cause: err });
+    }
+  },
+
+  async finalizarAtencion(id: string | number): Promise<Turno | null> {
+    try {
+      const numId = toNumericId(id);
+      const response = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.finalizarAtencion(numId)
+      );
+      return response.data ? normalizeTurno(response.data) : null;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo finalizar la atención del turno.'), { cause: err });
+    }
+  },
+
+  async getTurnosCarteleraPublica(centroId: string | number): Promise<Turno[]> {
+    try {
+      const numId = toNumericId(centroId, 'centroSaludId');
+      const response = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.turnos.carteleraPublica(numId)
+      );
+      return Array.isArray(response.data) ? response.data.map(normalizeTurno) : [];
+    } catch (err: unknown) {
+      try {
+        return await this.getTurnosKanbanCentro(centroId);
+      } catch {
+        throw new Error(extractApiErrorMessage(err, 'No se pudo cargar la cartelera de turnos.'), { cause: err });
+      }
+    }
+  },
+
+  async eliminarTurno(id: string): Promise<boolean> {
+    try {
+      const numId = toNumericId(id);
+      await apiClient.delete(API_ENDPOINTS.turnos.eliminar(numId));
+      return true;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar el turno.'), { cause: err });
+    }
+  },
+
+  async purgarCancelados(profesionalId?: string): Promise<number> {
+    try {
+      const res = await apiClient.delete<{ eliminados: number }>(API_ENDPOINTS.turnos.purgarCancelados, {
+        params: profesionalId ? { profesionalId } : undefined,
+      });
+      return res.data?.eliminados || 0;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron purgar los turnos cancelados.'), { cause: err });
     }
   },
 };

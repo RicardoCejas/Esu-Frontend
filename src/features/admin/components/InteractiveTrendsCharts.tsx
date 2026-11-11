@@ -162,7 +162,7 @@ export const InteractiveLineChart: React.FC<LineChartProps> = ({ data }) => {
                   x={paddingX - 8}
                   y={y + 3}
                   textAnchor="end"
-                  className="text-[9px] fill-muted-foreground font-mono"
+                  className="text-[9px] fill-muted-foreground tabular-nums"
                 >
                   {level}%
                 </text>

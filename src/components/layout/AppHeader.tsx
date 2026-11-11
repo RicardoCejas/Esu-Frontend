@@ -35,7 +35,7 @@ function getDashboardPath(rol?: UserRole): string {
     case 'RECEPCIONISTA':
       return '/dashboard/recepcion'
     case 'ADMIN':
-      return '/dashboard/admin'
+      return '/dashboard/admin/sedes'
     case 'PACIENTE':
     default:
       return '/dashboard/paciente'
@@ -65,7 +65,7 @@ export function AppHeader({
           <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition shrink-0">
             <img src="/logo-icon.png" alt="Luvia Logo" className="h-8 sm:h-9 w-8 sm:w-9 object-contain drop-shadow-xs" />
             <div className="flex flex-col">
-              <span className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 leading-none font-heading">
+              <span className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 leading-none">
                 Luvia <span className="text-sky-600 text-xs font-bold hidden xs:inline">Cruz del Eje</span>
               </span>
               <span className="text-[10px] font-semibold text-muted-foreground hidden sm:inline leading-tight mt-0.5">

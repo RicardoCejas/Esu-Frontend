@@ -5,6 +5,8 @@ import { ActivityMonitor } from '@/components/auth/ActivityMonitor';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AuthGuard } from './AuthGuard';
 import { RoleGuard } from './RoleGuard';
+import { RequireCentroSaludGuard } from './RequireCentroSaludGuard';
+import { PermissionGuard } from './PermissionGuard';
 
 // Lazy loading de rutas secundarias para optimización de bundle
 const TurneroContainer = React.lazy(() => import('@/features/turnero/TurneroContainer').then(m => ({ default: m.TurneroContainer })));
@@ -38,16 +40,27 @@ const PantallaTurnosTVPage = React.lazy(() => import('@/features/recepcion/Panta
 const MedicosCentroPage = React.lazy(() => import('@/features/recepcion/MedicosCentroPage').then(m => ({ default: m.MedicosCentroPage })));
 const NuevoMedicoPage = React.lazy(() => import('@/features/recepcion/NuevoMedicoPage').then(m => ({ default: m.NuevoMedicoPage })));
 const EspecialidadesCentroPage = React.lazy(() => import('@/features/recepcion/EspecialidadesCentroPage').then(m => ({ default: m.EspecialidadesCentroPage })));
+const MetricasCentroPage = React.lazy(() => import('@/features/recepcion/MetricasCentroPage').then(m => ({ default: m.MetricasCentroPage })));
+const MiSedePage = React.lazy(() => import('@/features/recepcion/MiSedePage').then(m => ({ default: m.MiSedePage })));
+const PersonalCentroPage = React.lazy(() => import('@/features/recepcion/PersonalCentroPage').then(m => ({ default: m.PersonalCentroPage })));
+const EditarSedePage = React.lazy(() => import('@/features/recepcion/EditarSedePage').then(m => ({ default: m.EditarSedePage })));
+const NuevoConsultorioPage = React.lazy(() => import('@/features/recepcion/NuevoConsultorioPage').then(m => ({ default: m.NuevoConsultorioPage })));
+const EditarConsultorioPage = React.lazy(() => import('@/features/recepcion/EditarConsultorioPage').then(m => ({ default: m.EditarConsultorioPage })));
+const MedicoDetallePage = React.lazy(() => import('@/features/recepcion/MedicoDetallePage').then(m => ({ default: m.MedicoDetallePage })));
+const EspecialidadDetallePage = React.lazy(() => import('@/features/recepcion/EspecialidadDetallePage').then(m => ({ default: m.EspecialidadDetallePage })));
+const NuevoPersonalCentroPage = React.lazy(() => import('@/features/recepcion/NuevoPersonalCentroPage').then(m => ({ default: m.NuevoPersonalCentroPage })));
+const PersonalPermisosPage = React.lazy(() => import('@/features/recepcion/PersonalPermisosPage').then(m => ({ default: m.PersonalPermisosPage })));
+const PacienteDetallePage = React.lazy(() => import('@/features/recepcion/PacienteDetallePage').then(m => ({ default: m.PacienteDetallePage })));
+const NuevoTurnoMostradorPage = React.lazy(() => import('@/features/recepcion/NuevoTurnoMostradorPage').then(m => ({ default: m.NuevoTurnoMostradorPage })));
+const NuevoSobreturnoPage = React.lazy(() => import('@/features/recepcion/NuevoSobreturnoPage').then(m => ({ default: m.NuevoSobreturnoPage })));
+const ReagendarTurnoPage = React.lazy(() => import('@/features/recepcion/ReagendarTurnoPage').then(m => ({ default: m.ReagendarTurnoPage })));
 
 // Vistas Admin
-const AdminDashboardPage = React.lazy(() => import('@/features/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
-const MetricasOcupacionAusentismoPage = React.lazy(() => import('@/features/admin/MetricasOcupacionAusentismoPage').then(m => ({ default: m.MetricasOcupacionAusentismoPage })));
 const AdminUsuariosPage = React.lazy(() => import('@/features/admin/AdminUsuariosPage').then(m => ({ default: m.AdminUsuariosPage })));
 const NuevoUsuarioPage = React.lazy(() => import('@/features/admin/NuevoUsuarioPage').then(m => ({ default: m.NuevoUsuarioPage })));
 const AdminEspecialidadesPage = React.lazy(() => import('@/features/admin/AdminEspecialidadesPage').then(m => ({ default: m.AdminEspecialidadesPage })));
 const AdminSedesPage = React.lazy(() => import('@/features/admin/AdminSedesPage').then(m => ({ default: m.AdminSedesPage })));
 const NuevaEspecialidadPage = React.lazy(() => import('@/features/admin/NuevaEspecialidadPage').then(m => ({ default: m.NuevaEspecialidadPage })));
-const AdminMapaPinesPage = React.lazy(() => import('@/features/admin/AdminMapaPinesPage').then(m => ({ default: m.AdminMapaPinesPage })));
 const NuevoProfesionalPage = React.lazy(() => import('@/features/profesionales/NuevoProfesionalPage').then(m => ({ default: m.NuevoProfesionalPage })));
 
 // Perfil (todos los roles)
@@ -120,28 +133,80 @@ export const AppRoutes: React.FC = () => {
                 <Route path="medico/atencion" element={<AtencionConsultaPage />} />
               </Route>
 
-              {/* Módulo Recepción y Sala de Espera (HU-53, HU-54, HU-55) */}
-              <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA', 'MEDICO', 'ADMIN']} />}>
-                <Route path="recepcion" element={<RecepcionPage />} />
-                <Route path="recepcion/kanban" element={<SalasEsperaKanbanPage />} />
-                <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
-                <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
-                <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
-                <Route path="recepcion/medicos" element={<MedicosCentroPage />} />
-                <Route path="recepcion/medicos/nuevo" element={<NuevoMedicoPage />} />
-                <Route path="recepcion/especialidades" element={<EspecialidadesCentroPage />} />
+              {/* Módulo Compartido Sala de Espera y Padrón (Recepción y Médico) */}
+              <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA', 'MEDICO']} />}>
+                <Route element={<RequireCentroSaludGuard />}>
+                  <Route element={<PermissionGuard anyOf={['SALA_ESPERA_GESTIONAR', 'TURNOS_VER']} />}>
+                    <Route path="recepcion/kanban" element={<SalasEsperaKanbanPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['PACIENTES_VER']} />}>
+                    <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
+                    <Route path="recepcion/pacientes/:id" element={<PacienteDetallePage />} />
+                  </Route>
+                </Route>
+              </Route>
+
+              {/* Módulo Exclusivo Centro de Salud / Recepción (HU-53, HU-54, HU-55, HU-99) */}
+              <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA']} />}>
+                <Route element={<RequireCentroSaludGuard />}>
+                  <Route element={<PermissionGuard anyOf={['TURNOS_VER', 'SALA_ESPERA_GESTIONAR']} />}>
+                    <Route path="recepcion" element={<RecepcionPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['PACIENTES_REGISTRAR']} />}>
+                    <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['TURNOS_VER']} />}>
+                    <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['MEDICOS_VER']} />}>
+                    <Route path="recepcion/medicos" element={<MedicosCentroPage />} />
+                    <Route path="recepcion/medicos/:id" element={<MedicoDetallePage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['MEDICOS_ASIGNAR_CONSULTORIO']} />}>
+                    <Route path="recepcion/medicos/nuevo" element={<NuevoMedicoPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['MEDICOS_VER', 'CONSULTORIOS_VER']} />}>
+                    <Route path="recepcion/especialidades" element={<EspecialidadesCentroPage />} />
+                    <Route path="recepcion/especialidades/:id" element={<EspecialidadDetallePage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['REPORTES_VER']} />}>
+                    <Route path="recepcion/metricas" element={<MetricasCentroPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['CONSULTORIOS_VER', 'CONSULTORIOS_ADMINISTRAR']} />}>
+                    <Route path="recepcion/sede" element={<MiSedePage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['TURNOS_CREAR']} />}>
+                    <Route path="recepcion/turnos/nuevo" element={<NuevoTurnoMostradorPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['TURNOS_REAGENDAR']} />}>
+                    <Route path="recepcion/turnos/:id/reagendar" element={<ReagendarTurnoPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['SOBRETURNOS_CREAR']} />}>
+                    <Route path="recepcion/kanban/sobreturno" element={<NuevoSobreturnoPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['CONSULTORIOS_ADMINISTRAR']} />}>
+                    <Route path="recepcion/sede/editar" element={<EditarSedePage />} />
+                    <Route path="recepcion/sede/consultorios/nuevo" element={<NuevoConsultorioPage />} />
+                    <Route path="recepcion/sede/consultorios/:id/editar" element={<EditarConsultorioPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['USUARIOS_ADMINISTRAR']} />}>
+                    <Route path="recepcion/personal" element={<PersonalCentroPage />} />
+                    <Route path="recepcion/personal/nuevo" element={<NuevoPersonalCentroPage />} />
+                    <Route path="recepcion/personal/:id/permisos" element={<PersonalPermisosPage />} />
+                  </Route>
+                </Route>
               </Route>
 
               {/* Módulo Administrador (HU-56 & HU-70) */}
               <Route element={<RoleGuard allowedRoles={['ADMIN']} />}>
-                <Route path="admin" element={<AdminDashboardPage />} />
-                <Route path="admin/ocupacion-ausentismo" element={<MetricasOcupacionAusentismoPage />} />
+                <Route path="admin" element={<Navigate to="/dashboard/admin/sedes" replace />} />
+                <Route path="admin/ocupacion-ausentismo" element={<Navigate to="/dashboard/admin/sedes" replace />} />
                 <Route path="admin/sedes" element={<AdminSedesPage />} />
                 <Route path="admin/usuarios" element={<AdminUsuariosPage />} />
                 <Route path="admin/usuarios/nuevo" element={<NuevoUsuarioPage />} />
                 <Route path="admin/especialidades" element={<AdminEspecialidadesPage />} />
                 <Route path="admin/especialidades/nueva" element={<NuevaEspecialidadPage />} />
-                <Route path="admin/mapa" element={<AdminMapaPinesPage />} />
+                <Route path="admin/mapa" element={<Navigate to="/dashboard/admin/sedes" replace />} />
                 <Route path="admin/profesionales/nuevo" element={<NuevoProfesionalPage />} />
               </Route>
             </Route>

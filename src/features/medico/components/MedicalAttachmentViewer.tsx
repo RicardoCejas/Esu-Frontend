@@ -230,7 +230,7 @@ export const MedicalAttachmentViewer: React.FC<MedicalAttachmentViewerProps> = (
                 <span className="text-xs font-bold text-foreground flex items-center justify-center gap-1.5">
                   <FileCheck2 className="h-4 w-4 text-emerald-600" /> {archivoSeleccionado.name}
                 </span>
-                <p className="text-[11px] text-muted-foreground font-mono">
+                <p className="text-[11px] text-muted-foreground tabular-nums">
                   {(archivoSeleccionado.size / (1024 * 1024)).toFixed(2)} MB • Listo para subir
                 </p>
               </div>
@@ -322,7 +322,7 @@ export const MedicalAttachmentViewer: React.FC<MedicalAttachmentViewerProps> = (
                       <p className="text-[10px] text-muted-foreground">
                         {estudio.tipoEstudio} • {estudio.fechaEstudio || 'Fecha no registrada'}
                       </p>
-                      <p className="text-[9px] font-mono text-slate-500 truncate" title={estudio.checksumSha256}>
+                      <p className="text-[9px] tabular-nums text-slate-500 truncate" title={estudio.checksumSha256}>
                         SHA-256: {estudio.checksumSha256.substring(0, 16)}...
                       </p>
                     </div>
@@ -363,7 +363,7 @@ export const MedicalAttachmentViewer: React.FC<MedicalAttachmentViewerProps> = (
                 <FileText className="h-5 w-5 text-sky-400 shrink-0" />
                 <div className="truncate">
                   <h4 className="text-xs font-bold truncate">{estudioEnVisor.nombreArchivo}</h4>
-                  <p className="text-[10px] text-slate-400 font-mono">
+                  <p className="text-[10px] text-slate-400 tabular-nums">
                     {estudioEnVisor.tipoEstudio} • Checksum SHA-256: {estudioEnVisor.checksumSha256}
                   </p>
                 </div>
@@ -380,7 +380,7 @@ export const MedicalAttachmentViewer: React.FC<MedicalAttachmentViewerProps> = (
                   >
                     <ZoomOut className="h-4 w-4" />
                   </button>
-                  <span className="text-[11px] font-mono px-1 font-semibold">
+                  <span className="text-[11px] tabular-nums px-1 font-semibold">
                     {Math.round(zoom * 100)}%
                   </span>
                   <button
