@@ -22,7 +22,7 @@ interface MetricasCentroFiltersBarProps {
   onToggleVistaTabular: () => void;
 }
 
-const inputCls = 'w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary';
+const inputCls = 'w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 shadow-2xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100 transition';
 
 export const MetricasCentroFiltersBar: React.FC<MetricasCentroFiltersBarProps> = ({
   fechaDesde, onFechaDesdeChange, fechaHasta, onFechaHastaChange,

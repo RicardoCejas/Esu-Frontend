@@ -38,10 +38,11 @@ export const MedicosCentroPage: React.FC = () => {
             <button
               type="button"
               onClick={() => medicos.setIsModalVincularOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-input bg-card hover:bg-muted text-foreground text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
+              title="Vincular a este centro de salud un médico ya registrado en la red"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted text-slate-800 dark:text-foreground text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
             >
               <UserPlus className="h-4 w-4 text-sky-700" aria-hidden="true" />
-              <span>Vincular Existente</span>
+              <span>Vincular Médico a esta Sede</span>
             </button>
             <Link
               to="/dashboard/recepcion/medicos/nuevo"

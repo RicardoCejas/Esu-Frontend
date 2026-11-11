@@ -33,6 +33,11 @@ export const NuevoMedicoPage: React.FC = () => {
 
   const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
+  const inputCls =
+    'w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 px-3 py-2 text-xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100 shadow-2xs transition';
+  const selectCls =
+    'w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-2 text-xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100 shadow-2xs transition cursor-pointer';
+
   useEffect(() => {
     profesionalesService.getEspecialidades().then((data) => {
       setEspecialidades(data);
@@ -159,7 +164,7 @@ export const NuevoMedicoPage: React.FC = () => {
               placeholder="ej: Carlos Alberto"
               value={formData.nombre}
               onChange={handleChange}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className={inputCls}
             />
           </div>
 
@@ -172,7 +177,7 @@ export const NuevoMedicoPage: React.FC = () => {
               placeholder="ej: Bustos"
               value={formData.apellido}
               onChange={handleChange}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className={inputCls}
             />
           </div>
         </div>
@@ -187,7 +192,7 @@ export const NuevoMedicoPage: React.FC = () => {
               placeholder="ej: MP-34982"
               value={formData.matricula}
               onChange={handleChange}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className={inputCls}
             />
           </div>
 
@@ -197,7 +202,7 @@ export const NuevoMedicoPage: React.FC = () => {
               name="especialidadId"
               value={formData.especialidadId}
               onChange={handleChange}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+              className={selectCls}
             >
               {especialidades.map((esp) => (
                 <option key={esp.id} value={esp.id}>
@@ -227,7 +232,7 @@ export const NuevoMedicoPage: React.FC = () => {
                 placeholder="ej: carlos.bustos@esu.salud.gob.ar"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
+                className={inputCls}
               />
             </div>
 
@@ -245,7 +250,7 @@ export const NuevoMedicoPage: React.FC = () => {
                 onChange={handleChange}
                 aria-invalid={Boolean(passwordError)}
                 aria-describedby={passwordError ? 'medico-password-error' : undefined}
-                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
+                className={inputCls}
               />
               {passwordError && (
                 <p id="medico-password-error" className="text-[11px] font-semibold text-rose-700">
@@ -291,7 +296,7 @@ export const NuevoMedicoPage: React.FC = () => {
               step={5}
               value={formData.duracionTurnoMin}
               onChange={handleChange}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className={inputCls}
             />
           </div>
 
@@ -303,7 +308,7 @@ export const NuevoMedicoPage: React.FC = () => {
               placeholder="ej: 3549-401122"
               value={formData.telefono}
               onChange={handleChange}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className={inputCls}
             />
           </div>
         </div>

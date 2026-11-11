@@ -156,7 +156,7 @@ export const MedicoDetallePage: React.FC = () => {
                 onChange={(e) => setField('nombre', e.target.value)}
                 aria-invalid={Boolean(errors.nombre)}
                 aria-describedby={errors.nombre ? 'medico-nombre-error' : undefined}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus-visible:outline-hidden focus-visible:border-sky-600 focus-visible:ring-2 focus-visible:ring-sky-100 shadow-2xs"
               />
               {errors.nombre && (
                 <p id="medico-nombre-error" className="mt-1 text-xs font-medium text-rose-700">
@@ -177,7 +177,7 @@ export const MedicoDetallePage: React.FC = () => {
                 onChange={(e) => setField('apellido', e.target.value)}
                 aria-invalid={Boolean(errors.apellido)}
                 aria-describedby={errors.apellido ? 'medico-apellido-error' : undefined}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus-visible:outline-hidden focus-visible:border-sky-600 focus-visible:ring-2 focus-visible:ring-sky-100 shadow-2xs"
               />
               {errors.apellido && (
                 <p id="medico-apellido-error" className="mt-1 text-xs font-medium text-rose-700">
@@ -198,7 +198,7 @@ export const MedicoDetallePage: React.FC = () => {
                 onChange={(e) => setField('matricula', e.target.value)}
                 aria-invalid={Boolean(errors.matricula)}
                 aria-describedby={errors.matricula ? 'medico-matricula-error' : undefined}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground tabular-nums focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 tabular-nums focus-visible:outline-hidden focus-visible:border-sky-600 focus-visible:ring-2 focus-visible:ring-sky-100 shadow-2xs"
               />
               {errors.matricula && (
                 <p id="medico-matricula-error" className="mt-1 text-xs font-medium text-rose-700">
@@ -218,7 +218,7 @@ export const MedicoDetallePage: React.FC = () => {
                 value={values.telefono}
                 onChange={(e) => setField('telefono', e.target.value)}
                 placeholder="Ej: 3549-412345"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus-visible:outline-hidden focus-visible:border-sky-600 focus-visible:ring-2 focus-visible:ring-sky-100 shadow-2xs"
               />
             </div>
 
@@ -231,7 +231,7 @@ export const MedicoDetallePage: React.FC = () => {
                 value={values.especialidadId}
                 onChange={(e) => setField('especialidadId', e.target.value)}
                 aria-invalid={Boolean(errors.especialidadId)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus-visible:outline-hidden focus-visible:border-sky-600 focus-visible:ring-2 focus-visible:ring-sky-100 shadow-2xs"
               >
                 <option value="">Seleccionar especialidad...</option>
                 {especialidades.map((esp) => (

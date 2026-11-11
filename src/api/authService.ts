@@ -2,6 +2,7 @@ import { isAxiosError } from 'axios';
 import { apiClient } from './apiClient';
 import { tokenStorage, refreshSingleFlight } from './tokenStorage';
 import { authBroadcast } from '@/lib/authBroadcast';
+import { authSessionStorage } from '@/lib/authSessionStorage';
 import { sanitizeFormData } from '@/lib/sanitizer';
 import { isValidDniFormat } from '../lib/dniValidation.ts';
 import { API_ENDPOINTS, extractApiErrorMessage, isDemoModeEnabled } from './endpoints';
@@ -289,7 +290,7 @@ export const authService = {
 
       tokenStorage.setAccessToken(token);
       currentSessionUser = user;
-      sessionStorage.setItem('esu_session_active', '1');
+      authSessionStorage.setSessionActive();
       if (allowSimulatedRole && credentials.rolSimulado) {
         await authService.devSwitchRole(credentials.rolSimulado);
       }
@@ -375,7 +376,7 @@ export const authService = {
 
       tokenStorage.setAccessToken(token);
       currentSessionUser = user;
-      sessionStorage.setItem('esu_session_active', '1');
+      authSessionStorage.setSessionActive();
 
       if (user.rol === 'PACIENTE') {
         try {
@@ -452,7 +453,7 @@ export const authService = {
       if (token) {
         tokenStorage.setAccessToken(token);
         currentSessionUser = user;
-        sessionStorage.setItem('esu_session_active', '1');
+        authSessionStorage.setSessionActive();
         try {
           const perfilRes = await apiClient.get<PacienteMeResponse>('/pacientes/me');
           user = mergePacienteProfile(user, perfilRes.data);
@@ -482,7 +483,7 @@ export const authService = {
     } finally {
       tokenStorage.clearToken();
       currentSessionUser = null;
-      sessionStorage.removeItem('esu_session_active');
+      authSessionStorage.clearSessionActive();
       localStorage.removeItem('esu_dev_mode');
       localStorage.removeItem('esu_dev_active_role');
       authBroadcast.postMessage({ type: 'LOGOUT', reason: 'user' });
@@ -585,7 +586,7 @@ export const authService = {
           tokenStorage.clearToken();
           currentSessionUser = null;
           if (typeof window !== 'undefined') {
-            sessionStorage.removeItem('esu_session_active');
+            authSessionStorage.clearSessionActive();
           }
         }
         return null;
@@ -750,7 +751,7 @@ export const authService = {
 
     tokenStorage.setAccessToken(token);
     currentSessionUser = user;
-    sessionStorage.setItem('esu_session_active', '1');
+    authSessionStorage.setSessionActive();
 
     if (user.rol === 'PACIENTE') {
       try {

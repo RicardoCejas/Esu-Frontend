@@ -76,7 +76,7 @@ export const ModalVincularMedico: React.FC<ModalVincularMedicoProps> = ({
             placeholder="Buscar por nombre, especialidad o matrícula..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-input text-xs bg-background focus:outline-none focus:ring-2 focus:ring-sky-600"
+            className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100 shadow-2xs"
           />
         </div>
 

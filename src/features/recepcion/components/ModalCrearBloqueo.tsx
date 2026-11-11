@@ -80,34 +80,34 @@ export const ModalCrearBloqueo: React.FC<ModalCrearBloqueoProps> = ({
         <form onSubmit={handleSubmit} className="space-y-3 text-xs">
           <div>
             <label htmlFor="bloq-motivo" className="block font-bold text-foreground mb-1">Motivo de Indisponibilidad *</label>
-            <select id="bloq-motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs">
+            <select id="bloq-motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)} className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-2 text-xs shadow-2xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100">
               {MOTIVOS.map((m) => <option key={m} value={m}>{m}</option>)}
               <option value="Otro">Otro motivo...</option>
             </select>
             {motivo === 'Otro' && (
-              <input type="text" placeholder="Especificar motivo..." value={motivoCustom} onChange={(e) => setMotivoCustom(e.target.value)} className="mt-2 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs" />
+              <input type="text" placeholder="Especificar motivo..." value={motivoCustom} onChange={(e) => setMotivoCustom(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-2 text-xs shadow-2xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100" />
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="bloq-fini" className="block font-bold text-foreground mb-1">Fecha Inicio *</label>
-              <input id="bloq-fini" type="date" required value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs" />
+              <input id="bloq-fini" type="date" required value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-2 text-xs shadow-2xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100" />
             </div>
             <div>
               <label htmlFor="bloq-ffin" className="block font-bold text-foreground mb-1">Fecha Fin *</label>
-              <input id="bloq-ffin" type="date" required value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs" />
+              <input id="bloq-ffin" type="date" required value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-2 text-xs shadow-2xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="bloq-hini" className="block font-bold text-foreground mb-1">Hora Inicio (opcional)</label>
-              <input id="bloq-hini" type="time" value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs" />
+              <input id="bloq-hini" type="time" value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-2 text-xs shadow-2xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100" />
             </div>
             <div>
               <label htmlFor="bloq-hfin" className="block font-bold text-foreground mb-1">Hora Fin (opcional)</label>
-              <input id="bloq-hfin" type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs" />
+              <input id="bloq-hfin" type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-2 text-xs shadow-2xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100" />
             </div>
           </div>
 
