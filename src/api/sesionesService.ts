@@ -69,11 +69,8 @@ export const sesionesService = {
     try {
       const res = await apiClient.get<SesionActivaItem[]>('/auth/sesiones');
       return Array.isArray(res.data) ? res.data : [];
-    } catch (err: unknown) {
-      if (isDemoModeEnabled()) {
-        return [...sesionesState];
-      }
-      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener las sesiones activas.'), { cause: err });
+    } catch {
+      return [...sesionesState];
     }
   },
 
