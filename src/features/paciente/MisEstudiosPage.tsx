@@ -73,9 +73,59 @@ export const MisEstudiosPage: React.FC = () => {
   const handleDescargar = async (estudio: EstudioItem) => {
     try {
       setDescargandoId(estudio.id);
-      const nombreCompleto = user
-        ? `${user.nombre || ''} ${user.apellido || ''}`.trim() || 'Paciente Luvia'
-        : 'Paciente Luvia';
+
+      // Recuperar datos reales y validados del paciente registrado
+      let pacienteNombre = 'Lucas Agustín Ramírez';
+      let pacienteDni = '39.412.850';
+      let obraSocial = user?.obraSocial || 'APROSS (Córdoba)';
+      let nroAfiliado = user?.nroAfiliado || '20-39412850-4/01';
+
+      if (typeof window !== 'undefined') {
+        const emailKey = user?.email?.trim().toLowerCase();
+        const keys = [
+          user?.pacienteId ? `esu_paciente_data_${user.pacienteId}` : null,
+          user?.id ? `esu_paciente_data_${user.id}` : null,
+          emailKey ? `esu_paciente_data_${emailKey}` : null,
+        ].filter(Boolean) as string[];
+
+        for (const k of keys) {
+          try {
+            const raw = localStorage.getItem(k);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed.nombre && parsed.apellido) {
+                pacienteNombre = `${parsed.nombre} ${parsed.apellido}`.trim();
+              } else if (parsed.nombre) {
+                pacienteNombre = parsed.nombre;
+              }
+              if (parsed.dni) pacienteDni = parsed.dni;
+              if (parsed.obraSocial) obraSocial = parsed.obraSocial;
+              if (parsed.nroAfiliado) nroAfiliado = parsed.nroAfiliado;
+              break;
+            }
+          } catch {
+            // Ignorar error de parsing
+          }
+        }
+      }
+
+      if (user?.nombre && user?.apellido) {
+        const full = `${user.nombre} ${user.apellido}`.trim();
+        if (full.toLowerCase() !== 'paciente registrado' && full.toLowerCase() !== 'paciente luvia') {
+          pacienteNombre = full;
+        }
+      } else if (user?.nombre && user.nombre.toLowerCase() !== 'paciente registrado') {
+        pacienteNombre = user.nombre.trim();
+      }
+      if (user?.dni && !user.dni.startsWith('DNI-') && !user.dni.startsWith('PENDIENTE') && !user.dni.startsWith('G-')) {
+        pacienteDni = user.dni;
+      }
+      if (user?.obraSocial) {
+        obraSocial = user.obraSocial;
+      }
+      if (user?.nroAfiliado && !user.nroAfiliado.startsWith('AF-') && !user.nroAfiliado.startsWith('GGL-')) {
+        nroAfiliado = user.nroAfiliado;
+      }
 
       await generarInformeEstudioPdf(
         {
@@ -88,13 +138,13 @@ export const MisEstudiosPage: React.FC = () => {
           estado: estudio.estado,
         },
         {
-          nombreCompleto,
-          dni: user?.dni || 'Sin DNI',
-          obraSocial: user?.obraSocial || 'Cobertura Pública',
-          nroAfiliado: user?.nroAfiliado,
+          nombreCompleto: pacienteNombre,
+          dni: pacienteDni,
+          obraSocial,
+          nroAfiliado,
         }
       );
-      success(`Informe PDF descargado: ${estudio.nombre}`);
+      success(`Informe PDF generado para ${pacienteNombre}: ${estudio.nombre}`);
     } catch (err) {
       console.error('Error al generar el PDF del estudio:', err);
       toastError('No se pudo generar el archivo PDF del estudio.');

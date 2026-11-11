@@ -15,11 +15,12 @@ import type {
   RecetaDigitalDto,
 } from '@/types';
 
-function toNumericId(raw: string | number | undefined, fallback = 1): number {
-  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+function toNumericId(raw: string | number | undefined, fieldName = 'identificador'): number {
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) return raw;
   const digits = String(raw ?? '').replace(/\D/g, '');
   const parsed = Number(digits);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  throw new Error(`El identificador '${fieldName}' es obligatorio y debe ser un número válido.`);
 }
 
 function normalizeRecetaValidacion(d: Record<string, unknown>, fallbackCodigo: string): RecetaValidacion {

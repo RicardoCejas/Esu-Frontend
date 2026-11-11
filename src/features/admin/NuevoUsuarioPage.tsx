@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { apiClient } from '@/api/apiClient';
-import { API_ENDPOINTS, extractApiErrorMessage } from '@/api/endpoints';
+import { usuariosService } from '@/api/usuariosService';
 import { centrosService } from '@/api/centrosService';
-import type { CentroSalud } from '@/types';
-import { Building2, ArrowLeft, Save, Shield, AlertCircle } from 'lucide-react';
+import { extractApiErrorMessage } from '@/api/endpoints';
+import type { CentroSalud, BackendUserRole } from '@/types';
+import { UserPlus, ArrowLeft, Save, Shield, AlertCircle } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 
 export const NuevoUsuarioPage: React.FC = () => {
@@ -13,57 +13,81 @@ export const NuevoUsuarioPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const [centros, setCentros] = useState<CentroSalud[]>([]);
+  const [loadingCentros, setLoadingCentros] = useState(false);
+
   const [formData, setFormData] = useState({
-    nombreCentro: '',
-    tipo: 'CLINICA' as CentroSalud['tipo'],
-    direccion: '',
-    telefono: '',
-    emailInstitucional: '',
+    username: '',
     password: '',
-    horarioAtencion: 'Lunes a Viernes 08:00 a 20:00',
-    disponibleGuardia: false,
-    responsable: '',
+    confirmPassword: '',
+    rol: 'RECEPCIONISTA' as BackendUserRole,
+    nombre: '',
+    apellido: '',
+    dni: '',
+    centroSaludId: '',
   });
 
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingCentros(true);
+    centrosService
+      .getAll()
+      .then((data) => {
+        if (isMounted) setCentros(data);
+      })
+      .catch(() => {
+        // Fallback silencioso si las sedes no están disponibles
+      })
+      .finally(() => {
+        if (isMounted) setLoadingCentros(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData((prev) => ({ ...prev, [name]: checked }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nombreCentro.trim() || !formData.emailInstitucional.trim() || !formData.password.trim()) {
+    setSubmitError(null);
+
+    const emailTrimmed = formData.username.trim().toLowerCase();
+    if (!emailTrimmed) {
+      setSubmitError('El correo electrónico es obligatorio.');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setSubmitError('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setSubmitError('Las contraseñas ingresadas no coinciden.');
       return;
     }
 
     setIsSubmitting(true);
-    setSubmitError(null);
     try {
-      await centrosService.createCentroSalud({
-        nombre: formData.nombreCentro.trim(),
-        tipo: formData.tipo,
-        direccion: formData.direccion.trim() || 'Cruz del Eje, Córdoba',
-        telefono: formData.telefono.trim() || '03549-422001',
-        ciudad: 'Cruz del Eje',
-        horarioAtencion: formData.horarioAtencion,
-        disponibleGuardia: formData.disponibleGuardia,
-      });
-
-      await apiClient.post(API_ENDPOINTS.usuarios.crear, {
-        username: formData.emailInstitucional.trim().toLowerCase(),
+      const nuevoUsuario = await usuariosService.crearUsuario({
+        username: emailTrimmed,
         password: formData.password,
-        rol: 'RECEPCIONISTA',
+        rol: formData.rol,
+        nombre: formData.nombre.trim() || undefined,
+        apellido: formData.apellido.trim() || undefined,
+        dni: formData.dni.trim() || undefined,
+        centroSaludId: formData.centroSaludId || undefined,
       });
 
-      success(`Cuenta creada exitosamente para ${formData.nombreCentro}`);
+      success(`Usuario ${nuevoUsuario.email} (${nuevoUsuario.rol}) creado exitosamente.`);
       navigate('/dashboard/admin/usuarios');
-    } catch (err) {
-      const msg = extractApiErrorMessage(err, 'No se pudo registrar la cuenta institucional.');
+    } catch (err: unknown) {
+      const msg = extractApiErrorMessage(err, 'No se pudo registrar el usuario en el sistema.');
       setSubmitError(msg);
       toastError(msg);
     } finally {
@@ -79,17 +103,17 @@ export const NuevoUsuarioPage: React.FC = () => {
           <Link
             to="/dashboard/admin/usuarios"
             className="flex h-9 w-9 items-center justify-center rounded-xl border border-input bg-card text-muted-foreground hover:bg-accent hover:text-foreground transition cursor-pointer"
-            title="Volver a Cuentas de Centros de Salud"
+            title="Volver a Cuentas de Usuarios"
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2 font-heading">
-              <Building2 className="h-5 w-5 text-primary" />
-              <span>Crear Cuenta para Centro de Salud</span>
+              <UserPlus className="h-5 w-5 text-primary" />
+              <span>Alta de Nuevo Usuario</span>
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Alta institucional de centro médico y creación de credenciales de acceso.
+              Crea credenciales institucionales para administradores, médicos y personal de recepción.
             </p>
           </div>
         </div>
@@ -100,11 +124,11 @@ export const NuevoUsuarioPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Nota Explicativa */}
+      {/* Nota Explicativa de Seguridad */}
       <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-4 text-xs text-sky-950 space-y-1">
-        <p className="font-bold text-sky-900">Responsabilidad de la cuenta del Centro de Salud</p>
+        <p className="font-bold text-sky-900">Seguridad de la Sesión del Administrador</p>
         <p className="text-muted-foreground leading-relaxed">
-          Una vez creada la cuenta, el centro de salud podrá iniciar sesión de forma autónoma para <strong>crear las cuentas de sus médicos</strong>, <strong>asignar especialidades</strong> y <strong>gestionar la recepción de turnos</strong>.
+          El alta de nuevos usuarios registra las credenciales directamente en el servidor sin alterar tu sesión administrativa actual ni tus permisos de acceso.
         </p>
       </div>
 
@@ -117,144 +141,149 @@ export const NuevoUsuarioPage: React.FC = () => {
 
       {/* Formulario */}
       <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-4 text-xs">
+        {/* Selector de Rol */}
         <div className="space-y-1">
-          <label className="text-xs font-bold text-foreground">
-            Nombre Oficial de la Institución Sanitaria *
+          <label htmlFor="rol" className="text-xs font-bold text-foreground">
+            Rol en el Sistema *
           </label>
-          <input
-            type="text"
-            required
-            name="nombreCentro"
-            placeholder="ej: Hospital Regional Aurelio Crespo, Clínica Cabrera"
-            value={formData.nombreCentro}
+          <select
+            id="rol"
+            name="rol"
+            value={formData.rol}
             onChange={handleChange}
-            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer font-medium"
+          >
+            <option value="RECEPCIONISTA">Recepción / Gestión de Turnos Institucional</option>
+            <option value="PROFESIONAL">Profesional Médico (Atención Clínica y Recetas)</option>
+            <option value="ADMIN">Administrador General del Sistema</option>
+          </select>
+          <p className="text-[11px] text-muted-foreground">
+            Define los permisos de navegación y acceso a las funcionalidades del ecosistema de salud.
+          </p>
         </div>
 
+        {/* Datos Personales */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-foreground">Tipo de Centro Médico *</label>
-            <select
-              name="tipo"
-              value={formData.tipo}
+            <label htmlFor="nombre" className="text-xs font-bold text-foreground">Nombre</label>
+            <input
+              id="nombre"
+              type="text"
+              name="nombre"
+              placeholder="ej: María Laura"
+              value={formData.nombre}
               onChange={handleChange}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-            >
-              <option value="HOSPITAL">Hospital Público</option>
-              <option value="CLINICA">Clínica Privada</option>
-              <option value="CONSULTORIO_PRIVADO">Centro de Diagnóstico / Consultorio</option>
-              <option value="DISPENSARIO">Centro de Salud Barrial (CAPS)</option>
-            </select>
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-foreground">Teléfono Institucional *</label>
+            <label htmlFor="apellido" className="text-xs font-bold text-foreground">Apellido</label>
             <input
-              type="tel"
-              required
-              name="telefono"
-              placeholder="ej: 03549-422001"
-              value={formData.telefono}
+              id="apellido"
+              type="text"
+              name="apellido"
+              placeholder="ej: Fernández"
+              value={formData.apellido}
               onChange={handleChange}
               className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
 
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-foreground">Dirección en Cruz del Eje *</label>
-          <input
-            type="text"
-            required
-            name="direccion"
-            placeholder="ej: Av. Juan B. Justo 1200, Cruz del Eje"
-            value={formData.direccion}
-            onChange={handleChange}
-            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label htmlFor="dni" className="text-xs font-bold text-foreground">DNI / Documento</label>
+            <input
+              id="dni"
+              type="text"
+              name="dni"
+              placeholder="ej: 34567890"
+              value={formData.dni}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="centroSaludId" className="text-xs font-bold text-foreground">Sede / Centro de Salud Asignado</label>
+            <select
+              id="centroSaludId"
+              name="centroSaludId"
+              value={formData.centroSaludId}
+              onChange={handleChange}
+              disabled={loadingCentros}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+            >
+              <option value="">Sin sede asignada / Global</option>
+              {centros.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre} ({c.tipo})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* Credenciales de Acceso para el Centro */}
+        {/* Credenciales de Acceso */}
         <div className="rounded-xl border border-sky-200/80 bg-sky-50/50 p-4 space-y-3">
           <h3 className="font-bold text-xs text-sky-950 flex items-center gap-1.5">
             <Shield className="h-3.5 w-3.5 text-sky-700" />
-            <span>Credenciales de Inicio de Sesión del Centro de Salud</span>
+            <span>Credenciales de Inicio de Sesión</span>
           </h3>
+
+          <div className="space-y-1">
+            <label htmlFor="username" className="text-[11px] font-bold text-slate-700">
+              Correo Institucional / Usuario de Acceso *
+            </label>
+            <input
+              id="username"
+              type="email"
+              required
+              name="username"
+              placeholder="ej: profesional@cruzdeleje.gob.ar"
+              value={formData.username}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
+            />
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-700">
-                Correo Institucional de Acceso *
+              <label htmlFor="password" className="text-[11px] font-bold text-slate-700">
+                Contraseña Inicial *
               </label>
               <input
-                type="email"
-                required
-                name="emailInstitucional"
-                placeholder="ej: centro.salud@esu.gob.ar"
-                value={formData.emailInstitucional}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-700">
-                Contraseña Inicial de Acceso *
-              </label>
-              <input
+                id="password"
                 type="password"
                 required
                 name="password"
-                placeholder="Mínimo 8 caracteres"
+                placeholder="Mínimo 6 caracteres"
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
               />
             </div>
+
+            <div className="space-y-1">
+              <label htmlFor="confirmPassword" className="text-[11px] font-bold text-slate-700">
+                Confirmar Contraseña *
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                required
+                name="confirmPassword"
+                placeholder="Repetir contraseña"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-foreground">Horario de Atención</label>
-            <input
-              type="text"
-              name="horarioAtencion"
-              placeholder="ej: Lunes a Viernes 08:00 a 20:00"
-              value={formData.horarioAtencion}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-foreground">Responsable / Director de Sede</label>
-            <input
-              type="text"
-              name="responsable"
-              placeholder="ej: Dr. Fernando Cabrera"
-              value={formData.responsable}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 pt-2">
-          <input
-            type="checkbox"
-            id="disponibleGuardia"
-            name="disponibleGuardia"
-            checked={formData.disponibleGuardia}
-            onChange={handleChange}
-            className="rounded border-input text-primary h-4 w-4 cursor-pointer"
-          />
-          <label htmlFor="disponibleGuardia" className="text-xs text-foreground font-medium cursor-pointer select-none">
-            Centro con servicio de Guardia Médica Permanente (24 horas)
-          </label>
-        </div>
-
+        {/* Acciones */}
         <div className="flex items-center gap-3 pt-3 border-t border-border">
           <Link
             to="/dashboard/admin/usuarios"
@@ -268,7 +297,7 @@ export const NuevoUsuarioPage: React.FC = () => {
             className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition disabled:opacity-50 cursor-pointer"
           >
             <Save className="h-4 w-4" />
-            <span>{isSubmitting ? 'Registrando...' : 'Crear Cuenta Institucional'}</span>
+            <span>{isSubmitting ? 'Registrando...' : 'Crear Usuario'}</span>
           </button>
         </div>
       </form>

@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { PublicNavbar } from '@/components/layout/PublicNavbar';
 import { Footer } from '@/components/layout/Footer';
 import { centrosService } from '@/api/centrosService';
 import { profesionalesService } from '@/api/profesionalesService';
+import { extractApiErrorMessage, isDemoModeEnabled } from '@/api/endpoints';
 import type { CentroSalud, Especialidad, Profesional } from '@/types';
 import { getSpecialtyDesign } from '@/features/home/EspecialidadesSection';
 import {
@@ -26,6 +27,7 @@ import {
   Filter,
   CheckCircle2,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 
 const FALLBACK_CENTROS: CentroSalud[] = MOCK_CENTERS.map((c) => ({
@@ -68,48 +70,57 @@ const FALLBACK_PROFESIONALES: Profesional[] = MOCK_DOCTORS.map((d) => {
 });
 
 export const AgendaMedicaPublicaPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const isDemo = isDemoModeEnabled() || searchParams.get('demo') === 'true';
+
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [centros, setCentros] = useState<CentroSalud[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCenterType, setSelectedCenterType] = useState<string>('TODOS');
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<string | null>(null);
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        // Timeout de seguridad de 3.5s para garantizar respuesta rápida y evitar spinner indefinido
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('TIMEOUT_AGENDA')), 2000)
-        );
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [c, e, p] = await Promise.all([
+        centrosService.getAll(),
+        profesionalesService.getEspecialidades(),
+        profesionalesService.getAll(),
+      ]);
 
-        const fetchPromise = Promise.all([
-          centrosService.getAll().catch(() => []),
-          profesionalesService.getEspecialidades().catch(() => []),
-          profesionalesService.getAll().catch(() => []),
-        ]);
-
-        const [c, e, p] = await Promise.race([fetchPromise, timeoutPromise]);
-
+      if (isDemo && (!c?.length || !e?.length || !p?.length)) {
         setCentros(c && c.length > 0 ? c : FALLBACK_CENTROS);
         setEspecialidades(e && e.length > 0 ? e : FALLBACK_ESPECIALIDADES);
         setProfesionales(p && p.length > 0 ? p : FALLBACK_PROFESIONALES);
-      } catch (err) {
-        console.warn('Cargando catálogo oficial de Cruz del Eje:', err);
+      } else {
+        setCentros(c || []);
+        setEspecialidades(e || []);
+        setProfesionales(p || []);
+      }
+    } catch (err: unknown) {
+      if (isDemo) {
+        console.warn('Cargando catálogo oficial de prueba de Cruz del Eje:', err);
         setCentros(FALLBACK_CENTROS);
         setEspecialidades(FALLBACK_ESPECIALIDADES);
         setProfesionales(FALLBACK_PROFESIONALES);
-      } finally {
-        setLoading(false);
+      } else {
+        setError(extractApiErrorMessage(err, 'No se pudo sincronizar el catálogo oficial de especialidades y profesionales.'));
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  }, [isDemo]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Mapeo detallado de especialidades con centros y profesionales
   const especialidadesConDetalle = useMemo(() => {
@@ -323,6 +334,23 @@ export const AgendaMedicaPublicaPage: React.FC = () => {
             <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#005a87] border-t-transparent" />
               <p className="text-sm font-medium">Cargando agenda médica de Cruz del Eje...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-16 bg-white rounded-3xl border border-rose-200 p-8 space-y-4 shadow-sm">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-slate-900">No se pudo cargar la cartilla médica</h3>
+                <p className="text-sm text-slate-600 max-w-md mx-auto">{error}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => loadData()}
+                className="inline-flex items-center gap-2 rounded-full bg-[#005a87] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#00486c] transition cursor-pointer"
+              >
+                Reintentar conexión
+              </button>
             </div>
           ) : especialidadesFiltradas.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 space-y-3">

@@ -4,6 +4,7 @@ import {
   Map as MapLibreMap,
   Marker as MapLibreMarker,
   NavigationControl,
+  type MapMouseEvent,
   type StyleSpecification,
 } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -93,7 +94,7 @@ export const AdminMapaPinesPage: React.FC = () => {
 
     map.addControl(new NavigationControl({ visualizePitch: false }), 'top-right');
 
-    map.on('click', (e: any) => {
+    map.on('click', (e: MapMouseEvent) => {
       const lat = Number(e.lngLat.lat.toFixed(6));
       const lng = Number(e.lngLat.lng.toFixed(6));
       setCurrentLat(lat);

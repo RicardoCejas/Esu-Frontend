@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { turnosService } from '@/api/turnosService';
 import type { Turno } from '@/types';
 import {
@@ -16,7 +17,8 @@ import {
   CreditCard,
   Users,
   Info,
-  History
+  History,
+  AlertCircle
 } from 'lucide-react';
 import { CardSkeleton } from '@/components/ui/skeleton';
 import { CarnetDigitalModal } from './components/CarnetDigitalModal';
@@ -25,6 +27,8 @@ import { ScannableQrCode } from '@/components/common/ScannableQrCode';
 
 export const MisTurnosPage: React.FC = () => {
   const { user } = useAuth();
+  const { error: toastError } = useToast();
+  const pacienteId = user?.pacienteId;
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
   const [tabActiva, setTabActiva] = useState<'proximos' | 'historial'>('proximos');
@@ -34,21 +38,25 @@ export const MisTurnosPage: React.FC = () => {
   const [isGrupoFamiliarOpen, setIsGrupoFamiliarOpen] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setLoading(true);
-      turnosService.getByPaciente(user.id, user.dni)
-        .then((data) => {
-          setTurnos(data || []);
-        })
-        .catch((err) => {
-          console.error('Error al cargar turnos del paciente:', err);
-          setTurnos([]);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+    if (!pacienteId) {
+      setLoading(false);
+      setTurnos([]);
+      return;
     }
-  }, [user]);
+
+    setLoading(true);
+    turnosService.getByPaciente(pacienteId)
+      .then((data) => {
+        setTurnos(data || []);
+      })
+      .catch((err) => {
+        toastError(err instanceof Error ? err.message : 'No se pudieron cargar tus turnos.');
+        setTurnos([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [pacienteId, toastError]);
 
   // Bloqueo de scroll cuando un modal está abierto
   useEffect(() => {
@@ -64,11 +72,15 @@ export const MisTurnosPage: React.FC = () => {
 
   const handleConfirmarCancelacion = async () => {
     if (!turnoACancelar) return;
-    await turnosService.cancelarTurno(turnoACancelar.id);
-    setTurnos((prev) =>
-      prev.map((t) => (t.id === turnoACancelar.id ? { ...t, estado: 'CANCELADO' } : t))
-    );
-    setTurnoACancelar(null);
+    try {
+      await turnosService.cancelarTurno(turnoACancelar.id);
+      setTurnos((prev) =>
+        prev.map((t) => (t.id === turnoACancelar.id ? { ...t, estado: 'CANCELADO' } : t))
+      );
+      setTurnoACancelar(null);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'No se pudo cancelar el turno.');
+    }
   };
 
   const getBadgeEstado = (estado: string) => {
@@ -180,8 +192,18 @@ export const MisTurnosPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Skeletons de Carga Progresiva */}
-      {loading ? (
+      {/* Estado si el paciente no tiene pacienteId vinculado */}
+      {!pacienteId ? (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-8 text-center space-y-3">
+          <AlertCircle className="mx-auto h-10 w-10 text-amber-600 dark:text-amber-400" />
+          <h3 className="font-bold text-base text-amber-950 dark:text-amber-200">
+            Perfil de paciente no vinculado
+          </h3>
+          <p className="text-xs text-amber-800 dark:text-amber-300 max-w-md mx-auto">
+            Esta cuenta no posee un identificador clínico de paciente activo emitido por el backend. Por favor acérquese a recepción o vuelva a iniciar sesión.
+          </p>
+        </div>
+      ) : loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <CardSkeleton />
           <CardSkeleton />
@@ -438,17 +460,13 @@ export const MisTurnosPage: React.FC = () => {
             <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-white p-6 text-slate-900 shadow-inner">
               <div className="flex h-36 w-36 items-center justify-center rounded-lg border border-slate-200 bg-white p-1">
                 <ScannableQrCode
-                  value={
-                    typeof window !== 'undefined'
-                      ? `${window.location.origin}/dashboard/paciente?turnoVerif=${encodeURIComponent(selectedTurnoQr.codigoVerificacion)}&paciente=${encodeURIComponent(selectedTurnoQr.pacienteNombre)}`
-                      : `https://esuluvia.vercel.app/turnero?verif=${encodeURIComponent(selectedTurnoQr.codigoVerificacion)}`
-                  }
+                  value={`ESU-TURNO:${selectedTurnoQr.id}:${selectedTurnoQr.codigoVerificacion || selectedTurnoQr.id}:${selectedTurnoQr.pacienteDni || selectedTurnoQr.pacienteId}`}
                   size={132}
-                  alt={`QR Comprobante Turno ${selectedTurnoQr.codigoVerificacion}`}
+                  alt={`QR Comprobante Turno ${selectedTurnoQr.codigoVerificacion || selectedTurnoQr.id}`}
                 />
               </div>
               <span className="mt-3 font-mono text-xs font-bold text-slate-800">
-                {selectedTurnoQr.codigoVerificacion}
+                {selectedTurnoQr.codigoVerificacion || `Turno #${selectedTurnoQr.id}`}
               </span>
               <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full mt-1 border border-emerald-200">
                 Escaneable desde celular en recepción

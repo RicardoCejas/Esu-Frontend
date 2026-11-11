@@ -25,6 +25,23 @@ export function parseAvailabilityResponse(payload: unknown): AppointmentSlot[] {
       }
     }
 
+    if (typeof slot === 'object' && slot !== null && 'fechaHora' in slot) {
+      const fechaHora = typeof slot.fechaHora === 'string' ? slot.fechaHora : ''
+      const hora = 'hora' in slot && typeof slot.hora === 'string' ? slot.hora : fechaHora.slice(11, 16)
+      const disponible = !('disponible' in slot) || slot.disponible !== false
+
+      if (!isValidDate(fechaHora.slice(0, 10)) || !isValidTime(hora)) {
+        throw new Error(`El horario ${index + 1} no tiene el formato de disponibilidad esperado.`)
+      }
+
+      return {
+        id: fechaHora,
+        time: hora,
+        period: Number(hora.slice(0, 2)) < 12 ? 'MORNING' : 'AFTERNOON',
+        isAvailable: disponible,
+      }
+    }
+
     if (
       typeof slot !== 'object' || slot === null ||
       !('id' in slot) || typeof slot.id !== 'string' ||

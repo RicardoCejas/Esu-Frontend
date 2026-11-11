@@ -24,6 +24,7 @@ import { getFechaLocalHoy } from '@/lib/dateUtils';
 export const AgendaMedicaPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const profesionalId = user?.profesionalId || '';
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [bloqueos, setBloqueos] = useState<BloqueoAgenda[]>([]);
   const [centros, setCentros] = useState<CentroSalud[]>([]);
@@ -45,7 +46,7 @@ export const AgendaMedicaPage: React.FC = () => {
         turnosService.getMiAgenda({
           centroSaludId: filtroCentroId !== 'TODOS' ? filtroCentroId : undefined,
         }),
-        profesionalesService.getBloqueos(user?.id || 'p1'),
+        profesionalId ? profesionalesService.getBloqueos(profesionalId) : Promise.resolve([]),
         centrosService.getAll()
       ]);
 
@@ -499,7 +500,7 @@ export const AgendaMedicaPage: React.FC = () => {
       <ConfigurarGrillaHorariaModal
         isOpen={isModalGrillaOpen}
         onClose={() => setIsModalGrillaOpen(false)}
-        profesionalId={user?.id || 'p1'}
+        profesionalId={profesionalId}
         profesionalNombre={`${user?.nombre || 'Dr. Carlos'} ${user?.apellido || 'Bustos'}`}
         onSaved={cargarDatos}
       />
@@ -507,7 +508,7 @@ export const AgendaMedicaPage: React.FC = () => {
       <BloquearAgendaModal
         isOpen={isModalBloqueoOpen}
         onClose={() => setIsModalBloqueoOpen(false)}
-        profesionalId={user?.id || 'p1'}
+        profesionalId={profesionalId}
         profesionalNombre={`${user?.nombre || 'Dr. Carlos'} ${user?.apellido || 'Bustos'}`}
         turnosActuales={turnos}
         onBloqueoCreado={cargarDatos}
@@ -516,7 +517,7 @@ export const AgendaMedicaPage: React.FC = () => {
       <ModalCrearSobreturno
         isOpen={isModalSobreturnoOpen}
         onClose={() => setIsModalSobreturnoOpen(false)}
-        profesionalId={user?.id || 'p1'}
+        profesionalId={profesionalId}
         centroSaludId={filtroCentroId !== 'TODOS' ? filtroCentroId : (user?.centroSaludId || 'c1')}
         fecha={hoyStr}
         sobreturnosHoyCount={countSobreturnos}

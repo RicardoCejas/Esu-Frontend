@@ -229,7 +229,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
 
               <div className="pt-4 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
                 <span>Si no se presenta tras el segundo llamado, su turno será pospuesto.</span>
-                <span className="font-mono text-slate-500">Cód: {llamadoDestacado.codigoVerificacion}</span>
+                <span className="font-mono text-slate-500">Cód: {llamadoDestacado.codigoVerificacion || `#${llamadoDestacado.id}`}</span>
               </div>
             </div>
           ) : (

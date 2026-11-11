@@ -1,7 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { MapPin, PlusCircle, Search, LogIn, ChevronDown } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Link, useNavigate } from 'react-router-dom'
+import { MapPin, LogIn, ChevronDown, UserCheck, LogOut } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import { NotificationCenter } from '@/components/notifications/NotificationCenter'
+import { DevRoleSwitcher } from '@/components/dev/DevRoleSwitcher'
+import type { UserRole } from '@/types'
 
 export interface CityOption {
   id: string
@@ -20,18 +23,39 @@ export const SUPPORTED_CITIES: CityOption[] = [
 interface AppHeaderProps {
   selectedCity: CityOption
   onCityChange: (city: CityOption) => void
-  onNewBooking: () => void
-  onLookupBooking: () => void
+  onNewBooking?: () => void
+  onLookupBooking?: () => void
   onLoginClick?: () => void
+}
+
+function getDashboardPath(rol?: UserRole): string {
+  switch (rol) {
+    case 'MEDICO':
+      return '/dashboard/medico'
+    case 'RECEPCIONISTA':
+      return '/dashboard/recepcion'
+    case 'ADMIN':
+      return '/dashboard/admin'
+    case 'PACIENTE':
+    default:
+      return '/dashboard/paciente'
+  }
 }
 
 export function AppHeader({
   selectedCity,
   onCityChange,
-  onNewBooking,
-  onLookupBooking,
 }: AppHeaderProps) {
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false)
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    localStorage.removeItem('esu_dev_mode')
+    localStorage.removeItem('esu_dev_active_role')
+    await logout()
+    navigate('/')
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-sky-200/70 bg-[#edf5fa]/95 backdrop-blur supports-[backdrop-filter]:bg-[#edf5fa]/80 text-slate-900 shadow-xs">
@@ -102,37 +126,40 @@ export function AppHeader({
           </div>
         </div>
 
-        {/* Right: Quick actions & Authentication */}
+        {/* Right: Sesión activa y portal del usuario */}
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onNewBooking}
-            className="hidden sm:inline-flex cursor-pointer gap-1.5 text-xs font-semibold text-slate-700 hover:text-sky-700 hover:bg-sky-100/60 rounded-full"
-          >
-            <PlusCircle className="size-3.5 text-sky-600" />
-            <span>Nuevo Turno</span>
-          </Button>
+          {user ? (
+            <div className="flex items-center gap-2">
+              <DevRoleSwitcher />
+              <NotificationCenter />
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onLookupBooking}
-            className="cursor-pointer gap-1.5 text-xs font-semibold text-slate-700 border-sky-200 bg-white hover:bg-sky-50 hover:text-sky-800 rounded-full shadow-xs"
-          >
-            <Search className="size-3.5 text-slate-500" />
-            <span className="hidden md:inline">Consultar Cita</span>
-          </Button>
+              <Link
+                to={getDashboardPath(user.rol)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-sky-700 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-sky-800 transition cursor-pointer"
+              >
+                <UserCheck className="size-3.5" />
+                <span>Mi Portal</span>
+              </Link>
 
-          <Link
-            to="/login"
-            className="inline-flex items-center cursor-pointer gap-1.5 bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800 px-4 py-2 rounded-full shadow-xs transition"
-          >
-            <LogIn className="size-3.5" />
-            <span>Ingresar</span>
-          </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Cerrar Sesión"
+                aria-label="Cerrar Sesión"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-600 hover:bg-rose-50 hover:text-rose-800 hover:border-rose-300 transition cursor-pointer"
+              >
+                <LogOut className="size-4" />
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="inline-flex items-center cursor-pointer gap-1.5 bg-sky-700 text-xs font-semibold text-white hover:bg-sky-800 px-4 py-2 rounded-full shadow-xs transition"
+            >
+              <LogIn className="size-3.5" />
+              <span>Ingresar</span>
+            </Link>
+          )}
         </div>
       </div>
     </header>

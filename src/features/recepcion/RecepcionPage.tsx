@@ -113,7 +113,8 @@ export const RecepcionPage: React.FC = () => {
         (t.profesionalNombre && t.profesionalNombre.toLowerCase().includes(q)) ||
         (t.especialidadNombre && t.especialidadNombre.toLowerCase().includes(q)) ||
         (t.consultorioNumero && t.consultorioNumero.toLowerCase().includes(q)) ||
-        (t.consultorioNumero && `consultorio ${t.consultorioNumero}`.toLowerCase().includes(q));
+        (t.consultorioNumero && ('consultorio ' + t.consultorioNumero).toLowerCase().includes(q)) ||
+        (t.id && t.id.toLowerCase().includes(q));
 
       const matchCentro = filtroCentro === 'TODOS' || t.centroSaludId === filtroCentro;
       const matchProf = filtroProfesional === 'TODOS' || t.profesionalId === filtroProfesional;

@@ -335,9 +335,12 @@ export async function generarInformeEstudioPdf(
   doc.text('M.P. 31.849 · M.E. 14.205 (Consejo Médico Cba)', pageWidth - margin - 55, footerY + 17);
   doc.text(estudio.centroSalud, pageWidth - margin - 55, footerY + 21);
 
-  // 7. Descargar el archivo PDF en el navegador
+  // 7. Descargar el archivo PDF en el navegador con el nombre del estudio y del paciente
   const nombreLimpio = estudio.nombre
     .replace(/[^a-zA-Z0-9]/g, '_')
-    .slice(0, 35);
-  doc.save(`Informe_Estudio_${nombreLimpio}.pdf`);
+    .slice(0, 30);
+  const pacienteLimpio = (paciente.nombreCompleto || 'Paciente')
+    .replace(/[^a-zA-Z0-9]/g, '_')
+    .slice(0, 30);
+  doc.save(`Informe_${nombreLimpio}_${pacienteLimpio}.pdf`);
 }
