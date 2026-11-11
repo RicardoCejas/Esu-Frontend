@@ -14,7 +14,6 @@ import {
   ListOrdered,
   ArrowLeft,
   ChevronRight,
-  TrendingUp,
   Pill,
   FileCheck,
   User,
@@ -54,15 +53,13 @@ const navItems: NavItem[] = [
   { title: 'Especialidades del Centro', path: '/dashboard/recepcion/especialidades', icon: Building2, roles: ['RECEPCIONISTA', 'ADMIN'] },
 
   // Rutas Administrador (HU-56 & HU-70)
-  { title: 'Dashboard y Métricas', path: '/dashboard/admin', icon: Layers, roles: ['ADMIN'] },
-  { title: 'Ocupación y Ausentismo', path: '/dashboard/admin/ocupacion-ausentismo', icon: TrendingUp, roles: ['ADMIN'] },
   { title: 'Sedes y Consultorios', path: '/dashboard/admin/sedes', icon: Building2, roles: ['ADMIN'] },
   { title: 'Cuentas de Centros de Salud', path: '/dashboard/admin/usuarios', icon: ShieldCheck, roles: ['ADMIN'] },
   { title: 'Centros y Especialidades', path: '/dashboard/admin/especialidades', icon: Building2, roles: ['ADMIN'] },
   { title: 'Mapa y Pines Cruz del Eje', path: '/dashboard/admin/mapa', icon: MapPin, roles: ['ADMIN'] },
 ];
 
-const INDEX_PATHS = ['/dashboard/paciente', '/dashboard/medico', '/dashboard/recepcion', '/dashboard/admin'];
+const INDEX_PATHS = ['/dashboard/paciente', '/dashboard/medico', '/dashboard/recepcion', '/dashboard/admin/sedes'];
 
 export const Sidebar: React.FC = () => {
   const { user } = useAuth();
