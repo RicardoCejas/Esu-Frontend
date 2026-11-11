@@ -4,7 +4,6 @@ import { turnosService } from '@/api/turnosService';
 import { centrosService } from '@/api/centrosService';
 import { profesionalesService } from '@/api/profesionalesService';
 import { pacientesService } from '@/api/pacientesService';
-import { useDebounce } from '@/lib/useDebounce';
 import type { Turno, CentroSalud, Profesional, User } from '@/types';
 import {
   Clock,
@@ -40,11 +39,8 @@ export const RecepcionPage: React.FC = () => {
   const [busquedaCentro, setBusquedaCentro] = useState('');
   const [busquedaProfesional, setBusquedaProfesional] = useState('');
   const [busquedaConsultorio, setBusquedaConsultorio] = useState('');
+  const [verTodosLosDias, setVerTodosLosDias] = useState(false);
 
-  const debouncedPaciente = useDebounce(busquedaPaciente, 250);
-  const debouncedCentro = useDebounce(busquedaCentro, 250);
-  const debouncedProfesional = useDebounce(busquedaProfesional, 250);
-  const debouncedConsultorio = useDebounce(busquedaConsultorio, 250);
 
   // Modales HU-54
   const [isModalAltaOpen, setIsModalAltaOpen] = useState(false);
@@ -106,13 +102,18 @@ export const RecepcionPage: React.FC = () => {
     return turnos.filter((t) => t.fecha === hoyStr);
   }, [turnos, hoyStr]);
 
-  const turnosFiltrados = useMemo(() => {
-    const qPac = debouncedPaciente.toLowerCase().trim();
-    const qCentro = debouncedCentro.toLowerCase().trim();
-    const qProf = debouncedProfesional.toLowerCase().trim();
-    const qCons = debouncedConsultorio.toLowerCase().trim();
+  const turnosBase = useMemo(() => {
+    if (verTodosLosDias || turnosHoy.length === 0) return turnos;
+    return turnosHoy;
+  }, [verTodosLosDias, turnosHoy, turnos]);
 
-    return turnosHoy.filter((t) => {
+  const turnosFiltrados = useMemo(() => {
+    const qPac = busquedaPaciente.toLowerCase().trim();
+    const qCentro = busquedaCentro.toLowerCase().trim();
+    const qProf = busquedaProfesional.toLowerCase().trim();
+    const qCons = busquedaConsultorio.toLowerCase().trim();
+
+    return turnosBase.filter((t) => {
       const matchPaciente =
         !qPac ||
         (t.pacienteDni && t.pacienteDni.toLowerCase().includes(qPac)) ||
@@ -141,7 +142,7 @@ export const RecepcionPage: React.FC = () => {
 
       return matchPaciente && matchCentro && matchProf && matchConsultorio;
     });
-  }, [turnosHoy, debouncedPaciente, debouncedCentro, debouncedProfesional, debouncedConsultorio]);
+  }, [turnosBase, busquedaPaciente, busquedaCentro, busquedaProfesional, busquedaConsultorio]);
 
   // Contadores para métricas operativas
   const enSalaDeEspera = turnosHoy.filter((t) => t.estado === 'EN_SALA_DE_ESPERA' || t.estado === 'EN_ESPERA');
@@ -252,11 +253,40 @@ export const RecepcionPage: React.FC = () => {
 
       {/* Barra de Búsquedas Individuales por Campo (Sedes, Médicos, Consultorios y Pacientes) */}
       <div className="rounded-2xl border border-border bg-card p-4 shadow-xs space-y-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between flex-wrap gap-2 pb-1 border-b border-border/40">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold text-foreground uppercase tracking-wider">
               Búsquedas de Sala
             </span>
+            <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5">
+              <button
+                type="button"
+                onClick={() => setVerTodosLosDias(false)}
+                className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                  !verTodosLosDias && turnosHoy.length > 0
+                    ? 'bg-primary text-primary-foreground shadow-2xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Turnos de Hoy ({turnosHoy.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setVerTodosLosDias(true)}
+                className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                  verTodosLosDias || turnosHoy.length === 0
+                    ? 'bg-primary text-primary-foreground shadow-2xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Todas las Fechas ({turnos.length})
+              </button>
+            </div>
+            {turnosHoy.length === 0 && turnos.length > 0 && (
+              <span className="text-[11px] text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-md px-2 py-0.5 font-medium">
+                Hoy no hay turnos: mostrando {turnos.length} turnos registrados
+              </span>
+            )}
             {(busquedaPaciente || busquedaCentro || busquedaProfesional || busquedaConsultorio) && (
               <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-[10px] font-bold">
                 Filtros activos
@@ -279,7 +309,6 @@ export const RecepcionPage: React.FC = () => {
             </button>
           )}
         </div>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Búsqueda 1: Paciente / DNI */}
           <div className="relative">
@@ -414,7 +443,7 @@ export const RecepcionPage: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="border-b border-border bg-muted/40 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">
                 <tr>
-                  <th className="p-3.5">Hora</th>
+                  <th className="p-3.5">Fecha y Hora</th>
                   <th className="p-3.5">Paciente / DNI</th>
                   <th className="p-3.5">Cobertura & Copago</th>
                   <th className="p-3.5">Médico / Especialidad</th>
