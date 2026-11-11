@@ -49,8 +49,8 @@ const navItems: NavItem[] = [
   { title: 'Atención Clínica', path: '/dashboard/medico/atencion', icon: Stethoscope, roles: ['MEDICO'] },
 
   // Rutas Centro de Salud / Recepción
-  { title: 'Recepción (Daily Board)', path: '/dashboard/recepcion', icon: Clock, roles: ['RECEPCIONISTA'], requiredPermissions: ['TURNOS_VER', 'SALA_ESPERA_GESTIONAR'] },
-  { title: 'Tablero Kanban Espera', path: '/dashboard/recepcion/kanban', icon: Layers, roles: ['RECEPCIONISTA', 'MEDICO'], requiredPermissions: ['SALA_ESPERA_GESTIONAR', 'TURNOS_VER'] },
+  { title: 'Recepción del Día', path: '/dashboard/recepcion', icon: Clock, roles: ['RECEPCIONISTA'], requiredPermissions: ['TURNOS_VER', 'SALA_ESPERA_GESTIONAR'] },
+  { title: 'Salas de Espera', path: '/dashboard/recepcion/kanban', icon: Layers, roles: ['RECEPCIONISTA', 'MEDICO'], requiredPermissions: ['SALA_ESPERA_GESTIONAR', 'TURNOS_VER'] },
   { title: 'Padrón de Pacientes', path: '/dashboard/recepcion/pacientes', icon: Users, roles: ['RECEPCIONISTA', 'MEDICO'], requiredPermissions: ['PACIENTES_VER'] },
   { title: 'Gestión de Turnos', path: '/dashboard/recepcion/turnos', icon: ListOrdered, roles: ['RECEPCIONISTA'], requiredPermissions: ['TURNOS_VER'] },
   { title: 'Médicos del Centro', path: '/dashboard/recepcion/medicos', icon: Stethoscope, roles: ['RECEPCIONISTA'], requiredPermissions: ['MEDICOS_VER'] },
@@ -60,7 +60,7 @@ const navItems: NavItem[] = [
   { title: 'Personal del Centro', path: '/dashboard/recepcion/personal', icon: ShieldCheck, roles: ['RECEPCIONISTA'], requiredPermissions: ['USUARIOS_ADMINISTRAR'] },
 
   // Rutas Administrador (HU-56 & HU-70)
-  { title: 'Dashboard y Métricas', path: '/dashboard/admin', icon: Layers, roles: ['ADMIN'] },
+  { title: 'Panel de Métricas', path: '/dashboard/admin', icon: Layers, roles: ['ADMIN'] },
   { title: 'Ocupación y Ausentismo', path: '/dashboard/admin/ocupacion-ausentismo', icon: TrendingUp, roles: ['ADMIN'] },
   { title: 'Sedes y Consultorios', path: '/dashboard/admin/sedes', icon: Building2, roles: ['ADMIN'] },
   { title: 'Cuentas de Centros de Salud', path: '/dashboard/admin/usuarios', icon: ShieldCheck, roles: ['ADMIN'] },

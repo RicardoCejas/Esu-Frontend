@@ -4,7 +4,6 @@ import { useAuth } from '@/context/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useMedicosCentro } from './hooks/useMedicosCentro';
 import { ModalConfirmacion } from '@/components/ui/ModalConfirmacion';
-import { ModalVincularMedico } from './components/ModalVincularMedico';
 import {
   Stethoscope,
   PlusCircle,
@@ -13,7 +12,6 @@ import {
   ChevronRight,
   UserCheck,
   UserX,
-  UserPlus,
   AlertCircle,
 } from 'lucide-react';
 
@@ -34,24 +32,13 @@ export const MedicosCentroPage: React.FC = () => {
         </div>
 
         {canAssign && (
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => medicos.setIsModalVincularOpen(true)}
-              title="Vincular a este centro de salud un médico ya registrado en la red"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted text-slate-800 dark:text-foreground text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
-            >
-              <UserPlus className="h-4 w-4 text-sky-700" aria-hidden="true" />
-              <span>Vincular Médico a esta Sede</span>
-            </button>
-            <Link
-              to="/dashboard/recepcion/medicos/nuevo"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-xl shadow-xs transition"
-            >
-              <PlusCircle className="h-4 w-4" aria-hidden="true" />
-              <span>Nuevo Médico</span>
-            </Link>
-          </div>
+          <Link
+            to="/dashboard/recepcion/medicos/nuevo"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-xl shadow-xs transition"
+          >
+            <PlusCircle className="h-4 w-4" aria-hidden="true" />
+            <span>Nuevo Médico</span>
+          </Link>
         )}
       </div>
 
@@ -152,14 +139,6 @@ export const MedicosCentroPage: React.FC = () => {
           })}
         </div>
       )}
-
-      <ModalVincularMedico
-        isOpen={medicos.isModalVincularOpen}
-        onClose={() => medicos.setIsModalVincularOpen(false)}
-        medicosDisponibles={medicos.medicosNoVinculados}
-        onVincular={medicos.vincularMedico}
-        centroNombre={user?.centroSaludNombre || 'este centro de salud'}
-      />
 
       <ModalConfirmacion
         isOpen={!!medicos.medicoADesvincular}

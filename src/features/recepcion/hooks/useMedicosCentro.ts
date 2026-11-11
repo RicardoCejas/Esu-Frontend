@@ -8,7 +8,6 @@ export function useMedicosCentro(centroId?: string | number) {
   const { success, error: toastError } = useToast();
 
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
-  const [todosLosProfesionales, setTodosLosProfesionales] = useState<Profesional[]>([]);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -17,9 +16,6 @@ export function useMedicosCentro(centroId?: string | number) {
   // Confirmación de desvinculación
   const [medicoADesvincular, setMedicoADesvincular] = useState<Profesional | null>(null);
   const [isDesvinculando, setIsDesvinculando] = useState(false);
-
-  // Modal vincular existente
-  const [isModalVincularOpen, setIsModalVincularOpen] = useState(false);
 
   const cargarDatos = useCallback(async () => {
     if (!centroId) {
@@ -30,16 +26,11 @@ export function useMedicosCentro(centroId?: string | number) {
     setLoadError(null);
     try {
       const activeCentroId = String(centroId);
-      const [todos, esps] = await Promise.all([
-        profesionalesService.getAll().catch(() => [] as Profesional[]),
+      const [delCentro, esps] = await Promise.all([
+        profesionalesService.getByCentro(activeCentroId).catch(() => [] as Profesional[]),
         profesionalesService.getEspecialidades().catch(() => [] as Especialidad[]),
       ]);
 
-      const delCentro = todos.filter((p) =>
-        p.centrosSaludIds && p.centrosSaludIds.length > 0 ? p.centrosSaludIds.includes(activeCentroId) : false
-      );
-
-      setTodosLosProfesionales(todos);
       setProfesionales(delCentro);
       setEspecialidades(esps);
     } catch (err) {
@@ -68,19 +59,6 @@ export function useMedicosCentro(centroId?: string | number) {
     }
   };
 
-  const vincularMedico = async (profesionalId: string): Promise<boolean> => {
-    if (!centroId) return false;
-    try {
-      await profesionalesService.vincularCentro(profesionalId, String(centroId));
-      success('Profesional médico vinculado a este centro de salud exitosamente.');
-      await cargarDatos();
-      return true;
-    } catch (err) {
-      toastError(extractApiErrorMessage(err, 'No se pudo vincular al médico a este centro.'));
-      return false;
-    }
-  };
-
   const medicosFiltrados = useMemo(() => {
     return profesionales.filter((p) => {
       const texto = `${p.nombre} ${p.apellido} ${p.especialidadNombre} ${p.matricula}`.toLowerCase();
@@ -88,18 +66,8 @@ export function useMedicosCentro(centroId?: string | number) {
     });
   }, [profesionales, busqueda]);
 
-  const medicosNoVinculados = useMemo(() => {
-    if (!centroId) return [];
-    const activeCentroId = String(centroId);
-    return todosLosProfesionales.filter(
-      (p) => !p.centrosSaludIds || !p.centrosSaludIds.includes(activeCentroId)
-    );
-  }, [todosLosProfesionales, centroId]);
-
   return {
     profesionales: medicosFiltrados,
-    todosLosProfesionales,
-    medicosNoVinculados,
     especialidades,
     loading,
     loadError,
@@ -109,9 +77,6 @@ export function useMedicosCentro(centroId?: string | number) {
     setMedicoADesvincular,
     confirmarDesvinculacion,
     isDesvinculando,
-    isModalVincularOpen,
-    setIsModalVincularOpen,
-    vincularMedico,
     recargar: cargarDatos,
   };
 }

@@ -31,20 +31,20 @@ export const RecepcionDailySummaryCards: React.FC<RecepcionDailySummaryCardsProp
       </div>
 
       {/* 2. En Sala de Espera (Métrica Clave del Mostrador) */}
-      <div className="rounded-xl border border-amber-300/80 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-950/20 p-4 transition">
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200">
+      <div className="rounded-xl border border-border/70 bg-card p-4 transition hover:border-border">
+        <div className="flex items-center justify-between text-muted-foreground">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             En Sala de Espera
           </span>
           <Users className="h-4 w-4 text-amber-600 dark:text-amber-400" />
         </div>
         <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-amber-700 dark:text-amber-300 tabular-nums">
+          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
             {kpis.enSalaDeEspera}
           </span>
-          <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400">pacientes</span>
+          <span className="text-[11px] text-muted-foreground">pacientes</span>
         </div>
-        <p className="mt-1 text-[11px] text-amber-800/80 dark:text-amber-400/80">Listos para ser llamados</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">Listos para ser llamados</p>
       </div>
 
       {/* 3. En Consultorio */}

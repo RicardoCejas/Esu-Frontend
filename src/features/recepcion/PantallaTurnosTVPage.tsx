@@ -147,17 +147,18 @@ export const PantallaTurnosTVPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-primary selection:text-white font-sans overflow-hidden">
       {/* Header Superior Tótem / TV */}
-      <header className="px-8 py-5 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md flex items-center justify-between">
+      <header className="px-8 py-4 border-b border-slate-800 bg-slate-900 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-sky-700 flex items-center justify-center shadow-lg shadow-sky-600/30">
-            <span className="text-xl font-black tracking-wider text-white">ESU</span>
-          </div>
+          <img
+            src="/logo-icon.png"
+            alt="ESU Cruz del Eje"
+            className="h-11 w-11 object-contain rounded-xl bg-white p-1 shadow-xs shrink-0"
+          />
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
               <span>{nombreCentroActual}</span>
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
             </h1>
-            <p className="text-xs text-slate-400 font-medium">
+            <p className="text-xs text-slate-300 font-medium">
               Pantalla Pública de Turnos y Orientación a Consultorios
             </p>
           </div>
@@ -166,16 +167,16 @@ export const PantallaTurnosTVPage: React.FC = () => {
         {/* Controles de Pantalla y Reloj */}
         <div className="flex items-center gap-5">
           {/* Selector de Sede para el Tótem */}
-          <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
+          <div className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
             <Building2 className="h-4 w-4 text-sky-400" />
             <select
               value={filtroCentro}
               onChange={(e) => handleCambioCentro(e.target.value)}
-              className="bg-transparent text-slate-200 font-medium focus:outline-none"
+              className="bg-transparent text-slate-200 font-medium focus:outline-none cursor-pointer"
             >
-              <option value="TODOS" className="bg-slate-900">Todas las Sedes</option>
+              <option value="TODOS" className="bg-slate-900 text-white">Todas las Sedes</option>
               {centros.map((c) => (
-                <option key={c.id} value={String(c.id)} className="bg-slate-900">
+                <option key={c.id} value={String(c.id)} className="bg-slate-900 text-white">
                   {c.nombre}
                 </option>
               ))}
@@ -189,7 +190,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
             className={`p-2 rounded-xl border transition cursor-pointer ${
               sonidoHabilitado
                 ? 'border-sky-600 bg-sky-700 text-white'
-                : 'border-slate-800 bg-slate-900 text-slate-500'
+                : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200'
             }`}
             title={sonidoHabilitado ? 'Silenciar sonido' : 'Activar sonido'}
             aria-label={sonidoHabilitado ? 'Silenciar sonido' : 'Activar sonido'}
@@ -213,7 +214,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
             <div className="text-2xl font-black tabular-nums tracking-tight text-white">
               {horaActual.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </div>
-            <div className="text-[11px] text-slate-400 uppercase tracking-widest font-semibold">
+            <div className="text-[11px] text-slate-300 uppercase tracking-widest font-semibold">
               {horaActual.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
             </div>
           </div>
@@ -225,74 +226,74 @@ export const PantallaTurnosTVPage: React.FC = () => {
         {/* PANEL PRINCIPAL: Último llamado médico (Destacado Gigante) */}
         <section className="lg:col-span-8 flex flex-col justify-center" aria-live="polite">
           {llamadoDestacado ? (
-            <div className="relative rounded-3xl border-2 border-sky-500/50 bg-slate-900 p-8 lg:p-12 shadow-2xl shadow-sky-950/50 flex flex-col justify-between animate-in zoom-in-95 duration-300 ring-4 ring-sky-500/20">
-              <div className="flex items-center justify-between pb-6 border-b border-slate-800">
+            <div className="relative rounded-2xl border border-slate-700 bg-slate-900 p-8 lg:p-10 shadow-xl flex flex-col justify-between">
+              <div className="flex items-center justify-between pb-5 border-b border-slate-800">
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-700 text-white px-4 py-1.5 text-sm font-black uppercase tracking-wider">
-                    ¡Llamado en curso!
+                  <span className="inline-flex items-center rounded-lg bg-emerald-700 text-white px-3.5 py-1 text-xs font-bold uppercase tracking-wider">
+                    Llamado en curso
                   </span>
                   {llamadoDestacado.horaLlamado && (
-                    <span className="text-xs text-slate-400 tabular-nums">
+                    <span className="text-xs text-slate-300 tabular-nums">
                       Hora: {llamadoDestacado.horaLlamado} hs
                     </span>
                   )}
                 </div>
-                <span className="text-sm font-semibold text-slate-400">
+                <span className="text-xs font-semibold text-slate-300">
                   {llamadoDestacado.centroSaludNombre}
                 </span>
               </div>
 
-              <div className="my-10 space-y-8">
+              <div className="my-8 space-y-6">
                 {/* Nombre del Paciente */}
                 <div>
-                  <span className="text-xs uppercase font-extrabold tracking-widest text-slate-400">
+                  <span className="text-xs uppercase font-bold tracking-widest text-slate-400">
                     Paciente Convocado
                   </span>
-                  <div className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight mt-1 truncate drop-shadow-md">
+                  <div className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight mt-1 truncate">
                     {llamadoDestacado.pacienteNombre}
                   </div>
                 </div>
 
-                {/* Flecha y Destino: Consultorio */}
-                <div className="rounded-2xl bg-slate-800 border border-slate-700 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {/* Destino: Consultorio */}
+                <div className="rounded-xl bg-slate-800 border border-slate-700 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-600 text-white font-black text-2xl shadow-lg shadow-sky-600/40">
-                      <ArrowRight className="h-8 w-8 animate-bounce" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-sky-700 text-white font-bold text-xl shrink-0">
+                      <ArrowRight className="h-7 w-7" />
                     </div>
                     <div>
-                      <span className="text-xs uppercase font-bold text-sky-400 tracking-wider">
-                        Por favor dirigirse a:
+                      <span className="text-xs uppercase font-bold text-sky-300 tracking-wider">
+                        Dirigirse a:
                       </span>
                       <div className="text-3xl sm:text-5xl font-black text-white tracking-tight tabular-nums">
                         CONSULTORIO {llamadoDestacado.consultorioNumero || 'ASIGNADO'}
                       </div>
                       {llamadoDestacado.planta && (
-                        <div className="text-sm font-semibold text-sky-300 mt-0.5">
+                        <div className="text-xs font-semibold text-slate-300 mt-0.5">
                           Ubicación: Planta {llamadoDestacado.planta}
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="text-left sm:text-right pt-3 sm:pt-0 border-t sm:border-t-0 border-sky-500/20">
-                    <div className="text-xs text-slate-400">Profesional:</div>
-                    <div className="text-lg font-bold text-white">{llamadoDestacado.profesionalNombre}</div>
-                    <div className="text-xs text-slate-400">{llamadoDestacado.especialidadNombre}</div>
+                  <div className="text-left sm:text-right pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-700">
+                    <div className="text-xs text-slate-400">Profesional / Especialidad:</div>
+                    <div className="text-base font-bold text-white">{llamadoDestacado.profesionalNombre}</div>
+                    <div className="text-xs text-slate-300">{llamadoDestacado.especialidadNombre}</div>
                   </div>
                 </div>
               </div>
 
               <div className="pt-4 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
                 <span>Si no se presenta tras el segundo llamado, su turno será pospuesto.</span>
-                <span className="tabular-nums text-slate-500">Cód: {llamadoDestacado.codigoVerificacion || `#${llamadoDestacado.id}`}</span>
+                <span className="tabular-nums text-slate-400">Cód: {llamadoDestacado.codigoVerificacion || `#${llamadoDestacado.id}`}</span>
               </div>
             </div>
           ) : (
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-12 text-center my-auto">
-              <Clock className="h-16 w-16 text-slate-600 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-slate-300">Sala en Espera de Nuevos Llamados</h2>
-              <p className="text-sm text-slate-500 mt-2">
-                Los pacientes serán convocados por pantalla y audio en cuanto el profesional habilite el ingreso.
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-12 text-center my-auto shadow-sm">
+              <Clock className="h-14 w-14 text-sky-400 mx-auto mb-3" />
+              <h2 className="text-2xl font-bold text-white">Sala de Espera Activa</h2>
+              <p className="text-sm text-slate-300 mt-2 max-w-md mx-auto">
+                Los pacientes serán convocados por pantalla y audio en cuanto el profesional médico habilite el ingreso a consultorio.
               </p>
             </div>
           )}
@@ -301,52 +302,52 @@ export const PantallaTurnosTVPage: React.FC = () => {
         {/* PANEL LATERAL: Lista de Llamados Recientes y Próximos en Espera */}
         <aside className="lg:col-span-4 flex flex-col gap-6">
           {/* Llamados recientes */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 flex-1 flex flex-col">
-            <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 pb-3 border-b border-slate-800 flex items-center justify-between">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 flex-1 flex flex-col">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-300 pb-3 border-b border-slate-800 flex items-center justify-between">
               <span>Llamados Recientes</span>
-              <span className="text-[10px] text-sky-400 font-normal">Últimas atenciones</span>
+              <span className="text-[10px] text-sky-300 font-semibold">Últimas atenciones</span>
             </h2>
 
             <div className="mt-3 space-y-2.5 overflow-y-auto flex-1">
               {turnosEnLlamado.slice(1, 6).map((t) => (
                 <div
                   key={t.id}
-                  className="rounded-xl border border-slate-800 bg-slate-800/40 p-3 flex items-center justify-between"
+                  className="rounded-xl border border-slate-700 bg-slate-800/80 p-3 flex items-center justify-between"
                 >
                   <div>
                     <h3 className="font-bold text-sm text-white">{t.pacienteNombre}</h3>
-                    <p className="text-xs text-slate-400">Dr(a). {t.profesionalNombre}</p>
+                    <p className="text-xs text-slate-300">Dr(a). {t.profesionalNombre}</p>
                   </div>
                   <div className="text-right">
-                    <span className="rounded-lg bg-sky-700 text-white px-2 py-1 text-xs tabular-nums font-black">
+                    <span className="rounded-lg bg-sky-700 text-white px-2 py-1 text-xs tabular-nums font-bold">
                       Cons. {t.consultorioNumero || 'S/N'}
                     </span>
-                    <div className="text-[10px] text-slate-500 mt-1 tabular-nums">{t.horaLlamado || t.hora} hs</div>
+                    <div className="text-[10px] text-slate-400 mt-1 tabular-nums">{t.horaLlamado || t.hora} hs</div>
                   </div>
                 </div>
               ))}
               {turnosEnLlamado.length <= 1 && (
-                <p className="text-center text-xs text-slate-500 py-6 italic">No hay llamados previos registrados</p>
+                <p className="text-center text-xs text-slate-400 py-6 italic">No hay llamados previos registrados</p>
               )}
             </div>
           </div>
 
           {/* Próximos Pacientes en Sala */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 h-48 flex flex-col">
-            <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 pb-2 border-b border-slate-800 flex items-center justify-between">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 h-48 flex flex-col">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-300 pb-2 border-b border-slate-800 flex items-center justify-between">
               <span>Próximos en Sala</span>
-              <span className="text-xs tabular-nums font-bold text-amber-400">{pacientesEnEspera.length} en espera</span>
+              <span className="text-xs tabular-nums font-bold text-amber-300">{pacientesEnEspera.length} en espera</span>
             </h2>
 
             <div className="mt-2 space-y-1.5 overflow-y-auto flex-1">
               {pacientesEnEspera.slice(0, 5).map((t) => (
-                <div key={t.id} className="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-slate-800/20">
-                  <span className="text-slate-300 truncate max-w-[170px]">{t.pacienteNombre}</span>
-                  <span className="tabular-nums text-slate-500">{t.hora} hs</span>
+                <div key={t.id} className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-slate-800 border border-slate-700/60">
+                  <span className="text-slate-200 truncate max-w-[170px] font-medium">{t.pacienteNombre}</span>
+                  <span className="tabular-nums text-slate-400">{t.hora} hs</span>
                 </div>
               ))}
               {pacientesEnEspera.length === 0 && (
-                <p className="text-center text-xs text-slate-600 py-3 italic">Todos los pacientes han sido llamados</p>
+                <p className="text-center text-xs text-slate-400 py-3 italic">Todos los pacientes han sido llamados</p>
               )}
             </div>
           </div>
@@ -354,12 +355,12 @@ export const PantallaTurnosTVPage: React.FC = () => {
       </main>
 
       {/* Pie de pantalla Tótem con cintillo informativo */}
-      <footer className="px-8 py-3 border-t border-slate-800 bg-slate-900/90 text-xs text-slate-400 flex items-center justify-between">
+      <footer className="px-8 py-3 border-t border-slate-800 bg-slate-900 text-xs text-slate-300 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="font-semibold text-slate-200">Aviso a la comunidad:</span>
+          <span className="font-bold text-white">Aviso a la comunidad:</span>
           <span>Mantenga a mano su DNI y credencial médica antes de pasar al consultorio.</span>
         </div>
-        <div className="text-[11px] text-slate-500">
+        <div className="text-[11px] text-slate-400 font-medium">
           Sistema de Turnos ESU • Cruz del Eje
         </div>
       </footer>

@@ -103,7 +103,7 @@ export const RecepcionFiltersBar: React.FC<RecepcionFiltersBarProps> = ({
             placeholder="Buscar paciente, DNI, médico o consultorio..."
             value={busqueda}
             onChange={(e) => onBusquedaChange(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background pl-9 pr-8 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-9 pr-8 py-2 text-xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 shadow-2xs transition"
           />
           {busqueda && (
             <button
@@ -124,7 +124,7 @@ export const RecepcionFiltersBar: React.FC<RecepcionFiltersBarProps> = ({
             aria-label="Filtrar por médico"
             value={filtroProfesional}
             onChange={(e) => onFiltroProfesionalChange(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary text-foreground cursor-pointer"
+            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100 text-slate-900 dark:text-slate-100 cursor-pointer shadow-2xs transition"
           >
             <option value="TODOS">Todos los Médicos</option>
             {profesionales.map((p) => (
@@ -142,7 +142,7 @@ export const RecepcionFiltersBar: React.FC<RecepcionFiltersBarProps> = ({
             aria-label="Filtrar por consultorio"
             value={filtroConsultorio}
             onChange={(e) => onFiltroConsultorioChange(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary text-foreground cursor-pointer"
+            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100 text-slate-900 dark:text-slate-100 cursor-pointer shadow-2xs transition"
           >
             <option value="TODOS">Todos los Consultorios</option>
             {consultorios.map((c) => (

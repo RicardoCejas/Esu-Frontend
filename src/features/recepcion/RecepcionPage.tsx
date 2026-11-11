@@ -56,9 +56,9 @@ export const RecepcionPage: React.FC = () => {
           {can('PACIENTES_REGISTRAR') && (
             <Link
               to="/dashboard/recepcion/pacientes/nuevo?returnTo=turno"
-              className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-input bg-background hover:bg-muted px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+              className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-foreground shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
             >
-              <UserPlus className="h-4 w-4 text-primary" aria-hidden="true" />
+              <UserPlus className="h-4 w-4 text-sky-700" aria-hidden="true" />
               <span>Alta Rápida Paciente</span>
             </Link>
           )}
@@ -77,15 +77,15 @@ export const RecepcionPage: React.FC = () => {
               className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
             >
               <Layers className="h-4 w-4" aria-hidden="true" />
-              <span>Tablero Kanban</span>
+              <span>Salas de Espera</span>
             </Link>
           )}
           <Link
             to="/pantalla-turnos"
             target="_blank"
-            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-input bg-background hover:bg-muted px-3.5 py-2 text-xs font-semibold text-foreground transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-foreground shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
           >
-            <MonitorPlay className="h-4 w-4 text-sky-600" aria-hidden="true" />
+            <MonitorPlay className="h-4 w-4 text-sky-700" aria-hidden="true" />
             <span>Pantalla TV</span>
           </Link>
         </div>
