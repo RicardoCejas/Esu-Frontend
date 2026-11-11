@@ -4,6 +4,7 @@ import { useToast } from '@/context/ToastContext';
 import { extractApiErrorMessage } from '@/api/endpoints';
 import { pacientesService } from '@/api/pacientesService';
 import { turnosService } from '@/api/turnosService';
+import { DNI_VALIDATION_ERROR, isValidDniFormat } from '@/lib/dniValidation';
 import type { Turno, User } from '@/types';
 
 export interface PacienteFormValues {
@@ -103,8 +104,8 @@ export function usePacienteDetalle(pacienteId?: string) {
   const validate = (): PacienteFormErrors => {
     const next: PacienteFormErrors = {};
     const dniClean = values.dni.trim();
-    if (!/^\d{7,9}$/.test(dniClean)) {
-      next.dni = 'Ingresá un DNI numérico válido (7 a 9 dígitos).';
+    if (!isValidDniFormat(dniClean)) {
+      next.dni = DNI_VALIDATION_ERROR;
     }
     if (values.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
       next.email = 'El correo electrónico ingresado no tiene un formato válido.';

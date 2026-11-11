@@ -84,12 +84,13 @@ describe('HU-INT-05: Validación de Reglas de Sobreturnos y Consultorios', () =>
       assert.equal(resApellido.valido, false);
     });
 
-    it('debe rechazar DNIs inválidos menores a 6 o mayores a 9 dígitos', () => {
-      const resCorto = validarDatosSobreturno({ ...validBase, dni: '1234' });
-      assert.equal(resCorto.valido, false);
-
-      const resLargo = validarDatosSobreturno({ ...validBase, dni: '12345678901' });
-      assert.equal(resLargo.valido, false);
+    it('debe rechazar DNIs inválidos fuera del rango argentino de 7 a 8 dígitos', () => {
+      assert.equal(validarDatosSobreturno({ ...validBase, dni: '1234' }).valido, false);
+      assert.equal(validarDatosSobreturno({ ...validBase, dni: '123456' }).valido, false);
+      assert.equal(validarDatosSobreturno({ ...validBase, dni: '123456789' }).valido, false);
+      assert.equal(validarDatosSobreturno({ ...validBase, dni: '12345678901' }).valido, false);
+      assert.equal(validarDatosSobreturno({ ...validBase, dni: '7123456' }).valido, true);
+      assert.equal(validarDatosSobreturno({ ...validBase, dni: '32123456' }).valido, true);
     });
 
     it('debe rechazar si el motivo total supera los 255 caracteres', () => {

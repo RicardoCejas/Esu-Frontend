@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { extractApiErrorMessage } from '@/api/endpoints';
 import { pacientesService } from '@/api/pacientesService';
+import { DNI_VALIDATION_ERROR, isValidDniFormat } from '@/lib/dniValidation';
 
 export interface NuevoPacienteValues {
   nombre: string;
@@ -68,8 +69,8 @@ export function useNuevoPaciente() {
     if (values.nombre.trim().length < 2) next.nombre = 'Ingresá el nombre del paciente.';
     if (values.apellido.trim().length < 2) next.apellido = 'Ingresá el apellido del paciente.';
     const dniClean = values.dni.trim();
-    if (!/^\d{7,9}$/.test(dniClean)) {
-      next.dni = 'Ingresá un DNI numérico válido (entre 7 y 9 dígitos).';
+    if (!isValidDniFormat(dniClean)) {
+      next.dni = DNI_VALIDATION_ERROR;
     }
     if (values.altaRapidaSinEmail && values.telefono.trim().length < 6) {
       next.telefono = 'Para alta rápida sin correo, el teléfono es obligatorio.';

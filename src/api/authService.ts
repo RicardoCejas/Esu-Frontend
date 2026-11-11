@@ -3,6 +3,7 @@ import { apiClient } from './apiClient';
 import { tokenStorage, refreshSingleFlight } from './tokenStorage';
 import { authBroadcast } from '@/lib/authBroadcast';
 import { sanitizeFormData } from '@/lib/sanitizer';
+import { isValidDniFormat } from '../lib/dniValidation.ts';
 import { API_ENDPOINTS, extractApiErrorMessage, isDemoModeEnabled } from './endpoints';
 import { toFrontendRole, toBackendRole } from '@/lib/roles';
 import type { User, UserRole, PermissionCode } from '@/types';
@@ -181,7 +182,7 @@ function mergePacienteProfile(user: User, perfil?: PacienteMeResponse | null): U
     }
   }
 
-  const hasValidDni = Boolean(merged.dni && /^\d{7,8}$/.test(merged.dni.trim()));
+  const hasValidDni = isValidDniFormat(merged.dni);
   const hasCompleteIdentity = hasValidDni && isRealPhone(merged.telefono) && Boolean(merged.fechaNacimiento);
   const verifiedStorage = isDniMarkedVerifiedInStorage(candidateIds, merged.email);
 

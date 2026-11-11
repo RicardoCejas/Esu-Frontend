@@ -1,4 +1,5 @@
 import type { User, ConsultaMedica, TimelineItem } from '@/types';
+import { isValidDniFormat } from '../lib/dniValidation.ts';
 
 function normalizeFechaNacimiento(raw: unknown): string | undefined {
   if (!raw) return undefined;
@@ -45,7 +46,7 @@ export function normalizePaciente(d: Record<string, unknown>): User {
         : undefined,
     centroSaludNombre:
       typeof d.centroSaludReferenciaNombre === 'string' ? d.centroSaludReferenciaNombre : undefined,
-    dniVerificado: /^\d{7,8}$/.test(dni) && telReal && Boolean(fechaNacimiento),
+    dniVerificado: isValidDniFormat(dni) && telReal && Boolean(fechaNacimiento),
     activo: true,
   };
 }

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { pacientesService } from '@/api/pacientesService';
+import { DNI_VALIDATION_ERROR, isValidDniFormat } from '@/lib/dniValidation';
 import type { User } from '@/types';
 import {
   ShieldAlert,
@@ -368,8 +369,8 @@ export const ValidacionDniModal: React.FC<ValidacionDniModalProps> = ({
     }
 
     const cleanDni = dni.trim();
-    if (!cleanDni || cleanDni.length < 7) {
-      setErrorLocal('El DNI debe contener entre 7 y 8 dígitos numéricos.');
+    if (!isValidDniFormat(cleanDni)) {
+      setErrorLocal(DNI_VALIDATION_ERROR);
       return;
     }
 

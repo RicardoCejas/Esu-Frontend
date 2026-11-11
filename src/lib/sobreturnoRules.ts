@@ -1,3 +1,9 @@
+import {
+  DNI_VALIDATION_ERROR,
+  isValidDniFormat,
+  normalizeDniDigits,
+} from './dniValidation.ts';
+
 export const LIMITE_SOBRETURNOS_DIARIOS = 3;
 
 export const MOTIVOS_SOBRETURNO: string[] = [
@@ -73,11 +79,11 @@ export function validarDatosSobreturno(
     };
   }
 
-  const dniDigits = (params.dni ?? '').replace(/\D/g, '');
-  if (dniDigits.length < 6 || dniDigits.length > 9) {
+  const dniDigits = normalizeDniDigits(params.dni);
+  if (!isValidDniFormat(dniDigits)) {
     return {
       valido: false,
-      error: 'El DNI debe contener entre 6 y 9 dígitos numéricos.',
+      error: DNI_VALIDATION_ERROR,
       motivoCompleto: '',
     };
   }
