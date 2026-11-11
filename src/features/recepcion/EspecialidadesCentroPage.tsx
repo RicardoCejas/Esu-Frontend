@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useEspecialidadesCentro } from './hooks/useEspecialidadesCentro';
 import { EspecialidadesGrid } from './components/EspecialidadesGrid';
 import { ModalConfirmacion } from '@/components/ui/ModalConfirmacion';
@@ -8,6 +9,7 @@ import { DoorOpen, Search, RefreshCw } from 'lucide-react';
 
 export const EspecialidadesCentroPage: React.FC = () => {
   const { user } = useAuth();
+  const { canAny } = usePermissions();
   const esp = useEspecialidadesCentro(user?.centroSaludId);
 
   return (
@@ -20,13 +22,15 @@ export const EspecialidadesCentroPage: React.FC = () => {
           </p>
         </div>
 
-        <Link
-          to="/dashboard/recepcion/sede"
-          className="min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-input bg-card text-foreground hover:bg-muted transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary self-start sm:self-auto"
-        >
-          <DoorOpen className="h-4 w-4 text-primary" aria-hidden="true" />
-          <span>Gestionar Consultorios en Mi Sede</span>
-        </Link>
+        {canAny(['CONSULTORIOS_VER', 'CONSULTORIOS_ADMINISTRAR']) && (
+          <Link
+            to="/dashboard/recepcion/sede"
+            className="min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-input bg-card text-foreground hover:bg-muted transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary self-start sm:self-auto"
+          >
+            <DoorOpen className="h-4 w-4 text-primary" aria-hidden="true" />
+            <span>Gestionar Consultorios en Mi Sede</span>
+          </Link>
+        )}
       </div>
 
       <div className="flex items-center gap-3">

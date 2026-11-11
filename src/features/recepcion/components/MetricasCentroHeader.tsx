@@ -8,6 +8,7 @@ interface MetricasCentroHeaderProps {
   respuestaIncompleta?: boolean;
   cargando: boolean;
   hasMetricas: boolean;
+  canExport?: boolean;
   activeTab: MetricasTabKey;
   onTabChange: (tab: MetricasTabKey) => void;
   onExportCsv: () => void;
@@ -19,6 +20,7 @@ export const MetricasCentroHeader: React.FC<MetricasCentroHeaderProps> = ({
   respuestaIncompleta,
   cargando,
   hasMetricas,
+  canExport = true,
   activeTab,
   onTabChange,
   onExportCsv,
@@ -42,15 +44,17 @@ export const MetricasCentroHeader: React.FC<MetricasCentroHeaderProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 print:hidden">
-          <button
-            type="button"
-            onClick={onExportCsv}
-            disabled={!hasMetricas || cargando}
-            className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 px-3.5 py-2 text-xs font-semibold text-white transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:opacity-50"
-          >
-            <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
-            <span>Exportar CSV</span>
-          </button>
+          {canExport && (
+            <button
+              type="button"
+              onClick={onExportCsv}
+              disabled={!hasMetricas || cargando}
+              className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 px-3.5 py-2 text-xs font-semibold text-white transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:opacity-50"
+            >
+              <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
+              <span>Exportar CSV</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => window.print()}

@@ -2,10 +2,13 @@ import React, { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Building2, Link2, Power, Save, Unlink } from 'lucide-react';
 import { ModalConfirmacion } from '@/components/ui/ModalConfirmacion';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useMedicoDetalle } from './hooks/useMedicoDetalle';
 import { MedicoAgendaSection } from './components/MedicoAgendaSection';
 
 export const MedicoDetallePage: React.FC = () => {
+  const { can } = usePermissions();
+  const canEditMedico = can('MEDICOS_ASIGNAR_CONSULTORIO');
   const { id } = useParams<{ id: string }>();
   const {
     activeCentroId,
@@ -109,19 +112,17 @@ export const MedicoDetallePage: React.FC = () => {
           </p>
         </div>
 
-        <button
+        {canEditMedico && (<button
           type="button"
           onClick={() => setConfirmToggleEstado(true)}
           disabled={saving}
           className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-xs font-semibold transition cursor-pointer disabled:opacity-50 ${
-            isActivo
-              ? 'border-rose-300 bg-card text-rose-700 hover:bg-rose-50'
-              : 'border-emerald-300 bg-emerald-700 text-white hover:bg-emerald-800'
+            isActivo ? 'border-rose-300 bg-card text-rose-700 hover:bg-rose-50' : 'border-emerald-300 bg-emerald-700 text-white hover:bg-emerald-800'
           }`}
         >
           <Power className="h-4 w-4" aria-hidden="true" />
           {isActivo ? 'Desactivar Profesional' : 'Reactivar Profesional'}
-        </button>
+        </button>)}
       </div>
 
       {submitError && (
@@ -245,7 +246,7 @@ export const MedicoDetallePage: React.FC = () => {
           </div>
         </fieldset>
 
-        <div className="flex justify-end border-t border-border pt-4">
+        {canEditMedico && (<div className="flex justify-end border-t border-border pt-4">
           <button
             type="submit"
             disabled={saving}
@@ -254,7 +255,7 @@ export const MedicoDetallePage: React.FC = () => {
             <Save className="h-4 w-4" aria-hidden="true" />
             {saving ? 'Guardando...' : 'Guardar Cambios'}
           </button>
-        </div>
+        </div>)}
       </form>
 
       <section className="rounded-xl border border-border bg-card p-6 space-y-4">
@@ -269,7 +270,7 @@ export const MedicoDetallePage: React.FC = () => {
             </p>
           </div>
 
-          {availableCentrosToLink.length > 0 && (
+          {canEditMedico && availableCentrosToLink.length > 0 && (
             <div className="flex items-center gap-2">
               <select
                 aria-label="Seleccionar centro para vincular"
@@ -328,7 +329,7 @@ export const MedicoDetallePage: React.FC = () => {
                     </p>
                   </div>
 
-                  <button
+                  {canEditMedico && (<button
                     type="button"
                     disabled={saving}
                     onClick={() => setCentroToUnlink(centro.id)}
@@ -336,7 +337,7 @@ export const MedicoDetallePage: React.FC = () => {
                   >
                     <Unlink className="h-3 w-3" aria-hidden="true" />
                     Desvincular
-                  </button>
+                  </button>)}
                 </div>
               );
             })}

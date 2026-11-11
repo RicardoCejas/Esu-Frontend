@@ -5,6 +5,7 @@ import type { ConsultorioItem } from '@/api/centrosService';
 
 export interface ConsultoriosCentroTabProps {
   consultorios: ConsultorioItem[];
+  canManageSede?: boolean;
   togglingId?: string | null;
   onToggleEstado: (c: ConsultorioItem) => void;
   onEliminar: (c: ConsultorioItem) => void;
@@ -12,6 +13,7 @@ export interface ConsultoriosCentroTabProps {
 
 export const ConsultoriosCentroTab: React.FC<ConsultoriosCentroTabProps> = ({
   consultorios,
+  canManageSede = true,
   togglingId,
   onToggleEstado,
   onEliminar,
@@ -25,13 +27,15 @@ export const ConsultoriosCentroTab: React.FC<ConsultoriosCentroTabProps> = ({
             Infraestructura habilitada para atención ambulatoria y asignación de profesionales.
           </p>
         </div>
-        <Link
-          to="/dashboard/recepcion/sede/consultorios/nuevo"
-          className="min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-2 bg-sky-700 hover:bg-sky-800 text-white text-xs font-semibold rounded-xl transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          <span>Nuevo Consultorio</span>
-        </Link>
+        {canManageSede && (
+          <Link
+            to="/dashboard/recepcion/sede/consultorios/nuevo"
+            className="min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-2 bg-sky-700 hover:bg-sky-800 text-white text-xs font-semibold rounded-xl transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            <span>Nuevo Consultorio</span>
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -65,46 +69,48 @@ export const ConsultoriosCentroTab: React.FC<ConsultoriosCentroTabProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-1.5 border-t border-border/70 pt-2.5">
-                <Link
-                  to={`/dashboard/recepcion/sede/consultorios/${c.id}/editar`}
-                  aria-label={`Editar consultorio ${c.numero}`}
-                  title={`Editar consultorio ${c.numero}`}
-                  className="min-h-[34px] inline-flex items-center gap-1 rounded-lg border border-input bg-background hover:bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <Pencil className="h-3.5 w-3.5 text-sky-700" aria-hidden="true" />
-                  <span>Editar</span>
-                </Link>
-                <button
-                  type="button"
-                  disabled={isToggling}
-                  onClick={() => onToggleEstado(c)}
-                  aria-label={c.activo ? `Pausar consultorio ${c.numero}` : `Reactivar consultorio ${c.numero}`}
-                  title={c.activo ? `Pausar consultorio ${c.numero}` : `Reactivar consultorio ${c.numero}`}
-                  className="min-h-[34px] inline-flex items-center gap-1 rounded-lg border border-input bg-background hover:bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
-                >
-                  {c.activo ? (
-                    <>
-                      <PauseCircle className="h-3.5 w-3.5 text-amber-700" aria-hidden="true" />
-                      <span>Pausar</span>
-                    </>
-                  ) : (
-                    <>
-                      <PlayCircle className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />
-                      <span>Reactivar</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onEliminar(c)}
-                  aria-label={`Dar de baja consultorio ${c.numero}`}
-                  title={`Dar de baja consultorio ${c.numero}`}
-                  className="min-h-[34px] min-w-[34px] inline-flex items-center justify-center p-1.5 text-muted-foreground hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-600"
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />
-                </button>
-              </div>
+              {canManageSede && (
+                <div className="flex items-center justify-end gap-1.5 border-t border-border/70 pt-2.5">
+                  <Link
+                    to={`/dashboard/recepcion/sede/consultorios/${c.id}/editar`}
+                    aria-label={`Editar consultorio ${c.numero}`}
+                    title={`Editar consultorio ${c.numero}`}
+                    className="min-h-[34px] inline-flex items-center gap-1 rounded-lg border border-input bg-background hover:bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <Pencil className="h-3.5 w-3.5 text-sky-700" aria-hidden="true" />
+                    <span>Editar</span>
+                  </Link>
+                  <button
+                    type="button"
+                    disabled={isToggling}
+                    onClick={() => onToggleEstado(c)}
+                    aria-label={c.activo ? `Pausar consultorio ${c.numero}` : `Reactivar consultorio ${c.numero}`}
+                    title={c.activo ? `Pausar consultorio ${c.numero}` : `Reactivar consultorio ${c.numero}`}
+                    className="min-h-[34px] inline-flex items-center gap-1 rounded-lg border border-input bg-background hover:bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+                  >
+                    {c.activo ? (
+                      <>
+                        <PauseCircle className="h-3.5 w-3.5 text-amber-700" aria-hidden="true" />
+                        <span>Pausar</span>
+                      </>
+                    ) : (
+                      <>
+                        <PlayCircle className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />
+                        <span>Reactivar</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onEliminar(c)}
+                    aria-label={`Dar de baja consultorio ${c.numero}`}
+                    title={`Dar de baja consultorio ${c.numero}`}
+                    className="min-h-[34px] min-w-[34px] inline-flex items-center justify-center p-1.5 text-muted-foreground hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-600"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}

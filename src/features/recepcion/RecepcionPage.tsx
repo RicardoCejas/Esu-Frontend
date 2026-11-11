@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useRecepcionBoard } from './hooks/useRecepcionBoard';
 import { RecepcionDailySummaryCards } from './components/RecepcionDailySummaryCards';
 import { RecepcionFiltersBar } from './components/RecepcionFiltersBar';
@@ -12,6 +13,7 @@ import type { Turno } from '@/types';
 
 export const RecepcionPage: React.FC = () => {
   const { user } = useAuth();
+  const { can, canAny } = usePermissions();
   const board = useRecepcionBoard(user?.centroSaludId);
   const [turnoParaCopago, setTurnoParaCopago] = useState<Turno | null>(null);
   const [turnoParaCancelar, setTurnoParaCancelar] = useState<Turno | null>(null);
@@ -32,27 +34,33 @@ export const RecepcionPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <Link
-            to="/dashboard/recepcion/pacientes/nuevo?returnTo=turno"
-            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-input bg-background hover:bg-muted px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <UserPlus className="h-4 w-4 text-primary" aria-hidden="true" />
-            <span>Alta Rápida Paciente</span>
-          </Link>
-          <Link
-            to="/dashboard/recepcion/turnos/nuevo"
-            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
-          >
-            <CalendarPlus className="h-4 w-4" aria-hidden="true" />
-            <span>Turno de Mostrador</span>
-          </Link>
-          <Link
-            to="/dashboard/recepcion/kanban"
-            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
-          >
-            <Layers className="h-4 w-4" aria-hidden="true" />
-            <span>Tablero Kanban</span>
-          </Link>
+          {can('PACIENTES_REGISTRAR') && (
+            <Link
+              to="/dashboard/recepcion/pacientes/nuevo?returnTo=turno"
+              className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-input bg-background hover:bg-muted px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <UserPlus className="h-4 w-4 text-primary" aria-hidden="true" />
+              <span>Alta Rápida Paciente</span>
+            </Link>
+          )}
+          {can('TURNOS_CREAR') && (
+            <Link
+              to="/dashboard/recepcion/turnos/nuevo"
+              className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+            >
+              <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+              <span>Turno de Mostrador</span>
+            </Link>
+          )}
+          {canAny(['SALA_ESPERA_GESTIONAR', 'TURNOS_VER']) && (
+            <Link
+              to="/dashboard/recepcion/kanban"
+              className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
+            >
+              <Layers className="h-4 w-4" aria-hidden="true" />
+              <span>Tablero Kanban</span>
+            </Link>
+          )}
           <Link
             to="/pantalla-turnos"
             target="_blank"
@@ -88,6 +96,8 @@ export const RecepcionPage: React.FC = () => {
           turnos={board.turnosFiltrados}
           loading={board.loading}
           mostrarFecha={board.mostrandoTodosLosDias}
+          canCheckIn={can('SALA_ESPERA_GESTIONAR')}
+          canCancelar={can('TURNOS_CANCELAR')}
           onCheckIn={board.handleCheckIn}
           onOpenCopago={(t) => setTurnoParaCopago(t)}
           onOpenCancelar={(t) => setTurnoParaCancelar(t)}

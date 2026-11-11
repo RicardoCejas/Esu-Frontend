@@ -2,10 +2,14 @@ import React, { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Link2, Save, Stethoscope, Trash2 } from 'lucide-react';
 import { ModalConfirmacion } from '@/components/ui/ModalConfirmacion';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useEspecialidadDetalle } from './hooks/useEspecialidadDetalle';
 import type { Profesional } from '@/types';
 
 export const EspecialidadDetallePage: React.FC = () => {
+  const { can, canAny } = usePermissions();
+  const canAssignMedicos = can('MEDICOS_ASIGNAR_CONSULTORIO');
+  const canManageEsp = canAny(['CONSULTORIOS_ADMINISTRAR', 'MEDICOS_ASIGNAR_CONSULTORIO']);
   const { id } = useParams<{ id: string }>();
   const {
     centroId,
@@ -144,16 +148,18 @@ export const EspecialidadDetallePage: React.FC = () => {
           </div>
         </fieldset>
 
-        <div className="flex justify-end border-t border-border pt-4">
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-5 py-2 text-xs font-semibold text-white hover:bg-sky-800 disabled:opacity-50 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
-          >
-            <Save className="h-4 w-4" aria-hidden="true" />
-            {saving ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
-        </div>
+        {canManageEsp && (
+          <div className="flex justify-end border-t border-border pt-4">
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-5 py-2 text-xs font-semibold text-white hover:bg-sky-800 disabled:opacity-50 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+            >
+              <Save className="h-4 w-4" aria-hidden="true" />
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
+          </div>
+        )}
       </form>
 
       <section className="rounded-xl border border-border bg-card p-6 space-y-4">
@@ -161,12 +167,14 @@ export const EspecialidadDetallePage: React.FC = () => {
           <h2 className="text-base font-bold text-foreground">
             Profesionales Asignados en esta Sede ({medicosCentro.length})
           </h2>
-          <Link
-            to="/dashboard/recepcion/medicos/nuevo"
-            className="text-xs font-semibold text-sky-700 hover:underline"
-          >
-            + Alta de médico
-          </Link>
+          {canAssignMedicos && (
+            <Link
+              to="/dashboard/recepcion/medicos/nuevo"
+              className="text-xs font-semibold text-sky-700 hover:underline"
+            >
+              + Alta de médico
+            </Link>
+          )}
         </div>
 
         {medicosCentro.length === 0 ? (
@@ -195,7 +203,7 @@ export const EspecialidadDetallePage: React.FC = () => {
                   </div>
                 </div>
 
-                {centroId && (
+                {centroId && canAssignMedicos && (
                   <button
                     type="button"
                     disabled={saving}
@@ -213,7 +221,7 @@ export const EspecialidadDetallePage: React.FC = () => {
         )}
       </section>
 
-      {centroId && otrosMedicosEspecialidad.length > 0 && (
+      {centroId && canAssignMedicos && otrosMedicosEspecialidad.length > 0 && (
         <section className="rounded-xl border border-border bg-card p-6 space-y-3">
           <h2 className="text-sm font-bold text-foreground border-b border-border pb-2.5">
             Otros Profesionales de {especialidad.nombre} en la Red ({otrosMedicosEspecialidad.length})

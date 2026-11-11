@@ -6,6 +6,8 @@ interface RecepcionTurnosTableProps {
   turnos: Turno[];
   loading: boolean;
   mostrarFecha?: boolean;
+  canCheckIn?: boolean;
+  canCancelar?: boolean;
   onCheckIn: (turno: Turno) => void;
   onOpenCopago: (turno: Turno) => void;
   onOpenCancelar: (turno: Turno) => void;
@@ -15,6 +17,8 @@ export const RecepcionTurnosTable: React.FC<RecepcionTurnosTableProps> = ({
   turnos,
   loading,
   mostrarFecha = false,
+  canCheckIn = true,
+  canCancelar = true,
   onCheckIn,
   onOpenCopago,
   onOpenCancelar,
@@ -138,7 +142,7 @@ export const RecepcionTurnosTable: React.FC<RecepcionTurnosTableProps> = ({
 
                   <td className="p-3.5 text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      {!esEnEspera && !esAtendiendo && !esCompletado && !esCancelado && (
+                      {canCheckIn && !esEnEspera && !esAtendiendo && !esCompletado && !esCancelado && (
                         <button
                           type="button"
                           onClick={() => onCheckIn(t)}
@@ -160,7 +164,7 @@ export const RecepcionTurnosTable: React.FC<RecepcionTurnosTableProps> = ({
                         <span>Copago</span>
                       </button>
 
-                      {!esCompletado && !esCancelado && (
+                      {canCancelar && !esCompletado && !esCancelado && (
                         <button
                           type="button"
                           onClick={() => onOpenCancelar(t)}

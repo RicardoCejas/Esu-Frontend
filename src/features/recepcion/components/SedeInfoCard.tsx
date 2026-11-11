@@ -7,6 +7,7 @@ import type { CentroSalud } from '@/types';
 interface SedeInfoCardProps {
   centro: CentroSalud;
   consultoriosCount: number;
+  canManageSede?: boolean;
 }
 
 const TIPO_LABELS: Record<CentroSalud['tipo'], string> = {
@@ -16,10 +17,7 @@ const TIPO_LABELS: Record<CentroSalud['tipo'], string> = {
   CONSULTORIO_PRIVADO: 'Consultorio Privado',
 };
 
-export const SedeInfoCard: React.FC<SedeInfoCardProps> = ({
-  centro,
-  consultoriosCount,
-}) => {
+export const SedeInfoCard: React.FC<SedeInfoCardProps> = ({ centro, consultoriosCount, canManageSede = true }) => {
   const floors = buildFloorOptions(centro.cantidadPlantas);
   const coords = parseCoordinatePair(centro.latitud, centro.longitud);
   const mapsUrl = buildGoogleMapsUrl(centro.latitud, centro.longitud, `${centro.nombre} ${centro.direccion}`);
@@ -56,13 +54,13 @@ export const SedeInfoCard: React.FC<SedeInfoCardProps> = ({
           </div>
         </div>
 
-        <Link
+        {canManageSede && (<Link
           to="/dashboard/recepcion/sede/editar"
           className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl border border-input bg-background hover:bg-muted px-3.5 py-2 text-xs font-semibold text-foreground transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary self-start"
         >
           <Pencil className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
           <span>Editar Datos de Sede</span>
-        </Link>
+        </Link>)}
       </div>
 
       <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">

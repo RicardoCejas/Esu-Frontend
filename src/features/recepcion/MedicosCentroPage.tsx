@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useMedicosCentro } from './hooks/useMedicosCentro';
 import { ModalConfirmacion } from '@/components/ui/ModalConfirmacion';
 import { Stethoscope, PlusCircle, Search, RefreshCw, ChevronRight, UserCheck } from 'lucide-react';
@@ -8,6 +9,7 @@ import { Stethoscope, PlusCircle, Search, RefreshCw, ChevronRight, UserCheck } f
 
 export const MedicosCentroPage: React.FC = () => {
   const { user } = useAuth();
+  const { can } = usePermissions();
   const medicos = useMedicosCentro(user?.centroSaludId);
 
   return (
@@ -17,10 +19,12 @@ export const MedicosCentroPage: React.FC = () => {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Cuerpo Médico de la Institución</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Gestión de profesionales activos, agendas de atención y vinculación de consultorios.</p>
         </div>
-        <Link to="/dashboard/recepcion/medicos/nuevo" className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-xl shadow-xs transition">
-          <PlusCircle className="h-4 w-4" />
-          <span>Vincular Nuevo Médico</span>
-        </Link>
+        {can('MEDICOS_ASIGNAR_CONSULTORIO') && (
+          <Link to="/dashboard/recepcion/medicos/nuevo" className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-xl shadow-xs transition">
+            <PlusCircle className="h-4 w-4" aria-hidden="true" />
+            <span>Vincular Nuevo Médico</span>
+          </Link>
+        )}
       </div>
 
       <div className="flex items-center gap-3">

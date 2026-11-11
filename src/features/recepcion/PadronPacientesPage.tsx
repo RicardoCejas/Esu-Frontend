@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { pacientesService } from '@/api/pacientesService';
 import type { User } from '@/types';
 import {
@@ -14,7 +15,10 @@ import {
 
 export const PadronPacientesPage: React.FC = () => {
   const { user } = useAuth();
-  const canManageTurnos = user?.rol !== 'MEDICO';
+  const { can } = usePermissions();
+  const isMedico = user?.rol === 'MEDICO';
+  const canRegistrarPaciente = !isMedico && can('PACIENTES_REGISTRAR');
+  const canManageTurnos = !isMedico && can('TURNOS_CREAR');
   const [pacientes, setPacientes] = useState<User[]>([]);
   const [busqueda, setBusqueda] = useState('');
 
@@ -44,13 +48,15 @@ export const PadronPacientesPage: React.FC = () => {
           </div>
         </div>
 
-        <Link
-          to="/dashboard/recepcion/pacientes/nuevo"
-          className="min-h-[40px] inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer self-start sm:self-auto"
-        >
-          <UserPlus className="h-4 w-4" aria-hidden="true" />
-          <span>Registrar Nuevo Paciente</span>
-        </Link>
+        {canRegistrarPaciente && (
+          <Link
+            to="/dashboard/recepcion/pacientes/nuevo"
+            className="min-h-[40px] inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer self-start sm:self-auto"
+          >
+            <UserPlus className="h-4 w-4" aria-hidden="true" />
+            <span>Registrar Nuevo Paciente</span>
+          </Link>
+        )}
       </div>
 
       {/* Contenedor Unificado: Barra de Búsqueda + Tabla */}

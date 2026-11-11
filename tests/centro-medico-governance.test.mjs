@@ -60,11 +60,21 @@ describe('Centro Médico Governance & Multi-Tenant Staff Scoping', () => {
     assert.equal(isSelfAccount(peer, null), false);
   });
 
-  it('sanitizePermissionsForCenterStaff strips network-wide permissions while allowed roles exclude ADMIN/PACIENTE', () => {
+  it('sanitizePermissionsForCenterStaff strips network-wide and restricted permissions while allowed roles exclude ADMIN/PACIENTE', () => {
     assert.deepEqual(CENTER_STAFF_ALLOWED_ROLES.map((r) => r.value), ['RECEPCIONISTA', 'PROFESIONAL']);
-    assert.deepEqual(EXCLUDED_CENTER_PERMISSIONS, ['PACIENTES_FUSIONAR']);
+    assert.deepEqual(EXCLUDED_CENTER_PERMISSIONS, [
+      'PACIENTES_FUSIONAR',
+      'USUARIOS_ADMINISTRAR',
+      'CONSULTORIOS_ADMINISTRAR',
+    ]);
     assert.deepEqual(
-      sanitizePermissionsForCenterStaff(['TURNOS_VER', 'PACIENTES_FUSIONAR', 'REPORTES_VER']),
+      sanitizePermissionsForCenterStaff([
+        'TURNOS_VER',
+        'PACIENTES_FUSIONAR',
+        'USUARIOS_ADMINISTRAR',
+        'CONSULTORIOS_ADMINISTRAR',
+        'REPORTES_VER',
+      ]),
       ['TURNOS_VER', 'REPORTES_VER']
     );
   });

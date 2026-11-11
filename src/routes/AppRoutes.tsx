@@ -6,6 +6,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AuthGuard } from './AuthGuard';
 import { RoleGuard } from './RoleGuard';
 import { RequireCentroSaludGuard } from './RequireCentroSaludGuard';
+import { PermissionGuard } from './PermissionGuard';
 
 // Lazy loading de rutas secundarias para optimización de bundle
 const TurneroContainer = React.lazy(() => import('@/features/turnero/TurneroContainer').then(m => ({ default: m.TurneroContainer })));
@@ -138,34 +139,64 @@ export const AppRoutes: React.FC = () => {
               {/* Módulo Compartido Sala de Espera y Padrón (Recepción y Médico) */}
               <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA', 'MEDICO']} />}>
                 <Route element={<RequireCentroSaludGuard />}>
-                  <Route path="recepcion/kanban" element={<SalasEsperaKanbanPage />} />
-                  <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
-                  <Route path="recepcion/pacientes/:id" element={<PacienteDetallePage />} />
+                  <Route element={<PermissionGuard anyOf={['SALA_ESPERA_GESTIONAR', 'TURNOS_VER']} />}>
+                    <Route path="recepcion/kanban" element={<SalasEsperaKanbanPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['PACIENTES_VER']} />}>
+                    <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
+                    <Route path="recepcion/pacientes/:id" element={<PacienteDetallePage />} />
+                  </Route>
                 </Route>
               </Route>
 
               {/* Módulo Exclusivo Centro de Salud / Recepción (HU-53, HU-54, HU-55, HU-99) */}
               <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA']} />}>
                 <Route element={<RequireCentroSaludGuard />}>
-                  <Route path="recepcion" element={<RecepcionPage />} />
-                  <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
-                  <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
-                  <Route path="recepcion/medicos" element={<MedicosCentroPage />} />
-                  <Route path="recepcion/medicos/nuevo" element={<NuevoMedicoPage />} />
-                  <Route path="recepcion/especialidades" element={<EspecialidadesCentroPage />} />
-                  <Route path="recepcion/metricas" element={<MetricasCentroPage />} />
-                  <Route path="recepcion/sede" element={<MiSedePage />} />
-                  <Route path="recepcion/turnos/nuevo" element={<NuevoTurnoMostradorPage />} />
-                  <Route path="recepcion/turnos/:id/reagendar" element={<ReagendarTurnoPage />} />
-                  <Route path="recepcion/kanban/sobreturno" element={<NuevoSobreturnoPage />} />
-                  <Route path="recepcion/medicos/:id" element={<MedicoDetallePage />} />
-                  <Route path="recepcion/especialidades/:id" element={<EspecialidadDetallePage />} />
-                  <Route path="recepcion/sede/editar" element={<EditarSedePage />} />
-                  <Route path="recepcion/sede/consultorios/nuevo" element={<NuevoConsultorioPage />} />
-            <Route path="recepcion/sede/consultorios/:id/editar" element={<EditarConsultorioPage />} />
-                  <Route path="recepcion/personal" element={<PersonalCentroPage />} />
-                  <Route path="recepcion/personal/nuevo" element={<NuevoPersonalCentroPage />} />
-                  <Route path="recepcion/personal/:id/permisos" element={<PersonalPermisosPage />} />
+                  <Route element={<PermissionGuard anyOf={['TURNOS_VER', 'SALA_ESPERA_GESTIONAR']} />}>
+                    <Route path="recepcion" element={<RecepcionPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['PACIENTES_REGISTRAR']} />}>
+                    <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['TURNOS_VER']} />}>
+                    <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['MEDICOS_VER']} />}>
+                    <Route path="recepcion/medicos" element={<MedicosCentroPage />} />
+                    <Route path="recepcion/medicos/:id" element={<MedicoDetallePage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['MEDICOS_ASIGNAR_CONSULTORIO']} />}>
+                    <Route path="recepcion/medicos/nuevo" element={<NuevoMedicoPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['MEDICOS_VER', 'CONSULTORIOS_VER']} />}>
+                    <Route path="recepcion/especialidades" element={<EspecialidadesCentroPage />} />
+                    <Route path="recepcion/especialidades/:id" element={<EspecialidadDetallePage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['REPORTES_VER']} />}>
+                    <Route path="recepcion/metricas" element={<MetricasCentroPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['CONSULTORIOS_VER', 'CONSULTORIOS_ADMINISTRAR']} />}>
+                    <Route path="recepcion/sede" element={<MiSedePage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['TURNOS_CREAR']} />}>
+                    <Route path="recepcion/turnos/nuevo" element={<NuevoTurnoMostradorPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['TURNOS_REAGENDAR']} />}>
+                    <Route path="recepcion/turnos/:id/reagendar" element={<ReagendarTurnoPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['SOBRETURNOS_CREAR']} />}>
+                    <Route path="recepcion/kanban/sobreturno" element={<NuevoSobreturnoPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['CONSULTORIOS_ADMINISTRAR']} />}>
+                    <Route path="recepcion/sede/editar" element={<EditarSedePage />} />
+                    <Route path="recepcion/sede/consultorios/nuevo" element={<NuevoConsultorioPage />} />
+                    <Route path="recepcion/sede/consultorios/:id/editar" element={<EditarConsultorioPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['USUARIOS_ADMINISTRAR']} />}>
+                    <Route path="recepcion/personal" element={<PersonalCentroPage />} />
+                    <Route path="recepcion/personal/nuevo" element={<NuevoPersonalCentroPage />} />
+                    <Route path="recepcion/personal/:id/permisos" element={<PersonalPermisosPage />} />
+                  </Route>
                 </Route>
               </Route>
 

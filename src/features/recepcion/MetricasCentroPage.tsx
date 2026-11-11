@@ -2,6 +2,7 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useMetricasCentro } from './hooks/useMetricasCentro';
 import { MetricasCentroHeader, type MetricasTabKey } from './components/MetricasCentroHeader';
 import { MetricasCentroFiltersBar } from './components/MetricasCentroFiltersBar';
@@ -11,6 +12,7 @@ import { MetricasCentroOcupacionPanel } from './components/MetricasCentroOcupaci
 
 export const MetricasCentroPage: React.FC = () => {
   const { user } = useAuth();
+  const { can } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab: MetricasTabKey = searchParams.get('tab') === 'ocupacion' ? 'ocupacion' : 'resumen';
   const state = useMetricasCentro(user?.centroSaludId);
@@ -22,6 +24,7 @@ export const MetricasCentroPage: React.FC = () => {
         respuestaIncompleta={state.metricas?.respuestaIncompleta}
         cargando={state.cargando}
         hasMetricas={!!state.metricas}
+        canExport={can('REPORTES_VER')}
         activeTab={activeTab}
         onTabChange={(tab) => setSearchParams({ tab }, { replace: true })}
         onExportCsv={state.exportarCSV}

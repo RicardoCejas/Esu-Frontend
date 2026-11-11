@@ -1,6 +1,7 @@
 import React from 'react';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { ModalConfirmacion } from '@/components/ui/ModalConfirmacion';
 import { useMiSede } from './hooks/useMiSede';
 import { SedeInfoCard } from './components/SedeInfoCard';
@@ -8,6 +9,8 @@ import { ConsultoriosCentroTab } from './components/ConsultoriosCentroTab';
 
 export const MiSedePage: React.FC = () => {
   const { user } = useAuth();
+  const { can } = usePermissions();
+  const canManageSede = can('CONSULTORIOS_ADMINISTRAR');
   const sede = useMiSede(user?.centroSaludId);
 
   return (
@@ -57,12 +60,14 @@ export const MiSedePage: React.FC = () => {
             <SedeInfoCard
               centro={sede.centro}
               consultoriosCount={sede.consultorios.length}
+              canManageSede={canManageSede}
             />
           )}
 
           <div className="rounded-xl border border-border bg-card p-6">
             <ConsultoriosCentroTab
               consultorios={sede.consultorios}
+              canManageSede={canManageSede}
               togglingId={sede.togglingId}
               onToggleEstado={sede.toggleEstadoConsultorio}
               onEliminar={(c) => sede.setConsultorioAEliminar(c)}
