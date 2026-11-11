@@ -66,8 +66,12 @@ export const EspecialidadesGrid: React.FC<EspecialidadesGridProps> = ({
             </div>
 
             <div className="pt-3 border-t border-border flex items-center justify-between">
-              <span className="text-[10px] font-bold text-white bg-emerald-700 px-2 py-0.5 rounded shadow-xs">
-                Habilitada en sede
+              <span
+                className={`text-[10px] font-bold text-white px-2 py-0.5 rounded shadow-xs ${
+                  medicosAsignados.length > 0 ? 'bg-emerald-700' : 'bg-slate-700'
+                }`}
+              >
+                {medicosAsignados.length > 0 ? 'Habilitada en sede' : 'Sin médicos en sede'}
               </span>
               <Link
                 to={`/dashboard/recepcion/especialidades/${esp.id}`}

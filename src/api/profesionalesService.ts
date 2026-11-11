@@ -70,14 +70,21 @@ function normalizeEspecialidad(d: Record<string, unknown>): Especialidad {
 
 function normalizeDisponibilidad(d: Record<string, unknown>): DisponibilidadProfesional {
   const diaSemana = String(d.diaSemana ?? 'MONDAY');
+  const intervaloMin = typeof d.intervaloMinutos === 'number'
+    ? d.intervaloMinutos
+    : (typeof d.duracionMinutos === 'number' ? d.duracionMinutos : 20);
   return {
     id: String(d.id),
     profesionalId: String(d.profesionalId ?? '1'),
     centroSaludId: String(d.centroSaludId ?? '1'),
+    centroSaludNombre: typeof d.centroSaludNombre === 'string' ? d.centroSaludNombre : undefined,
+    consultorioId: d.consultorioId != null ? String(d.consultorioId) : undefined,
+    consultorioNumero: typeof d.consultorioNumero === 'string' ? d.consultorioNumero : undefined,
+    planta: typeof d.planta === 'string' ? d.planta : undefined,
     diaSemana,
     horaInicio: String(d.horaInicio ?? '08:00'),
     horaFin: String(d.horaFin ?? '12:00'),
-    intervaloMinutos: typeof d.duracionMinutos === 'number' ? d.duracionMinutos : 20,
+    intervaloMinutos: intervaloMin,
     activo: d.activo !== false,
   };
 }
@@ -171,7 +178,28 @@ export const profesionalesService = {
         telefono: data.telefono,
       };
       const res = await apiClient.post<Record<string, unknown>>(API_ENDPOINTS.profesionales.base, payload);
-      return normalizeProfesional(res.data);
+      const nuevo = normalizeProfesional(res.data);
+
+      if (Array.isArray(data.diasAtencion) && data.diasAtencion.length > 0 && Array.isArray(data.centrosSaludIds) && data.centrosSaludIds.length > 0) {
+        const centroId = String(data.centrosSaludIds[0]);
+        const duracion = Number(data.duracionTurnoMin ?? 20);
+        for (const dia of data.diasAtencion) {
+          try {
+            await this.configurarDisponibilidad(nuevo.id, {
+              profesionalId: nuevo.id,
+              centroSaludId: centroId,
+              diaSemana: dia,
+              horaInicio: '08:00',
+              horaFin: '13:00',
+              intervaloMinutos: duracion,
+            });
+          } catch {
+            // Non-blocking availability seeding
+          }
+        }
+      }
+
+      return nuevo;
     } catch (err: unknown) {
       throw new Error(extractApiErrorMessage(err, 'No se pudo registrar el profesional médico.'), { cause: err });
     }
@@ -293,9 +321,11 @@ export const profesionalesService = {
       const payload = {
         profesionalId: numProfId,
         centroSaludId: toNumericId(req.centroSaludId),
+        consultorioId: req.consultorioId ? toNumericId(req.consultorioId) : null,
         diaSemana: diaNormalized,
         horaInicio: req.horaInicio.length === 5 ? `${req.horaInicio}:00` : req.horaInicio,
         horaFin: req.horaFin.length === 5 ? `${req.horaFin}:00` : req.horaFin,
+        intervaloMinutos: req.intervaloMinutos,
         duracionMinutos: req.intervaloMinutos,
         activo: true,
       };
@@ -312,6 +342,18 @@ export const profesionalesService = {
 
   async guardarDisponibilidad(req: DisponibilidadRequest): Promise<DisponibilidadProfesional> {
     return this.configurarDisponibilidad(req.profesionalId, req);
+  },
+
+  async generarSlots(profesionalId: string): Promise<number> {
+    try {
+      const numProfId = toNumericId(profesionalId);
+      const res = await apiClient.post<number>(
+        API_ENDPOINTS.disponibilidades.generarSlots(numProfId)
+      );
+      return typeof res.data === 'number' ? res.data : 0;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron regenerar los slots de turnos.'), { cause: err });
+    }
   },
 
   async eliminarDisponibilidad(disponibilidadId: string): Promise<boolean> {

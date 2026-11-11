@@ -1,6 +1,6 @@
 import { apiClient } from './apiClient';
 import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
-import type { CentroSalud } from '@/types';
+import type { CentroSalud, Especialidad } from '@/types';
 
 export interface ConsultorioItem {
   id: string;
@@ -213,6 +213,24 @@ export const centrosService = {
       return true;
     } catch (err: unknown) {
       throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar el consultorio físico.'), { cause: err });
+    }
+  },
+
+  async getEspecialidadesPorCentro(centroId: string | number): Promise<Especialidad[]> {
+    try {
+      const res = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.centrosSalud.especialidadesPorCentro(centroId)
+      );
+      return Array.isArray(res.data)
+        ? res.data.map((d) => ({
+            id: String(d.id),
+            nombre: String(d.nombre ?? ''),
+            descripcion: String(d.descripcion ?? ''),
+            categoria: typeof d.categoria === 'string' ? d.categoria : undefined,
+          }))
+        : [];
+    } catch {
+      return [];
     }
   },
 };

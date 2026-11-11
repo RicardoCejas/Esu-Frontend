@@ -142,6 +142,9 @@ export interface DisponibilidadProfesional {
   intervaloMinutos: number; // 15, 20, 30
   centroSaludId: string;
   centroSaludNombre?: string;
+  consultorioId?: string;
+  consultorioNumero?: string;
+  planta?: string;
   activo?: boolean;
 }
 
@@ -152,6 +155,7 @@ export interface DisponibilidadRequest {
   horaFin: string;
   intervaloMinutos: number;
   centroSaludId: string;
+  consultorioId?: string;
 }
 
 // HU-FE-62: Bloqueo de Agenda Médica

@@ -2,14 +2,17 @@ import React, { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Link2, Save, Stethoscope, Trash2 } from 'lucide-react';
 import { ModalConfirmacion } from '@/components/ui/ModalConfirmacion';
+import { useAuth } from '@/context/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useEspecialidadDetalle } from './hooks/useEspecialidadDetalle';
 import type { Profesional } from '@/types';
 
 export const EspecialidadDetallePage: React.FC = () => {
+  const { user } = useAuth();
   const { can, canAny } = usePermissions();
+  const isAdmin = user?.rol === 'ADMIN';
   const canAssignMedicos = can('MEDICOS_ASIGNAR_CONSULTORIO');
-  const canManageEsp = canAny(['CONSULTORIOS_ADMINISTRAR', 'MEDICOS_ASIGNAR_CONSULTORIO']);
+  const canManageEsp = isAdmin && canAny(['CONSULTORIOS_ADMINISTRAR', 'MEDICOS_ASIGNAR_CONSULTORIO']);
   const { id } = useParams<{ id: string }>();
   const {
     centroId,
@@ -114,18 +117,22 @@ export const EspecialidadDetallePage: React.FC = () => {
 
           <div>
             <label htmlFor="esp-nombre" className="block text-xs font-semibold text-foreground mb-1.5">
-              Nombre de Especialidad <span className="text-rose-700">*</span>
+              Nombre de Especialidad {canManageEsp && <span className="text-rose-700">*</span>}
             </label>
-            <input
-              id="esp-nombre"
-              type="text"
-              required
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              aria-invalid={Boolean(nombreError)}
-              aria-describedby={nombreError ? 'esp-nombre-error' : undefined}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
-            />
+            {canManageEsp ? (
+              <input
+                id="esp-nombre"
+                type="text"
+                required
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                aria-invalid={Boolean(nombreError)}
+                aria-describedby={nombreError ? 'esp-nombre-error' : undefined}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+              />
+            ) : (
+              <p className="text-sm font-semibold text-foreground py-1">{nombre}</p>
+            )}
             {nombreError && (
               <p id="esp-nombre-error" className="mt-1 text-xs font-medium text-rose-700">
                 {nombreError}
@@ -137,15 +144,27 @@ export const EspecialidadDetallePage: React.FC = () => {
             <label htmlFor="esp-descripcion" className="block text-xs font-semibold text-foreground mb-1.5">
               Descripción Asistencial / Alcance
             </label>
-            <textarea
-              id="esp-descripcion"
-              rows={3}
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Ej: Atención ambulatoria, seguimiento preventivo y derivación hospitalaria."
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
-            />
+            {canManageEsp ? (
+              <textarea
+                id="esp-descripcion"
+                rows={3}
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                placeholder="Ej: Atención ambulatoria, seguimiento preventivo y derivación hospitalaria."
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground py-1 leading-relaxed">
+                {descripcion || 'Sin descripción asistencial específica cargada.'}
+              </p>
+            )}
           </div>
+
+          {!canManageEsp && (
+            <p className="text-[11px] text-muted-foreground italic border-t border-border pt-2">
+              La denominación y alcance del catálogo clínico centralizado es administrada por la Dirección de Salud.
+            </p>
+          )}
         </fieldset>
 
         {canManageEsp && (

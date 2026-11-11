@@ -14,6 +14,7 @@ export const NuevoMedicoPage: React.FC = () => {
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const centroId = user?.centroSaludId ? String(user.centroSaludId) : '1';
   const centroNombre = user?.centroSaludNombre || 'Centro de Salud Cruz del Eje';
@@ -45,6 +46,9 @@ export const NuevoMedicoPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    if (name === 'password' && passwordError) {
+      setPasswordError(null);
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -63,6 +67,12 @@ export const NuevoMedicoPage: React.FC = () => {
     if (!formData.nombre.trim() || !formData.apellido.trim() || !formData.matricula.trim() || !formData.email.trim()) {
       return;
     }
+
+    if (!formData.password || formData.password.trim().length < 8) {
+      setPasswordError('La contraseña de acceso debe contener al menos 8 caracteres.');
+      return;
+    }
+    setPasswordError(null);
 
     setIsSubmitting(true);
     setSubmitError(null);
@@ -222,18 +232,26 @@ export const NuevoMedicoPage: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-700">
+              <label htmlFor="medico-password" className="text-[11px] font-bold text-slate-700">
                 Contraseña de Acceso *
               </label>
               <input
+                id="medico-password"
                 type="password"
                 required
                 name="password"
                 placeholder="Mínimo 8 caracteres"
                 value={formData.password}
                 onChange={handleChange}
+                aria-invalid={Boolean(passwordError)}
+                aria-describedby={passwordError ? 'medico-password-error' : undefined}
                 className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-600"
               />
+              {passwordError && (
+                <p id="medico-password-error" className="text-[11px] font-semibold text-rose-700">
+                  {passwordError}
+                </p>
+              )}
             </div>
           </div>
         </div>

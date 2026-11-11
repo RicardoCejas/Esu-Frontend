@@ -33,7 +33,6 @@ export const MedicoDetallePage: React.FC = () => {
   } = useMedicoDetalle(id);
 
   const formRef = useRef<HTMLFormElement>(null);
-  const [selectedCentroToLink, setSelectedCentroToLink] = useState('');
   const [confirmToggleEstado, setConfirmToggleEstado] = useState(false);
   const [centroToUnlink, setCentroToUnlink] = useState<string | null>(null);
 
@@ -82,7 +81,6 @@ export const MedicoDetallePage: React.FC = () => {
 
   const isActivo = medico.activo !== false;
   const linkedCentros = centros.filter((c) => medico.centrosSaludIds.includes(c.id));
-  const availableCentrosToLink = centros.filter((c) => !medico.centrosSaludIds.includes(c.id));
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-10 animate-in fade-in duration-200">
@@ -270,35 +268,16 @@ export const MedicoDetallePage: React.FC = () => {
             </p>
           </div>
 
-          {canEditMedico && availableCentrosToLink.length > 0 && (
-            <div className="flex items-center gap-2">
-              <select
-                aria-label="Seleccionar centro para vincular"
-                value={selectedCentroToLink}
-                onChange={(e) => setSelectedCentroToLink(e.target.value)}
-                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
-              >
-                <option value="">Vincular a otro centro...</option>
-                {availableCentrosToLink.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                disabled={!selectedCentroToLink || saving}
-                onClick={async () => {
-                  if (!selectedCentroToLink) return;
-                  const ok = await handleVincularCentro(selectedCentroToLink);
-                  if (ok) setSelectedCentroToLink('');
-                }}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-900 disabled:opacity-40 cursor-pointer"
-              >
-                <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
-                Vincular
-              </button>
-            </div>
+          {canEditMedico && activeCentroId && !medico.centrosSaludIds.includes(activeCentroId) && (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => handleVincularCentro(activeCentroId)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-sky-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-sky-800 disabled:opacity-40 cursor-pointer"
+            >
+              <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Vincular a esta Sede</span>
+            </button>
           )}
         </div>
 
@@ -329,14 +308,14 @@ export const MedicoDetallePage: React.FC = () => {
                     </p>
                   </div>
 
-                  {canEditMedico && (<button
+                  {canEditMedico && isCurrentCenter && (<button
                     type="button"
                     disabled={saving}
                     onClick={() => setCentroToUnlink(centro.id)}
                     className="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1.5 text-[11px] font-semibold text-rose-700 hover:bg-rose-50 transition cursor-pointer shrink-0"
                   >
                     <Unlink className="h-3 w-3" aria-hidden="true" />
-                    Desvincular
+                    Desvincular de esta Sede
                   </button>)}
                 </div>
               );
@@ -346,10 +325,13 @@ export const MedicoDetallePage: React.FC = () => {
       </section>
 
       <MedicoAgendaSection
+        medicoId={medico.id}
         disponibilidades={disponibilidades}
         bloqueos={bloqueos}
         proximosTurnos={proximosTurnos}
         activeCentroId={activeCentroId}
+        onReload={loadData}
+        canEdit={canEditMedico}
       />
 
       <ModalConfirmacion
