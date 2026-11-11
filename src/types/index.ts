@@ -28,7 +28,8 @@ export const DEFAULT_PERMISSIONS_BY_ROLE: Record<string, PermissionCode[]> = {
   RECEPCIONISTA: [
     'TURNOS_VER', 'TURNOS_CREAR', 'TURNOS_CANCELAR', 'TURNOS_REAGENDAR', 'SOBRETURNOS_CREAR',
     'SALA_ESPERA_GESTIONAR', 'PACIENTES_VER', 'PACIENTES_REGISTRAR', 'CONSULTORIOS_VER',
-    'MEDICOS_VER', 'MEDICOS_ASIGNAR_CONSULTORIO',
+    'CONSULTORIOS_ADMINISTRAR', 'MEDICOS_VER', 'MEDICOS_ASIGNAR_CONSULTORIO',
+    'REPORTES_VER', 'USUARIOS_ADMINISTRAR',
   ],
   MEDICO: ['TURNOS_VER', 'PACIENTES_VER', 'CONSULTORIOS_VER', 'MEDICOS_VER'],
   PROFESIONAL: ['TURNOS_VER', 'PACIENTES_VER', 'CONSULTORIOS_VER', 'MEDICOS_VER'],
@@ -79,9 +80,12 @@ export interface CentroSalud {
   ciudad: string;
   horarioAtencion: string;
   disponibleGuardia: boolean;
+  latitud?: number;
+  longitud?: number;
   activo?: boolean;
   permiteConsultas?: boolean;
   permiteEstudios?: boolean;
+  cantidadPlantas?: number;
   estudiosDisponibles?: string[];
 }
 
@@ -97,6 +101,8 @@ export interface Profesional {
   nombre: string;
   apellido: string;
   matricula: string;
+  telefono?: string;
+  activo?: boolean;
   especialidadId: string;
   especialidadNombre: string;
   centrosSaludIds: string[];

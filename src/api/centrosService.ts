@@ -11,6 +11,13 @@ export interface ConsultorioItem {
   activo: boolean;
 }
 
+export interface ConsultorioUpdateInput {
+  numero: string;
+  planta: string;
+  especialidadAsignada?: string;
+  activo?: boolean;
+}
+
 interface BackendCentroSaludDto {
   id: number | string;
   nombre: string;
@@ -20,9 +27,12 @@ interface BackendCentroSaludDto {
   ciudad?: string;
   horarioAtencion?: string;
   disponibleGuardia?: boolean;
+  latitud?: number | null;
+  longitud?: number | null;
   activo?: boolean;
   permiteConsultas?: boolean;
   permiteEstudios?: boolean;
+  cantidadPlantas?: number;
   estudiosDisponibles?: string[];
 }
 
@@ -45,9 +55,12 @@ function normalizeCentro(dto: BackendCentroSaludDto): CentroSalud {
     ciudad: dto.ciudad || 'Cruz del Eje, Córdoba',
     horarioAtencion: dto.horarioAtencion || '08:00 a 20:00 hs',
     disponibleGuardia: Boolean(dto.disponibleGuardia),
+    latitud: typeof dto.latitud === 'number' ? dto.latitud : undefined,
+    longitud: typeof dto.longitud === 'number' ? dto.longitud : undefined,
     activo: dto.activo !== false,
     permiteConsultas: dto.permiteConsultas !== false,
     permiteEstudios: Boolean(dto.permiteEstudios),
+    cantidadPlantas: typeof dto.cantidadPlantas === 'number' && dto.cantidadPlantas >= 1 ? dto.cantidadPlantas : 1,
     estudiosDisponibles: Array.isArray(dto.estudiosDisponibles) ? dto.estudiosDisponibles : [],
   };
 }
@@ -119,16 +132,23 @@ export const centrosService = {
 
   async getConsultorios(centroId?: string): Promise<ConsultorioItem[]> {
     try {
-      const params: Record<string, string> = {};
-      if (centroId && /^\d+$/.test(centroId)) {
-        params.centroSaludId = centroId;
-      }
-      const res = await apiClient.get<BackendConsultorioDto[]>(API_ENDPOINTS.centrosSalud.consultorios, {
-        params,
-      });
+      const hasNumericCentro = Boolean(centroId && /^\d+$/.test(centroId));
+      const url = hasNumericCentro
+        ? API_ENDPOINTS.centrosSalud.consultoriosPorCentro(centroId!)
+        : API_ENDPOINTS.centrosSalud.consultorios;
+      const res = await apiClient.get<BackendConsultorioDto[]>(url);
       return Array.isArray(res.data) ? res.data.map(normalizeConsultorio) : [];
     } catch (err: unknown) {
       throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los consultorios físicos.'), { cause: err });
+    }
+  },
+
+  async getConsultorioById(id: string): Promise<ConsultorioItem> {
+    try {
+      const res = await apiClient.get<BackendConsultorioDto>(API_ENDPOINTS.centrosSalud.consultorioById(id));
+      return normalizeConsultorio(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el consultorio físico.'), { cause: err });
     }
   },
 
@@ -154,6 +174,36 @@ export const centrosService = {
       return normalizeConsultorio(res.data);
     } catch (err: unknown) {
       throw new Error(extractApiErrorMessage(err, 'No se pudo registrar el consultorio físico.'), { cause: err });
+    }
+  },
+
+  async updateConsultorio(id: string, data: ConsultorioUpdateInput): Promise<ConsultorioItem> {
+    try {
+      const payload = {
+        numero: data.numero,
+        planta: data.planta,
+        especialidadAsignada: data.especialidadAsignada,
+        activo: data.activo,
+      };
+      const res = await apiClient.put<BackendConsultorioDto>(
+        API_ENDPOINTS.centrosSalud.consultorioById(id),
+        payload
+      );
+      return normalizeConsultorio(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar el consultorio físico.'), { cause: err });
+    }
+  },
+
+  async cambiarEstadoConsultorio(id: string, activo: boolean): Promise<ConsultorioItem> {
+    try {
+      const res = await apiClient.patch<BackendConsultorioDto>(
+        API_ENDPOINTS.centrosSalud.consultorioEstado(id),
+        { activo }
+      );
+      return normalizeConsultorio(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo cambiar el estado del consultorio físico.'), { cause: err });
     }
   },
 

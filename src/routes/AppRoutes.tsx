@@ -39,6 +39,20 @@ const PantallaTurnosTVPage = React.lazy(() => import('@/features/recepcion/Panta
 const MedicosCentroPage = React.lazy(() => import('@/features/recepcion/MedicosCentroPage').then(m => ({ default: m.MedicosCentroPage })));
 const NuevoMedicoPage = React.lazy(() => import('@/features/recepcion/NuevoMedicoPage').then(m => ({ default: m.NuevoMedicoPage })));
 const EspecialidadesCentroPage = React.lazy(() => import('@/features/recepcion/EspecialidadesCentroPage').then(m => ({ default: m.EspecialidadesCentroPage })));
+const MetricasCentroPage = React.lazy(() => import('@/features/recepcion/MetricasCentroPage').then(m => ({ default: m.MetricasCentroPage })));
+const MiSedePage = React.lazy(() => import('@/features/recepcion/MiSedePage').then(m => ({ default: m.MiSedePage })));
+const PersonalCentroPage = React.lazy(() => import('@/features/recepcion/PersonalCentroPage').then(m => ({ default: m.PersonalCentroPage })));
+const EditarSedePage = React.lazy(() => import('@/features/recepcion/EditarSedePage').then(m => ({ default: m.EditarSedePage })));
+const NuevoConsultorioPage = React.lazy(() => import('@/features/recepcion/NuevoConsultorioPage').then(m => ({ default: m.NuevoConsultorioPage })));
+const EditarConsultorioPage = React.lazy(() => import('@/features/recepcion/EditarConsultorioPage').then(m => ({ default: m.EditarConsultorioPage })));
+const MedicoDetallePage = React.lazy(() => import('@/features/recepcion/MedicoDetallePage').then(m => ({ default: m.MedicoDetallePage })));
+const EspecialidadDetallePage = React.lazy(() => import('@/features/recepcion/EspecialidadDetallePage').then(m => ({ default: m.EspecialidadDetallePage })));
+const NuevoPersonalCentroPage = React.lazy(() => import('@/features/recepcion/NuevoPersonalCentroPage').then(m => ({ default: m.NuevoPersonalCentroPage })));
+const PersonalPermisosPage = React.lazy(() => import('@/features/recepcion/PersonalPermisosPage').then(m => ({ default: m.PersonalPermisosPage })));
+const PacienteDetallePage = React.lazy(() => import('@/features/recepcion/PacienteDetallePage').then(m => ({ default: m.PacienteDetallePage })));
+const NuevoTurnoMostradorPage = React.lazy(() => import('@/features/recepcion/NuevoTurnoMostradorPage').then(m => ({ default: m.NuevoTurnoMostradorPage })));
+const NuevoSobreturnoPage = React.lazy(() => import('@/features/recepcion/NuevoSobreturnoPage').then(m => ({ default: m.NuevoSobreturnoPage })));
+const ReagendarTurnoPage = React.lazy(() => import('@/features/recepcion/ReagendarTurnoPage').then(m => ({ default: m.ReagendarTurnoPage })));
 
 // Vistas Admin
 const AdminDashboardPage = React.lazy(() => import('@/features/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
@@ -121,17 +135,37 @@ export const AppRoutes: React.FC = () => {
                 <Route path="medico/atencion" element={<AtencionConsultaPage />} />
               </Route>
 
-              {/* Módulo Recepción y Sala de Espera (HU-53, HU-54, HU-55, HU-99) */}
-              <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA', 'MEDICO', 'ADMIN']} />}>
+              {/* Módulo Compartido Sala de Espera y Padrón (Recepción y Médico) */}
+              <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA', 'MEDICO']} />}>
                 <Route element={<RequireCentroSaludGuard />}>
-                  <Route path="recepcion" element={<RecepcionPage />} />
                   <Route path="recepcion/kanban" element={<SalasEsperaKanbanPage />} />
                   <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
+                  <Route path="recepcion/pacientes/:id" element={<PacienteDetallePage />} />
+                </Route>
+              </Route>
+
+              {/* Módulo Exclusivo Centro de Salud / Recepción (HU-53, HU-54, HU-55, HU-99) */}
+              <Route element={<RoleGuard allowedRoles={['RECEPCIONISTA']} />}>
+                <Route element={<RequireCentroSaludGuard />}>
+                  <Route path="recepcion" element={<RecepcionPage />} />
                   <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
                   <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />
                   <Route path="recepcion/medicos" element={<MedicosCentroPage />} />
                   <Route path="recepcion/medicos/nuevo" element={<NuevoMedicoPage />} />
                   <Route path="recepcion/especialidades" element={<EspecialidadesCentroPage />} />
+                  <Route path="recepcion/metricas" element={<MetricasCentroPage />} />
+                  <Route path="recepcion/sede" element={<MiSedePage />} />
+                  <Route path="recepcion/turnos/nuevo" element={<NuevoTurnoMostradorPage />} />
+                  <Route path="recepcion/turnos/:id/reagendar" element={<ReagendarTurnoPage />} />
+                  <Route path="recepcion/kanban/sobreturno" element={<NuevoSobreturnoPage />} />
+                  <Route path="recepcion/medicos/:id" element={<MedicoDetallePage />} />
+                  <Route path="recepcion/especialidades/:id" element={<EspecialidadDetallePage />} />
+                  <Route path="recepcion/sede/editar" element={<EditarSedePage />} />
+                  <Route path="recepcion/sede/consultorios/nuevo" element={<NuevoConsultorioPage />} />
+            <Route path="recepcion/sede/consultorios/:id/editar" element={<EditarConsultorioPage />} />
+                  <Route path="recepcion/personal" element={<PersonalCentroPage />} />
+                  <Route path="recepcion/personal/nuevo" element={<NuevoPersonalCentroPage />} />
+                  <Route path="recepcion/personal/:id/permisos" element={<PersonalPermisosPage />} />
                 </Route>
               </Route>
 

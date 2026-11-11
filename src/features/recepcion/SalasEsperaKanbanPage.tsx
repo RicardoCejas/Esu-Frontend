@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useSalasEsperaKanban } from './hooks/useSalasEsperaKanban';
 import { usePermissions } from '@/hooks/usePermissions';
 import { KanbanColumn } from './components/KanbanColumn';
-import { ModalCrearSobreturno } from '@/features/medico/components/ModalCrearSobreturno';
 import { soundNotification } from '@/lib/soundNotification';
 import { Volume2, MonitorPlay, Flame, Plus } from 'lucide-react';
 
@@ -12,13 +11,12 @@ export const SalasEsperaKanbanPage: React.FC = () => {
   const { user } = useAuth();
   const kanban = useSalasEsperaKanban(user?.centroSaludId);
   const { can } = usePermissions();
-  const [isModalSobreturnoOpen, setIsModalSobreturnoOpen] = useState(false);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Tablero de Salas de Espera
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -36,10 +34,12 @@ export const SalasEsperaKanbanPage: React.FC = () => {
               onChange={(e) => kanban.setFiltroPlanta(e.target.value)}
               className="bg-transparent text-xs font-semibold focus:outline-none text-foreground cursor-pointer"
             >
-              <option value="TODAS">Todas las Plantas</option>
-              <option value="Planta Baja">Planta Baja</option>
-              <option value="Piso 1">Piso 1</option>
-              <option value="Piso 2">Piso 2</option>
+              <option value="TODOS">Todas las Plantas</option>
+              {kanban.floorOptions.map((floor) => (
+                <option key={floor} value={floor}>
+                  {floor}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -52,18 +52,17 @@ export const SalasEsperaKanbanPage: React.FC = () => {
           >
             <Flame className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
             <span>Sobreturnos:</span>
-            <span className="font-mono text-xs font-black">{kanban.countSobreturnos}/3</span>
+            <span className="tabular-nums text-xs font-black">{kanban.countSobreturnos}/3</span>
           </div>
 
           {can('SOBRETURNOS_CREAR') && (
-            <button
-              type="button"
-              onClick={() => setIsModalSobreturnoOpen(true)}
-              className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-2 text-xs shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 cursor-pointer"
+            <Link
+              to="/dashboard/recepcion/kanban/sobreturno"
+              className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-bold px-3 py-2 text-xs shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-600"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              <span>+ Sobreturno</span>
-            </button>
+              <span>Sobreturno</span>
+            </Link>
           )}
 
           <button
@@ -119,18 +118,6 @@ export const SalasEsperaKanbanPage: React.FC = () => {
           turnos={kanban.atendidos}
         />
       </div>
-
-      <ModalCrearSobreturno
-        isOpen={isModalSobreturnoOpen}
-        onClose={() => setIsModalSobreturnoOpen(false)}
-        profesionalId={kanban.turnos[0]?.profesionalId || user?.profesionalId || '1'}
-        centroSaludId={user?.centroSaludId}
-        sobreturnosHoyCount={kanban.countSobreturnos}
-        onSobreturnoCreado={() => {
-          setIsModalSobreturnoOpen(false);
-          kanban.recargar();
-        }}
-      />
     </div>
   );
 };

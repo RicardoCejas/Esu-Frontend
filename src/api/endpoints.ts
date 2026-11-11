@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
     byId: (id: string | number) => `/centros-salud/${id}`,
     consultorios: '/centros-salud/consultorios',
     consultorioById: (id: string | number) => `/centros-salud/consultorios/${id}`,
+    consultorioEstado: (id: string | number) => `/centros-salud/consultorios/${id}/estado`,
     consultoriosPorCentro: (centroId: string | number) => `/centros-salud/${centroId}/consultorios`,
   },
   especialidades: {

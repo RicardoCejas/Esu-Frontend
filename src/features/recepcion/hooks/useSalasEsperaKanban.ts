@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { turnosService } from '@/api/turnosService';
 import { centrosService } from '@/api/centrosService';
 import { audioSpeechService } from '@/lib/audioSpeechService';
+import { buildFloorOptions } from '@/lib/centroUtils';
 import type { Turno, CentroSalud } from '@/types';
 
 export function useSalasEsperaKanban(centroId?: string | number) {
@@ -40,7 +41,10 @@ export function useSalasEsperaKanban(centroId?: string | number) {
 
   const turnosFiltrados = useMemo(() => {
     return turnos.filter((t) => {
-      const matchPlanta = filtroPlanta === 'TODOS' || t.planta === filtroPlanta;
+      const matchPlanta =
+        filtroPlanta === 'TODOS' ||
+        filtroPlanta === 'TODAS' ||
+        (t.planta ?? '').toLowerCase() === filtroPlanta.toLowerCase();
       return matchPlanta;
     });
   }, [turnos, filtroPlanta]);
@@ -109,9 +113,20 @@ export function useSalasEsperaKanban(centroId?: string | number) {
     setTurnos((prev) => [nuevo, ...prev]);
   };
 
+  const activeCentro = useMemo(
+    () => (centroId ? centros.find((c) => String(c.id) === String(centroId)) : centros[0]),
+    [centroId, centros]
+  );
+
+  const floorOptions = useMemo(
+    () => buildFloorOptions(activeCentro?.cantidadPlantas),
+    [activeCentro?.cantidadPlantas]
+  );
+
   return {
     turnos,
     centros,
+    floorOptions,
     filtroPlanta,
     setFiltroPlanta,
     loading,
