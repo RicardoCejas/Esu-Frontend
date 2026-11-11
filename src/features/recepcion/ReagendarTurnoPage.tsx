@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, Calendar, Clock, RotateCcw } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Calendar, Clock, RotateCcw, FileText } from 'lucide-react';
 import { useReagendarTurno } from './hooks/useReagendarTurno';
 
 const DAY_LABELS: Record<string, string> = {
@@ -20,21 +20,33 @@ export const ReagendarTurnoPage: React.FC = () => {
     turno,
     disponibilidades,
     bloqueos,
+    bloqueoActivo,
+    isBlockedState,
     nuevaFecha,
     setNuevaFecha,
     nuevaHora,
     setNuevaHora,
     horaManual,
     setHoraManual,
+    motivo,
+    setMotivo,
     slotsDisponibles,
     loadingSlots,
     loading,
     saving,
     loadError,
     submitError,
+    returnTo,
     loadTurno,
     handleConfirm,
   } = useReagendarTurno(id);
+
+  const backUrl =
+    returnTo === 'paciente' && turno?.pacienteId
+      ? `/dashboard/recepcion/pacientes/${turno.pacienteId}`
+      : '/dashboard/recepcion/turnos';
+
+  const backLabel = returnTo === 'paciente' ? 'Volver a Ficha del Paciente' : 'Volver a Gestión de Turnos';
 
   if (loading) {
     return (
@@ -48,11 +60,11 @@ export const ReagendarTurnoPage: React.FC = () => {
     return (
       <div className="mx-auto max-w-3xl space-y-4">
         <Link
-          to="/dashboard/recepcion/turnos"
+          to={backUrl}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 hover:underline"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-          Volver a Gestión de Turnos
+          {backLabel}
         </Link>
         <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 p-6 text-sm text-rose-900 space-y-3">
           <p className="font-semibold">{loadError || 'No se pudo cargar el turno.'}</p>
@@ -68,8 +80,6 @@ export const ReagendarTurnoPage: React.FC = () => {
     );
   }
 
-  const blockedState = turno.estado === 'CANCELADO' || turno.estado === 'COMPLETADO';
-
   const onFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     await handleConfirm();
@@ -79,11 +89,11 @@ export const ReagendarTurnoPage: React.FC = () => {
     <div className="mx-auto max-w-4xl space-y-6 pb-10 animate-in fade-in duration-200">
       <div>
         <Link
-          to="/dashboard/recepcion/turnos"
+          to={backUrl}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 hover:text-sky-800 hover:underline rounded focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-          Volver a Gestión de Turnos
+          {backLabel}
         </Link>
         <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground">
           Reagendar Turno Médico
@@ -122,9 +132,21 @@ export const ReagendarTurnoPage: React.FC = () => {
         </div>
       </section>
 
-      {blockedState && (
-        <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950">
-          Este turno se encuentra en estado <strong>{turno.estado}</strong> y no puede ser reagendado.
+      {isBlockedState && (
+        <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-900">
+          Este turno se encuentra en estado <strong>{turno.estado}</strong> y no admite reprogramación administrativa.
+        </div>
+      )}
+
+      {bloqueoActivo && (
+        <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-950 flex items-start gap-2.5">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700 mt-0.5" />
+          <div>
+            <span className="font-bold block">Alerta: Profesional con Bloqueo de Agenda en esta Fecha</span>
+            <span>
+              El médico posee un bloqueo registrado ({bloqueoActivo.motivo}) desde el {bloqueoActivo.fechaInicio} hasta el {bloqueoActivo.fechaFin}.
+            </span>
+          </div>
         </div>
       )}
 
@@ -152,7 +174,7 @@ export const ReagendarTurnoPage: React.FC = () => {
               id="rt-fecha"
               type="date"
               min={hoy}
-              disabled={blockedState || saving}
+              disabled={isBlockedState || saving}
               value={nuevaFecha}
               onChange={(e) => setNuevaFecha(e.target.value)}
               className="w-full max-w-xs rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
@@ -184,7 +206,7 @@ export const ReagendarTurnoPage: React.FC = () => {
                         type="radio"
                         name="rt-slot"
                         value={slot}
-                        disabled={blockedState || saving}
+                        disabled={isBlockedState || saving}
                         checked={selected}
                         onChange={() => {
                           setNuevaHora(slot);
@@ -205,7 +227,7 @@ export const ReagendarTurnoPage: React.FC = () => {
                 <input
                   id="rt-hora-manual"
                   type="time"
-                  disabled={blockedState || saving}
+                  disabled={isBlockedState || saving}
                   value={horaManual}
                   onChange={(e) => setHoraManual(e.target.value)}
                   aria-label="Horario manual de reagendamiento"
@@ -215,16 +237,32 @@ export const ReagendarTurnoPage: React.FC = () => {
             )}
           </div>
 
+          <div className="space-y-1.5 pt-2 border-t border-border">
+            <label htmlFor="rt-motivo" className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+              <FileText className="h-3.5 w-3.5 text-sky-700" aria-hidden="true" />
+              Motivo u Observación de la Reprogramación (Opcional)
+            </label>
+            <input
+              id="rt-motivo"
+              type="text"
+              placeholder="Ej: Solicitado por el paciente por imprevisto laboral"
+              value={motivo}
+              disabled={isBlockedState || saving}
+              onChange={(e) => setMotivo(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
           <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
             <Link
-              to="/dashboard/recepcion/turnos"
+              to={backUrl}
               className="rounded-lg border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition"
             >
               Cancelar
             </Link>
             <button
               type="submit"
-              disabled={blockedState || saving}
+              disabled={isBlockedState || saving}
               className="inline-flex items-center gap-2 rounded-lg bg-sky-700 px-5 py-2 text-xs font-semibold text-white hover:bg-sky-800 disabled:opacity-50 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
             >
               <RotateCcw className="h-4 w-4" aria-hidden="true" />
