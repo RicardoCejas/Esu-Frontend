@@ -17,7 +17,6 @@ import {
   Pill,
   FileCheck,
   User,
-  MapPin,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { useProximoTurno } from '@/hooks/useProximoTurno';
@@ -56,7 +55,6 @@ const navItems: NavItem[] = [
   { title: 'Sedes y Consultorios', path: '/dashboard/admin/sedes', icon: Building2, roles: ['ADMIN'] },
   { title: 'Cuentas de Centros de Salud', path: '/dashboard/admin/usuarios', icon: ShieldCheck, roles: ['ADMIN'] },
   { title: 'Centros y Especialidades', path: '/dashboard/admin/especialidades', icon: Building2, roles: ['ADMIN'] },
-  { title: 'Mapa y Pines Cruz del Eje', path: '/dashboard/admin/mapa', icon: MapPin, roles: ['ADMIN'] },
 ];
 
 const INDEX_PATHS = ['/dashboard/paciente', '/dashboard/medico', '/dashboard/recepcion', '/dashboard/admin/sedes'];
