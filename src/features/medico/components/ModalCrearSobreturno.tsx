@@ -14,7 +14,7 @@ import {
 } from '@/features/recepcion/hooks/useSobreturnoRules';
 import { MOTIVOS_SOBRETURNO } from '@/lib/sobreturnoRules';
 
-export interface ModalCrearSobreturnoProps extends UseSobreturnoRulesProps {}
+export type ModalCrearSobreturnoProps = UseSobreturnoRulesProps;
 
 export const ModalCrearSobreturno: React.FC<ModalCrearSobreturnoProps> = (props) => {
   const {
