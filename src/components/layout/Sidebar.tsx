@@ -45,8 +45,8 @@ const navItems: NavItem[] = [
   { title: 'Atención Clínica', path: '/dashboard/medico/atencion', icon: Stethoscope, roles: ['MEDICO'] },
 
   // Rutas Centro de Salud / Recepción
-  { title: 'Recepción (Daily Board)', path: '/dashboard/recepcion', icon: Clock, roles: ['RECEPCIONISTA', 'ADMIN'] },
-  { title: 'Tablero Kanban Espera', path: '/dashboard/recepcion/kanban', icon: Layers, roles: ['RECEPCIONISTA', 'MEDICO', 'ADMIN'] },
+  { title: 'Recepción (Daily Board)', path: '/dashboard/recepcion', icon: Clock, roles: ['RECEPCIONISTA'] },
+  { title: 'Tablero Kanban Espera', path: '/dashboard/recepcion/kanban', icon: Layers, roles: ['RECEPCIONISTA', 'MEDICO'] },
   { title: 'Padrón de Pacientes', path: '/dashboard/recepcion/pacientes', icon: Users, roles: ['RECEPCIONISTA', 'MEDICO', 'ADMIN'] },
   { title: 'Gestión de Turnos', path: '/dashboard/recepcion/turnos', icon: ListOrdered, roles: ['RECEPCIONISTA', 'ADMIN'] },
   { title: 'Médicos del Centro', path: '/dashboard/recepcion/medicos', icon: Stethoscope, roles: ['RECEPCIONISTA', 'ADMIN'] },
