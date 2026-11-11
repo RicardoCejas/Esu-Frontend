@@ -1,53 +1,126 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { turnosService } from '@/api/turnosService';
-import { centrosService } from '@/api/centrosService';
+import { centrosService, type ConsultorioItem } from '@/api/centrosService';
+import { profesionalesService } from '@/api/profesionalesService';
 import { audioSpeechService } from '@/lib/audioSpeechService';
 import { buildFloorOptions } from '@/lib/centroUtils';
-import type { Turno, CentroSalud } from '@/types';
+import type { Turno, CentroSalud, Profesional } from '@/types';
 
 export function useSalasEsperaKanban(centroId?: string | number) {
   const [turnos, setTurnos] = useState<Turno[]>([]);
-  const [centros, setCentros] = useState<CentroSalud[]>([]);
-  const [filtroPlanta, setFiltroPlanta] = useState<string>('TODOS');
+  const [centro, setCentro] = useState<CentroSalud | null>(null);
+  const [consultorios, setConsultorios] = useState<ConsultorioItem[]>([]);
+  const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [loading, setLoading] = useState(true);
-  const [consultorioSeleccionado, setConsultorioSeleccionado] = useState<string>('102');
+  const [error, setError] = useState<string | null>(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
-  const cargarDatos = useCallback(async () => {
-    setLoading(true);
-    try {
-      const activeCentroId = centroId ? String(centroId) : undefined;
-      const turnosPromise = activeCentroId
-        ? turnosService.getTurnosKanbanCentro(activeCentroId)
-        : turnosService.getAll();
+  // Filtros
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroPlanta, setFiltroPlanta] = useState<string>('TODOS');
+  const [filtroProfesional, setFiltroProfesional] = useState<string>('TODOS');
+  const [filtroConsultorio, setFiltroConsultorio] = useState<string>('TODOS');
+  const [consultorioSeleccionado, setConsultorioSeleccionado] = useState<string>('');
+  const [alerta, setAlerta] = useState<string | null>(null);
 
-      const [turnosData, centrosData] = await Promise.all([
-        turnosPromise.catch(() => [] as Turno[]),
-        centrosService.getAll().catch(() => [] as CentroSalud[]),
-      ]);
+  const alertaTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-      setTurnos(turnosData ?? []);
-      setCentros(centrosData ?? []);
-    } catch (err: unknown) {
-      console.error('Error al cargar datos del tablero Kanban:', err);
-      setTurnos([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [centroId]);
+  const mostrarAlerta = useCallback((mensaje: string) => {
+    if (alertaTimeoutRef.current) clearTimeout(alertaTimeoutRef.current);
+    setAlerta(mensaje);
+    alertaTimeoutRef.current = setTimeout(() => {
+      setAlerta(null);
+      alertaTimeoutRef.current = null;
+    }, 4000);
+  }, []);
 
   useEffect(() => {
-    cargarDatos();
-  }, [cargarDatos]);
+    return () => {
+      if (alertaTimeoutRef.current) clearTimeout(alertaTimeoutRef.current);
+    };
+  }, []);
+
+  const recargar = useCallback(() => {
+    setReloadTrigger((prev) => prev + 1);
+  }, []);
+
+  useEffect(() => {
+    let isSubscribed = true;
+    const cargarDatos = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const activeCentroId = centroId ? String(centroId) : undefined;
+        const [turnosData, centroData, consData, profsData] = await Promise.all([
+          activeCentroId
+            ? turnosService.getTurnosKanbanCentro(activeCentroId).catch(() => [] as Turno[])
+            : turnosService.getAll().catch(() => [] as Turno[]),
+          activeCentroId
+            ? centrosService.getById(activeCentroId).catch(() => undefined)
+            : Promise.resolve(undefined),
+          activeCentroId
+            ? centrosService.getConsultorios(activeCentroId).catch(() => [] as ConsultorioItem[])
+            : Promise.resolve([] as ConsultorioItem[]),
+          activeCentroId
+            ? profesionalesService.getByCentro(activeCentroId).catch(() => [] as Profesional[])
+            : profesionalesService.getAll().catch(() => [] as Profesional[]),
+        ]);
+
+        if (!isSubscribed) return;
+        setTurnos(turnosData ?? []);
+        setCentro(centroData ?? null);
+        setConsultorios(consData ?? []);
+        setProfesionales(profsData ?? []);
+
+        if (consData && consData.length > 0) {
+          setConsultorioSeleccionado((prev) => prev || consData[0]?.numero || '');
+        }
+      } catch (err: unknown) {
+        if (!isSubscribed) return;
+        const msg = err instanceof Error ? err.message : 'Error al sincronizar tablero Kanban';
+        setError(msg);
+      } finally {
+        if (isSubscribed) setLoading(false);
+      }
+    };
+
+    void cargarDatos();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [centroId, reloadTrigger]);
+
+  const floorOptions = useMemo(() => {
+    const fromConfig = buildFloorOptions(centro?.cantidadPlantas);
+    const set = new Set<string>(fromConfig);
+    consultorios.forEach((c) => {
+      if (c.planta) set.add(c.planta);
+    });
+    return Array.from(set);
+  }, [centro?.cantidadPlantas, consultorios]);
 
   const turnosFiltrados = useMemo(() => {
+    const q = busqueda.toLowerCase().trim();
     return turnos.filter((t) => {
       const matchPlanta =
         filtroPlanta === 'TODOS' ||
         filtroPlanta === 'TODAS' ||
         (t.planta ?? '').toLowerCase() === filtroPlanta.toLowerCase();
-      return matchPlanta;
+
+      const matchProf = filtroProfesional === 'TODOS' || String(t.profesionalId) === filtroProfesional;
+      const matchCons = filtroConsultorio === 'TODOS' || t.consultorioNumero === filtroConsultorio;
+
+      const matchBusqueda =
+        !q ||
+        (t.pacienteNombre ?? '').toLowerCase().includes(q) ||
+        (t.pacienteDni ?? '').toLowerCase().includes(q) ||
+        (t.profesionalNombre ?? '').toLowerCase().includes(q) ||
+        (t.consultorioNumero ?? '').toLowerCase().includes(q);
+
+      return matchPlanta && matchProf && matchCons && matchBusqueda;
     });
-  }, [turnos, filtroPlanta]);
+  }, [turnos, filtroPlanta, filtroProfesional, filtroConsultorio, busqueda]);
 
   const porLlegar = useMemo(() => {
     return turnosFiltrados.filter((t) => t.estado === 'PENDIENTE' || t.estado === 'CONFIRMADO');
@@ -65,82 +138,97 @@ export function useSalasEsperaKanban(centroId?: string | number) {
     return turnosFiltrados.filter((t) => t.estado === 'COMPLETADO');
   }, [turnosFiltrados]);
 
-  const sobreturnosHoy = useMemo(() => {
-    return turnosFiltrados.filter((t) => t.esSobreturno && t.estado !== 'CANCELADO');
-  }, [turnosFiltrados]);
+  const countSobreturnos = useMemo(() => {
+    return turnos.filter((t) => {
+      if (!t.esSobreturno || t.estado === 'CANCELADO' || t.estado === 'CANCELADO_POR_MEDICO') return false;
+      if (filtroProfesional !== 'TODOS') return String(t.profesionalId) === filtroProfesional;
+      return true;
+    }).length;
+  }, [turnos, filtroProfesional]);
 
-  const handleMoverAEnEspera = async (turno: Turno) => {
+  const handleMoverAEnEspera = useCallback(async (turno: Turno) => {
     try {
       const updated = await turnosService.checkIn(turno.id);
       if (updated) {
         setTurnos((prev) => prev.map((t) => (t.id === turno.id ? updated : t)));
+        mostrarAlerta(`Check-in de ${turno.pacienteNombre} completado.`);
       }
     } catch (err: unknown) {
-      console.error('Error al mover a espera:', err);
+      const msg = err instanceof Error ? err.message : 'Error al registrar ingreso';
+      mostrarAlerta(msg);
     }
-  };
+  }, [mostrarAlerta]);
 
-  const handleLlamarAConsultorio = async (turno: Turno) => {
+  const handleLlamarAConsultorio = useCallback(async (turno: Turno, destino?: string) => {
     try {
-      audioSpeechService.anunciarLlamado(
-        turno.pacienteNombre,
-        turno.consultorioNumero || consultorioSeleccionado
-      );
-      const updated = await turnosService.llamarPaciente(
-        turno.id,
-        turno.consultorioNumero || consultorioSeleccionado
-      );
+      const destinoFinal = destino || turno.consultorioNumero || consultorioSeleccionado || '1';
+      audioSpeechService.anunciarLlamado(turno.pacienteNombre, destinoFinal);
+      const updated = await turnosService.llamarPaciente(turno.id, destinoFinal);
       if (updated) {
         setTurnos((prev) => prev.map((t) => (t.id === turno.id ? updated : t)));
+        mostrarAlerta(`Llamando a ${turno.pacienteNombre} a Consultorio ${destinoFinal}.`);
       }
     } catch (err: unknown) {
-      console.error('Error al llamar a consultorio:', err);
+      const msg = err instanceof Error ? err.message : 'Error al llamar a consultorio';
+      mostrarAlerta(msg);
     }
-  };
+  }, [consultorioSeleccionado, mostrarAlerta]);
 
-  const handleFinalizar = async (turno: Turno) => {
+  const handleFinalizar = useCallback(async (turno: Turno) => {
     try {
-      const updated = await turnosService.updateEstado(turno.id, 'COMPLETADO');
+      const updated = await turnosService.finalizarAtencion(turno.id);
       if (updated) {
         setTurnos((prev) => prev.map((t) => (t.id === turno.id ? updated : t)));
+        mostrarAlerta(`Atención finalizada para ${turno.pacienteNombre}.`);
       }
     } catch (err: unknown) {
-      console.error('Error al finalizar turno:', err);
+      const msg = err instanceof Error ? err.message : 'Error al finalizar atención';
+      mostrarAlerta(msg);
     }
-  };
+  }, [mostrarAlerta]);
 
-  const handleSobreturnoCreado = (nuevo: Turno) => {
-    setTurnos((prev) => [nuevo, ...prev]);
-  };
-
-  const activeCentro = useMemo(
-    () => (centroId ? centros.find((c) => String(c.id) === String(centroId)) : centros[0]),
-    [centroId, centros]
-  );
-
-  const floorOptions = useMemo(
-    () => buildFloorOptions(activeCentro?.cantidadPlantas),
-    [activeCentro?.cantidadPlantas]
-  );
+  const handleMarcarAusente = useCallback(async (turno: Turno) => {
+    try {
+      const updated = await turnosService.marcarAusente(turno.id);
+      if (updated) {
+        setTurnos((prev) => prev.map((t) => (t.id === turno.id ? updated : t)));
+        mostrarAlerta(`Turno marcado como Ausente para ${turno.pacienteNombre}.`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'No se pudo marcar ausente';
+      mostrarAlerta(msg);
+    }
+  }, [mostrarAlerta]);
 
   return {
     turnos,
-    centros,
+    setTurnos,
+    centro,
+    consultorios,
+    profesionales,
     floorOptions,
     filtroPlanta,
     setFiltroPlanta,
-    loading,
+    filtroProfesional,
+    setFiltroProfesional,
+    filtroConsultorio,
+    setFiltroConsultorio,
     consultorioSeleccionado,
     setConsultorioSeleccionado,
+    busqueda,
+    setBusqueda,
+    loading,
+    error,
+    alerta,
     porLlegar,
     enEspera,
     enConsulta,
     atendidos,
-    countSobreturnos: sobreturnosHoy.length,
+    countSobreturnos,
     handleMoverAEnEspera,
     handleLlamarAConsultorio,
     handleFinalizar,
-    handleSobreturnoCreado,
-    recargar: cargarDatos,
+    handleMarcarAusente,
+    recargar,
   };
 }

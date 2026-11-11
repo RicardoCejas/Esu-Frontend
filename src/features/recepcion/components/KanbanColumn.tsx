@@ -11,6 +11,8 @@ interface KanbanColumnProps {
   onMoverAEnEspera?: (t: Turno) => void;
   onLlamar?: (t: Turno) => void;
   onFinalizar?: (t: Turno) => void;
+  onMarcarAusente?: (t: Turno) => void;
+  onCancelar?: (t: Turno) => void;
 }
 
 export const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -22,6 +24,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   onMoverAEnEspera,
   onLlamar,
   onFinalizar,
+  onMarcarAusente,
+  onCancelar,
 }) => {
   const listaTurnos = Array.isArray(turnos) ? turnos : [];
 
@@ -46,6 +50,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
             onMoverAEnEspera={onMoverAEnEspera}
             onLlamar={onLlamar}
             onFinalizar={onFinalizar}
+            onMarcarAusente={onMarcarAusente}
+            onCancelar={onCancelar}
           />
         ))}
 
