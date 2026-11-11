@@ -1,71 +1,97 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { turnosService } from '@/api/turnosService';
 import { profesionalesService } from '@/api/profesionalesService';
-import { centrosService } from '@/api/centrosService';
-import { pacientesService } from '@/api/pacientesService';
+import { centrosService, type ConsultorioItem } from '@/api/centrosService';
 import { getFechaLocalHoy } from '@/lib/dateUtils';
-import type { Turno, CentroSalud, Profesional, User } from '@/types';
+import type { Turno, Profesional } from '@/types';
 
 export function useRecepcionBoard(centroId?: string | number) {
   const [turnos, setTurnos] = useState<Turno[]>([]);
-  const [centros, setCentros] = useState<CentroSalud[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
-  const [pacientes, setPacientes] = useState<User[]>([]);
+  const [consultorios, setConsultorios] = useState<ConsultorioItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
-  // Filtros reactivos
+  // Reactive filters
   const [busqueda, setBusqueda] = useState('');
   const [filtroProfesional, setFiltroProfesional] = useState<string>('TODOS');
   const [filtroConsultorio, setFiltroConsultorio] = useState<string>('TODOS');
   const [verTodosLosDias, setVerTodosLosDias] = useState(false);
   const [alerta, setAlerta] = useState<string | null>(null);
 
+  const alertaTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const mostrarAlerta = useCallback((mensaje: string) => {
+    if (alertaTimeoutRef.current) clearTimeout(alertaTimeoutRef.current);
     setAlerta(mensaje);
-    setTimeout(() => setAlerta(null), 4000);
+    alertaTimeoutRef.current = setTimeout(() => {
+      setAlerta(null);
+      alertaTimeoutRef.current = null;
+    }, 4000);
   }, []);
 
-  const cargarDatos = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const activeCentroId = centroId ? String(centroId) : undefined;
-      const turnosPromise = activeCentroId
-        ? turnosService.getTurnosHoyCentro(activeCentroId)
-        : turnosService.getAll();
+  useEffect(() => {
+    return () => {
+      if (alertaTimeoutRef.current) clearTimeout(alertaTimeoutRef.current);
+    };
+  }, []);
 
-      const profsPromise = activeCentroId
-        ? profesionalesService.getByCentro(activeCentroId).catch(() => profesionalesService.getAll())
-        : profesionalesService.getAll();
-
-      const [turnosData, centrosData, profsData, pacsData] = await Promise.all([
-        turnosPromise.catch((err) => {
-          console.error('Error al cargar turnos del centro:', err);
-          return [] as Turno[];
-        }),
-        centrosService.getAll().catch(() => [] as CentroSalud[]),
-        profsPromise.catch(() => [] as Profesional[]),
-        pacientesService.getAll().catch(() => [] as User[]),
-      ]);
-
-      setTurnos(turnosData ?? []);
-      setCentros(centrosData ?? []);
-      setProfesionales(profsData ?? []);
-      setPacientes(pacsData ?? []);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al sincronizar datos de mostrador';
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [centroId]);
+  const recargar = useCallback(() => {
+    setReloadTrigger((prev) => prev + 1);
+  }, []);
 
   useEffect(() => {
-    cargarDatos();
-  }, [cargarDatos]);
+    let isSubscribed = true;
+    const fetchBoardData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const activeCentroId = centroId ? String(centroId) : undefined;
+        const turnosPromise = activeCentroId
+          ? verTodosLosDias
+            ? turnosService.getTurnosCentro(activeCentroId)
+            : turnosService.getTurnosHoyCentro(activeCentroId)
+          : turnosService.getAll();
 
-  const handleCheckIn = async (turno: Turno) => {
+        const profsPromise = activeCentroId
+          ? profesionalesService.getByCentro(activeCentroId).catch(() => profesionalesService.getAll())
+          : profesionalesService.getAll();
+
+        const consultoriosPromise = activeCentroId
+          ? centrosService.getConsultorios(activeCentroId).catch(() => [] as ConsultorioItem[])
+          : Promise.resolve([] as ConsultorioItem[]);
+
+        const [turnosData, profsData, consData] = await Promise.all([
+          turnosPromise.catch((err) => {
+            console.error('Error al cargar turnos del centro:', err);
+            return [] as Turno[];
+          }),
+          profsPromise.catch(() => [] as Profesional[]),
+          consultoriosPromise,
+        ]);
+
+        if (!isSubscribed) return;
+        setTurnos(turnosData ?? []);
+        setProfesionales(profsData ?? []);
+        setConsultorios(consData ?? []);
+      } catch (err: unknown) {
+        if (!isSubscribed) return;
+        const msg = err instanceof Error ? err.message : 'Error al sincronizar datos de mostrador';
+        setError(msg);
+      } finally {
+        if (isSubscribed) setLoading(false);
+      }
+    };
+
+    void fetchBoardData();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [centroId, verTodosLosDias, reloadTrigger]);
+
+  const handleCheckIn = useCallback(async (turno: Turno) => {
     try {
       const updated = await turnosService.checkIn(turno.id);
       if (updated) {
@@ -76,15 +102,45 @@ export function useRecepcionBoard(centroId?: string | number) {
       const msg = err instanceof Error ? err.message : 'No se pudo realizar el check-in';
       mostrarAlerta(msg);
     }
-  };
+  }, [mostrarAlerta]);
+
+  const handleMarcarAusente = useCallback(async (turno: Turno) => {
+    try {
+      const updated = await turnosService.marcarAusente(turno.id);
+      if (updated) {
+        setTurnos((prev) => prev.map((t) => (t.id === turno.id ? updated : t)));
+        mostrarAlerta(`Turno marcado como Ausente para ${turno.pacienteNombre}.`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'No se pudo marcar como ausente';
+      mostrarAlerta(msg);
+    }
+  }, [mostrarAlerta]);
+
+  const handleLlamarPaciente = useCallback(async (turno: Turno) => {
+    try {
+      const consultorio = turno.consultorioNumero || '1';
+      const updated = await turnosService.llamarPaciente(turno.id, consultorio);
+      if (updated) {
+        setTurnos((prev) => prev.map((t) => (t.id === turno.id ? updated : t)));
+        mostrarAlerta(`Llamando a ${turno.pacienteNombre} a Consultorio ${consultorio}.`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'No se pudo llamar al paciente';
+      mostrarAlerta(msg);
+    }
+  }, [mostrarAlerta]);
 
   const consultoriosDisponibles = useMemo(() => {
     const set = new Set<string>();
+    consultorios.forEach((c) => {
+      if (c.numero) set.add(c.numero);
+    });
     turnos.forEach((t) => {
       if (t.consultorioNumero) set.add(t.consultorioNumero);
     });
     return Array.from(set).sort();
-  }, [turnos]);
+  }, [consultorios, turnos]);
 
   const hoyStr = getFechaLocalHoy();
   const turnosHoy = useMemo(() => {
@@ -135,10 +191,8 @@ export function useRecepcionBoard(centroId?: string | number) {
   return {
     turnos,
     setTurnos,
-    centros,
     profesionales,
-    pacientes,
-    setPacientes,
+    consultorios,
     loading,
     error,
     busqueda,
@@ -159,6 +213,8 @@ export function useRecepcionBoard(centroId?: string | number) {
     alerta,
     mostrarAlerta,
     handleCheckIn,
-    recargar: cargarDatos,
+    handleMarcarAusente,
+    handleLlamarPaciente,
+    recargar,
   };
 }

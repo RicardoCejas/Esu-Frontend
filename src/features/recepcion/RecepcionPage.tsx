@@ -8,7 +8,7 @@ import { RecepcionFiltersBar } from './components/RecepcionFiltersBar';
 import { RecepcionTurnosTable } from './components/RecepcionTurnosTable';
 import { ModalVerificarCoberturaCopago } from './components/ModalVerificarCoberturaCopago';
 import { ModalCancelarMostrador } from './components/ModalCancelarMostrador';
-import { UserPlus, CalendarPlus, Layers, MonitorPlay, CheckCircle2 } from 'lucide-react';
+import { UserPlus, CalendarPlus, Layers, MonitorPlay, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { Turno } from '@/types';
 
 export const RecepcionPage: React.FC = () => {
@@ -24,6 +24,25 @@ export const RecepcionPage: React.FC = () => {
         <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-semibold text-white shadow-xl animate-in slide-in-from-top-4 duration-200">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           <span>{board.alerta}</span>
+        </div>
+      )}
+
+      {board.error && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-xl border border-rose-300 bg-rose-50 p-4 text-xs font-semibold text-rose-800"
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-rose-700" aria-hidden="true" />
+            <span>{board.error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => void board.recargar()}
+            className="rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-800 cursor-pointer transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-600"
+          >
+            Reintentar
+          </button>
         </div>
       )}
 
@@ -99,6 +118,8 @@ export const RecepcionPage: React.FC = () => {
           canCheckIn={can('SALA_ESPERA_GESTIONAR')}
           canCancelar={can('TURNOS_CANCELAR')}
           onCheckIn={board.handleCheckIn}
+          onMarcarAusente={board.handleMarcarAusente}
+          onLlamar={board.handleLlamarPaciente}
           onOpenCopago={(t) => setTurnoParaCopago(t)}
           onOpenCancelar={(t) => setTurnoParaCancelar(t)}
         />
