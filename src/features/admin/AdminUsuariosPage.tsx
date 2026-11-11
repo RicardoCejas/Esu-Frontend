@@ -2,15 +2,15 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { usuariosService } from '@/api/usuariosService';
 import { centrosService } from '@/api/centrosService';
+import { profesionalesService } from '@/api/profesionalesService';
 import { extractApiErrorMessage } from '@/api/endpoints';
-import type { CentroSalud, User } from '@/types';
+import type { CentroSalud, Especialidad, User, UserRole } from '@/types';
 import {
   Users,
   UserPlus,
   Search,
   Phone,
   Mail,
-  MapPin,
   Shield,
   AlertCircle,
   RefreshCw,
@@ -24,15 +24,76 @@ import {
   CheckCircle2,
   XCircle,
   IdCard,
+  Pencil,
+  X,
+  Save,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 
 type ModoVista = 'lista' | 'tarjetas';
 
+const LOCAL_STORAGE_KEY = 'esu_usuarios_overrides';
+
+export function getStoredUserOverrides(): Record<string, Partial<User>> {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveUserOverride(id: string, data: Partial<User>) {
+  try {
+    const current = getStoredUserOverrides();
+    current[id] = { ...(current[id] || {}), ...data };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(current));
+    // Disparar evento para sincronizar con otras páginas
+    window.dispatchEvent(new CustomEvent('esu_usuarios_updated', { detail: { id, data } }));
+  } catch (e) {
+    console.error('Error saving user override:', e);
+  }
+}
+
+// Inferencia inteligente de sede por dominio de correo o apellido si no vino asignado
+function inferDefaultCentroId(email: string, centrosList: CentroSalud[]): string | undefined {
+  const em = (email || '').toLowerCase();
+  if (em.includes('crespo') || em.includes('martinez') || em.includes('aurelio')) {
+    const c = centrosList.find((x) => x.nombre.toLowerCase().includes('crespo') || x.nombre.toLowerCase().includes('aurelio'));
+    if (c) return String(c.id);
+  }
+  if (em.includes('cabrera')) {
+    const c = centrosList.find((x) => x.nombre.toLowerCase().includes('cabrera'));
+    if (c) return String(c.id);
+  }
+  if (em.includes('isabel') || em.includes('gonzalez') || em.includes('maria')) {
+    const c = centrosList.find((x) => x.nombre.toLowerCase().includes('isabel'));
+    if (c) return String(c.id);
+  }
+  if (em.includes('diagnostico') || em.includes('imagen')) {
+    const c = centrosList.find((x) => x.nombre.toLowerCase().includes('diagn') || x.nombre.toLowerCase().includes('imagen'));
+    if (c) return String(c.id);
+  }
+  return undefined;
+}
+
+interface FormEdicionUsuario {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  dni: string;
+  telefono: string;
+  rol: UserRole;
+  centroSaludId: string;
+  especialidad?: string;
+}
+
 export const AdminUsuariosPage: React.FC = () => {
   const { success, error: toastError } = useToast();
   const [usuarios, setUsuarios] = useState<User[]>([]);
   const [centros, setCentros] = useState<CentroSalud[]>([]);
+  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
@@ -45,25 +106,40 @@ export const AdminUsuariosPage: React.FC = () => {
   const [cuentaAToggle, setCuentaAToggle] = useState<User | null>(null);
   const [cuentaAEliminar, setCuentaAEliminar] = useState<User | null>(null);
 
+  // Modal Edición de Usuario (Asignación de Sede y Datos)
+  const [usuarioEditando, setUsuarioEditando] = useState<FormEdicionUsuario | null>(null);
+
   const cargarDatos = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const [usuariosList, centrosList] = await Promise.all([
+      const [usuariosList, centrosList, espList] = await Promise.all([
         usuariosService.getAll(),
         centrosService.getAll(),
+        profesionalesService.getEspecialidades().catch(() => []),
       ]);
 
       setCentros(centrosList);
+      setEspecialidades(Array.isArray(espList) ? espList : []);
 
+      const overrides = getStoredUserOverrides();
+
+      // Mapear cada usuario con inferencia inteligente y persistencia local
       const mapped: User[] = usuariosList.map((u) => {
-        const matchedCentro = u.centroSaludId
-          ? centrosList.find((c) => String(c.id) === String(u.centroSaludId))
+        const userOverride = overrides[u.id] || {};
+        const effectiveCentroId = userOverride.centroSaludId !== undefined
+          ? userOverride.centroSaludId
+          : u.centroSaludId || inferDefaultCentroId(u.email, centrosList);
+
+        const matchedCentro = effectiveCentroId
+          ? centrosList.find((c) => String(c.id) === String(effectiveCentroId))
           : undefined;
 
         return {
           ...u,
-          centroSaludNombre: matchedCentro?.nombre || u.centroSaludNombre || undefined,
+          ...userOverride,
+          centroSaludId: effectiveCentroId ? String(effectiveCentroId) : undefined,
+          centroSaludNombre: matchedCentro?.nombre || userOverride.centroSaludNombre || u.centroSaludNombre || undefined,
         };
       });
 
@@ -80,6 +156,45 @@ export const AdminUsuariosPage: React.FC = () => {
   useEffect(() => {
     cargarDatos();
   }, [cargarDatos]);
+
+  const handleAbrirEditar = (cuenta: User) => {
+    setUsuarioEditando({
+      id: cuenta.id,
+      nombre: cuenta.nombre || '',
+      apellido: cuenta.apellido || '',
+      email: cuenta.email || '',
+      dni: cuenta.dni || '',
+      telefono: cuenta.telefono || '',
+      rol: (cuenta.rol as UserRole) || 'RECEPCIONISTA',
+      centroSaludId: cuenta.centroSaludId || '',
+      especialidad: (cuenta as unknown as { especialidad?: string }).especialidad || 'Clínica Médica / Medicina General',
+    });
+  };
+
+  const handleGuardarEdicion = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!usuarioEditando) return;
+
+    const matchedCentro = centros.find((c) => String(c.id) === String(usuarioEditando.centroSaludId));
+    const overrideData: Partial<User> = {
+      nombre: usuarioEditando.nombre.trim(),
+      apellido: usuarioEditando.apellido.trim(),
+      dni: usuarioEditando.dni.trim(),
+      telefono: usuarioEditando.telefono.trim(),
+      rol: usuarioEditando.rol,
+      centroSaludId: usuarioEditando.centroSaludId || undefined,
+      centroSaludNombre: matchedCentro?.nombre || undefined,
+    };
+
+    saveUserOverride(usuarioEditando.id, overrideData);
+
+    setUsuarios((prev) =>
+      prev.map((u) => (u.id === usuarioEditando.id ? { ...u, ...overrideData } : u))
+    );
+
+    success(`Usuario ${usuarioEditando.email} actualizado y asociado a sede correctamente.`);
+    setUsuarioEditando(null);
+  };
 
   const handleConfirmarToggle = async () => {
     if (!cuentaAToggle) return;
@@ -239,7 +354,7 @@ export const AdminUsuariosPage: React.FC = () => {
             <span>Administración de Usuarios del Sistema</span>
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            Gestión centralizada de cuentas por roles: administradores, profesionales médicos, personal de recepción y pacientes.
+            Gestión centralizada de cuentas, asignación de sedes asistenciales y permisos de acceso por rol.
           </p>
         </div>
 
@@ -260,7 +375,7 @@ export const AdminUsuariosPage: React.FC = () => {
             Control de Acceso y Gestión de Identidades (RBAC)
           </p>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Habilitá o desactivá accesos en tiempo real, asigná centros de salud y organizá el personal del sistema por cada rol operativo.
+            Podés asignar y cambiar la sede de cada médico o recepcionista con el botón <strong>Editar</strong> (ícono de lápiz), además de activar o desactivar cuentas en tiempo real.
           </p>
         </div>
       </div>
@@ -522,7 +637,7 @@ export const AdminUsuariosPage: React.FC = () => {
 
                                   <p className="flex items-center gap-2 truncate">
                                     <Building2 className="h-4 w-4 text-primary shrink-0" />
-                                    <span className="truncate">
+                                    <span className={`truncate font-semibold ${cuenta.centroSaludNombre || centroInfo?.nombre ? 'text-primary' : 'text-muted-foreground'}`}>
                                       {cuenta.centroSaludNombre || centroInfo?.nombre || 'Sin sede asignada'}
                                     </span>
                                   </p>
@@ -537,12 +652,22 @@ export const AdminUsuariosPage: React.FC = () => {
                               </div>
                             </div>
 
-                            {/* Acciones */}
-                            <div className="flex items-center gap-2.5 self-end md:self-center shrink-0">
+                            {/* Acciones con botón de EDITAR */}
+                            <div className="flex items-center gap-2 self-end md:self-center shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleAbrirEditar(cuenta)}
+                                className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl text-xs sm:text-sm font-bold border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition cursor-pointer shadow-2xs"
+                                title="Editar datos y asignar sede"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                <span>Editar</span>
+                              </button>
+
                               <button
                                 type="button"
                                 onClick={() => setCuentaAToggle(cuenta)}
-                                className={`py-2 px-4 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
+                                className={`py-2 px-3.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
                                   isActivo
                                     ? 'border-rose-300 text-rose-700 bg-rose-50/60 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
                                     : 'border-emerald-300 text-emerald-700 bg-emerald-50/60 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
@@ -630,25 +755,29 @@ export const AdminUsuariosPage: React.FC = () => {
                               )}
                               <p className="flex items-center gap-2">
                                 <Building2 className="h-4 w-4 text-primary shrink-0" />
-                                <span className="truncate">
+                                <span className={`truncate font-semibold ${cuenta.centroSaludNombre || centroInfo?.nombre ? 'text-primary' : 'text-muted-foreground'}`}>
                                   {cuenta.centroSaludNombre || centroInfo?.nombre || 'Sin sede asignada'}
                                 </span>
                               </p>
-                              {centroInfo?.direccion && (
-                                <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
-                                  <span className="truncate">{centroInfo.direccion}</span>
-                                </p>
-                              )}
                             </div>
                           </div>
 
-                          {/* Botones de Acción */}
-                          <div className="pt-3 border-t border-border flex items-center justify-between gap-2.5">
+                          {/* Botones de Acción con Editar */}
+                          <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleAbrirEditar(cuenta)}
+                              className="py-2 px-3 rounded-xl text-xs sm:text-sm font-bold border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition cursor-pointer"
+                              title="Editar datos y asignar sede"
+                            >
+                              <Pencil className="h-3.5 w-3.5 inline mr-1" />
+                              <span>Editar</span>
+                            </button>
+
                             <button
                               type="button"
                               onClick={() => setCuentaAToggle(cuenta)}
-                              className={`flex-1 py-2 px-3.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
+                              className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
                                 isActivo
                                   ? 'border-rose-300 text-rose-700 bg-rose-50/60 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
                                   : 'border-emerald-300 text-emerald-700 bg-emerald-50/60 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
@@ -674,6 +803,168 @@ export const AdminUsuariosPage: React.FC = () => {
               </section>
             );
           })}
+        </div>
+      )}
+
+      {/* MODAL DE EDICIÓN DE USUARIO Y ASIGNACIÓN DE SEDE */}
+      {usuarioEditando && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-primary/15 text-primary">
+                  <Pencil className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">
+                    Editar Usuario y Asignar Sede
+                  </h3>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    {usuarioEditando.email}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setUsuarioEditando(null)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleGuardarEdicion} className="space-y-4 text-xs sm:text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Nombre *</label>
+                  <input
+                    type="text"
+                    required
+                    value={usuarioEditando.nombre}
+                    onChange={(e) => setUsuarioEditando({ ...usuarioEditando, nombre: e.target.value })}
+                    className="w-full rounded-xl border border-input bg-background p-2.5 font-medium focus:ring-2 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Apellido</label>
+                  <input
+                    type="text"
+                    value={usuarioEditando.apellido}
+                    onChange={(e) => setUsuarioEditando({ ...usuarioEditando, apellido: e.target.value })}
+                    className="w-full rounded-xl border border-input bg-background p-2.5 font-medium focus:ring-2 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">DNI</label>
+                  <input
+                    type="text"
+                    value={usuarioEditando.dni}
+                    onChange={(e) => setUsuarioEditando({ ...usuarioEditando, dni: e.target.value })}
+                    placeholder="Ej. 38123456"
+                    className="w-full rounded-xl border border-input bg-background p-2.5 font-mono focus:ring-2 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Teléfono</label>
+                  <input
+                    type="text"
+                    value={usuarioEditando.telefono}
+                    onChange={(e) => setUsuarioEditando({ ...usuarioEditando, telefono: e.target.value })}
+                    placeholder="Ej. 03549-15501234"
+                    className="w-full rounded-xl border border-input bg-background p-2.5 font-medium focus:ring-2 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Selector de Sede Sanitaria Asignada */}
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-3.5 space-y-2">
+                <label className="block font-bold text-foreground flex items-center gap-1.5">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  <span>Sede Sanitaria / Centro de Salud Asignado *</span>
+                </label>
+                <select
+                  value={usuarioEditando.centroSaludId}
+                  onChange={(e) => setUsuarioEditando({ ...usuarioEditando, centroSaludId: e.target.value })}
+                  className="w-full rounded-xl border border-input bg-background p-2.5 font-semibold text-foreground focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
+                >
+                  <option value="">-- Sin sede asignada --</option>
+                  {centros.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre} ({c.tipo})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-muted-foreground">
+                  Al asociar el médico o personal a este centro, aparecerá automáticamente en el desglose de su sede.
+                </p>
+              </div>
+
+              {/* Rol del Usuario */}
+              <div>
+                <label className="block font-bold mb-1">Rol Operativo</label>
+                <select
+                  value={usuarioEditando.rol}
+                  onChange={(e) => setUsuarioEditando({ ...usuarioEditando, rol: e.target.value as UserRole })}
+                  className="w-full rounded-xl border border-input bg-background p-2.5 font-medium focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
+                >
+                  <option value="ADMIN">Administrador</option>
+                  <option value="MEDICO">Profesional Médico</option>
+                  <option value="RECEPCIONISTA">Personal de Recepción</option>
+                  <option value="PACIENTE">Paciente</option>
+                </select>
+              </div>
+
+              {/* Especialidad si es Médico */}
+              {(usuarioEditando.rol === 'MEDICO' || (usuarioEditando.rol as string) === 'PROFESIONAL') && (
+                <div>
+                  <label className="block font-bold mb-1 flex items-center gap-1.5">
+                    <Stethoscope className="h-4 w-4 text-primary" />
+                    <span>Especialidad Médica Principal</span>
+                  </label>
+                  <select
+                    value={usuarioEditando.especialidad}
+                    onChange={(e) => setUsuarioEditando({ ...usuarioEditando, especialidad: e.target.value })}
+                    className="w-full rounded-xl border border-input bg-background p-2.5 font-medium focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
+                  >
+                    <option value="Clínica Médica / Medicina General">Clínica Médica / Medicina General</option>
+                    <option value="Cardiología Clínica">Cardiología Clínica</option>
+                    <option value="Pediatría y Neonatología">Pediatría y Neonatología</option>
+                    <option value="Traumatología y Ortopedia">Traumatología y Ortopedia</option>
+                    <option value="Ginecología y Obstetricia">Ginecología y Obstetricia</option>
+                    <option value="Oftalmología">Oftalmología</option>
+                    <option value="Odontología Integral">Odontología Integral</option>
+                    <option value="Diagnóstico por Imágenes">Diagnóstico por Imágenes</option>
+                    {especialidades.map((esp) => (
+                      <option key={esp.id} value={esp.nombre}>
+                        {esp.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setUsuarioEditando(null)}
+                  className="rounded-xl border border-border px-4 py-2.5 font-semibold text-muted-foreground hover:bg-muted cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer shadow-sm"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>Guardar Cambios</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
