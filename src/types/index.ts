@@ -254,6 +254,8 @@ export interface SobreturnoRequest {
   centroSaludId: string;
   fecha: string; // YYYY-MM-DD
   hora?: string;  // HH:mm
+  consultorioNumero?: string;
+  planta?: string;
   motivoSobreturno: string;
 }
 

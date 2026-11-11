@@ -447,6 +447,8 @@ export const turnosService = {
         centroSaludId: toNumericId(data.centroSaludId),
         fecha: data.fecha,
         hora: data.hora,
+        consultorioNumero: data.consultorioNumero,
+        planta: data.planta,
         motivoSobreturno: data.motivoSobreturno,
       };
       const response = await apiClient.post<Record<string, unknown>>(
@@ -502,6 +504,34 @@ export const turnosService = {
           err,
           'No se pudo llamar al paciente a consultorio.'
         ), { cause: err });
+    }
+  },
+
+  async finalizarAtencion(id: string | number): Promise<Turno | null> {
+    try {
+      const numId = toNumericId(id);
+      const response = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.finalizarAtencion(numId)
+      );
+      return response.data ? normalizeTurno(response.data) : null;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo finalizar la atención del turno.'), { cause: err });
+    }
+  },
+
+  async getTurnosCarteleraPublica(centroId: string | number): Promise<Turno[]> {
+    try {
+      const numId = toNumericId(centroId, 'centroSaludId');
+      const response = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.turnos.carteleraPublica(numId)
+      );
+      return Array.isArray(response.data) ? response.data.map(normalizeTurno) : [];
+    } catch (err: unknown) {
+      try {
+        return await this.getTurnosKanbanCentro(centroId);
+      } catch {
+        throw new Error(extractApiErrorMessage(err, 'No se pudo cargar la cartelera de turnos.'), { cause: err });
+      }
     }
   },
 };

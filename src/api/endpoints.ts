@@ -87,6 +87,7 @@ export const API_ENDPOINTS = {
     hoyCentro: (centroId: string | number) => `/turnos/centro/${centroId}/hoy`,
     centro: (centroId: string | number) => `/turnos/centro/${centroId}`,
     kanbanCentro: (centroId: string | number) => `/turnos/centro/${centroId}/kanban`,
+    carteleraPublica: (centroId: string | number) => `/turnos/publico/cartelera/${centroId}`,
     byId: (id: string | number) => `/turnos/obtener/${id}`,
     byPaciente: (pacienteId: string | number) => `/turnos/paciente/${pacienteId}`,
     byProfesional: (profesionalId: string | number) => `/turnos/profesional/${profesionalId}`,
