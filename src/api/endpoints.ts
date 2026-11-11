@@ -111,6 +111,8 @@ export const API_ENDPOINTS = {
     ausente: (id: string | number) => `/turnos/${id}/ausente`,
     finalizarAtencion: (id: string | number) => `/turnos/${id}/finalizar-atencion`,
     certificadoAsistencia: (id: string | number) => `/turnos/${id}/certificado-asistencia`,
+    eliminar: (id: string | number) => `/turnos/eliminar/${id}`,
+    purgarCancelados: '/turnos/purgar-cancelados',
   },
   recetas: {
     base: '/recetas',

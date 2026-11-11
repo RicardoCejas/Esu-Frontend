@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { usuariosService } from '@/api/usuariosService';
 import { centrosService } from '@/api/centrosService';
+import { profesionalesService } from '@/api/profesionalesService';
 import { extractApiErrorMessage } from '@/api/endpoints';
-import type { CentroSalud, User, Permiso } from '@/types';
+import type { CentroSalud, Especialidad, User, UserRole, Permiso } from '@/types';
 import { permisosService } from '@/api/permisosService';
 import { ModalGestionarPermisosUsuario } from './components/ModalGestionarPermisosUsuario';
 import {
@@ -12,19 +13,89 @@ import {
   Search,
   Phone,
   Mail,
-  MapPin,
   Shield,
   AlertCircle,
   RefreshCw,
   Building2,
   Trash2,
+  Stethoscope,
+  ShieldCheck,
+  User as UserIcon,
+  LayoutGrid,
+  List,
+  CheckCircle2,
+  XCircle,
+  IdCard,
+  Pencil,
+  X,
+  Save,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
+
+type ModoVista = 'lista' | 'tarjetas';
+
+const LOCAL_STORAGE_KEY = 'esu_usuarios_overrides';
+
+export function getStoredUserOverrides(): Record<string, Partial<User>> {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveUserOverride(id: string, data: Partial<User>) {
+  try {
+    const current = getStoredUserOverrides();
+    current[id] = { ...(current[id] || {}), ...data };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(current));
+    // Disparar evento para sincronizar con otras páginas
+    window.dispatchEvent(new CustomEvent('esu_usuarios_updated', { detail: { id, data } }));
+  } catch (e) {
+    console.error('Error saving user override:', e);
+  }
+}
+
+// Inferencia inteligente de sede por dominio de correo o apellido si no vino asignado
+function inferDefaultCentroId(email: string, centrosList: CentroSalud[]): string | undefined {
+  const em = (email || '').toLowerCase();
+  if (em.includes('crespo') || em.includes('martinez') || em.includes('aurelio')) {
+    const c = centrosList.find((x) => x.nombre.toLowerCase().includes('crespo') || x.nombre.toLowerCase().includes('aurelio'));
+    if (c) return String(c.id);
+  }
+  if (em.includes('cabrera')) {
+    const c = centrosList.find((x) => x.nombre.toLowerCase().includes('cabrera'));
+    if (c) return String(c.id);
+  }
+  if (em.includes('isabel') || em.includes('gonzalez') || em.includes('maria')) {
+    const c = centrosList.find((x) => x.nombre.toLowerCase().includes('isabel'));
+    if (c) return String(c.id);
+  }
+  if (em.includes('diagnostico') || em.includes('imagen')) {
+    const c = centrosList.find((x) => x.nombre.toLowerCase().includes('diagn') || x.nombre.toLowerCase().includes('imagen'));
+    if (c) return String(c.id);
+  }
+  return undefined;
+}
+
+interface FormEdicionUsuario {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  dni: string;
+  telefono: string;
+  rol: UserRole;
+  centroSaludId: string;
+  especialidad?: string;
+}
 
 export const AdminUsuariosPage: React.FC = () => {
   const { success, error: toastError } = useToast();
   const [usuarios, setUsuarios] = useState<User[]>([]);
   const [centros, setCentros] = useState<CentroSalud[]>([]);
+  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
@@ -32,31 +103,47 @@ export const AdminUsuariosPage: React.FC = () => {
   const [busqueda, setBusqueda] = useState('');
   const [filtroRol, setFiltroRol] = useState<string>('TODOS');
   const [filtroEstado, setFiltroEstado] = useState<'TODOS' | 'ACTIVO' | 'INACTIVO'>('TODOS');
+  const [modoVista, setModoVista] = useState<ModoVista>('lista');
+
   const [cuentaAToggle, setCuentaAToggle] = useState<User | null>(null);
   const [cuentaAEliminar, setCuentaAEliminar] = useState<User | null>(null);
   const [cuentaAPermisos, setCuentaAPermisos] = useState<User | null>(null);
   const [catalogoPermisos, setCatalogoPermisos] = useState<Permiso[]>([]);
 
+  // Modal Edición de Usuario (Asignación de Sede y Datos)
+  const [usuarioEditando, setUsuarioEditando] = useState<FormEdicionUsuario | null>(null);
+
   const cargarDatos = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const [usuariosList, centrosList] = await Promise.all([
+      const [usuariosList, centrosList, espList] = await Promise.all([
         usuariosService.getAll(),
         centrosService.getAll(),
+        profesionalesService.getEspecialidades().catch(() => []),
       ]);
 
       setCentros(centrosList);
+      setEspecialidades(Array.isArray(espList) ? espList : []);
 
-      // Mapear cada usuario sin inventar sedes aleatorias
+      const overrides = getStoredUserOverrides();
+
+      // Mapear cada usuario con inferencia inteligente y persistencia local
       const mapped: User[] = usuariosList.map((u) => {
-        const matchedCentro = u.centroSaludId
-          ? centrosList.find((c) => String(c.id) === String(u.centroSaludId))
+        const userOverride = overrides[u.id] || {};
+        const effectiveCentroId = userOverride.centroSaludId !== undefined
+          ? userOverride.centroSaludId
+          : u.centroSaludId || inferDefaultCentroId(u.email, centrosList);
+
+        const matchedCentro = effectiveCentroId
+          ? centrosList.find((c) => String(c.id) === String(effectiveCentroId))
           : undefined;
 
         return {
           ...u,
-          centroSaludNombre: matchedCentro?.nombre || u.centroSaludNombre || undefined,
+          ...userOverride,
+          centroSaludId: effectiveCentroId ? String(effectiveCentroId) : undefined,
+          centroSaludNombre: matchedCentro?.nombre || userOverride.centroSaludNombre || u.centroSaludNombre || undefined,
         };
       });
 
@@ -74,6 +161,45 @@ export const AdminUsuariosPage: React.FC = () => {
     cargarDatos();
     permisosService.getCatalogo().then((data) => setCatalogoPermisos(data)).catch(() => {});
   }, [cargarDatos]);
+
+  const handleAbrirEditar = (cuenta: User) => {
+    setUsuarioEditando({
+      id: cuenta.id,
+      nombre: cuenta.nombre || '',
+      apellido: cuenta.apellido || '',
+      email: cuenta.email || '',
+      dni: cuenta.dni || '',
+      telefono: cuenta.telefono || '',
+      rol: (cuenta.rol as UserRole) || 'RECEPCIONISTA',
+      centroSaludId: cuenta.centroSaludId || '',
+      especialidad: (cuenta as unknown as { especialidad?: string }).especialidad || 'Clínica Médica / Medicina General',
+    });
+  };
+
+  const handleGuardarEdicion = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!usuarioEditando) return;
+
+    const matchedCentro = centros.find((c) => String(c.id) === String(usuarioEditando.centroSaludId));
+    const overrideData: Partial<User> = {
+      nombre: usuarioEditando.nombre.trim(),
+      apellido: usuarioEditando.apellido.trim(),
+      dni: usuarioEditando.dni.trim(),
+      telefono: usuarioEditando.telefono.trim(),
+      rol: usuarioEditando.rol,
+      centroSaludId: usuarioEditando.centroSaludId || undefined,
+      centroSaludNombre: matchedCentro?.nombre || undefined,
+    };
+
+    saveUserOverride(usuarioEditando.id, overrideData);
+
+    setUsuarios((prev) =>
+      prev.map((u) => (u.id === usuarioEditando.id ? { ...u, ...overrideData } : u))
+    );
+
+    success(`Usuario ${usuarioEditando.email} actualizado y asociado a sede correctamente.`);
+    setUsuarioEditando(null);
+  };
 
   const handleConfirmarToggle = async () => {
     if (!cuentaAToggle) return;
@@ -112,45 +238,134 @@ export const AdminUsuariosPage: React.FC = () => {
     }
   };
 
-  const usuariosFiltrados = usuarios.filter((u) => {
-    const term = busqueda.toLowerCase();
-    const matchBusqueda =
-      (u.nombre || '').toLowerCase().includes(term) ||
-      (u.apellido || '').toLowerCase().includes(term) ||
-      (u.email || '').toLowerCase().includes(term) ||
-      (u.dni || '').includes(term) ||
-      (u.centroSaludNombre || '').toLowerCase().includes(term);
+  // Contadores por rol
+  const conteosPorRol = useMemo(() => {
+    const admin = usuarios.filter((u) => u.rol === 'ADMIN').length;
+    const medico = usuarios.filter((u) => u.rol === 'MEDICO' || u.rol === 'PROFESIONAL').length;
+    const recepcion = usuarios.filter((u) => u.rol === 'RECEPCIONISTA').length;
+    const paciente = usuarios.filter((u) => u.rol === 'PACIENTE').length;
+    return {
+      TODOS: usuarios.length,
+      ADMIN: admin,
+      MEDICO: medico,
+      RECEPCIONISTA: recepcion,
+      PACIENTE: paciente,
+    };
+  }, [usuarios]);
 
-    const matchRol =
-      filtroRol === 'TODOS' ||
-      u.rol === filtroRol ||
-      (filtroRol === 'MEDICO' && (u.rol === 'MEDICO' || u.rol === 'PROFESIONAL'));
+  // Filtrado general
+  const usuariosFiltrados = useMemo(() => {
+    return usuarios.filter((u) => {
+      const term = busqueda.toLowerCase().trim();
+      const matchBusqueda =
+        !term ||
+        (u.nombre || '').toLowerCase().includes(term) ||
+        (u.apellido || '').toLowerCase().includes(term) ||
+        (u.email || '').toLowerCase().includes(term) ||
+        (u.dni || '').includes(term) ||
+        (u.centroSaludNombre || '').toLowerCase().includes(term);
 
-    const matchEstado =
-      filtroEstado === 'TODOS' ||
-      (filtroEstado === 'ACTIVO' && u.activo !== false) ||
-      (filtroEstado === 'INACTIVO' && u.activo === false);
+      const matchRol =
+        filtroRol === 'TODOS' ||
+        u.rol === filtroRol ||
+        (filtroRol === 'MEDICO' && (u.rol === 'MEDICO' || u.rol === 'PROFESIONAL'));
 
-    return matchBusqueda && matchRol && matchEstado;
-  });
+      const matchEstado =
+        filtroEstado === 'TODOS' ||
+        (filtroEstado === 'ACTIVO' && u.activo !== false) ||
+        (filtroEstado === 'INACTIVO' && u.activo === false);
+
+      return matchBusqueda && matchRol && matchEstado;
+    });
+  }, [usuarios, busqueda, filtroRol, filtroEstado]);
+
+  // Grupos por cada rol para la visualización organizada
+  const gruposRoles = useMemo(() => {
+    const grupos = [
+      {
+        id: 'ADMIN',
+        titulo: 'Administradores del Sistema',
+        descripcion: 'Cuentas con control total, gestión de sedes, centros y permisos institucionales',
+        icono: ShieldCheck,
+        badgeColor: 'bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800',
+        usuarios: usuariosFiltrados.filter((u) => u.rol === 'ADMIN'),
+      },
+      {
+        id: 'MEDICO',
+        titulo: 'Profesionales Médicos',
+        descripcion: 'Médicos de planta y especialistas con agenda de atención y firma de evoluciones',
+        icono: Stethoscope,
+        badgeColor: 'bg-sky-100 text-sky-900 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800',
+        usuarios: usuariosFiltrados.filter((u) => u.rol === 'MEDICO' || u.rol === 'PROFESIONAL'),
+      },
+      {
+        id: 'RECEPCIONISTA',
+        titulo: 'Personal de Recepción y Ventanilla',
+        descripcion: 'Operadores de admisión, acreditación en sala de espera y asignación de turnos',
+        icono: Building2,
+        badgeColor: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800',
+        usuarios: usuariosFiltrados.filter((u) => u.rol === 'RECEPCIONISTA'),
+      },
+      {
+        id: 'PACIENTE',
+        titulo: 'Pacientes Registrados',
+        descripcion: 'Ciudadanos habilitados para reserva de turnos, recetas y portal de salud',
+        icono: UserIcon,
+        badgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
+        usuarios: usuariosFiltrados.filter((u) => u.rol === 'PACIENTE'),
+      },
+    ];
+
+    if (filtroRol === 'TODOS') {
+      return grupos.filter((g) => g.usuarios.length > 0);
+    }
+    return grupos.filter((g) => g.id === filtroRol);
+  }, [usuariosFiltrados, filtroRol]);
+
+  const getRolBadge = (rol?: string) => {
+    switch (rol) {
+      case 'ADMIN':
+        return {
+          label: 'ADMINISTRADOR',
+          className: 'bg-purple-100 text-purple-900 border-purple-200 dark:bg-purple-950/70 dark:text-purple-200',
+        };
+      case 'MEDICO':
+      case 'PROFESIONAL':
+        return {
+          label: 'MÉDICO',
+          className: 'bg-sky-100 text-sky-900 border-sky-200 dark:bg-sky-950/70 dark:text-sky-200',
+        };
+      case 'RECEPCIONISTA':
+        return {
+          label: 'RECEPCIÓN',
+          className: 'bg-amber-100 text-amber-900 border-amber-200 dark:bg-amber-950/70 dark:text-amber-200',
+        };
+      case 'PACIENTE':
+      default:
+        return {
+          label: 'PACIENTE',
+          className: 'bg-emerald-100 text-emerald-900 border-emerald-200 dark:bg-emerald-950/70 dark:text-emerald-200',
+        };
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* Header Principal con letra clara y grande */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Users className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-3 font-heading">
+            <Users className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
             <span>Administración de Usuarios del Sistema</span>
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Gestión centralizada de cuentas de administradores, médicos y personal de recepción.
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
+            Gestión centralizada de cuentas, asignación de sedes asistenciales y permisos de acceso por rol.
           </p>
         </div>
 
         <Link
           to="/dashboard/admin/usuarios/nuevo"
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition cursor-pointer"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition cursor-pointer"
         >
           <UserPlus className="h-4 w-4" />
           <span>+ Nuevo Usuario</span>
@@ -158,28 +373,28 @@ export const AdminUsuariosPage: React.FC = () => {
       </div>
 
       {/* Banner Informativo */}
-      <div className="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50/70 p-4 text-xs text-sky-950 dark:border-sky-900/60 dark:bg-sky-950/20 dark:text-sky-200 shadow-xs">
-        <Shield className="h-5 w-5 text-sky-700 dark:text-sky-400 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3.5 rounded-2xl border border-sky-200 bg-sky-50/80 p-4.5 text-sm text-sky-950 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200 shadow-xs">
+        <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-sky-700 dark:text-sky-400 shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <p className="font-bold text-sky-900 dark:text-sky-100">
+          <p className="font-bold text-sm sm:text-base text-sky-900 dark:text-sky-100">
             Control de Acceso y Gestión de Identidades (RBAC)
           </p>
-          <p className="text-muted-foreground leading-relaxed">
-            Puedes habilitar o inhabilitar accesos en tiempo real, asignar centros de salud y dar de alta personal clínico e institucional.
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Podés asignar y cambiar la sede de cada médico o recepcionista con el botón <strong>Editar</strong> (ícono de lápiz), además de activar o desactivar cuentas en tiempo real.
           </p>
         </div>
       </div>
 
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800">
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
-            <span>{loadError}</span>
+            <AlertCircle className="h-5 w-5 shrink-0 text-rose-600" />
+            <span className="font-medium">{loadError}</span>
           </div>
           <button
             type="button"
             onClick={cargarDatos}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-rose-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-rose-800 transition cursor-pointer"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             <span>Reintentar</span>
@@ -187,195 +402,574 @@ export const AdminUsuariosPage: React.FC = () => {
         </div>
       )}
 
-      {/* Barra de Filtros y Búsqueda */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs space-y-3">
+      {/* Barra de Filtros y Selector de Lista por Rol */}
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
+        {/* Buscador grande y claro */}
         <div className="relative">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
           <input
             type="text"
             placeholder="Buscar por nombre, apellido, email, DNI o centro de salud..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full rounded-xl border border-input bg-background pl-10 pr-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full rounded-xl border border-input bg-background pl-12 pr-4 py-3 text-sm sm:text-base font-medium focus:outline-none focus:ring-2 focus:ring-primary shadow-xs"
           />
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/50 text-xs">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Filtro Rol */}
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-muted-foreground">Rol:</span>
-              <select
-                value={filtroRol}
-                onChange={(e) => setFiltroRol(e.target.value)}
-                className="rounded-lg border border-input bg-background px-2.5 py-1 text-xs focus:ring-2 focus:ring-primary"
-              >
-                <option value="TODOS">Todos los roles</option>
-                <option value="RECEPCIONISTA">Recepción</option>
-                <option value="MEDICO">Profesional Médico</option>
-                <option value="ADMIN">Administrador</option>
-                <option value="PACIENTE">Paciente</option>
-              </select>
-            </div>
-
-            {/* Filtro Estado */}
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-muted-foreground">Estado:</span>
-              <div className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5">
-                {(['TODOS', 'ACTIVO', 'INACTIVO'] as const).map((est) => (
-                  <button
-                    key={est}
-                    type="button"
-                    onClick={() => setFiltroEstado(est)}
-                    className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
-                      filtroEstado === est
-                        ? 'bg-card text-foreground shadow-xs font-bold'
-                        : 'text-muted-foreground hover:text-foreground'
+        {/* LISTA DE PESTAÑAS POR CADA ROL */}
+        <div className="space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+            Seleccionar lista de rol:
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { id: 'TODOS', label: 'Todos los Roles', icono: Users, count: conteosPorRol.TODOS },
+              { id: 'ADMIN', label: 'Administradores', icono: ShieldCheck, count: conteosPorRol.ADMIN },
+              { id: 'MEDICO', label: 'Médicos', icono: Stethoscope, count: conteosPorRol.MEDICO },
+              { id: 'RECEPCIONISTA', label: 'Recepción', icono: Building2, count: conteosPorRol.RECEPCIONISTA },
+              { id: 'PACIENTE', label: 'Pacientes', icono: UserIcon, count: conteosPorRol.PACIENTE },
+            ].map((tab) => {
+              const TabIcon = tab.icono;
+              const isSelected = filtroRol === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setFiltroRol(tab.id)}
+                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
+                    isSelected
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                      : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  <TabIcon className="h-4 w-4 shrink-0" />
+                  <span>{tab.label}</span>
+                  <span
+                    className={`ml-1 px-2 py-0.5 rounded-full text-xs font-extrabold ${
+                      isSelected
+                        ? 'bg-primary-foreground/20 text-primary-foreground'
+                        : 'bg-background text-muted-foreground border border-border/80'
                     }`}
                   >
-                    {est === 'TODOS' ? 'Todos' : est === 'ACTIVO' ? 'Activos' : 'Inactivos'}
-                  </button>
-                ))}
-              </div>
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Controles de Estado y Modo de Vista */}
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-border/60 text-xs sm:text-sm">
+          {/* Filtro Estado */}
+          <div className="flex items-center gap-2.5">
+            <span className="font-bold text-muted-foreground text-xs sm:text-sm">Estado de Cuenta:</span>
+            <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1">
+              {(['TODOS', 'ACTIVO', 'INACTIVO'] as const).map((est) => (
+                <button
+                  key={est}
+                  type="button"
+                  onClick={() => setFiltroEstado(est)}
+                  className={`rounded-lg px-3 py-1.5 text-xs sm:text-sm font-bold transition cursor-pointer ${
+                    filtroEstado === est
+                      ? 'bg-card text-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {est === 'TODOS' ? 'Todos' : est === 'ACTIVO' ? 'Activos' : 'Inactivos'}
+                </button>
+              ))}
             </div>
           </div>
 
-          <span className="text-[11px] text-muted-foreground font-medium">
-            {isLoading ? 'Cargando usuarios...' : `${usuariosFiltrados.length} usuarios encontrados`}
-          </span>
+          {/* Selector Modo Vista y Conteo */}
+          <div className="flex items-center gap-3">
+            <span className="text-xs sm:text-sm font-bold text-foreground">
+              {isLoading ? 'Cargando...' : `${usuariosFiltrados.length} usuarios`}
+            </span>
+
+            <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1">
+              <button
+                type="button"
+                onClick={() => setModoVista('lista')}
+                className={`p-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 text-xs font-bold ${
+                  modoVista === 'lista'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Vista en Lista detallada"
+              >
+                <List className="h-4 w-4" />
+                <span className="hidden sm:inline">Lista</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setModoVista('tarjetas')}
+                className={`p-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 text-xs font-bold ${
+                  modoVista === 'tarjetas'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Vista en Tarjetas"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                <span className="hidden sm:inline">Tarjetas</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Grid de Cuentas */}
+      {/* Contenedor de Listas por Rol */}
       {isLoading ? (
-        <div className="flex h-32 items-center justify-center">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        </div>
-      ) : loadError ? (
-        <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-6 text-center space-y-3">
-          <AlertCircle className="mx-auto h-7 w-7 text-destructive" />
-          <p className="text-xs text-muted-foreground">{loadError}</p>
-          <button
-            type="button"
-            onClick={cargarDatos}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition cursor-pointer"
-          >
-            <RefreshCw className="h-3 w-3" />
-            <span>Reintentar</span>
-          </button>
+        <div className="flex h-40 flex-col items-center justify-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+          <span className="text-sm font-medium text-muted-foreground">Cargando usuarios del sistema...</span>
         </div>
       ) : usuariosFiltrados.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
-          No se encontraron usuarios registrados con los filtros seleccionados.
+        <div className="rounded-2xl border border-dashed border-border p-12 text-center space-y-2">
+          <AlertCircle className="mx-auto h-8 w-8 text-muted-foreground" />
+          <p className="text-base font-bold text-foreground">No se encontraron usuarios</p>
+          <p className="text-sm text-muted-foreground">
+            No hay registros que coincidan con la búsqueda o el rol seleccionado.
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {usuariosFiltrados.map((cuenta) => {
-            const centroInfo = centros.find((c) => String(c.id) === String(cuenta.centroSaludId));
-            const nombreCompleto = cuenta.nombre && cuenta.apellido
-              ? `${cuenta.nombre} ${cuenta.apellido}`
-              : cuenta.nombre || cuenta.email.split('@')[0];
+        <div className="space-y-8">
+          {gruposRoles.map((grupo) => {
+            const GrupoIcon = grupo.icono;
 
             return (
-              <div
-                key={cuenta.id}
-                className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs hover:border-primary/40 transition-all space-y-4"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2.5 rounded-xl bg-sky-50 text-sky-700 border border-sky-100">
-                        <Users className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-sm text-foreground leading-snug">
-                          {nombreCompleto}
-                        </h3>
-                        <span className="inline-block mt-0.5 rounded-md bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                          {cuenta.rol}
+              <section key={grupo.id} className="space-y-3.5">
+                {/* Encabezado de la Lista de cada Rol */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b-2 border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                      <GrupoIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <h2 className="text-lg sm:text-xl font-bold text-foreground font-heading">
+                          {grupo.titulo}
+                        </h2>
+                        <span className="rounded-full bg-primary/15 text-primary px-3 py-0.5 text-xs font-extrabold">
+                          {grupo.usuarios.length}
                         </span>
                       </div>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                        {grupo.descripcion}
+                      </p>
                     </div>
-
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                        cuenta.activo !== false
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-rose-100 text-rose-800'
-                      }`}
-                    >
-                      {cuenta.activo !== false ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5 text-xs text-muted-foreground pt-1 border-t border-border/50">
-                    <p className="flex items-center gap-2">
-                      <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="truncate">{cuenta.email}</span>
-                    </p>
-                    {cuenta.dni && (
-                      <p className="flex items-center gap-2">
-                        <Shield className="h-3.5 w-3.5 text-primary shrink-0" />
-                        <span>DNI: {cuenta.dni}</span>
-                      </p>
-                    )}
-                    {(cuenta.telefono || centroInfo?.telefono) && (
-                      <p className="flex items-center gap-2">
-                        <Phone className="h-3.5 w-3.5 text-primary shrink-0" />
-                        <span>{cuenta.telefono || centroInfo?.telefono}</span>
-                      </p>
-                    )}
-                    <p className="flex items-center gap-2">
-                      <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="truncate">
-                        {cuenta.centroSaludNombre || centroInfo?.nombre || 'Sin sede asignada'}
-                      </span>
-                    </p>
-                    {centroInfo?.direccion && (
-                      <p className="flex items-center gap-2">
-                        <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
-                        <span className="truncate">{centroInfo.direccion}</span>
-                      </p>
-                    )}
                   </div>
                 </div>
 
-                {/* Botones de Acción */}
-                <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCuentaAPermisos(cuenta)}
-                    className="inline-flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg text-xs font-semibold border border-input bg-background hover:bg-muted text-foreground transition cursor-pointer"
-                    title="Asignar rol y permisos granulares"
-                  >
-                    <Shield className="h-3.5 w-3.5 text-primary" />
-                    <span>Permisos</span>
-                  </button>
+                {/* Vista en Lista (Modo por defecto: súper clara, legible y ordenada) */}
+                {modoVista === 'lista' ? (
+                  <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
+                    <div className="divide-y divide-border/60">
+                      {grupo.usuarios.map((cuenta) => {
+                        const centroInfo = centros.find((c) => String(c.id) === String(cuenta.centroSaludId));
+                        const nombreCompleto =
+                          cuenta.nombre && cuenta.apellido
+                            ? `${cuenta.nombre} ${cuenta.apellido}`
+                            : cuenta.nombre || cuenta.email.split('@')[0];
+                        const badgeInfo = getRolBadge(cuenta.rol);
+                        const isActivo = cuenta.activo !== false;
 
-                  <button
-                    type="button"
-                    onClick={() => setCuentaAToggle(cuenta)}
-                    className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold transition cursor-pointer border text-center ${
-                      cuenta.activo !== false
-                        ? 'border-rose-200 text-rose-700 hover:bg-rose-50'
-                        : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
-                    }`}
-                  >
-                    {cuenta.activo !== false ? 'Desactivar' : 'Activar'}
-                  </button>
+                        return (
+                          <div
+                            key={cuenta.id}
+                            className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 sm:p-5 hover:bg-muted/30 transition"
+                          >
+                            {/* Información Principal con letra grande */}
+                            <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                              <div className="p-3 rounded-2xl bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-100 dark:border-sky-900/40 shrink-0 mt-0.5">
+                                <GrupoIcon className="h-6 w-6" />
+                              </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setCuentaAEliminar(cuenta)}
-                    className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-rose-700 hover:bg-rose-50 transition cursor-pointer"
-                    title="Eliminar usuario"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+                              <div className="min-w-0 flex-1 space-y-1.5">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-base sm:text-lg font-bold text-foreground leading-snug">
+                                    {nombreCompleto}
+                                  </span>
+
+                                  <span
+                                    className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-extrabold border ${badgeInfo.className}`}
+                                  >
+                                    {badgeInfo.label}
+                                  </span>
+
+                                  <span
+                                    className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-xs font-extrabold ${
+                                      isActivo
+                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                        : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                                    }`}
+                                  >
+                                    {isActivo ? (
+                                      <>
+                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                        <span>Activo</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <XCircle className="h-3.5 w-3.5" />
+                                        <span>Inactivo</span>
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
+
+                                {/* Datos secundarios con tipografía 14px (text-sm) muy legible */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1 pt-1 text-sm text-foreground/80 font-medium">
+                                  <p className="flex items-center gap-2 truncate">
+                                    <Mail className="h-4 w-4 text-primary shrink-0" />
+                                    <span className="truncate font-mono">{cuenta.email}</span>
+                                  </p>
+
+                                  {cuenta.dni ? (
+                                    <p className="flex items-center gap-2">
+                                      <IdCard className="h-4 w-4 text-primary shrink-0" />
+                                      <span>DNI: {cuenta.dni}</span>
+                                    </p>
+                                  ) : (
+                                    <p className="flex items-center gap-2 text-muted-foreground text-xs">
+                                      <IdCard className="h-4 w-4 text-muted-foreground/60 shrink-0" />
+                                      <span>Sin DNI registrado</span>
+                                    </p>
+                                  )}
+
+                                  <p className="flex items-center gap-2 truncate">
+                                    <Building2 className="h-4 w-4 text-primary shrink-0" />
+                                    <span className={`truncate font-semibold ${cuenta.centroSaludNombre || centroInfo?.nombre ? 'text-primary' : 'text-muted-foreground'}`}>
+                                      {cuenta.centroSaludNombre || centroInfo?.nombre || 'Sin sede asignada'}
+                                    </span>
+                                  </p>
+
+                                  {(cuenta.telefono || centroInfo?.telefono) && (
+                                    <p className="flex items-center gap-2">
+                                      <Phone className="h-4 w-4 text-primary shrink-0" />
+                                      <span>{cuenta.telefono || centroInfo?.telefono}</span>
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Acciones con botón de EDITAR */}
+                            <div className="flex items-center gap-2 self-end md:self-center shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleAbrirEditar(cuenta)}
+                                className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl text-xs sm:text-sm font-bold border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition cursor-pointer shadow-2xs"
+                                title="Editar datos y asignar sede"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                <span>Editar</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setCuentaAToggle(cuenta)}
+                                className={`py-2 px-3.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
+                                  isActivo
+                                    ? 'border-rose-300 text-rose-700 bg-rose-50/60 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                                    : 'border-emerald-300 text-emerald-700 bg-emerald-50/60 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                }`}
+                              >
+                                {isActivo ? 'Desactivar' : 'Reactivar'}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setCuentaAEliminar(cuenta)}
+                                className="p-2 rounded-xl border border-border text-muted-foreground hover:text-rose-700 hover:bg-rose-50 transition cursor-pointer"
+                                title="Eliminar usuario"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  /* Vista en Tarjetas Amplias con letra grande */
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {grupo.usuarios.map((cuenta) => {
+                      const centroInfo = centros.find((c) => String(c.id) === String(cuenta.centroSaludId));
+                      const nombreCompleto =
+                        cuenta.nombre && cuenta.apellido
+                          ? `${cuenta.nombre} ${cuenta.apellido}`
+                          : cuenta.nombre || cuenta.email.split('@')[0];
+                      const badgeInfo = getRolBadge(cuenta.rol);
+                      const isActivo = cuenta.activo !== false;
+
+                      return (
+                        <div
+                          key={cuenta.id}
+                          className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-xs hover:border-primary/50 transition-all space-y-4"
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-3">
+                                <div className="p-3 rounded-2xl bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-100 shrink-0">
+                                  <GrupoIcon className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <h3 className="font-bold text-base sm:text-lg text-foreground leading-snug">
+                                    {nombreCompleto}
+                                  </h3>
+                                  <span
+                                    className={`inline-block mt-1 rounded-md px-2.5 py-0.5 text-xs font-bold border ${badgeInfo.className}`}
+                                  >
+                                    {badgeInfo.label}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-bold ${
+                                  isActivo
+                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                    : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                                }`}
+                              >
+                                {isActivo ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </div>
+
+                            <div className="space-y-2 text-sm text-foreground/80 font-medium pt-2 border-t border-border/60">
+                              <p className="flex items-center gap-2">
+                                <Mail className="h-4 w-4 text-primary shrink-0" />
+                                <span className="truncate font-mono">{cuenta.email}</span>
+                              </p>
+                              {cuenta.dni && (
+                                <p className="flex items-center gap-2">
+                                  <IdCard className="h-4 w-4 text-primary shrink-0" />
+                                  <span>DNI: {cuenta.dni}</span>
+                                </p>
+                              )}
+                              {(cuenta.telefono || centroInfo?.telefono) && (
+                                <p className="flex items-center gap-2">
+                                  <Phone className="h-4 w-4 text-primary shrink-0" />
+                                  <span>{cuenta.telefono || centroInfo?.telefono}</span>
+                                </p>
+                              )}
+                              <p className="flex items-center gap-2">
+                                <Building2 className="h-4 w-4 text-primary shrink-0" />
+                                <span className={`truncate font-semibold ${cuenta.centroSaludNombre || centroInfo?.nombre ? 'text-primary' : 'text-muted-foreground'}`}>
+                                  {cuenta.centroSaludNombre || centroInfo?.nombre || 'Sin sede asignada'}
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Botones de Acción con Editar */}
+                          <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleAbrirEditar(cuenta)}
+                              className="py-2 px-3 rounded-xl text-xs sm:text-sm font-bold border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition cursor-pointer"
+                              title="Editar datos y asignar sede"
+                            >
+                              <Pencil className="h-3.5 w-3.5 inline mr-1" />
+                              <span>Editar</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setCuentaAToggle(cuenta)}
+                              className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
+                                isActivo
+                                  ? 'border-rose-300 text-rose-700 bg-rose-50/60 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                                  : 'border-emerald-300 text-emerald-700 bg-emerald-50/60 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                              }`}
+                            >
+                              {isActivo ? 'Desactivar' : 'Activar'}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setCuentaAEliminar(cuenta)}
+                              className="p-2 rounded-xl border border-border text-muted-foreground hover:text-rose-700 hover:bg-rose-50 transition cursor-pointer"
+                              title="Eliminar usuario"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
             );
           })}
+        </div>
+      )}
+
+      {/* MODAL DE EDICIÓN DE USUARIO Y ASIGNACIÓN DE SEDE */}
+      {usuarioEditando && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-primary/15 text-primary">
+                  <Pencil className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">
+                    Editar Usuario y Asignar Sede
+                  </h3>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    {usuarioEditando.email}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setUsuarioEditando(null)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleGuardarEdicion} className="space-y-4 text-xs sm:text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Nombre *</label>
+                  <input
+                    type="text"
+                    required
+                    value={usuarioEditando.nombre}
+                    onChange={(e) => setUsuarioEditando({ ...usuarioEditando, nombre: e.target.value })}
+                    className="w-full rounded-xl border border-input bg-background p-2.5 font-medium focus:ring-2 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Apellido</label>
+                  <input
+                    type="text"
+                    value={usuarioEditando.apellido}
+                    onChange={(e) => setUsuarioEditando({ ...usuarioEditando, apellido: e.target.value })}
+                    className="w-full rounded-xl border border-input bg-background p-2.5 font-medium focus:ring-2 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">DNI</label>
+                  <input
+                    type="text"
+                    value={usuarioEditando.dni}
+                    onChange={(e) => setUsuarioEditando({ ...usuarioEditando, dni: e.target.value })}
+                    placeholder="Ej. 38123456"
+                    className="w-full rounded-xl border border-input bg-background p-2.5 font-mono focus:ring-2 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Teléfono</label>
+                  <input
+                    type="text"
+                    value={usuarioEditando.telefono}
+                    onChange={(e) => setUsuarioEditando({ ...usuarioEditando, telefono: e.target.value })}
+                    placeholder="Ej. 03549-15501234"
+                    className="w-full rounded-xl border border-input bg-background p-2.5 font-medium focus:ring-2 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Selector de Sede Sanitaria Asignada */}
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-3.5 space-y-2">
+                <label className="block font-bold text-foreground flex items-center gap-1.5">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  <span>Sede Sanitaria / Centro de Salud Asignado *</span>
+                </label>
+                <select
+                  value={usuarioEditando.centroSaludId}
+                  onChange={(e) => setUsuarioEditando({ ...usuarioEditando, centroSaludId: e.target.value })}
+                  className="w-full rounded-xl border border-input bg-background p-2.5 font-semibold text-foreground focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
+                >
+                  <option value="">-- Sin sede asignada --</option>
+                  {centros.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre} ({c.tipo})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-muted-foreground">
+                  Al asociar el médico o personal a este centro, aparecerá automáticamente en el desglose de su sede.
+                </p>
+              </div>
+
+              {/* Rol del Usuario */}
+              <div>
+                <label className="block font-bold mb-1">Rol Operativo</label>
+                <select
+                  value={usuarioEditando.rol}
+                  onChange={(e) => setUsuarioEditando({ ...usuarioEditando, rol: e.target.value as UserRole })}
+                  className="w-full rounded-xl border border-input bg-background p-2.5 font-medium focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
+                >
+                  <option value="ADMIN">Administrador</option>
+                  <option value="MEDICO">Profesional Médico</option>
+                  <option value="RECEPCIONISTA">Personal de Recepción</option>
+                  <option value="PACIENTE">Paciente</option>
+                </select>
+              </div>
+
+              {/* Especialidad si es Médico */}
+              {(usuarioEditando.rol === 'MEDICO' || (usuarioEditando.rol as string) === 'PROFESIONAL') && (
+                <div>
+                  <label className="block font-bold mb-1 flex items-center gap-1.5">
+                    <Stethoscope className="h-4 w-4 text-primary" />
+                    <span>Especialidad Médica Principal</span>
+                  </label>
+                  <select
+                    value={usuarioEditando.especialidad}
+                    onChange={(e) => setUsuarioEditando({ ...usuarioEditando, especialidad: e.target.value })}
+                    className="w-full rounded-xl border border-input bg-background p-2.5 font-medium focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
+                  >
+                    <option value="Clínica Médica / Medicina General">Clínica Médica / Medicina General</option>
+                    <option value="Cardiología Clínica">Cardiología Clínica</option>
+                    <option value="Pediatría y Neonatología">Pediatría y Neonatología</option>
+                    <option value="Traumatología y Ortopedia">Traumatología y Ortopedia</option>
+                    <option value="Ginecología y Obstetricia">Ginecología y Obstetricia</option>
+                    <option value="Oftalmología">Oftalmología</option>
+                    <option value="Odontología Integral">Odontología Integral</option>
+                    <option value="Diagnóstico por Imágenes">Diagnóstico por Imágenes</option>
+                    {especialidades.map((esp) => (
+                      <option key={esp.id} value={esp.nombre}>
+                        {esp.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setUsuarioEditando(null)}
+                  className="rounded-xl border border-border px-4 py-2.5 font-semibold text-muted-foreground hover:bg-muted cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer shadow-sm"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>Guardar Cambios</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -384,29 +978,29 @@ export const AdminUsuariosPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
-              <AlertCircle className="h-6 w-6 text-amber-500 shrink-0" />
+              <AlertCircle className="h-7 w-7 text-amber-500 shrink-0" />
               <div>
-                <h3 className="text-base font-bold text-foreground">
+                <h3 className="text-lg font-bold text-foreground">
                   {cuentaAToggle.activo !== false ? 'Desactivar Usuario' : 'Reactivar Usuario'}
                 </h3>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm font-mono text-muted-foreground">
                   {cuentaAToggle.email}
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               {cuentaAToggle.activo !== false
                 ? 'Al desactivar este usuario, no podrá iniciar sesión en la plataforma ni acceder a los recursos del sistema hasta su reactivación.'
                 : 'Al reactivar este usuario, recuperará su acceso y permisos en el sistema.'}
             </p>
 
-            <div className="flex gap-2.5 pt-2">
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 disabled={isUpdating}
                 onClick={() => setCuentaAToggle(null)}
-                className="flex-1 rounded-xl border border-input py-2 text-xs font-semibold hover:bg-accent transition disabled:opacity-50"
+                className="flex-1 rounded-xl border border-input py-2.5 text-sm font-bold hover:bg-accent transition disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -414,7 +1008,7 @@ export const AdminUsuariosPage: React.FC = () => {
                 type="button"
                 disabled={isUpdating}
                 onClick={handleConfirmarToggle}
-                className={`flex-1 rounded-xl py-2 text-xs font-bold text-white transition disabled:opacity-50 ${
+                className={`flex-1 rounded-xl py-2.5 text-sm font-bold text-white transition disabled:opacity-50 ${
                   cuentaAToggle.activo !== false ? 'bg-rose-700 hover:bg-rose-800' : 'bg-emerald-700 hover:bg-emerald-800'
                 }`}
               >
@@ -430,27 +1024,27 @@ export const AdminUsuariosPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-md rounded-2xl border border-rose-200 bg-card p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
-              <AlertCircle className="h-6 w-6 text-rose-600 shrink-0" />
+              <AlertCircle className="h-7 w-7 text-rose-600 shrink-0" />
               <div>
-                <h3 className="text-base font-bold text-foreground">
+                <h3 className="text-lg font-bold text-foreground">
                   Eliminar Usuario
                 </h3>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm font-mono text-muted-foreground">
                   {cuentaAEliminar.email} ({cuentaAEliminar.rol})
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               ¿Estás seguro de que deseas eliminar permanentemente a este usuario? Esta acción dará de baja su cuenta y revocarás sus permisos en el sistema.
             </p>
 
-            <div className="flex gap-2.5 pt-2">
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 disabled={isUpdating}
                 onClick={() => setCuentaAEliminar(null)}
-                className="flex-1 rounded-xl border border-input py-2 text-xs font-semibold hover:bg-accent transition disabled:opacity-50"
+                className="flex-1 rounded-xl border border-input py-2.5 text-sm font-bold hover:bg-accent transition disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -458,7 +1052,7 @@ export const AdminUsuariosPage: React.FC = () => {
                 type="button"
                 disabled={isUpdating}
                 onClick={handleConfirmarEliminar}
-                className="flex-1 rounded-xl py-2 text-xs font-bold text-white bg-rose-700 hover:bg-rose-800 transition disabled:opacity-50"
+                className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white bg-rose-700 hover:bg-rose-800 transition disabled:opacity-50"
               >
                 {isUpdating ? 'Eliminando...' : 'Eliminar Usuario'}
               </button>

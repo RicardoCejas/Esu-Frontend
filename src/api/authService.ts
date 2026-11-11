@@ -42,6 +42,8 @@ interface BackendAuthData {
   nombre?: string;
   apellido?: string;
   dni?: string;
+  matricula?: string;
+  especialidad?: string;
   emailVerificado?: boolean;
   emailVerified?: boolean;
   twoFactorEnabled?: boolean;
@@ -238,6 +240,8 @@ export const authService = {
           usuarioId,
           pacienteId,
           profesionalId,
+          matricula: response.data.matricula,
+          especialidad: response.data.especialidad,
           nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
           apellido: response.data.apellido || '',
           email: response.data.email || payload.email,
@@ -274,6 +278,8 @@ export const authService = {
         usuarioId,
         pacienteId,
         profesionalId,
+        matricula: response.data.matricula,
+        especialidad: response.data.especialidad,
         nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
         apellido: response.data.apellido || '',
         email: response.data.email || payload.email,
@@ -532,6 +538,8 @@ export const authService = {
           nombre?: string;
           apellido?: string;
           dni?: string;
+          matricula?: string;
+          especialidad?: string;
           activo: boolean;
           verificado: boolean;
           twoFactorEnabled?: boolean;
@@ -553,6 +561,8 @@ export const authService = {
             usuarioId: authUserId,
             pacienteId,
             profesionalId,
+            matricula: res.data.matricula,
+            especialidad: res.data.especialidad,
             nombre: res.data.nombre || (res.data.email ? res.data.email.split('@')[0] : 'Usuario'),
             apellido: res.data.apellido || '',
             email: res.data.email,

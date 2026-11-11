@@ -26,7 +26,7 @@ export const PublicNavbar: React.FC = () => {
       case 'RECEPCIONISTA':
         return '/dashboard/recepcion';
       case 'ADMIN':
-        return '/dashboard/admin';
+        return '/dashboard/admin/sedes';
       case 'PACIENTE':
       default:
         return '/dashboard/paciente';

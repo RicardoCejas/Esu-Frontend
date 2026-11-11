@@ -56,14 +56,11 @@ const NuevoSobreturnoPage = React.lazy(() => import('@/features/recepcion/NuevoS
 const ReagendarTurnoPage = React.lazy(() => import('@/features/recepcion/ReagendarTurnoPage').then(m => ({ default: m.ReagendarTurnoPage })));
 
 // Vistas Admin
-const AdminDashboardPage = React.lazy(() => import('@/features/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
-const MetricasOcupacionAusentismoPage = React.lazy(() => import('@/features/admin/MetricasOcupacionAusentismoPage').then(m => ({ default: m.MetricasOcupacionAusentismoPage })));
 const AdminUsuariosPage = React.lazy(() => import('@/features/admin/AdminUsuariosPage').then(m => ({ default: m.AdminUsuariosPage })));
 const NuevoUsuarioPage = React.lazy(() => import('@/features/admin/NuevoUsuarioPage').then(m => ({ default: m.NuevoUsuarioPage })));
 const AdminEspecialidadesPage = React.lazy(() => import('@/features/admin/AdminEspecialidadesPage').then(m => ({ default: m.AdminEspecialidadesPage })));
 const AdminSedesPage = React.lazy(() => import('@/features/admin/AdminSedesPage').then(m => ({ default: m.AdminSedesPage })));
 const NuevaEspecialidadPage = React.lazy(() => import('@/features/admin/NuevaEspecialidadPage').then(m => ({ default: m.NuevaEspecialidadPage })));
-const AdminMapaPinesPage = React.lazy(() => import('@/features/admin/AdminMapaPinesPage').then(m => ({ default: m.AdminMapaPinesPage })));
 const NuevoProfesionalPage = React.lazy(() => import('@/features/profesionales/NuevoProfesionalPage').then(m => ({ default: m.NuevoProfesionalPage })));
 
 // Perfil (todos los roles)
@@ -202,14 +199,14 @@ export const AppRoutes: React.FC = () => {
 
               {/* Módulo Administrador (HU-56 & HU-70) */}
               <Route element={<RoleGuard allowedRoles={['ADMIN']} />}>
-                <Route path="admin" element={<AdminDashboardPage />} />
-                <Route path="admin/ocupacion-ausentismo" element={<MetricasOcupacionAusentismoPage />} />
+                <Route path="admin" element={<Navigate to="/dashboard/admin/sedes" replace />} />
+                <Route path="admin/ocupacion-ausentismo" element={<Navigate to="/dashboard/admin/sedes" replace />} />
                 <Route path="admin/sedes" element={<AdminSedesPage />} />
                 <Route path="admin/usuarios" element={<AdminUsuariosPage />} />
                 <Route path="admin/usuarios/nuevo" element={<NuevoUsuarioPage />} />
                 <Route path="admin/especialidades" element={<AdminEspecialidadesPage />} />
                 <Route path="admin/especialidades/nueva" element={<NuevaEspecialidadPage />} />
-                <Route path="admin/mapa" element={<AdminMapaPinesPage />} />
+                <Route path="admin/mapa" element={<Navigate to="/dashboard/admin/sedes" replace />} />
                 <Route path="admin/profesionales/nuevo" element={<NuevoProfesionalPage />} />
               </Route>
             </Route>

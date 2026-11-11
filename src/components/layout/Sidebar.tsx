@@ -14,11 +14,10 @@ import {
   ListOrdered,
   ArrowLeft,
   ChevronRight,
-  TrendingUp,
   Pill,
   FileCheck,
   User,
-  MapPin,
+  TrendingUp,
 } from 'lucide-react';
 import type { PermissionCode, UserRole } from '@/types';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -65,10 +64,9 @@ const navItems: NavItem[] = [
   { title: 'Sedes y Consultorios', path: '/dashboard/admin/sedes', icon: Building2, roles: ['ADMIN'] },
   { title: 'Cuentas de Centros de Salud', path: '/dashboard/admin/usuarios', icon: ShieldCheck, roles: ['ADMIN'] },
   { title: 'Centros y Especialidades', path: '/dashboard/admin/especialidades', icon: Building2, roles: ['ADMIN'] },
-  { title: 'Mapa y Pines Cruz del Eje', path: '/dashboard/admin/mapa', icon: MapPin, roles: ['ADMIN'] },
 ];
 
-const INDEX_PATHS = ['/dashboard/paciente', '/dashboard/medico', '/dashboard/recepcion', '/dashboard/admin'];
+const INDEX_PATHS = ['/dashboard/paciente', '/dashboard/medico', '/dashboard/recepcion', '/dashboard/admin/sedes'];
 
 export const Sidebar: React.FC = () => {
   const { user } = useAuth();
