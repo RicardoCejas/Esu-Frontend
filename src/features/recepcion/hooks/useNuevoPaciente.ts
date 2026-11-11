@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -49,6 +49,8 @@ export function useNuevoPaciente() {
   const [errors, setErrors] = useState<NuevoPacienteErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dniDuplicadoId, setDniDuplicadoId] = useState<string | null>(null);
+  const [verificandoDni, setVerificandoDni] = useState(false);
 
   const setField = <K extends keyof NuevoPacienteValues>(
     field: K,
@@ -61,8 +63,35 @@ export function useNuevoPaciente() {
       delete next[field];
       return next;
     });
+    if (field === 'dni') setDniDuplicadoId(null);
     if (submitError) setSubmitError(null);
   };
+
+  const verificarDniExistente = useCallback(async (dniParam?: string) => {
+    const raw = dniParam ?? values.dni;
+    const clean = raw.replace(/\D/g, '');
+    if (clean.length < 7) {
+      setDniDuplicadoId(null);
+      return;
+    }
+    setVerificandoDni(true);
+    try {
+      const found = await pacientesService.getByDni(clean);
+      if (found) {
+        setDniDuplicadoId(found.id);
+        setErrors((prev) => ({
+          ...prev,
+          dni: `El DNI ya se encuentra registrado a nombre de ${found.nombre} ${found.apellido}.`,
+        }));
+      } else {
+        setDniDuplicadoId(null);
+      }
+    } catch {
+      setDniDuplicadoId(null);
+    } finally {
+      setVerificandoDni(false);
+    }
+  }, [values.dni]);
 
   const validate = (): NuevoPacienteErrors => {
     const next: NuevoPacienteErrors = {};
@@ -84,7 +113,7 @@ export function useNuevoPaciente() {
 
   const handleSubmit = async (): Promise<boolean> => {
     const nextErrors = validate();
-    if (Object.keys(nextErrors).length > 0) {
+    if (Object.keys(nextErrors).length > 0 || dniDuplicadoId) {
       setErrors(nextErrors);
       return false;
     }
@@ -94,8 +123,8 @@ export function useNuevoPaciente() {
     try {
       const dniClean = values.dni.trim();
       const resolvedEmail = values.altaRapidaSinEmail
-        ? `dni${dniClean}@recepcion.esu.salud`
-        : values.email.trim() || `dni${dniClean}@recepcion.esu.salud`;
+        ? undefined
+        : values.email.trim() || undefined;
 
       const creado = await pacientesService.createPaciente({
         nombre: values.nombre.trim(),
@@ -136,7 +165,10 @@ export function useNuevoPaciente() {
     errors,
     submitError,
     saving,
+    dniDuplicadoId,
+    verificandoDni,
     setField,
+    verificarDniExistente,
     handleSubmit,
   };
 }

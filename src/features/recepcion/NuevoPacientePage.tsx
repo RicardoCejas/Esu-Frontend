@@ -18,8 +18,18 @@ const OBRA_SOCIAL_OPTIONS = [
 const BLOOD_GROUPS = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'];
 
 export const NuevoPacientePage: React.FC = () => {
-  const { returnTo, values, errors, submitError, saving, setField, handleSubmit } =
-    useNuevoPaciente();
+  const {
+    returnTo,
+    values,
+    errors,
+    submitError,
+    saving,
+    dniDuplicadoId,
+    verificandoDni,
+    setField,
+    verificarDniExistente,
+    handleSubmit,
+  } = useNuevoPaciente();
   const formRef = useRef<HTMLFormElement>(null);
 
   const backHref =
@@ -160,14 +170,31 @@ export const NuevoPacientePage: React.FC = () => {
                 required
                 value={values.dni}
                 onChange={(e) => setField('dni', e.target.value.replace(/\D/g, ''))}
+                onBlur={() => void verificarDniExistente()}
                 aria-invalid={Boolean(errors.dni)}
                 aria-describedby={errors.dni ? 'npac-dni-error' : undefined}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground tabular-nums focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
               />
+              {verificandoDni && (
+                <p className="mt-1 text-[11px] text-muted-foreground animate-pulse">
+                  Verificando existencia en padrón...
+                </p>
+              )}
               {errors.dni && (
                 <p id="npac-dni-error" className="mt-1 text-xs font-medium text-rose-700">
                   {errors.dni}
                 </p>
+              )}
+              {dniDuplicadoId && (
+                <div className="mt-1">
+                  <Link
+                    to={`/dashboard/recepcion/pacientes/${dniDuplicadoId}`}
+                    className="text-xs font-bold text-sky-700 hover:underline inline-flex items-center gap-1"
+                  >
+                    <span>Ver ficha del paciente existente</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
               )}
             </div>
 
