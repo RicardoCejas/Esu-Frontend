@@ -131,7 +131,7 @@ export const AdminSedesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Gestión de Sedes, Centros y Consultorios Físicos
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">

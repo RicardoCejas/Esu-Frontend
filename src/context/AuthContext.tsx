@@ -1,8 +1,9 @@
-﻿import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, UserRole } from '@/types';
 import { authService, type LoginCredentials, type AuthResponse } from '@/api/authService';
 import { tokenStorage } from '@/api/tokenStorage';
 import { authBroadcast, type AuthBroadcastMessage } from '@/lib/authBroadcast';
+import { authSessionStorage } from '@/lib/authSessionStorage';
 
 interface AuthContextType {
   user: User | null;
@@ -23,7 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(() => {
     try {
-      return Boolean(sessionStorage.getItem('esu_session_active'));
+      return authSessionStorage.isSessionActive();
     } catch {
       return false;
     }
@@ -35,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initAuth = async () => {
       try {
-        const sessionActive = sessionStorage.getItem('esu_session_active');
+        const sessionActive = authSessionStorage.isSessionActive();
         if (sessionActive) {
           let refreshedUser: User | null = null;
           try {
@@ -45,10 +46,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           if (isMounted) {
             setUser(refreshedUser);
+            if (!refreshedUser) {
+              authSessionStorage.clearSessionActive();
+            }
           }
         }
       } catch (err) {
         console.warn('No se pudo restaurar la sesión en memoria:', err);
+        authSessionStorage.clearSessionActive();
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -63,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (msg.type === 'LOGOUT') {
         setUser(null);
         tokenStorage.clearToken();
-        sessionStorage.removeItem('esu_session_active');
+        authSessionStorage.clearSessionActive();
       }
     });
 
@@ -123,7 +128,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = useCallback(async () => {
-    await authService.logout();
+    try {
+      await authService.logout();
+    } finally {
+      authSessionStorage.clearSessionActive();
+    }
     setUser(null);
   }, []);
 

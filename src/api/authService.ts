@@ -2,10 +2,12 @@ import { isAxiosError } from 'axios';
 import { apiClient } from './apiClient';
 import { tokenStorage, refreshSingleFlight } from './tokenStorage';
 import { authBroadcast } from '@/lib/authBroadcast';
+import { authSessionStorage } from '@/lib/authSessionStorage';
 import { sanitizeFormData } from '@/lib/sanitizer';
+import { isValidDniFormat } from '../lib/dniValidation.ts';
 import { API_ENDPOINTS, extractApiErrorMessage, isDemoModeEnabled } from './endpoints';
 import { toFrontendRole, toBackendRole } from '@/lib/roles';
-import type { User, UserRole } from '@/types';
+import type { User, UserRole, PermissionCode } from '@/types';
 
 export interface LoginCredentials {
   email?: string;
@@ -33,6 +35,8 @@ interface BackendAuthData {
   usuarioId?: string | number;
   pacienteId?: string | number;
   profesionalId?: string | number;
+  centroSaludId?: string | number;
+  centroSaludNombre?: string;
   email?: string;
   rol?: string;
   nombre?: string;
@@ -47,6 +51,7 @@ interface BackendAuthData {
   tempToken?: string;
   user?: User;
   message?: string;
+  permisos?: string[];
 }
 
 interface PacienteMeResponse {
@@ -180,7 +185,7 @@ function mergePacienteProfile(user: User, perfil?: PacienteMeResponse | null): U
     }
   }
 
-  const hasValidDni = Boolean(merged.dni && /^\d{7,8}$/.test(merged.dni.trim()));
+  const hasValidDni = isValidDniFormat(merged.dni);
   const hasCompleteIdentity = hasValidDni && isRealPhone(merged.telefono) && Boolean(merged.fechaNacimiento);
   const verifiedStorage = isDniMarkedVerifiedInStorage(candidateIds, merged.email);
 
@@ -228,6 +233,8 @@ export const authService = {
         const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
         const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
         const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
+        const centroSaludId = response.data.centroSaludId != null ? String(response.data.centroSaludId) : undefined;
+        const centroSaludNombre = response.data.centroSaludNombre || undefined;
         const challengeUser: User = {
           id: usuarioId || '',
           usuarioId,
@@ -239,6 +246,8 @@ export const authService = {
           apellido: response.data.apellido || '',
           email: response.data.email || payload.email,
           dni: response.data.dni || cleanCredentials.dni || '',
+        centroSaludId,
+        centroSaludNombre,
           rol: normalizeUserRole(response.data.rol),
           activo: true,
           twoFactorEnabled: true,
@@ -261,6 +270,8 @@ export const authService = {
       const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
       const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
       const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
+      const centroSaludId = response.data.centroSaludId != null ? String(response.data.centroSaludId) : undefined;
+      const centroSaludNombre = response.data.centroSaludNombre || undefined;
       const allowSimulatedRole = Boolean((import.meta.env.DEV || isDemoModeEnabled()) && credentials.rolSimulado);
       let user: User = {
         id: usuarioId || String(Date.now()),
@@ -273,16 +284,19 @@ export const authService = {
         apellido: response.data.apellido || '',
         email: response.data.email || payload.email,
         dni: response.data.dni || cleanCredentials.dni || '',
+        centroSaludId,
+        centroSaludNombre,
         rol: allowSimulatedRole ? credentials.rolSimulado! : normalizeUserRole(response.data.rol),
         activo: true,
         twoFactorEnabled: false,
         emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
         isDeveloper: Boolean(import.meta.env.DEV && emailLower === 'dev@esu.gob.ar'),
+        permisos: ((response.data.permisos as unknown as PermissionCode[]) ?? []),
       };
 
       tokenStorage.setAccessToken(token);
       currentSessionUser = user;
-      sessionStorage.setItem('esu_session_active', '1');
+      authSessionStorage.setSessionActive();
       if (allowSimulatedRole && credentials.rolSimulado) {
         await authService.devSwitchRole(credentials.rolSimulado);
       }
@@ -345,6 +359,8 @@ export const authService = {
       }
 
       const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
+      const centroSaludId = response.data.centroSaludId != null ? String(response.data.centroSaludId) : undefined;
+      const centroSaludNombre = response.data.centroSaludNombre || undefined;
       let user: User = {
         id: usuarioId || String(Date.now()),
         usuarioId,
@@ -354,16 +370,19 @@ export const authService = {
         apellido: response.data.apellido || '',
         email: response.data.email || '',
         dni: response.data.dni || '',
+        centroSaludId,
+        centroSaludNombre,
         rol: normalizeUserRole(response.data.rol),
         activo: true,
         twoFactorEnabled: false,
         emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
         isDeveloper: false,
+        permisos: ((response.data.permisos as unknown as PermissionCode[]) ?? []),
       };
 
       tokenStorage.setAccessToken(token);
       currentSessionUser = user;
-      sessionStorage.setItem('esu_session_active', '1');
+      authSessionStorage.setSessionActive();
 
       if (user.rol === 'PACIENTE') {
         try {
@@ -440,7 +459,7 @@ export const authService = {
       if (token) {
         tokenStorage.setAccessToken(token);
         currentSessionUser = user;
-        sessionStorage.setItem('esu_session_active', '1');
+        authSessionStorage.setSessionActive();
         try {
           const perfilRes = await apiClient.get<PacienteMeResponse>('/pacientes/me');
           user = mergePacienteProfile(user, perfilRes.data);
@@ -470,7 +489,7 @@ export const authService = {
     } finally {
       tokenStorage.clearToken();
       currentSessionUser = null;
-      sessionStorage.removeItem('esu_session_active');
+      authSessionStorage.clearSessionActive();
       localStorage.removeItem('esu_dev_mode');
       localStorage.removeItem('esu_dev_active_role');
       authBroadcast.postMessage({ type: 'LOGOUT', reason: 'user' });
@@ -524,6 +543,9 @@ export const authService = {
           activo: boolean;
           verificado: boolean;
           twoFactorEnabled?: boolean;
+          centroSaludId?: number | string | null;
+          centroSaludNombre?: string | null;
+          permisos?: string[];
         }>(API_ENDPOINTS.auth.me);
 
         if (res.data) {
@@ -531,6 +553,8 @@ export const authService = {
           const pacienteId = res.data.pacienteId != null ? String(res.data.pacienteId) : undefined;
           const profesionalId = res.data.profesionalId != null ? String(res.data.profesionalId) : undefined;
           const authUserId = String(res.data.usuarioId || res.data.id);
+          const centroSaludId = res.data.centroSaludId != null ? String(res.data.centroSaludId) : currentSessionUser?.centroSaludId;
+          const centroSaludNombre = res.data.centroSaludNombre || currentSessionUser?.centroSaludNombre;
 
           const baseUser: User = {
             id: authUserId,
@@ -543,11 +567,14 @@ export const authService = {
             apellido: res.data.apellido || '',
             email: res.data.email,
             dni: res.data.dni || (userRol === 'PACIENTE' ? '' : authUserId),
+            centroSaludId,
+            centroSaludNombre,
             rol: userRol,
             activo: res.data.activo !== false,
             emailVerified: res.data.verificado !== false,
             twoFactorEnabled: res.data.twoFactorEnabled ?? currentSessionUser?.twoFactorEnabled ?? false,
             isDeveloper: import.meta.env.DEV && res.data.email?.toLowerCase() === 'dev@esu.gob.ar',
+            permisos: (res.data.permisos as unknown as PermissionCode[]) ?? currentSessionUser?.permisos ?? [],
           };
 
           let hydratedUser = baseUser;
@@ -569,7 +596,7 @@ export const authService = {
           tokenStorage.clearToken();
           currentSessionUser = null;
           if (typeof window !== 'undefined') {
-            sessionStorage.removeItem('esu_session_active');
+            authSessionStorage.clearSessionActive();
           }
         }
         return null;
@@ -712,6 +739,8 @@ export const authService = {
     const pacienteId = response.data.pacienteId != null ? String(response.data.pacienteId) : undefined;
     const profesionalId = response.data.profesionalId != null ? String(response.data.profesionalId) : undefined;
     const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
+    const centroSaludId = response.data.centroSaludId != null ? String(response.data.centroSaludId) : undefined;
+    const centroSaludNombre = response.data.centroSaludNombre || undefined;
     let user: User = {
       id: usuarioId || String(Date.now()),
       usuarioId,
@@ -721,15 +750,18 @@ export const authService = {
       apellido: response.data.apellido || '',
       email: response.data.email || '',
       dni: response.data.dni || '',
+      centroSaludId,
+      centroSaludNombre,
       rol: normalizeUserRole(response.data.rol),
       activo: true,
       twoFactorEnabled: true,
       emailVerified: response.data.emailVerificado ?? response.data.emailVerified ?? true,
+      permisos: ((response.data.permisos as unknown as PermissionCode[]) ?? []),
     };
 
     tokenStorage.setAccessToken(token);
     currentSessionUser = user;
-    sessionStorage.setItem('esu_session_active', '1');
+    authSessionStorage.setSessionActive();
 
     if (user.rol === 'PACIENTE') {
       try {

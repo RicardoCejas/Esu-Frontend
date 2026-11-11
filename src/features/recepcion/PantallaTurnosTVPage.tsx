@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import { turnosService } from '@/api/turnosService';
 import { centrosService } from '@/api/centrosService';
-import { soundNotification } from '@/lib/soundNotification';
+import { useQueueAudioAnnouncement } from './hooks/useQueueAudioAnnouncement';
 import { getFechaLocalHoy } from '@/lib/dateUtils';
 import type { Turno, CentroSalud } from '@/types';
 import {
@@ -9,19 +11,26 @@ import {
   VolumeX,
   Maximize2,
   Minimize2,
-  Building2,
   Clock,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck,
+  AlertCircle,
+  ExternalLink,
 } from 'lucide-react';
 
 export const PantallaTurnosTVPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+
+  const paramCentroId = searchParams.get('centroId') || '';
+  const activeCentroId = paramCentroId || (user?.centroSaludId ? String(user.centroSaludId) : '');
+
+  const [centro, setCentro] = useState<CentroSalud | null>(null);
   const [turnos, setTurnos] = useState<Turno[]>([]);
-  const [centros, setCentros] = useState<CentroSalud[]>([]);
-  const [filtroCentro, setFiltroCentro] = useState<string>('TODOS');
   const [horaActual, setHoraActual] = useState(new Date());
-  const [sonidoHabilitado, setSonidoHabilitado] = useState(true);
+  const { sonidoHabilitado, toggleSonido, anunciarLlamado } = useQueueAudioAnnouncement();
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [ultimoLlamadoId, setUltimoLlamadoId] = useState<string | null>(null);
+  const ultimoLlamadoIdRef = useRef<string | null>(null);
 
   // Reloj en tiempo real
   useEffect(() => {
@@ -29,31 +38,69 @@ export const PantallaTurnosTVPage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Polling automático cada 4 segundos para simular tiempo real en pantalla TV
+  // Cargar datos de la sede asignada
   useEffect(() => {
+    if (!activeCentroId) return;
+    let isSubscribed = true;
+
+    centrosService
+      .getById(activeCentroId)
+      .then((data) => {
+        if (isSubscribed && data) {
+          setCentro(data);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [activeCentroId]);
+
+  // Polling automático cada 4 segundos de cartelera pública para el centro específico
+  useEffect(() => {
+    if (!activeCentroId) return;
+    let isSubscribed = true;
+
     const fetchData = async () => {
-      const [t, c] = await Promise.all([turnosService.getAll(), centrosService.getAll()]);
-      setTurnos(t);
-      setCentros(c);
+      try {
+        const data = await turnosService
+          .getTurnosCarteleraPublica(activeCentroId)
+          .catch(async () => {
+            return turnosService.getTurnosKanbanCentro(activeCentroId).catch(() => [] as Turno[]);
+          });
+
+        if (isSubscribed) {
+          setTurnos(data ?? []);
+        }
+      } catch {
+        // En caso de intermitencia temporal de red, retener el estado actual
+      }
     };
 
-    fetchData();
+    void fetchData();
     const interval = setInterval(fetchData, 4000);
-    return () => clearInterval(interval);
-  }, []);
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
+  }, [activeCentroId]);
 
   const hoyStr = getFechaLocalHoy();
 
-  // Turnos del día filtrados por sede
+  // Filtrado defensivo de turnos del día para este centro
   const turnosHoy = useMemo(() => {
     return turnos.filter((t) => {
-      if (t.fecha !== hoyStr) return false;
-      if (filtroCentro !== 'TODOS' && t.centroSaludId !== filtroCentro) return false;
+      if (t.fecha && t.fecha !== hoyStr) return false;
+      if (activeCentroId && t.centroSaludId && String(t.centroSaludId) !== String(activeCentroId)) {
+        return false;
+      }
       return true;
     });
-  }, [turnos, hoyStr, filtroCentro]);
+  }, [turnos, hoyStr, activeCentroId]);
 
-  // Turnos llamados (Atendiendo o recién llamados)
+  // Turnos en llamado (Atendiendo)
   const turnosEnLlamado = useMemo(() => {
     return turnosHoy
       .filter((t) => t.estado === 'ATENDIENDO')
@@ -67,15 +114,15 @@ export const PantallaTurnosTVPage: React.FC = () => {
 
   const llamadoDestacado = turnosEnLlamado[0] || null;
 
-  // Efecto de sonido y animación cuando cambia el paciente llamado
+  // Anuncio por voz y chime al ingresar un nuevo paciente en llamado
   useEffect(() => {
-    if (llamadoDestacado && llamadoDestacado.id !== ultimoLlamadoId) {
-      setUltimoLlamadoId(llamadoDestacado.id);
+    if (llamadoDestacado && llamadoDestacado.id !== ultimoLlamadoIdRef.current) {
+      ultimoLlamadoIdRef.current = llamadoDestacado.id;
       if (sonidoHabilitado) {
-        soundNotification.playChime();
+        anunciarLlamado(llamadoDestacado.pacienteNombre, llamadoDestacado.consultorioNumero || '1');
       }
     }
-  }, [llamadoDestacado, ultimoLlamadoId, sonidoHabilitado]);
+  }, [llamadoDestacado, anunciarLlamado, sonidoHabilitado]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -86,79 +133,114 @@ export const PantallaTurnosTVPage: React.FC = () => {
   };
 
   const nombreCentroActual =
-    filtroCentro === 'TODOS'
-      ? 'Red de Salud Cruz del Eje'
-      : centros.find((c) => c.id === filtroCentro)?.nombre || 'Centro de Salud';
+    centro?.nombre ||
+    (user?.centroSaludId && String(user.centroSaludId) === String(activeCentroId)
+      ? user.centroSaludNombre
+      : null) ||
+    'Centro de Salud';
+
+  // Si no se proveyó un centroId válido en URL ni por usuario autenticado
+  if (!activeCentroId) {
+    return (
+      <div className="min-h-screen bg-slate-100 text-slate-900 flex items-center justify-center p-6 font-sans">
+        <div className="max-w-md w-full bg-white border border-slate-300 rounded-3xl p-8 shadow-sm text-center">
+          <div className="h-16 w-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="h-8 w-8" />
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            Pantalla no vinculada a una institución
+          </h1>
+          <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+            Esta pantalla pública de turnos debe accederse mediante el enlace institucional único correspondiente a su centro de salud para proyectar exclusivamente los llamados de su sala de espera.
+          </p>
+
+          {user?.centroSaludId && (
+            <div className="mt-6 pt-5 border-t border-slate-200">
+              <p className="text-xs text-slate-500 mb-2">Su usuario está adscrito a:</p>
+              <div className="text-sm font-bold text-slate-800 mb-4">{user.centroSaludNombre}</div>
+              <Link
+                to={`/pantalla-turnos?centroId=${user.centroSaludId}`}
+                className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-sky-700 hover:bg-sky-800 text-white font-semibold text-xs shadow-xs transition"
+              >
+                <span>Abrir Pantalla de mi Centro</span>
+                <ExternalLink className="h-4 w-4" />
+              </Link>
+            </div>
+          )}
+
+          <div className="mt-4">
+            <Link
+              to="/dashboard/recepcion"
+              className="text-xs text-sky-700 hover:text-sky-800 font-semibold underline underline-offset-4"
+            >
+              Volver al Panel de Recepción
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-primary selection:text-white font-sans overflow-hidden">
-      {/* Header Superior Tótem / TV */}
-      <header className="px-8 py-5 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md flex items-center justify-between">
+    <div className="min-h-screen bg-slate-100/90 text-slate-900 flex flex-col justify-between selection:bg-sky-600 selection:text-white font-sans overflow-hidden">
+      {/* Header Superior Tótem / TV en tonos claros */}
+      <header className="px-8 py-4 border-b border-slate-200 bg-white flex items-center justify-between shadow-2xs">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-sky-700 flex items-center justify-center shadow-lg shadow-sky-600/30">
-            <span className="text-xl font-black tracking-wider">ESU</span>
-          </div>
+          <img
+            src="/logo-icon.png"
+            alt="ESU Cruz del Eje"
+            className="h-11 w-11 object-contain rounded-xl bg-slate-50 border border-slate-200 p-1 shadow-2xs shrink-0"
+          />
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
               <span>{nombreCentroActual}</span>
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
             </h1>
-            <p className="text-xs text-slate-400 font-medium">
+            <p className="text-xs text-slate-500 font-medium">
               Pantalla Pública de Turnos y Orientación a Consultorios
             </p>
           </div>
         </div>
 
-        {/* Controles de Pantalla y Reloj */}
+        {/* Controles de Pantalla, Identidad de Sede y Reloj */}
         <div className="flex items-center gap-5">
-          {/* Selector de Sede para el Tótem */}
-          <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
-            <Building2 className="h-4 w-4 text-sky-400" />
-            <select
-              value={filtroCentro}
-              onChange={(e) => setFiltroCentro(e.target.value)}
-              className="bg-transparent text-slate-200 font-medium focus:outline-none"
-            >
-              <option value="TODOS" className="bg-slate-900">Todas las Sedes</option>
-              {centros.map((c) => (
-                <option key={c.id} value={c.id} className="bg-slate-900">
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
+          {/* Identificador institucional fijo (sin selector) */}
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-50 border border-sky-200 text-sky-900 text-xs font-semibold">
+            <ShieldCheck className="h-4 w-4 text-sky-700 shrink-0" />
+            <span>Turnero Oficial de Sede</span>
           </div>
 
           {/* Botón de Sonido */}
           <button
-            onClick={() => {
-              setSonidoHabilitado(!sonidoHabilitado);
-              if (!sonidoHabilitado) soundNotification.playChime();
-            }}
-            className={`p-2 rounded-xl border transition ${
+            type="button"
+            onClick={toggleSonido}
+            className={`p-2.5 rounded-xl border transition cursor-pointer shadow-2xs ${
               sonidoHabilitado
-                ? 'border-sky-600 bg-sky-700 text-white'
-                : 'border-slate-800 bg-slate-900 text-slate-500'
+                ? 'border-sky-700 bg-sky-700 text-white'
+                : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
             }`}
             title={sonidoHabilitado ? 'Silenciar sonido' : 'Activar sonido'}
+            aria-label={sonidoHabilitado ? 'Silenciar sonido' : 'Activar sonido'}
           >
             {sonidoHabilitado ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
           </button>
 
           {/* Botón Pantalla Completa */}
           <button
+            type="button"
             onClick={toggleFullscreen}
-            className="p-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition"
+            className="p-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition cursor-pointer shadow-2xs"
             title="Pantalla Completa (F11)"
+            aria-label="Alternar Pantalla Completa"
           >
             {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
           </button>
 
           {/* Reloj Digital Grande */}
-          <div className="text-right pl-3 border-l border-slate-800">
-            <div className="text-2xl font-black font-mono tracking-tight text-white">
+          <div className="text-right pl-4 border-l border-slate-200">
+            <div className="text-2xl font-black tabular-nums tracking-tight text-slate-900">
               {horaActual.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </div>
-            <div className="text-[11px] text-slate-400 uppercase tracking-widest font-semibold">
+            <div className="text-[11px] text-slate-500 uppercase tracking-widest font-semibold">
               {horaActual.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
             </div>
           </div>
@@ -168,76 +250,78 @@ export const PantallaTurnosTVPage: React.FC = () => {
       {/* Contenido Central Dividido */}
       <main className="flex-1 p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch overflow-hidden">
         {/* PANEL PRINCIPAL: Último llamado médico (Destacado Gigante) */}
-        <section className="lg:col-span-8 flex flex-col justify-center">
+        <section className="lg:col-span-8 flex flex-col justify-center" aria-live="polite">
           {llamadoDestacado ? (
-            <div className="relative rounded-3xl border-2 border-sky-500/50 bg-slate-900 p-8 lg:p-12 shadow-2xl shadow-sky-950/50 flex flex-col justify-between animate-in zoom-in-95 duration-300 ring-4 ring-sky-500/20">
-              <div className="flex items-center justify-between pb-6 border-b border-slate-800">
+            <div className="relative rounded-3xl border-2 border-sky-600 bg-white p-8 lg:p-10 shadow-lg flex flex-col justify-between">
+              <div className="flex items-center justify-between pb-5 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-700 text-white px-4 py-1.5 text-sm font-black uppercase tracking-wider">
-                    ¡Llamado en curso!
+                  <span className="inline-flex items-center rounded-lg bg-emerald-700 text-white px-3.5 py-1 text-xs font-bold uppercase tracking-wider shadow-2xs">
+                    Llamado en curso
                   </span>
                   {llamadoDestacado.horaLlamado && (
-                    <span className="text-xs text-slate-400 font-mono">
+                    <span className="text-xs text-slate-500 font-semibold tabular-nums">
                       Hora: {llamadoDestacado.horaLlamado} hs
                     </span>
                   )}
                 </div>
-                <span className="text-sm font-semibold text-slate-400">
-                  {llamadoDestacado.centroSaludNombre}
+                <span className="text-xs font-bold text-sky-900 bg-sky-50 px-3 py-1 rounded-md border border-sky-200">
+                  {llamadoDestacado.centroSaludNombre || nombreCentroActual}
                 </span>
               </div>
 
-              <div className="my-10 space-y-8">
+              <div className="my-8 space-y-6">
                 {/* Nombre del Paciente */}
                 <div>
-                  <span className="text-xs uppercase font-extrabold tracking-widest text-slate-400">
+                  <span className="text-xs uppercase font-extrabold tracking-widest text-slate-500">
                     Paciente Convocado
                   </span>
-                  <div className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight mt-1 truncate drop-shadow-md">
+                  <div className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 tracking-tight mt-1 truncate">
                     {llamadoDestacado.pacienteNombre}
                   </div>
                 </div>
 
-                {/* Flecha y Destino: Consultorio */}
-                <div className="rounded-2xl bg-slate-800 border border-slate-700 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-600 text-white font-black text-2xl shadow-lg shadow-sky-600/40">
-                      <ArrowRight className="h-8 w-8 animate-bounce" />
+                {/* Destino: Consultorio */}
+                <div className="rounded-2xl bg-sky-50 border-2 border-sky-600 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                  <div className="flex items-center gap-5">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-700 text-white font-bold text-2xl shrink-0 shadow-sm">
+                      <ArrowRight className="h-8 w-8" />
                     </div>
                     <div>
-                      <span className="text-xs uppercase font-bold text-sky-400 tracking-wider">
-                        Por favor dirigirse a:
+                      <span className="text-xs uppercase font-black text-sky-900 tracking-wider">
+                        Dirigirse a:
                       </span>
-                      <div className="text-3xl sm:text-5xl font-black text-white tracking-tight font-mono">
-                        CONSULTORIO {llamadoDestacado.consultorioNumero || '102'}
+                      <div className="text-3xl sm:text-5xl font-black text-sky-950 tracking-tight tabular-nums">
+                        CONSULTORIO {llamadoDestacado.consultorioNumero || 'ASIGNADO'}
                       </div>
                       {llamadoDestacado.planta && (
-                        <div className="text-sm font-semibold text-sky-300 mt-0.5">
-                          Ubicación: {llamadoDestacado.planta}
+                        <div className="text-xs font-bold text-sky-800 mt-0.5">
+                          Ubicación: Planta {llamadoDestacado.planta}
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="text-left sm:text-right pt-3 sm:pt-0 border-t sm:border-t-0 border-sky-500/20">
-                    <div className="text-xs text-slate-400">Profesional:</div>
-                    <div className="text-lg font-bold text-white">{llamadoDestacado.profesionalNombre}</div>
-                    <div className="text-xs text-slate-400">{llamadoDestacado.especialidadNombre}</div>
+                  <div className="text-left sm:text-right pt-3 sm:pt-0 border-t sm:border-t-0 border-sky-200">
+                    <div className="text-xs text-slate-600 font-medium">Profesional / Especialidad:</div>
+                    <div className="text-lg font-black text-slate-900">{llamadoDestacado.profesionalNombre}</div>
+                    <div className="text-xs font-bold text-sky-800">{llamadoDestacado.especialidadNombre}</div>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+              <div className="pt-4 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
                 <span>Si no se presenta tras el segundo llamado, su turno será pospuesto.</span>
-                <span className="font-mono text-slate-500">Cód: {llamadoDestacado.codigoVerificacion || `#${llamadoDestacado.id}`}</span>
+                <span className="tabular-nums font-semibold text-slate-700">Cód: {llamadoDestacado.codigoVerificacion || `#${llamadoDestacado.id}`}</span>
               </div>
             </div>
           ) : (
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-12 text-center my-auto">
-              <Clock className="h-16 w-16 text-slate-600 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-slate-300">Sala en Espera de Nuevos Llamados</h2>
-              <p className="text-sm text-slate-500 mt-2">
-                Los pacientes serán convocados por pantalla y audio en cuanto el profesional habilite el ingreso.
+            <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center my-auto shadow-sm">
+              <div className="h-20 w-20 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-10 w-10 text-sky-700" />
+              </div>
+              <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Sala de Espera Activa</h2>
+              <p className="text-base text-slate-600 mt-2 max-w-lg mx-auto font-medium leading-relaxed">
+                Los pacientes serán convocados por pantalla y audio en cuanto el profesional médico habilite el ingreso al consultorio asignado.
               </p>
             </div>
           )}
@@ -246,66 +330,79 @@ export const PantallaTurnosTVPage: React.FC = () => {
         {/* PANEL LATERAL: Lista de Llamados Recientes y Próximos en Espera */}
         <aside className="lg:col-span-4 flex flex-col gap-6">
           {/* Llamados recientes */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 flex-1 flex flex-col">
-            <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 pb-3 border-b border-slate-800 flex items-center justify-between">
-              <span>Llamados Recientes</span>
-              <span className="text-[10px] text-sky-400 font-normal">Últimas atenciones</span>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 flex-1 flex flex-col shadow-xs">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 pb-3 border-b border-slate-100 flex items-center justify-between">
+              <span className="font-extrabold">Llamados Recientes</span>
+              <span className="text-[11px] text-sky-700 font-bold bg-sky-50 px-2.5 py-0.5 rounded-md border border-sky-200">
+                Últimas atenciones
+              </span>
             </h2>
 
             <div className="mt-3 space-y-2.5 overflow-y-auto flex-1">
               {turnosEnLlamado.slice(1, 6).map((t) => (
                 <div
                   key={t.id}
-                  className="rounded-xl border border-slate-800 bg-slate-800/40 p-3 flex items-center justify-between"
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 flex items-center justify-between shadow-2xs"
                 >
                   <div>
-                    <h3 className="font-bold text-sm text-white">{t.pacienteNombre}</h3>
-                    <p className="text-xs text-slate-400">Dr(a). {t.profesionalNombre}</p>
+                    <h3 className="font-bold text-sm text-slate-900">{t.pacienteNombre}</h3>
+                    <p className="text-xs text-slate-600 font-medium">Dr(a). {t.profesionalNombre}</p>
                   </div>
                   <div className="text-right">
-                    <span className="rounded-lg bg-sky-700 text-white px-2 py-1 text-xs font-mono font-black">
-                      Cons. {t.consultorioNumero || '102'}
+                    <span className="rounded-lg bg-sky-700 text-white px-2.5 py-1 text-xs tabular-nums font-bold shadow-2xs">
+                      Cons. {t.consultorioNumero || 'S/N'}
                     </span>
-                    <div className="text-[10px] text-slate-500 mt-1 font-mono">{t.horaLlamado || t.hora} hs</div>
+                    <div className="text-[10px] text-slate-500 mt-1 tabular-nums font-semibold">
+                      {t.horaLlamado || t.hora} hs
+                    </div>
                   </div>
                 </div>
               ))}
               {turnosEnLlamado.length <= 1 && (
-                <p className="text-center text-xs text-slate-500 py-6 italic">No hay llamados previos registrados</p>
+                <p className="text-center text-xs text-slate-400 py-8 italic font-medium">
+                  No hay llamados previos registrados
+                </p>
               )}
             </div>
           </div>
 
           {/* Próximos Pacientes en Sala */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 h-48 flex flex-col">
-            <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 pb-2 border-b border-slate-800 flex items-center justify-between">
-              <span>Próximos en Sala</span>
-              <span className="text-xs font-mono font-bold text-amber-400">{pacientesEnEspera.length} en espera</span>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 h-52 flex flex-col shadow-xs">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100 flex items-center justify-between">
+              <span className="font-extrabold">Próximos en Sala</span>
+              <span className="text-xs tabular-nums font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                {pacientesEnEspera.length} en espera
+              </span>
             </h2>
 
-            <div className="mt-2 space-y-1.5 overflow-y-auto flex-1">
+            <div className="mt-2.5 space-y-2 overflow-y-auto flex-1">
               {pacientesEnEspera.slice(0, 5).map((t) => (
-                <div key={t.id} className="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-slate-800/20">
-                  <span className="text-slate-300 truncate max-w-[170px]">{t.pacienteNombre}</span>
-                  <span className="font-mono text-slate-500">{t.hora} hs</span>
+                <div
+                  key={t.id}
+                  className="flex items-center justify-between text-xs py-2 px-3 rounded-lg bg-slate-50 border border-slate-200"
+                >
+                  <span className="text-slate-800 truncate max-w-[170px] font-semibold">{t.pacienteNombre}</span>
+                  <span className="tabular-nums font-bold text-slate-600">{t.hora} hs</span>
                 </div>
               ))}
               {pacientesEnEspera.length === 0 && (
-                <p className="text-center text-xs text-slate-600 py-3 italic">Todos los pacientes han sido llamados</p>
+                <p className="text-center text-xs text-slate-400 py-4 italic font-medium">
+                  Todos los pacientes han sido llamados
+                </p>
               )}
             </div>
           </div>
         </aside>
       </main>
 
-      {/* Pie de pantalla Tótem con cintillo informativo */}
-      <footer className="px-8 py-3 border-t border-slate-800 bg-slate-900/90 text-xs text-slate-400 flex items-center justify-between">
+      {/* Pie de pantalla Tótem con aviso informativo */}
+      <footer className="px-8 py-3.5 border-t border-slate-200 bg-white text-xs text-slate-600 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
-          <span className="font-semibold text-slate-200">Aviso a la comunidad:</span>
-          <span>Mantenga a mano su DNI y credencial médica antes de pasar al consultorio.</span>
+          <span className="font-bold text-slate-900">Aviso a la comunidad:</span>
+          <span className="font-medium">Mantenga a mano su DNI y credencial médica antes de pasar al consultorio.</span>
         </div>
-        <div className="text-[11px] text-slate-500 font-mono">
-          Sistema de Turnos ESU • Cruz del Eje
+        <div className="text-[11px] text-slate-500 font-semibold tracking-wide">
+          Sistema de Salud ESU • Cruz del Eje
         </div>
       </footer>
     </div>

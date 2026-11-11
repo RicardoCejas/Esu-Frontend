@@ -181,7 +181,7 @@ export const NuevoProfesionalPage: React.FC = () => {
                   value={formData.matricula}
                   onChange={handleTextChange}
                   placeholder="Ej. MP-34982"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 

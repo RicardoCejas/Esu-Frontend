@@ -166,7 +166,7 @@ export const RegisterPage: React.FC = () => {
               <img src="/logo-icon.png" alt="Luvia Logo" width="48" height="48" className="h-12 w-12 object-contain drop-shadow-sm" />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold tracking-tight font-heading text-slate-900">
+              <h1 className="text-xl font-extrabold tracking-tight text-slate-900">
                 Registro de Paciente
               </h1>
               <p className="text-[11px] text-slate-600">

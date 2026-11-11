@@ -76,7 +76,7 @@ export const ResetPasswordPage: React.FC = () => {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-700 shadow-inner">
               <Lock className="h-7 w-7" />
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight font-heading text-foreground">
+            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
               Nueva Contraseña
             </h1>
             <p className="text-xs text-muted-foreground max-w-xs mx-auto">

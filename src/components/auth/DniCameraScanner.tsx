@@ -210,7 +210,7 @@ export const DniCameraScanner: React.FC<DniCameraScannerProps> = ({
                     <span className="text-xs font-bold text-emerald-200">
                       Documento Identificado y Verificado
                     </span>
-                    <span className="text-[11px] font-mono text-white mt-0.5">
+                    <span className="text-[11px] tabular-nums text-white mt-0.5">
                       DNI: {detectedData?.dni}
                     </span>
                   </div>

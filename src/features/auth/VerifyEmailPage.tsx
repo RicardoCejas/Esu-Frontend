@@ -80,7 +80,7 @@ export const VerifyEmailPage: React.FC = () => {
           </div>
 
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight font-heading text-foreground">
+            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
               {verifiedSuccessfully ? '¡Correo Verificado!' : 'Verifica tu Correo'}
             </h1>
             <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1">

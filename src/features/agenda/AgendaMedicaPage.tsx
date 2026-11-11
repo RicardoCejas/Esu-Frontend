@@ -208,7 +208,7 @@ export const AgendaMedicaPublicaPage: React.FC = () => {
               <span>Red Integral de Salud • Cruz del Eje</span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight font-heading leading-tight text-white">
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight text-white">
               Agenda Médica Asistencial y Especialidades
             </h1>
 
@@ -237,7 +237,7 @@ export const AgendaMedicaPublicaPage: React.FC = () => {
           {/* Tarjetas de Métricas Rápidas */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-10 pt-8 border-t border-white/15">
             <div className="rounded-2xl bg-white/10 border border-white/15 p-4 backdrop-blur-xs">
-              <span className="text-2xl sm:text-3xl font-extrabold font-heading text-white block">
+              <span className="text-2xl sm:text-3xl font-extrabold text-white block">
                 {especialidades.length || 28}
               </span>
               <span className="text-xs text-sky-100 font-medium mt-0.5 block">
@@ -245,7 +245,7 @@ export const AgendaMedicaPublicaPage: React.FC = () => {
               </span>
             </div>
             <div className="rounded-2xl bg-white/10 border border-white/15 p-4 backdrop-blur-xs">
-              <span className="text-2xl sm:text-3xl font-extrabold font-heading text-white block">
+              <span className="text-2xl sm:text-3xl font-extrabold text-white block">
                 {profesionales.length || 24}
               </span>
               <span className="text-xs text-sky-100 font-medium mt-0.5 block">
@@ -253,7 +253,7 @@ export const AgendaMedicaPublicaPage: React.FC = () => {
               </span>
             </div>
             <div className="rounded-2xl bg-white/10 border border-white/15 p-4 backdrop-blur-xs">
-              <span className="text-2xl sm:text-3xl font-extrabold font-heading text-white block">
+              <span className="text-2xl sm:text-3xl font-extrabold text-white block">
                 {centros.length || 4}
               </span>
               <span className="text-xs text-sky-100 font-medium mt-0.5 block">
@@ -261,7 +261,7 @@ export const AgendaMedicaPublicaPage: React.FC = () => {
               </span>
             </div>
             <div className="rounded-2xl bg-white/10 border border-white/15 p-4 backdrop-blur-xs">
-              <span className="text-2xl sm:text-3xl font-extrabold font-heading text-white block">
+              <span className="text-2xl sm:text-3xl font-extrabold text-white block">
                 24 Hs
               </span>
               <span className="text-xs text-sky-100 font-medium mt-0.5 block">
@@ -389,7 +389,7 @@ export const AgendaMedicaPublicaPage: React.FC = () => {
                         </div>
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#003855] font-heading">
+                            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#003855]">
                               {item.nombre}
                             </h2>
                             <span className="rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5">
@@ -479,7 +479,7 @@ export const AgendaMedicaPublicaPage: React.FC = () => {
                                       <h4 className="text-sm font-bold text-slate-900 leading-tight">
                                         Dr. {medico.nombre} {medico.apellido}
                                       </h4>
-                                      <span className="text-xs font-mono text-slate-500">
+                                      <span className="text-xs tabular-nums text-slate-500">
                                         {medico.matricula}
                                       </span>
                                     </div>
@@ -529,7 +529,7 @@ export const AgendaMedicaPublicaPage: React.FC = () => {
                 <ShieldCheck className="h-4 w-4" />
                 <span>Atención Médica Urgente</span>
               </span>
-              <h3 className="text-2xl sm:text-3xl font-extrabold font-heading">
+              <h3 className="text-2xl sm:text-3xl font-extrabold">
                 ¿Necesitás atención de guardia médica inmediata?
               </h3>
               <p className="text-sm text-rose-100 leading-relaxed">

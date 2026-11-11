@@ -1,450 +1,237 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { turnosService } from '@/api/turnosService';
-import { centrosService } from '@/api/centrosService';
+import { useAuth } from '@/context/AuthContext';
+import { useSalasEsperaKanban } from './hooks/useSalasEsperaKanban';
+import { usePermissions } from '@/hooks/usePermissions';
+import { KanbanColumn } from './components/KanbanColumn';
+import { ModalCancelarMostrador } from './components/ModalCancelarMostrador';
 import { soundNotification } from '@/lib/soundNotification';
-import type { Turno, CentroSalud } from '@/types';
-import {
-  ArrowRight,
-  Building2,
-  Volume2,
-  MonitorPlay,
-  CheckCircle2,
-  Flame,
-  Plus
-} from 'lucide-react';
-import { ModalCrearSobreturno } from '@/features/medico/components/ModalCrearSobreturno';
-import { getFechaLocalHoy } from '@/lib/dateUtils';
+import { Volume2, MonitorPlay, Flame, Plus, Search, CheckCircle2, AlertTriangle } from 'lucide-react';
+import type { Turno } from '@/types';
 
 export const SalasEsperaKanbanPage: React.FC = () => {
-  const [turnos, setTurnos] = useState<Turno[]>([]);
-  const [centros, setCentros] = useState<CentroSalud[]>([]);
-  const [filtroCentro, setFiltroCentro] = useState<string>('TODOS');
-  const [filtroPlanta, setFiltroPlanta] = useState<string>('TODOS');
-  const [loading, setLoading] = useState(true);
-  const [consultorioSeleccionado, setConsultorioSeleccionado] = useState<string>('102');
-  const [isModalSobreturnoOpen, setIsModalSobreturnoOpen] = useState(false);
+  const { user } = useAuth();
+  const kanban = useSalasEsperaKanban(user?.centroSaludId);
+  const { can } = usePermissions();
 
-  const hoyStr = getFechaLocalHoy();
+  const [turnoACancelar, setTurnoACancelar] = useState<Turno | null>(null);
+  const [modalCancelarOpen, setModalCancelarOpen] = useState(false);
 
-  const cargarDatos = () => {
-    setLoading(true);
-    Promise.all([
-      turnosService.getAll().catch(() => []),
-      centrosService.getAll().catch(() => [])
-    ])
-      .then(([t, c]) => {
-        setTurnos(t || []);
-        setCentros(c || []);
-      })
-      .catch((err) => {
-        console.error('Error al cargar datos del tablero:', err);
-        setTurnos([]);
-        setCentros([]);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+  const handleOpenCancelar = (t: Turno) => {
+    setTurnoACancelar(t);
+    setModalCancelarOpen(true);
   };
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  // Turnos del día filtrados por sede y planta
-  const turnosFiltrados = useMemo(() => {
-    return turnos.filter((t) => {
-      if (t.fecha !== hoyStr) return false;
-      const matchCentro = filtroCentro === 'TODOS' || t.centroSaludId === filtroCentro;
-      const matchPlanta = filtroPlanta === 'TODOS' || t.planta === filtroPlanta;
-      return matchCentro && matchPlanta;
-    });
-  }, [turnos, hoyStr, filtroCentro, filtroPlanta]);
-
-  // Columnas operativas según HU-55:
-  const porLlegar = turnosFiltrados.filter(
-    (t) => t.estado === 'PENDIENTE' || t.estado === 'CONFIRMADO'
-  );
-  const enEspera = turnosFiltrados.filter(
-    (t) => t.estado === 'EN_SALA_DE_ESPERA' || t.estado === 'EN_ESPERA'
-  );
-  const enConsulta = turnosFiltrados.filter((t) => t.estado === 'ATENDIENDO');
-  const atendidos = turnosFiltrados.filter((t) => t.estado === 'COMPLETADO');
-
-  // HU-FE-63: Contador de sobreturnos asignados en la jornada
-  const sobreturnosHoy = turnosFiltrados.filter((t) => t.esSobreturno && t.estado !== 'CANCELADO');
-  const countSobreturnos = sobreturnosHoy.length;
-
-  // Mover a En Espera (Check-In)
-  const handleMoverAEnEspera = async (turno: Turno) => {
-    const updated = await turnosService.checkIn(turno.id);
-    if (updated) {
-      setTurnos((prev) => prev.map((t) => (t.id === turno.id ? updated : t)));
-    }
+  const handleCloseCancelar = () => {
+    setModalCancelarOpen(false);
+    setTurnoACancelar(null);
   };
 
-  // Llamar a Consultorio (En Consulta) y emitir audio chime
-  const handleLlamarAConsultorio = async (turno: Turno) => {
-    soundNotification.playChime();
-    const updated = await turnosService.llamarPaciente(
-      turno.id,
-      turno.consultorioNumero || consultorioSeleccionado
-    );
-    if (updated) {
-      setTurnos((prev) => prev.map((t) => (t.id === turno.id ? updated : t)));
-    }
-  };
-
-  // Finalizar atención
-  const handleFinalizar = async (turno: Turno) => {
-    const updated = await turnosService.updateEstado(turno.id, 'COMPLETADO');
-    if (updated) {
-      setTurnos((prev) => prev.map((t) => (t.id === turno.id ? updated : t)));
-    }
+  const handleTurnoCancelado = (id: string) => {
+    kanban.setTurnos((prev) => prev.filter((t) => String(t.id) !== String(id)));
+    handleCloseCancelar();
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header y Control de Flujo */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Tablero Kanban de Salas de Espera
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Control de flujo de pacientes en tiempo real: de recepción a consultorio y salida.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {/* HU-FE-63: Contador visible de Sobreturnos en la jornada */}
-          <div
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold border transition ${
-              countSobreturnos >= 3
-                ? 'border-rose-300 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200'
-                : 'border-amber-300 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200'
-            }`}
-            title="Cupo diario de sobreturnos asignados en sala"
-          >
-            <Flame className="h-4 w-4 text-amber-600 shrink-0" />
-            <span>Sobreturnos en Sala:</span>
-            <span className="font-mono text-xs font-black">{countSobreturnos}/3</span>
-          </div>
-
-          {/* HU-FE-63: Botón de Acción Rápida "+ Agregar Sobreturno" */}
-          <button
-            type="button"
-            onClick={() => setIsModalSobreturnoOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-2 text-xs shadow-xs transition cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-            <span>+ Agregar Sobreturno</span>
-          </button>
-
-          <button
-            onClick={() => soundNotification.playChime()}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition cursor-pointer"
-            title="Probar sonido de llamado"
-          >
-            <Volume2 className="h-4 w-4 text-primary" />
-            <span>Probar Sonido</span>
-          </button>
-
-          <Link
-            to="/pantalla-turnos"
-            target="_blank"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-xs"
-          >
-            <MonitorPlay className="h-4 w-4" />
-            <span>Abrir Modo TV / Tótem</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Segmentación en tiempo real por Centro y Planta */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
+    <div className="space-y-5">
+      {/* Banner de alerta temporal */}
+      {kanban.alerta && (
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-xs font-semibold text-emerald-800 dark:text-emerald-200 flex items-center justify-between shadow-xs animate-in fade-in"
+        >
           <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <select
-              value={filtroCentro}
-              onChange={(e) => setFiltroCentro(e.target.value)}
-              className="rounded-xl border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-medium"
-            >
-              <option value="TODOS">Todas las Sedes / Centros</option>
-              {centros.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-semibold">Planta / Piso:</span>
-            <select
-              value={filtroPlanta}
-              onChange={(e) => setFiltroPlanta(e.target.value)}
-              className="rounded-xl border border-input bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-medium"
-            >
-              <option value="TODOS">Todas las Plantas</option>
-              <option value="Planta Baja">Planta Baja</option>
-              <option value="1° Piso">1° Piso</option>
-              <option value="2° Piso">2° Piso</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>Consultorio para llamado rápido:</span>
-          <select
-            value={consultorioSeleccionado}
-            onChange={(e) => setConsultorioSeleccionado(e.target.value)}
-            className="rounded-xl border border-input bg-background px-2.5 py-1 text-xs font-mono font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="101">101</option>
-            <option value="102">102</option>
-            <option value="105">105</option>
-            <option value="204">204</option>
-            <option value="301">301</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Columnas Kanban */}
-      {loading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* COLUMNA 1: Por Llegar */}
-          <div className="rounded-2xl border border-border bg-muted/40 p-3.5 flex flex-col min-h-[500px]">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-slate-500" />
-                <h3 className="font-bold text-xs uppercase tracking-wider text-foreground">Por Llegar</h3>
-              </div>
-              <span className="rounded-full bg-slate-700 px-2.5 py-0.5 text-xs font-mono font-bold text-white">
-                {porLlegar.length}
-              </span>
-            </div>
-
-            <div className="mt-3 space-y-3 flex-1 overflow-y-auto">
-              {porLlegar.map((t) => (
-                <div
-                  key={t.id}
-                  className={`rounded-xl border p-3 shadow-xs space-y-2 transition ${
-                    t.esSobreturno
-                      ? 'border-amber-400 bg-amber-50/20 dark:bg-amber-950/20 border-l-4 border-l-amber-500'
-                      : 'border-border bg-card hover:border-sky-500/50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-xs text-sky-700">{t.hora} hs</span>
-                    <div className="flex items-center gap-1.5">
-                      {/* Badge Sobreturno Ámbar */}
-                      {t.esSobreturno && (
-                        <span className="rounded-md bg-amber-500 text-white font-black px-2 py-0.5 text-[10px] tracking-wide shadow-2xs flex items-center gap-1">
-                          <Flame className="h-3 w-3" />
-                          Sobreturno
-                        </span>
-                      )}
-                      {t.esPrimeraVez && (
-                        <span className="rounded-full bg-amber-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                          1ª Vez
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-foreground">{t.pacienteNombre}</h4>
-                    <p className="text-[11px] text-muted-foreground">DNI <span className="font-mono">{t.pacienteDni}</span></p>
-                  </div>
-                  <div className="pt-2 border-t border-border text-[11px] text-muted-foreground flex justify-between">
-                    <span>{t.profesionalNombre}</span>
-                    <span className="font-mono font-semibold">Cons. {t.consultorioNumero || '102'}</span>
-                  </div>
-                  <button
-                    onClick={() => handleMoverAEnEspera(t)}
-                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold py-1.5 text-xs transition cursor-pointer"
-                  >
-                    <span>Marcar Llegada</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {porLlegar.length === 0 && (
-                <p className="text-center text-xs text-muted-foreground py-8 italic">No hay pacientes por llegar</p>
-              )}
-            </div>
-          </div>
-
-          {/* COLUMNA 2: En Sala de Espera */}
-          <div className="rounded-2xl border border-border bg-muted/40 p-3.5 flex flex-col min-h-[500px]">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-amber-600" />
-                <h3 className="font-bold text-xs uppercase tracking-wider text-amber-700">En Espera</h3>
-              </div>
-              <span className="rounded-full bg-amber-600 px-2.5 py-0.5 text-xs font-mono font-bold text-white">
-                {enEspera.length}
-              </span>
-            </div>
-
-            <div className="mt-3 space-y-3 flex-1 overflow-y-auto">
-              {enEspera.map((t) => (
-                <div
-                  key={t.id}
-                  className={`rounded-xl border p-3 shadow-xs space-y-2 transition ${
-                    t.esSobreturno
-                      ? 'border-amber-400 bg-amber-50/30 dark:bg-amber-950/30 border-l-4 border-l-amber-500'
-                      : 'border-border bg-card hover:border-amber-500/50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-xs text-amber-700">{t.hora} hs</span>
-                    <div className="flex items-center gap-1.5">
-                      {t.esSobreturno && (
-                        <span className="rounded-md bg-amber-500 text-white font-black px-2 py-0.5 text-[10px] tracking-wide shadow-2xs flex items-center gap-1">
-                          <Flame className="h-3 w-3" />
-                          Sobreturno
-                        </span>
-                      )}
-                      <span className="text-[10px] text-muted-foreground">
-                        Llegó: <span className="font-mono">{t.horaCheckIn || 'En sala'}</span>
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-foreground">{t.pacienteNombre}</h4>
-                    <p className="text-[11px] text-muted-foreground">{t.obraSocial || 'Particular'}</p>
-                  </div>
-                  <div className="pt-2 border-t border-border text-[11px] text-muted-foreground flex justify-between">
-                    <span>{t.profesionalNombre}</span>
-                    <span className="font-mono font-semibold text-foreground">Cons. {t.consultorioNumero || '102'}</span>
-                  </div>
-                  <button
-                    onClick={() => handleLlamarAConsultorio(t)}
-                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-sky-700 hover:bg-sky-800 text-white font-semibold py-1.5 text-xs transition shadow-xs cursor-pointer"
-                  >
-                    <Volume2 className="h-3 w-3" />
-                    <span>Llamar a Consultorio</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {enEspera.length === 0 && (
-                <p className="text-center text-xs text-muted-foreground py-8 italic">Sala de espera despejada</p>
-              )}
-            </div>
-          </div>
-
-          {/* COLUMNA 3: En Consulta */}
-          <div className="rounded-2xl border border-border bg-muted/40 p-3.5 flex flex-col min-h-[500px]">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-sky-600" />
-                <h3 className="font-bold text-xs uppercase tracking-wider text-sky-700">En Consulta</h3>
-              </div>
-              <span className="rounded-full bg-sky-700 px-2.5 py-0.5 text-xs font-mono font-bold text-white">
-                {enConsulta.length}
-              </span>
-            </div>
-
-            <div className="mt-3 space-y-3 flex-1 overflow-y-auto">
-              {enConsulta.map((t) => (
-                <div
-                  key={t.id}
-                  className={`rounded-xl border p-3 shadow-xs space-y-2 ${
-                    t.esSobreturno
-                      ? 'border-l-4 border-l-amber-500 border-sky-600 bg-card'
-                      : 'border-sky-600 bg-card'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-sky-700 px-2 py-0.5 text-[10px] font-bold text-white">En atención</span>
-                    <div className="flex items-center gap-1.5">
-                      {t.esSobreturno && (
-                        <span className="rounded-md bg-amber-500 text-white font-black px-2 py-0.5 text-[10px] tracking-wide shadow-2xs flex items-center gap-1">
-                          <Flame className="h-3 w-3" />
-                          Sobreturno
-                        </span>
-                      )}
-                      <span className="text-[10px] text-muted-foreground">
-                        Llamado: <span className="font-mono">{t.horaLlamado || '09:00'}</span>
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-foreground">{t.pacienteNombre}</h4>
-                    <p className="text-[11px] font-semibold text-sky-700 font-mono">Consultorio {t.consultorioNumero || '102'}</p>
-                  </div>
-                  <div className="pt-2 border-t border-border text-[11px] text-muted-foreground">
-                    Atendido por: <strong className="text-foreground">{t.profesionalNombre}</strong>
-                  </div>
-                  <button
-                    onClick={() => handleFinalizar(t)}
-                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-1.5 text-xs transition shadow-xs cursor-pointer"
-                  >
-                    <CheckCircle2 className="h-3 w-3" />
-                    <span>Finalizar Atención</span>
-                  </button>
-                </div>
-              ))}
-              {enConsulta.length === 0 && (
-                <p className="text-center text-xs text-muted-foreground py-8 italic">Ningún consultorio ocupado actualmente</p>
-              )}
-            </div>
-          </div>
-
-          {/* COLUMNA 4: Atendidos */}
-          <div className="rounded-2xl border border-border bg-muted/40 p-3.5 flex flex-col min-h-[500px]">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-emerald-600" />
-                <h3 className="font-bold text-xs uppercase tracking-wider text-emerald-700">Atendidos</h3>
-              </div>
-              <span className="rounded-full bg-emerald-700 px-2.5 py-0.5 text-xs font-mono font-bold text-white">
-                {atendidos.length}
-              </span>
-            </div>
-
-            <div className="mt-3 space-y-3 flex-1 overflow-y-auto">
-              {atendidos.map((t) => (
-                <div
-                  key={t.id}
-                  className="rounded-xl border border-border bg-card p-3 shadow-xs space-y-1.5 hover:border-emerald-500/40 transition"
-                >
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-foreground">{t.pacienteNombre}</h4>
-                    <span className="rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-bold text-white">Completado</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">{t.especialidadNombre}</p>
-                  <div className="text-[10px] text-muted-foreground pt-1 border-t border-border">
-                    Dr(a). {t.profesionalNombre}
-                  </div>
-                </div>
-              ))}
-              {atendidos.length === 0 && (
-                <p className="text-center text-xs text-muted-foreground py-8 italic">Sin pacientes atendidos aún hoy</p>
-              )}
-            </div>
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>{kanban.alerta}</span>
           </div>
         </div>
       )}
 
-      {/* Modal HU-FE-63: Sobreturno desde Recepción */}
-      <ModalCrearSobreturno
-        isOpen={isModalSobreturnoOpen}
-        onClose={() => setIsModalSobreturnoOpen(false)}
-        profesionalId="p1"
-        centroSaludId={filtroCentro !== 'TODOS' ? filtroCentro : 'c1'}
-        fecha={hoyStr}
-        sobreturnosHoyCount={countSobreturnos}
-        onSobreturnoCreado={() => {
-          cargarDatos();
-        }}
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Tablero de Salas de Espera
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Flujo de atención presencial: acreditación en recepción, llamado por voz y derivación a consultorio.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition shadow-xs ${
+              kanban.countSobreturnos >= 3
+                ? 'bg-rose-700 text-white'
+                : 'bg-slate-800 text-white'
+            }`}
+          >
+            <Flame className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
+            <span>Sobreturnos:</span>
+            <span className="tabular-nums text-xs font-black">{kanban.countSobreturnos}/3</span>
+          </div>
+
+          {can('SOBRETURNOS_CREAR') && (
+            <Link
+              to="/dashboard/recepcion/kanban/sobreturno"
+              className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-bold px-3 py-2 text-xs shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-600"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              <span>Sobreturno</span>
+            </Link>
+          )}
+
+          <button
+            type="button"
+            onClick={() => soundNotification.playChime()}
+            className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl border border-input bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition cursor-pointer"
+          >
+            <Volume2 className="h-4 w-4 text-primary" aria-hidden="true" />
+            <span>Probar Sonido</span>
+          </button>
+
+          <Link
+            to={user?.centroSaludId ? `/pantalla-turnos?centroId=${user.centroSaludId}` : '/pantalla-turnos'}
+            target="_blank"
+            className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition shadow-xs"
+          >
+            <MonitorPlay className="h-4 w-4" aria-hidden="true" />
+            <span>Pantalla TV</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Toolbar de Búsqueda y Filtros */}
+      <div className="p-3 rounded-2xl border border-border bg-card shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Buscador */}
+        <div className="relative">
+          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={kanban.busqueda}
+            onChange={(e) => kanban.setBusqueda(e.target.value)}
+            placeholder="Buscar por paciente, DNI, médico..."
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-input bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+
+        {/* Filtro Planta */}
+        <div className="flex items-center gap-2 border border-input rounded-xl px-3 py-1.5 bg-background">
+          <label htmlFor="filtro-planta" className="text-xs text-muted-foreground font-medium shrink-0">
+            Planta:
+          </label>
+          <select
+            id="filtro-planta"
+            value={kanban.filtroPlanta}
+            onChange={(e) => kanban.setFiltroPlanta(e.target.value)}
+            className="w-full bg-transparent text-xs font-semibold focus:outline-none text-foreground cursor-pointer"
+          >
+            <option value="TODOS">Todas las Plantas</option>
+            {kanban.floorOptions.map((floor) => (
+              <option key={floor} value={floor}>
+                {floor}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Filtro Profesional */}
+        <div className="flex items-center gap-2 border border-input rounded-xl px-3 py-1.5 bg-background">
+          <label htmlFor="filtro-prof" className="text-xs text-muted-foreground font-medium shrink-0">
+            Médico:
+          </label>
+          <select
+            id="filtro-prof"
+            value={kanban.filtroProfesional}
+            onChange={(e) => kanban.setFiltroProfesional(e.target.value)}
+            className="w-full bg-transparent text-xs font-semibold focus:outline-none text-foreground cursor-pointer truncate"
+          >
+            <option value="TODOS">Todos los Médicos</option>
+            {kanban.profesionales.map((p) => (
+              <option key={p.id} value={String(p.id)}>
+                {p.nombre} {p.apellido} {p.especialidadNombre ? `(${p.especialidadNombre})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Consultorio Destino Predeterminado para Llamadas */}
+        <div className="flex items-center gap-2 border border-input rounded-xl px-3 py-1.5 bg-background">
+          <label htmlFor="consultorio-default" className="text-xs text-muted-foreground font-medium shrink-0">
+            Llamar a Cons:
+          </label>
+          <select
+            id="consultorio-default"
+            value={kanban.consultorioSeleccionado}
+            onChange={(e) => kanban.setConsultorioSeleccionado(e.target.value)}
+            className="w-full bg-transparent text-xs font-semibold focus:outline-none text-foreground cursor-pointer truncate"
+          >
+            {kanban.consultorios.length === 0 ? (
+              <option value="">Sin consultorios cargados</option>
+            ) : (
+              kanban.consultorios.map((c) => (
+                <option key={c.id ?? c.numero} value={c.numero}>
+                  Cons. {c.numero} {c.planta ? `(${c.planta})` : ''}
+                </option>
+              ))
+            )}
+          </select>
+        </div>
+      </div>
+
+      {kanban.error && (
+        <div className="rounded-xl border border-rose-500/40 bg-rose-50 dark:bg-rose-950/40 p-3 text-xs text-rose-800 dark:text-rose-200 flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
+          <span>{kanban.error}</span>
+        </div>
+      )}
+
+      {/* Grid de 4 Columnas Kanban */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KanbanColumn
+          title="Por Llegar"
+          dotColor="bg-slate-500"
+          badgeBg="bg-slate-800"
+          columna="porLlegar"
+          turnos={kanban.porLlegar}
+          onMoverAEnEspera={kanban.handleMoverAEnEspera}
+          onMarcarAusente={kanban.handleMarcarAusente}
+          onCancelar={handleOpenCancelar}
+        />
+        <KanbanColumn
+          title="En Espera"
+          dotColor="bg-amber-500"
+          badgeBg="bg-amber-600"
+          columna="enEspera"
+          turnos={kanban.enEspera}
+          onLlamar={kanban.handleLlamarAConsultorio}
+          onMarcarAusente={kanban.handleMarcarAusente}
+          onCancelar={handleOpenCancelar}
+        />
+        <KanbanColumn
+          title="En Consulta"
+          dotColor="bg-sky-500"
+          badgeBg="bg-sky-700"
+          columna="enConsulta"
+          turnos={kanban.enConsulta}
+          onLlamar={kanban.handleLlamarAConsultorio}
+          onFinalizar={kanban.handleFinalizar}
+        />
+        <KanbanColumn
+          title="Atendidos"
+          dotColor="bg-emerald-500"
+          badgeBg="bg-emerald-700"
+          columna="atendidos"
+          turnos={kanban.atendidos}
+        />
+      </div>
+
+      {/* Modal de Cancelación */}
+      <ModalCancelarMostrador
+        turno={turnoACancelar}
+        isOpen={modalCancelarOpen}
+        onClose={handleCloseCancelar}
+        onCancelado={handleTurnoCancelado}
       />
     </div>
   );

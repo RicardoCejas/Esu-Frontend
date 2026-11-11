@@ -7,7 +7,7 @@ export const ROLE_HOME: Record<UserRole, string> = {
   MEDICO: '/dashboard/medico',
   PROFESIONAL: '/dashboard/medico',
   RECEPCIONISTA: '/dashboard/recepcion',
-  ADMIN: '/dashboard/admin',
+  ADMIN: '/dashboard/admin/sedes',
 };
 
 export const ROLE_LABELS: Record<UserRole, string> = {

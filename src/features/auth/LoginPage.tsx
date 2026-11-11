@@ -134,7 +134,7 @@ export const LoginPage: React.FC = () => {
               <img src="/logo-icon.png" alt="Luvia Logo" width="56" height="56" className="h-14 w-14 object-contain drop-shadow-sm" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold tracking-tight font-heading text-slate-900">
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
                 Ingreso al Sistema
               </h1>
               <p className="text-xs text-slate-600 mt-0.5">

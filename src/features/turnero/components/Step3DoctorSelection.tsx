@@ -155,7 +155,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
             <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
               Estudio Seleccionado: {selectedStudy?.name || 'Práctica Diagnóstica'}
             </span>
-            <h3 className="text-xl font-bold text-slate-900 font-heading">
+            <h3 className="text-xl font-bold text-slate-900">
               Servicio Diagnóstico Centralizado
             </h3>
             <p className="text-xs sm:text-sm text-slate-600">
@@ -200,7 +200,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#005a87]">
               Especialidad e Institución
             </span>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 font-heading truncate">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">
               {selectedSpecialty?.name || ''}
             </h3>
             <span className="text-xs sm:text-sm text-slate-500 truncate block">
@@ -229,7 +229,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
         <div className="flex items-start gap-3">
           <div className="w-1.5 h-10 sm:h-11 bg-[#005a87] rounded-full shrink-0 mt-0.5" />
           <div>
-            <h2 className="text-lg sm:text-2xl font-bold text-slate-900 font-heading leading-tight">
+            <h2 className="text-lg sm:text-2xl font-bold text-slate-900 leading-tight">
               3. Seleccione el Profesional Médico
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
@@ -299,7 +299,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-heading font-bold text-slate-900 text-sm sm:text-base leading-snug group-hover:text-[#005a87] transition-colors line-clamp-1">
+                    <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug group-hover:text-[#005a87] transition-colors line-clamp-1">
                       {doctor.name}
                     </h3>
                     <span className="text-xs text-slate-500 line-clamp-1 mt-0.5">
@@ -402,7 +402,7 @@ export const Step3DoctorSelection: React.FC<Step3DoctorSelectionProps> = ({
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#005a87] bg-sky-50 px-2.5 py-0.5 rounded-md border border-sky-200/60">
                     <Sparkles className="size-3" /> Profesional Médico Seleccionado
                   </span>
-                  <h3 className="text-xl font-bold text-slate-900 font-heading mt-1">
+                  <h3 className="text-xl font-bold text-slate-900 mt-1">
                     {modalDoctor.name}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-500 mt-0.5">

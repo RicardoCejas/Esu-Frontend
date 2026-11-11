@@ -2,9 +2,9 @@
 
 @theme {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Outfit', 'Plus Jakarta Sans', sans-serif;
-  /* Tipografía numérica única de ESU: una sola fuente para DNI, horas, códigos y métricas. */
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+  /* Unified Plus Jakarta Sans font family across headings, navigation, controls, and metrics */
+  --font-heading: var(--font-sans);
+  --font-mono: var(--font-sans);
 
   --color-background: #e3eff6;
   --color-foreground: #0f172a;
@@ -28,13 +28,20 @@
 }
 
 @layer base {
-  html, body {
+  html {
     min-height: 100%;
     background-color: #e3eff6;
+    font-family: var(--font-sans);
+    font-size-adjust: from-font;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100%;
+    font-family: inherit;
+    line-height: 1.5;
     color: var(--color-foreground);
     background-color: #e3eff6;
     -webkit-font-smoothing: antialiased;
@@ -42,13 +49,24 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
-    letter-spacing: -0.02em;
+    font-family: inherit;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
   }
 
-  /* Los datos numéricos usan cifras tabulares para alinear columnas de horas, DNI y códigos. */
+  input, select, textarea, button {
+    font-family: inherit;
+  }
+
+  th {
+    text-wrap: balance;
+  }
+
+  /* Keep numeric columns aligned while preserving the unified Plus Jakarta Sans typeface. */
   .font-mono {
-    font-variant-numeric: tabular-nums slashed-zero;
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -164,5 +182,14 @@ html.text-scale-xlarge {
 
 .animate-step-enter {
   animation: stepFadeSlide 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
 }
 

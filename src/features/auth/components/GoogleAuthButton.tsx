@@ -240,7 +240,7 @@ export const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
                 <span>¿Querés usar la ventana emergente real de Google?</span>
               </div>
               <p>
-                Configurá <code className="font-mono bg-white px-1 py-0.5 rounded border border-amber-200">VITE_GOOGLE_CLIENT_ID</code> en tu archivo <code className="font-mono bg-white px-1 py-0.5 rounded border border-amber-200">.env</code> con las credenciales de Google Cloud Console.
+                Configurá <code className="font-semibold bg-white px-1 py-0.5 rounded border border-amber-200">VITE_GOOGLE_CLIENT_ID</code> en tu archivo <code className="font-semibold bg-white px-1 py-0.5 rounded border border-amber-200">.env</code> con las credenciales de Google Cloud Console.
               </p>
             </div>
           </div>

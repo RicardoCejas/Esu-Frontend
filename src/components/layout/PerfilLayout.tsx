@@ -15,7 +15,7 @@ export const PerfilLayout: React.FC = () => {
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-2.5 transition hover:opacity-90">
               <img src="/logo-icon.png" alt="ESU" className="h-8 w-8 object-contain" />
-              <span className="font-heading text-sm font-bold text-foreground">
+              <span className="text-sm font-bold text-foreground">
                 ESU <span className="text-xs text-primary">Cruz del Eje</span>
               </span>
             </Link>

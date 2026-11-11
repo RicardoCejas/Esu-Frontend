@@ -54,6 +54,38 @@ export const usuariosService = {
     }
   },
 
+  async actualizarAsignacion(
+    id: string | number,
+    data: { rol?: string; centroSaludId?: string | number | null; centroSaludNombre?: string | null }
+  ): Promise<User> {
+    try {
+      const numId = toNumericId(id);
+      const res = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.usuarios.actualizarAsignacion(numId),
+        data
+      );
+      return normalizeUsuario(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar la asignación del usuario.'), { cause: err });
+    }
+  },
+
+  async actualizarPerfilOperativo(
+    id: string | number,
+    data: { nombre: string; apellido: string; dni?: string }
+  ): Promise<User> {
+    try {
+      const numId = toNumericId(id);
+      const res = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.usuarios.actualizarPerfilOperativo(numId),
+        data
+      );
+      return normalizeUsuario(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron actualizar los datos operativos del usuario.'), { cause: err });
+    }
+  },
+
   async eliminar(id: string | number): Promise<boolean> {
     try {
       const numId = toNumericId(id);

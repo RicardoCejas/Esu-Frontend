@@ -4,7 +4,9 @@ import { usuariosService } from '@/api/usuariosService';
 import { centrosService } from '@/api/centrosService';
 import { profesionalesService } from '@/api/profesionalesService';
 import { extractApiErrorMessage } from '@/api/endpoints';
-import type { CentroSalud, Especialidad, User, UserRole } from '@/types';
+import type { CentroSalud, Especialidad, User, UserRole, Permiso } from '@/types';
+import { permisosService } from '@/api/permisosService';
+import { ModalGestionarPermisosUsuario } from './components/ModalGestionarPermisosUsuario';
 import {
   Users,
   UserPlus,
@@ -105,6 +107,8 @@ export const AdminUsuariosPage: React.FC = () => {
 
   const [cuentaAToggle, setCuentaAToggle] = useState<User | null>(null);
   const [cuentaAEliminar, setCuentaAEliminar] = useState<User | null>(null);
+  const [cuentaAPermisos, setCuentaAPermisos] = useState<User | null>(null);
+  const [catalogoPermisos, setCatalogoPermisos] = useState<Permiso[]>([]);
 
   // Modal Edición de Usuario (Asignación de Sede y Datos)
   const [usuarioEditando, setUsuarioEditando] = useState<FormEdicionUsuario | null>(null);
@@ -155,6 +159,7 @@ export const AdminUsuariosPage: React.FC = () => {
 
   useEffect(() => {
     cargarDatos();
+    permisosService.getCatalogo().then((data) => setCatalogoPermisos(data)).catch(() => {});
   }, [cargarDatos]);
 
   const handleAbrirEditar = (cuenta: User) => {
@@ -1054,6 +1059,21 @@ export const AdminUsuariosPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      {cuentaAPermisos && (
+        <ModalGestionarPermisosUsuario
+          usuario={cuentaAPermisos}
+          isOpen={Boolean(cuentaAPermisos)}
+          onClose={() => setCuentaAPermisos(null)}
+          onGuardado={(actualizado) => {
+            setUsuarios((prev) =>
+              prev.map((u) => (u.id === actualizado.id ? { ...u, ...actualizado } : u))
+            );
+            success(`Rol y permisos de ${actualizado.email} actualizados exitosamente.`);
+          }}
+          catalogoPermisos={catalogoPermisos}
+          centros={centros}
+        />
       )}
     </div>
   );

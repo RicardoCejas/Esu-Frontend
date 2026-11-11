@@ -1,4 +1,17 @@
 import type { User } from '@/types';
+import {
+  DNI_REGEX,
+  DNI_VALIDATION_ERROR,
+  isValidDniFormat,
+  normalizeDniDigits,
+} from './dniValidation.ts';
+
+export {
+  DNI_REGEX,
+  DNI_VALIDATION_ERROR,
+  isValidDniFormat,
+  normalizeDniDigits,
+};
 
 /**
  * Verifica si el paciente autenticado cuenta con un DNI válido y ficha verificada.
@@ -21,8 +34,8 @@ export const esPacienteDniVerificado = (user: User | null): boolean => {
     return false;
   }
 
-  // Comprobar formato numérico estándar de DNI argentino
-  if (!/^\d{7,8}$/.test(dniClean)) {
+  // Check standard numeric Argentine DNI format
+  if (!isValidDniFormat(dniClean)) {
     return false;
   }
 

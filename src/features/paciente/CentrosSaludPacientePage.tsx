@@ -39,7 +39,7 @@ export const CentrosSaludPacientePage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight font-heading text-slate-900">
+        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
           Centros de Salud y Red Asistencial
         </h1>
         <p className="text-sm text-slate-600 mt-1">
@@ -61,7 +61,7 @@ export const CentrosSaludPacientePage: React.FC = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight font-heading">
+                <h3 className="text-lg font-bold text-slate-900 leading-tight">
                   {centro.nombre}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 mt-0.5">{centro.tipo}</p>

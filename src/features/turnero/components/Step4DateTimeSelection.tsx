@@ -183,7 +183,7 @@ export function Step4DateTimeSelection({
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#005a87]">
               Profesional Seleccionado
             </span>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 font-heading truncate">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">
               {tipoAtencion === 'ESTUDIO' ? (selectedStudy?.name || 'Estudio Diagnóstico') : (selectedDoctor?.name || 'Profesional')}
             </h3>
             <span className="text-xs sm:text-sm text-slate-500 truncate block">
@@ -212,7 +212,7 @@ export function Step4DateTimeSelection({
           <div className="flex items-start gap-3">
             <div className="w-1.5 h-10 sm:h-11 bg-[#005a87] rounded-full shrink-0 mt-0.5" />
             <div>
-              <h2 className="text-lg sm:text-2xl font-bold text-slate-900 font-heading leading-tight">
+              <h2 className="text-lg sm:text-2xl font-bold text-slate-900 leading-tight">
                 4. Seleccione Fecha y Horario
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
@@ -271,7 +271,7 @@ export function Step4DateTimeSelection({
 
                 {/* Línea 2: "Noviembre" */}
                 <span
-                  className={`text-base sm:text-lg font-black font-heading capitalize mt-0.5 leading-snug ${
+                  className={`text-base sm:text-lg font-black capitalize mt-0.5 leading-snug ${
                     isSelected ? 'text-white' : 'text-slate-900 group-hover:text-[#005a87]'
                   }`}
                 >
@@ -383,7 +383,7 @@ export function Step4DateTimeSelection({
                   <span className="text-[11px] font-bold uppercase tracking-wider text-teal-200 block">
                     Confirmación de Turno
                   </span>
-                  <h3 className="text-lg sm:text-xl font-bold font-heading text-white leading-snug">
+                  <h3 className="text-lg sm:text-xl font-bold text-white leading-snug">
                     Fecha y Horario Seleccionado
                   </h3>
                 </div>

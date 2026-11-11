@@ -156,7 +156,7 @@ export const MisEstudiosPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight font-heading text-foreground">
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
           Estudios y Resultados Diagnósticos
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -219,14 +219,14 @@ export const MisEstudiosPage: React.FC = () => {
                   <span className="text-xs font-bold text-sky-800 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 px-3 py-1 rounded-full border border-sky-200 dark:border-sky-800">
                     {est.tipoEstudio}
                   </span>
-                  <span className="text-[10px] font-mono text-muted-foreground">{est.tamano}</span>
+                  <span className="text-[10px] tabular-nums text-muted-foreground">{est.tamano}</span>
                 </div>
 
                 <div className="pt-1">
                   <span className="inline-block text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800 mb-1">
                     [DATO DE PRUEBA / SIMULACIÓN]
                   </span>
-                  <h3 className="text-base font-bold text-foreground leading-snug font-heading">
+                  <h3 className="text-base font-bold text-foreground leading-snug">
                     {est.nombre}
                   </h3>
                 </div>

@@ -12,7 +12,7 @@ export const QuienesSomosSection: React.FC = () => {
       <div className="container mx-auto max-w-7xl px-4 sm:px-6">
         {/* Top Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-14">
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight font-heading text-[#003855] leading-tight">
+          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#003855] leading-tight">
             ¿Quiénes Somos en <span className="text-[#005a87]">Luvia</span>?
           </h2>
 
@@ -23,7 +23,7 @@ export const QuienesSomosSection: React.FC = () => {
 
         {/* Narrative & Direct Access Box con gris azulado marcado */}
         <div className="max-w-4xl mx-auto mb-14 rounded-3xl border border-[#c5d3e0] bg-[#d8e2ec] p-8 sm:p-12 shadow-sm text-center space-y-6">
-          <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#003d5c] font-heading leading-snug">
+          <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#003d5c] leading-snug">
             Un solo lugar para cuidar la salud de tu familia, sin filas ni demoras.
           </h3>
 
@@ -37,7 +37,7 @@ export const QuienesSomosSection: React.FC = () => {
           {/* Pilar 1 */}
           <div className="rounded-2xl border border-[#c5d3e0] bg-white p-7 shadow-xs transition-all hover:border-[#005a87] hover:shadow-lg">
             <Building2 className="h-9 w-9 text-[#005a87] mb-4" />
-            <h4 className="text-lg sm:text-xl font-bold text-[#003d5c] font-heading mb-2">
+            <h4 className="text-lg sm:text-xl font-bold text-[#003d5c] mb-2">
               Red Integrada
             </h4>
             <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-normal">
@@ -48,7 +48,7 @@ export const QuienesSomosSection: React.FC = () => {
           {/* Pilar 2 */}
           <div className="rounded-2xl border border-[#c5d3e0] bg-white p-7 shadow-xs transition-all hover:border-[#005a87] hover:shadow-lg">
             <ShieldCheck className="h-9 w-9 text-[#005a87] mb-4" />
-            <h4 className="text-lg sm:text-xl font-bold text-[#003d5c] font-heading mb-2">
+            <h4 className="text-lg sm:text-xl font-bold text-[#003d5c] mb-2">
               Historia Clínica Única
             </h4>
             <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-normal">
@@ -59,7 +59,7 @@ export const QuienesSomosSection: React.FC = () => {
           {/* Pilar 3 */}
           <div className="rounded-2xl border border-[#c5d3e0] bg-white p-7 shadow-xs transition-all hover:border-[#005a87] hover:shadow-lg">
             <HeartPulse className="h-9 w-9 text-rose-600 mb-4" />
-            <h4 className="text-lg sm:text-xl font-bold text-[#003d5c] font-heading mb-2">
+            <h4 className="text-lg sm:text-xl font-bold text-[#003d5c] mb-2">
               Atención Descentralizada
             </h4>
             <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-normal">
@@ -70,7 +70,7 @@ export const QuienesSomosSection: React.FC = () => {
           {/* Pilar 4 */}
           <div className="rounded-2xl border border-[#c5d3e0] bg-white p-7 shadow-xs transition-all hover:border-[#005a87] hover:shadow-lg">
             <Users className="h-9 w-9 text-[#005a87] mb-4" />
-            <h4 className="text-lg sm:text-xl font-bold text-[#003d5c] font-heading mb-2">
+            <h4 className="text-lg sm:text-xl font-bold text-[#003d5c] mb-2">
               Articulación Sanitaria
             </h4>
             <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-normal">
@@ -83,7 +83,7 @@ export const QuienesSomosSection: React.FC = () => {
         <div className="mt-12 rounded-3xl border border-[#c5d3e0] bg-[#d8e2ec] p-8 sm:p-10 shadow-xs">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <span className="block text-4xl sm:text-5xl font-extrabold text-[#005a87] font-heading">
+              <span className="block text-4xl sm:text-5xl font-extrabold text-[#005a87]">
                 6
               </span>
               <span className="text-sm sm:text-base font-bold text-slate-700 mt-1 block">
@@ -91,7 +91,7 @@ export const QuienesSomosSection: React.FC = () => {
               </span>
             </div>
             <div>
-              <span className="block text-4xl sm:text-5xl font-extrabold text-[#005a87] font-heading">
+              <span className="block text-4xl sm:text-5xl font-extrabold text-[#005a87]">
                 +10
               </span>
               <span className="text-sm sm:text-base font-bold text-slate-700 mt-1 block">
@@ -99,7 +99,7 @@ export const QuienesSomosSection: React.FC = () => {
               </span>
             </div>
             <div>
-              <span className="block text-4xl sm:text-5xl font-extrabold text-[#005a87] font-heading">
+              <span className="block text-4xl sm:text-5xl font-extrabold text-[#005a87]">
                 100%
               </span>
               <span className="text-sm sm:text-base font-bold text-slate-700 mt-1 block">
@@ -107,7 +107,7 @@ export const QuienesSomosSection: React.FC = () => {
               </span>
             </div>
             <div>
-              <span className="block text-4xl sm:text-5xl font-extrabold text-[#005a87] font-heading">
+              <span className="block text-4xl sm:text-5xl font-extrabold text-[#005a87]">
                 0
               </span>
               <span className="text-sm sm:text-base font-bold text-slate-700 mt-1 block">

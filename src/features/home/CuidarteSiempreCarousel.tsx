@@ -89,10 +89,10 @@ export const CuidarteSiempreCarousel: React.FC = () => {
       <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
         {/* Título Estilo Referencia */}
         <div className="text-center mb-12 space-y-1">
-          <span className="block text-2xl sm:text-3xl font-bold tracking-widest text-sky-600 uppercase font-heading">
+          <span className="block text-2xl sm:text-3xl font-bold tracking-widest text-sky-600 uppercase">
             CUIDARTE
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-sky-800 uppercase font-heading">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-sky-800 uppercase">
             SIEMPRE
           </h2>
           <div className="h-1 w-16 bg-sky-600 mx-auto mt-2 rounded-full" />
@@ -138,7 +138,7 @@ export const CuidarteSiempreCarousel: React.FC = () => {
                 {/* Contenido Inferior Turquesa Oficial */}
                 <div className="flex flex-1 flex-col justify-between bg-sky-700 p-6 text-white space-y-4">
                   <div className="space-y-2">
-                    <h3 className="font-bold text-base sm:text-lg leading-snug font-heading text-white">
+                    <h3 className="font-bold text-base sm:text-lg leading-snug text-white">
                       {art.title}
                     </h3>
                     <p className="text-xs text-sky-100 font-medium">
@@ -213,7 +213,7 @@ export const CuidarteSiempreCarousel: React.FC = () => {
 
             <div className="p-6 space-y-4">
               <div>
-                <h3 className="text-xl font-bold text-foreground font-heading">
+                <h3 className="text-xl font-bold text-foreground">
                   {selectedArticle.title}
                 </h3>
                 <p className="text-xs text-sky-600 font-semibold mt-0.5">
