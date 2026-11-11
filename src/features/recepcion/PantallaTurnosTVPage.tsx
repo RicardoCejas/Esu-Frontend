@@ -155,7 +155,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
 
           {/* Reloj Digital Grande */}
           <div className="text-right pl-3 border-l border-slate-800">
-            <div className="text-2xl font-black font-mono tracking-tight text-white">
+            <div className="text-2xl font-black tabular-nums tracking-tight text-white">
               {horaActual.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </div>
             <div className="text-[11px] text-slate-400 uppercase tracking-widest font-semibold">
@@ -177,7 +177,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
                     ¡Llamado en curso!
                   </span>
                   {llamadoDestacado.horaLlamado && (
-                    <span className="text-xs text-slate-400 font-mono">
+                    <span className="text-xs text-slate-400 tabular-nums">
                       Hora: {llamadoDestacado.horaLlamado} hs
                     </span>
                   )}
@@ -208,7 +208,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
                       <span className="text-xs uppercase font-bold text-sky-400 tracking-wider">
                         Por favor dirigirse a:
                       </span>
-                      <div className="text-3xl sm:text-5xl font-black text-white tracking-tight font-mono">
+                      <div className="text-3xl sm:text-5xl font-black text-white tracking-tight tabular-nums">
                         CONSULTORIO {llamadoDestacado.consultorioNumero || '102'}
                       </div>
                       {llamadoDestacado.planta && (
@@ -229,7 +229,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
 
               <div className="pt-4 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
                 <span>Si no se presenta tras el segundo llamado, su turno será pospuesto.</span>
-                <span className="font-mono text-slate-500">Cód: {llamadoDestacado.codigoVerificacion || `#${llamadoDestacado.id}`}</span>
+                <span className="tabular-nums text-slate-500">Cód: {llamadoDestacado.codigoVerificacion || `#${llamadoDestacado.id}`}</span>
               </div>
             </div>
           ) : (
@@ -263,10 +263,10 @@ export const PantallaTurnosTVPage: React.FC = () => {
                     <p className="text-xs text-slate-400">Dr(a). {t.profesionalNombre}</p>
                   </div>
                   <div className="text-right">
-                    <span className="rounded-lg bg-sky-700 text-white px-2 py-1 text-xs font-mono font-black">
+                    <span className="rounded-lg bg-sky-700 text-white px-2 py-1 text-xs tabular-nums font-black">
                       Cons. {t.consultorioNumero || '102'}
                     </span>
-                    <div className="text-[10px] text-slate-500 mt-1 font-mono">{t.horaLlamado || t.hora} hs</div>
+                    <div className="text-[10px] text-slate-500 mt-1 tabular-nums">{t.horaLlamado || t.hora} hs</div>
                   </div>
                 </div>
               ))}
@@ -280,14 +280,14 @@ export const PantallaTurnosTVPage: React.FC = () => {
           <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 h-48 flex flex-col">
             <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 pb-2 border-b border-slate-800 flex items-center justify-between">
               <span>Próximos en Sala</span>
-              <span className="text-xs font-mono font-bold text-amber-400">{pacientesEnEspera.length} en espera</span>
+              <span className="text-xs tabular-nums font-bold text-amber-400">{pacientesEnEspera.length} en espera</span>
             </h2>
 
             <div className="mt-2 space-y-1.5 overflow-y-auto flex-1">
               {pacientesEnEspera.slice(0, 5).map((t) => (
                 <div key={t.id} className="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-slate-800/20">
                   <span className="text-slate-300 truncate max-w-[170px]">{t.pacienteNombre}</span>
-                  <span className="font-mono text-slate-500">{t.hora} hs</span>
+                  <span className="tabular-nums text-slate-500">{t.hora} hs</span>
                 </div>
               ))}
               {pacientesEnEspera.length === 0 && (
@@ -304,7 +304,7 @@ export const PantallaTurnosTVPage: React.FC = () => {
           <span className="font-semibold text-slate-200">Aviso a la comunidad:</span>
           <span>Mantenga a mano su DNI y credencial médica antes de pasar al consultorio.</span>
         </div>
-        <div className="text-[11px] text-slate-500 font-mono">
+        <div className="text-[11px] text-slate-500">
           Sistema de Turnos ESU • Cruz del Eje
         </div>
       </footer>

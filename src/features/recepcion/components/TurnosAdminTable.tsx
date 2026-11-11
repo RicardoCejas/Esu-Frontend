@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import type { Turno } from '@/types';
 import { Calendar, RotateCcw, XCircle } from 'lucide-react';
 
@@ -6,7 +7,6 @@ export interface TurnosAdminTableProps {
   turnos: Turno[];
   isLoading: boolean;
   isProcessing: boolean;
-  onReagendar: (t: Turno) => void;
   onCancelar: (t: Turno) => void;
   canCancelar?: boolean;
   canReagendar?: boolean;
@@ -16,7 +16,6 @@ export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
   turnos,
   isLoading,
   isProcessing,
-  onReagendar,
   onCancelar,
   canCancelar = true,
   canReagendar = true,
@@ -79,10 +78,10 @@ export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
                     <div className="flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5 text-primary" />
                       <span>{t.fecha ?? ''}</span>
-                      <span className="text-muted-foreground font-mono">({t.hora ?? ''} hs)</span>
+                      <span className="text-muted-foreground tabular-nums">({t.hora ?? ''} hs)</span>
                     </div>
                   </td>
-                  <td className="p-4 font-mono text-primary font-bold">
+                  <td className="p-4 tabular-nums text-primary font-bold">
                     {t.codigoVerificacion || `#${t.id}`}
                   </td>
                   <td className="p-4 font-medium text-foreground">{t.pacienteNombre ?? '—'}</td>
@@ -100,16 +99,14 @@ export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       {t.estado !== 'CANCELADO' && t.estado !== 'COMPLETADO' && canReagendar && (
-                        <button
-                          type="button"
-                          disabled={isProcessing}
-                          onClick={() => onReagendar(t)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2.5 py-1 text-foreground hover:bg-accent transition cursor-pointer disabled:opacity-50"
+                        <Link
+                          to={`/dashboard/recepcion/turnos/${t.id}/reagendar`}
+                          className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2.5 py-1 text-foreground hover:bg-accent transition"
                           title="Reagendar turno"
                         >
-                          <RotateCcw className="h-3.5 w-3.5 text-primary" />
+                          <RotateCcw className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
                           <span>Reagendar</span>
-                        </button>
+                        </Link>
                       )}
 
                       {t.estado !== 'CANCELADO' && canCancelar && (
@@ -117,7 +114,7 @@ export const TurnosAdminTable: React.FC<TurnosAdminTableProps> = ({
                           type="button"
                           disabled={isProcessing}
                           onClick={() => onCancelar(t)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1 text-rose-700 font-semibold hover:bg-rose-700 hover:text-white dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-200 transition cursor-pointer disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-card px-2.5 py-1 text-rose-700 font-semibold hover:bg-rose-700 hover:text-white dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-200 transition cursor-pointer disabled:opacity-50"
                           title="Cancelar cita"
                         >
                           <XCircle className="h-3.5 w-3.5" />

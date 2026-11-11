@@ -5,9 +5,7 @@ import { useRecepcionBoard } from './hooks/useRecepcionBoard';
 import { RecepcionDailySummaryCards } from './components/RecepcionDailySummaryCards';
 import { RecepcionFiltersBar } from './components/RecepcionFiltersBar';
 import { RecepcionTurnosTable } from './components/RecepcionTurnosTable';
-import { ModalAltaRapidaPaciente } from './components/ModalAltaRapidaPaciente';
 import { ModalVerificarCoberturaCopago } from './components/ModalVerificarCoberturaCopago';
-import { ModalTurnoMostrador } from './components/ModalTurnoMostrador';
 import { ModalCancelarMostrador } from './components/ModalCancelarMostrador';
 import { UserPlus, CalendarPlus, Layers, MonitorPlay, CheckCircle2 } from 'lucide-react';
 import type { Turno } from '@/types';
@@ -15,9 +13,6 @@ import type { Turno } from '@/types';
 export const RecepcionPage: React.FC = () => {
   const { user } = useAuth();
   const board = useRecepcionBoard(user?.centroSaludId);
-
-  const [isModalAltaOpen, setIsModalAltaOpen] = useState(false);
-  const [isModalTurnoMostradorOpen, setIsModalTurnoMostradorOpen] = useState(false);
   const [turnoParaCopago, setTurnoParaCopago] = useState<Turno | null>(null);
   const [turnoParaCancelar, setTurnoParaCancelar] = useState<Turno | null>(null);
 
@@ -37,22 +32,20 @@ export const RecepcionPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => setIsModalAltaOpen(true)}
-            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-input bg-background hover:bg-muted px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+          <Link
+            to="/dashboard/recepcion/pacientes/nuevo?returnTo=turno"
+            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-input bg-background hover:bg-muted px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
           >
             <UserPlus className="h-4 w-4 text-primary" aria-hidden="true" />
             <span>Alta Rápida Paciente</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsModalTurnoMostradorOpen(true)}
-            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-primary hover:bg-primary/90 px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+          </Link>
+          <Link
+            to="/dashboard/recepcion/turnos/nuevo"
+            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
           >
             <CalendarPlus className="h-4 w-4" aria-hidden="true" />
             <span>Turno de Mostrador</span>
-          </button>
+          </Link>
           <Link
             to="/dashboard/recepcion/kanban"
             className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-400"
@@ -83,21 +76,24 @@ export const RecepcionPage: React.FC = () => {
           onFiltroConsultorioChange={board.setFiltroConsultorio}
           profesionales={board.profesionales}
           consultorios={board.consultoriosDisponibles}
+          verTodosLosDias={board.verTodosLosDias}
+          onVerTodosLosDiasChange={board.setVerTodosLosDias}
+          turnosHoyCount={board.turnosHoyCount}
+          totalTurnosCount={board.totalTurnosCount}
+          onLimpiarFiltros={board.limpiarFiltros}
           centroNombre={user?.centroSaludNombre}
         />
 
         <RecepcionTurnosTable
           turnos={board.turnosFiltrados}
           loading={board.loading}
+          mostrarFecha={board.mostrandoTodosLosDias}
           onCheckIn={board.handleCheckIn}
           onOpenCopago={(t) => setTurnoParaCopago(t)}
           onOpenCancelar={(t) => setTurnoParaCancelar(t)}
         />
       </div>
-
-      <ModalAltaRapidaPaciente isOpen={isModalAltaOpen} onClose={() => setIsModalAltaOpen(false)} onPacienteCreado={(p) => { board.setPacientes((prev) => [p, ...prev]); board.mostrarAlerta(`Paciente ${p.nombre} registrado con éxito.`); }} />
       <ModalVerificarCoberturaCopago turno={turnoParaCopago} isOpen={!!turnoParaCopago} onClose={() => setTurnoParaCopago(null)} onCopagoRegistrado={(t) => { board.setTurnos((prev) => prev.map((item) => (item.id === t.id ? t : item))); board.mostrarAlerta(`Copago registrado para ${t.pacienteNombre}.`); }} />
-      <ModalTurnoMostrador isOpen={isModalTurnoMostradorOpen} onClose={() => setIsModalTurnoMostradorOpen(false)} pacientes={board.pacientes} centros={board.centros} profesionales={board.profesionales} onTurnoCreado={(t) => { board.setTurnos((prev) => [t, ...prev]); board.mostrarAlerta(`Turno generado para ${t.pacienteNombre}.`); }} />
       <ModalCancelarMostrador turno={turnoParaCancelar} isOpen={!!turnoParaCancelar} onClose={() => setTurnoParaCancelar(null)} onCancelado={(id, m) => { board.setTurnos((prev) => prev.map((item) => (item.id === id ? { ...item, estado: 'CANCELADO', justificativoCancelacion: m } : item))); board.mostrarAlerta('Turno cancelado en mostrador.'); }} />
     </div>
   );

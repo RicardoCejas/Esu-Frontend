@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   Heart,
   Baby,
@@ -16,7 +17,6 @@ import type { Especialidad, Profesional } from '@/types';
 interface EspecialidadesGridProps {
   especialidades: Especialidad[];
   getMedicosPorEspecialidad: (espId: string) => Profesional[];
-  onSeleccionar: (esp: Especialidad) => void;
 }
 
 const getSpecialtyIcon = (nombre: string): LucideIcon => {
@@ -33,7 +33,6 @@ const getSpecialtyIcon = (nombre: string): LucideIcon => {
 export const EspecialidadesGrid: React.FC<EspecialidadesGridProps> = ({
   especialidades,
   getMedicosPorEspecialidad,
-  onSeleccionar,
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -67,17 +66,16 @@ export const EspecialidadesGrid: React.FC<EspecialidadesGridProps> = ({
             </div>
 
             <div className="pt-3 border-t border-border flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold text-white bg-emerald-700 px-2 py-0.5 rounded shadow-xs">
+              <span className="text-[10px] font-bold text-white bg-emerald-700 px-2 py-0.5 rounded shadow-xs">
                 Habilitada en sede
               </span>
-              <button
-                type="button"
-                onClick={() => onSeleccionar(esp)}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer"
+              <Link
+                to={`/dashboard/recepcion/especialidades/${esp.id}`}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-sky-700 hover:text-sky-800 hover:underline"
               >
-                <span>Ver Médicos</span>
-                <ChevronRight className="h-3.5 w-3.5" />
-              </button>
+                <span>Ver Especialidad y Médicos</span>
+                <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
             </div>
           </div>
         );

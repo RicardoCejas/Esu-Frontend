@@ -28,6 +28,20 @@ export const pacientesService = {
     }
   },
 
+  async getById(id: string | number): Promise<User | undefined> {
+    try {
+      const numId = toNumericId(id);
+      const res = await apiClient.get<Record<string, unknown>>(API_ENDPOINTS.pacientes.byId(numId));
+      return res.data ? normalizePaciente(res.data) : undefined;
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) {
+        return undefined;
+      }
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el paciente.'), { cause: err });
+    }
+  },
+
   async getByDni(dni: string): Promise<User | undefined> {
     try {
       const res = await apiClient.get<Record<string, unknown>>(API_ENDPOINTS.pacientes.byDni(dni));
@@ -89,11 +103,13 @@ export const pacientesService = {
         nombre: paciente.nombre,
         apellido: paciente.apellido,
         dni: paciente.dni,
-        email: paciente.email,
+        email: paciente.email?.trim() || undefined,
         telefono: paciente.telefono || 'Sin especificar',
         obraSocial: paciente.obraSocial,
         nroAfiliado: paciente.nroAfiliado,
         grupoSanguineo: paciente.grupoSanguineo,
+        fechaNacimiento: paciente.fechaNacimiento || undefined,
+        centroSaludReferenciaId: paciente.centroSaludId ? Number(paciente.centroSaludId) : undefined,
       };
       const res = await apiClient.post<Record<string, unknown>>(API_ENDPOINTS.pacientes.base, payload);
       return normalizePaciente(res.data);

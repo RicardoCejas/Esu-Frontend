@@ -19,19 +19,12 @@ export interface UseGestionTurnosAdminReturn {
   setFechaDesde: (val: string) => void;
   fechaHasta: string;
   setFechaHasta: (val: string) => void;
-  turnoAReagendar: Turno | null;
-  setTurnoAReagendar: (t: Turno | null) => void;
-  nuevaFecha: string;
-  setNuevaFecha: (val: string) => void;
-  nuevaHora: string;
-  setNuevaHora: (val: string) => void;
   turnoACancelar: Turno | null;
   setTurnoACancelar: (t: Turno | null) => void;
   cargarTurnos: () => Promise<void>;
   limpiarFiltros: () => void;
   handleConfirmarCancelacion: () => Promise<void>;
   handleTurnoCancelado: (id: string, motivo: string) => void;
-  handleConfirmarReagendamiento: (e: React.FormEvent) => Promise<void>;
   esRecepcionista: boolean;
   centroSaludNombre?: string;
 }
@@ -52,9 +45,6 @@ export function useGestionTurnosAdmin(): UseGestionTurnosAdminReturn {
   const [fechaHasta, setFechaHasta] = useState('');
 
   // Modals state
-  const [turnoAReagendar, setTurnoAReagendar] = useState<Turno | null>(null);
-  const [nuevaFecha, setNuevaFecha] = useState('');
-  const [nuevaHora, setNuevaHora] = useState('');
   const [turnoACancelar, setTurnoACancelar] = useState<Turno | null>(null);
 
   const esRecepcionista = user?.rol === 'RECEPCIONISTA';
@@ -115,32 +105,6 @@ export function useGestionTurnosAdmin(): UseGestionTurnosAdminReturn {
     setTurnoACancelar(null);
   };
 
-  const handleConfirmarReagendamiento = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!turnoAReagendar || !nuevaFecha || !nuevaHora) return;
-
-    setIsProcessing(true);
-    try {
-      const nuevaFechaHoraIso = `${nuevaFecha}T${nuevaHora}:00`;
-      await turnosService.reprogramarTurno(turnoAReagendar.id, nuevaFechaHoraIso);
-      setTurnos((prev) =>
-        prev.map((t) =>
-          t.id === turnoAReagendar.id
-            ? { ...t, fecha: nuevaFecha, hora: nuevaHora, estado: 'CONFIRMADO' }
-            : t
-        )
-      );
-      success('Turno reprogramado exitosamente.');
-      setTurnoAReagendar(null);
-      setNuevaFecha('');
-      setNuevaHora('');
-    } catch (err: unknown) {
-      toastError(extractApiErrorMessage(err, 'No se pudo reprogramar el turno.'));
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   const limpiarFiltros = () => {
     setBusqueda('');
     setFiltroEstado('TODOS');
@@ -192,19 +156,12 @@ export function useGestionTurnosAdmin(): UseGestionTurnosAdminReturn {
     setFechaDesde,
     fechaHasta,
     setFechaHasta,
-    turnoAReagendar,
-    setTurnoAReagendar,
-    nuevaFecha,
-    setNuevaFecha,
-    nuevaHora,
-    setNuevaHora,
     turnoACancelar,
     setTurnoACancelar,
     cargarTurnos,
     limpiarFiltros,
     handleConfirmarCancelacion,
     handleTurnoCancelado,
-    handleConfirmarReagendamiento,
     esRecepcionista,
     centroSaludNombre,
   };

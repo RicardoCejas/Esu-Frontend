@@ -46,6 +46,8 @@ function normalizeProfesional(d: Record<string, unknown>): Profesional {
     nombre: String(d.nombre ?? ''),
     apellido: String(d.apellido ?? ''),
     matricula: String(d.matricula ?? ''),
+    telefono: typeof d.telefono === 'string' ? d.telefono : undefined,
+    activo: typeof d.estadoActivo === 'boolean' ? d.estadoActivo : d.activo !== false,
     especialidadId,
     especialidadNombre,
     centrosSaludIds,
@@ -217,6 +219,7 @@ export const profesionalesService = {
       if (data.nombre) payload.nombre = data.nombre;
       if (data.apellido) payload.apellido = data.apellido;
       if (data.matricula) payload.matricula = data.matricula;
+      if (typeof data.telefono === 'string') payload.telefono = data.telefono.trim();
       if (data.especialidadId) {
         payload.especialidadId = toNumericId(data.especialidadId);
         payload.especialidadIds = [toNumericId(data.especialidadId)];
@@ -254,6 +257,16 @@ export const profesionalesService = {
       return true;
     } catch (err: unknown) {
       throw new Error(extractApiErrorMessage(err, 'No se pudo desvincular al profesional del centro.'), { cause: err });
+    }
+  },
+
+  async cambiarEstado(id: string, activo: boolean): Promise<Profesional> {
+    try {
+      const numId = toNumericId(id);
+      const res = await apiClient.patch<Record<string, unknown>>(`${API_ENDPOINTS.profesionales.byId(numId)}/estado`, null, { params: { activo } });
+      return normalizeProfesional(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar el estado del profesional.'), { cause: err });
     }
   },
 

@@ -2,11 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMedicosCentro } from './hooks/useMedicosCentro';
-import { MedicoFichaModal } from './components/MedicoFichaModal';
 import { ModalConfirmacion } from '@/components/ui/ModalConfirmacion';
 import { Stethoscope, PlusCircle, Search, RefreshCw, ChevronRight, UserCheck } from 'lucide-react';
 
-const DIAS_DISPONIBLES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 export const MedicosCentroPage: React.FC = () => {
   const { user } = useAuth();
@@ -58,22 +56,23 @@ export const MedicosCentroPage: React.FC = () => {
                 </span>
               </div>
               <div className="text-[11px] text-muted-foreground space-y-1">
-                <p>Matrícula: <span className="font-mono font-semibold text-foreground">{med.matricula}</span></p>
+                <p>Matrícula: <span className="tabular-nums font-semibold text-foreground">{med.matricula}</span></p>
                 <p>Días: {med.diasAtencion?.join(', ') || 'A convenir'}</p>
                 <p>Slot promedio: {med.duracionTurnoMin ?? 20} minutos</p>
               </div>
               <div className="pt-2 border-t border-border flex items-center justify-between">
-                <button onClick={() => medicos.abrirFicha(med)} className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 hover:text-sky-700">
+                <Link
+                  to={`/dashboard/recepcion/medicos/${med.id}`}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-sky-700 hover:text-sky-800 hover:underline"
+                >
                   <span>Ver Ficha & Agenda</span>
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
+                  <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
               </div>
             </div>
           ))}
         </div>
       )}
-
-      <MedicoFichaModal medico={medicos.medicoSeleccionado} modoEdicion={medicos.modoEdicion} onCerrar={() => medicos.setMedicoSeleccionado(null)} onEditar={() => medicos.setModoEdicion(true)} onDesvincular={(m) => medicos.setMedicoADesvincular(m)} onSubmit={medicos.guardarCambios} editNombre={medicos.editNombre} setEditNombre={medicos.setEditNombre} editApellido={medicos.editApellido} setEditApellido={medicos.setEditApellido} editMatricula={medicos.editMatricula} setEditMatricula={medicos.setEditMatricula} editEspId={medicos.editEspId} setEditEspId={medicos.setEditEspId} editDias={medicos.editDias} onToggleDia={medicos.toggleDia} editDuracion={medicos.editDuracion} setEditDuracion={medicos.setEditDuracion} especialidades={medicos.especialidades} diasDisponibles={DIAS_DISPONIBLES} />
 
       <ModalConfirmacion isOpen={!!medicos.medicoADesvincular} onClose={() => medicos.setMedicoADesvincular(null)} onConfirm={medicos.confirmarDesvinculacion} title="Desvincular Profesional Médico" description={`¿Confirma que desea desvincular al Dr. ${medicos.medicoADesvincular?.nombre} ${medicos.medicoADesvincular?.apellido} de ${user?.centroSaludNombre || 'este centro'}? Si posee turnos programados pendientes, la operación será rechazada para proteger la atención del paciente.`} confirmText="Desvincular" cancelText="Cancelar" variant="danger" isLoading={medicos.isDesvinculando} />
     </div>

@@ -63,7 +63,7 @@ export const TurnosFiltersBar: React.FC<TurnosFiltersBarProps> = ({
             type="date"
             value={fechaDesde}
             onChange={(e) => onFechaDesdeChange(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 font-mono"
+            className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5"
           />
         </div>
 
@@ -74,7 +74,7 @@ export const TurnosFiltersBar: React.FC<TurnosFiltersBarProps> = ({
             type="date"
             value={fechaHasta}
             onChange={(e) => onFechaHastaChange(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 font-mono"
+            className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5"
           />
         </div>
 

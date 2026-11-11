@@ -4,7 +4,6 @@ import { ModalCancelarMostrador } from './components/ModalCancelarMostrador';
 import { useGestionTurnosAdmin } from './hooks/useGestionTurnosAdmin';
 import { TurnosFiltersBar } from './components/TurnosFiltersBar';
 import { TurnosAdminTable } from './components/TurnosAdminTable';
-import { ReagendarTurnoModal } from './components/ReagendarTurnoModal';
 import { usePermissions } from '@/hooks/usePermissions';
 
 export const GestionTurnosAdminPage: React.FC = () => {
@@ -21,18 +20,11 @@ export const GestionTurnosAdminPage: React.FC = () => {
     setFechaDesde,
     fechaHasta,
     setFechaHasta,
-    turnoAReagendar,
-    setTurnoAReagendar,
-    nuevaFecha,
-    setNuevaFecha,
-    nuevaHora,
-    setNuevaHora,
     turnoACancelar,
     setTurnoACancelar,
     cargarTurnos,
     limpiarFiltros,
     handleTurnoCancelado,
-    handleConfirmarReagendamiento,
     esRecepcionista,
   } = useGestionTurnosAdmin();
   const { can } = usePermissions();
@@ -84,29 +76,11 @@ export const GestionTurnosAdminPage: React.FC = () => {
           turnos={turnosFiltrados}
           isLoading={isLoading}
           isProcessing={isProcessing}
-          onReagendar={(t) => {
-            setTurnoAReagendar(t);
-            setNuevaFecha(t.fecha ?? '');
-            setNuevaHora(t.hora ?? '');
-          }}
           onCancelar={(t) => setTurnoACancelar(t)}
           canCancelar={can('TURNOS_CANCELAR')}
           canReagendar={can('TURNOS_REAGENDAR')}
         />
       </div>
-
-      {turnoAReagendar && (
-        <ReagendarTurnoModal
-          turno={turnoAReagendar}
-          nuevaFecha={nuevaFecha}
-          onNuevaFechaChange={setNuevaFecha}
-          nuevaHora={nuevaHora}
-          onNuevaHoraChange={setNuevaHora}
-          isProcessing={isProcessing}
-          onConfirm={handleConfirmarReagendamiento}
-          onClose={() => setTurnoAReagendar(null)}
-        />
-      )}
 
       <ModalCancelarMostrador
         turno={turnoACancelar}

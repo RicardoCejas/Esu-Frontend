@@ -107,7 +107,7 @@ export const NuevoMedicoPage: React.FC = () => {
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2 font-heading">
+            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
               <Stethoscope className="h-5 w-5 text-primary" />
               <span>Crear Cuenta para Nuevo Médico</span>
             </h1>
@@ -177,7 +177,7 @@ export const NuevoMedicoPage: React.FC = () => {
               placeholder="ej: MP-34982"
               value={formData.matricula}
               onChange={handleChange}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 

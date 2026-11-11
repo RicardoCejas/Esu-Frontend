@@ -22,7 +22,7 @@ export const RecepcionDailySummaryCards: React.FC<RecepcionDailySummaryCardsProp
           <Clock className="h-4 w-4 text-muted-foreground/70" />
         </div>
         <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground font-mono">
+          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
             {kpis.total}
           </span>
           <span className="text-[11px] text-muted-foreground">turnos</span>
@@ -39,7 +39,7 @@ export const RecepcionDailySummaryCards: React.FC<RecepcionDailySummaryCardsProp
           <Users className="h-4 w-4 text-amber-600 dark:text-amber-400" />
         </div>
         <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-amber-700 dark:text-amber-300 font-mono">
+          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-amber-700 dark:text-amber-300 tabular-nums">
             {kpis.enSalaDeEspera}
           </span>
           <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400">pacientes</span>
@@ -56,7 +56,7 @@ export const RecepcionDailySummaryCards: React.FC<RecepcionDailySummaryCardsProp
           <Activity className="h-4 w-4 text-sky-600 dark:text-sky-400" />
         </div>
         <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground font-mono">
+          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
             {kpis.enConsulta}
           </span>
           <span className="text-[11px] text-muted-foreground">en curso</span>
@@ -73,7 +73,7 @@ export const RecepcionDailySummaryCards: React.FC<RecepcionDailySummaryCardsProp
           <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
         </div>
         <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground font-mono">
+          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
             {kpis.atendidosHoy}
           </span>
           <span className="text-[11px] text-muted-foreground">egresos</span>

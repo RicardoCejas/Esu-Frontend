@@ -27,7 +27,7 @@ export const KanbanTurnoCard: React.FC<KanbanTurnoCardProps> = ({
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="font-mono font-bold text-xs text-sky-700">{turno.hora} hs</span>
+        <span className="tabular-nums font-bold text-xs text-sky-700">{turno.hora} hs</span>
         <div className="flex items-center gap-1.5">
           {turno.esSobreturno && (
             <span className="rounded-md bg-amber-500 text-white font-black px-2 py-0.5 text-[10px] tracking-wide flex items-center gap-1">
@@ -36,7 +36,7 @@ export const KanbanTurnoCard: React.FC<KanbanTurnoCardProps> = ({
             </span>
           )}
           {turno.codigoVerificacion && (
-            <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-sm">
+            <span className="tabular-nums text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-sm">
               {turno.codigoVerificacion}
             </span>
           )}

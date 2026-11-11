@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import { pacientesService } from '@/api/pacientesService';
 import type { User } from '@/types';
 import {
@@ -7,31 +8,19 @@ import {
   UserPlus,
   Phone,
   Lock,
-  X,
   Eye,
   Users,
 } from 'lucide-react';
 
 export const PadronPacientesPage: React.FC = () => {
+  const { user } = useAuth();
+  const canManageTurnos = user?.rol !== 'MEDICO';
   const [pacientes, setPacientes] = useState<User[]>([]);
   const [busqueda, setBusqueda] = useState('');
-  const [pacienteSeleccionado, setPacienteSeleccionado] = useState<User | null>(null);
 
   useEffect(() => {
     pacientesService.getAll().then(setPacientes).catch(() => {});
   }, []);
-
-  // Bloqueo de scroll cuando el modal está abierto
-  useEffect(() => {
-    if (pacienteSeleccionado) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [pacienteSeleccionado]);
 
   const term = busqueda.trim().toLowerCase();
   const pacientesFiltrados = pacientes.filter(
@@ -46,7 +35,7 @@ export const PadronPacientesPage: React.FC = () => {
       {/* Encabezado */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Padrón Asistencial y Empadronamiento
           </h1>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
@@ -76,7 +65,7 @@ export const PadronPacientesPage: React.FC = () => {
               placeholder="Buscar por Nombre, Apellido o número de DNI..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-mono text-foreground placeholder:text-muted-foreground"
+              className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
             />
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium self-end sm:self-auto">
@@ -108,15 +97,15 @@ export const PadronPacientesPage: React.FC = () => {
               ) : (
                 pacientesFiltrados.map((pac) => (
                   <tr key={pac.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="p-3.5 font-mono font-bold text-foreground">{pac.dni}</td>
+                    <td className="p-3.5 tabular-nums font-bold text-foreground">{pac.dni}</td>
                     <td className="p-3.5">
                       <div className="font-semibold text-foreground">
                         {pac.nombre} {pac.apellido}
                       </div>
-                      <div className="text-[11px] text-muted-foreground font-mono">{pac.email}</div>
+                      <div className="text-[11px] text-muted-foreground">{pac.email}</div>
                     </td>
                     <td className="p-3.5 text-muted-foreground">
-                      <div className="flex items-center gap-1 font-mono text-[11px]">
+                      <div className="flex items-center gap-1 tabular-nums text-[11px]">
                         <Phone className="h-3 w-3 text-primary shrink-0" aria-hidden="true" />
                         <span>{pac.telefono}</span>
                       </div>
@@ -128,15 +117,24 @@ export const PadronPacientesPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="p-3.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setPacienteSeleccionado(pac)}
-                        aria-label={`Ver ficha de ${pac.nombre} ${pac.apellido}`}
-                        className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-muted transition cursor-pointer"
-                      >
-                        <Eye className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-                        <span>Ver Ficha</span>
-                      </button>
+                      <div className="inline-flex items-center justify-end gap-1.5">
+                        <Link
+                          to={`/dashboard/recepcion/pacientes/${pac.id}`}
+                          aria-label={`Ver ficha de ${pac.nombre} ${pac.apellido}`}
+                          className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-muted transition"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                          <span>Ver Ficha</span>
+                        </Link>
+                        {canManageTurnos && (
+                          <Link
+                            to={`/dashboard/recepcion/turnos/nuevo?dni=${encodeURIComponent(pac.dni)}`}
+                            className="inline-flex items-center rounded-lg bg-sky-700 hover:bg-sky-800 px-2.5 py-1 text-xs font-semibold text-white transition"
+                          >
+                            Dar Turno
+                          </Link>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -145,84 +143,6 @@ export const PadronPacientesPage: React.FC = () => {
           </table>
         </div>
       </div>
-
-      {/* Modal Accesible de Ficha de Paciente */}
-      {pacienteSeleccionado && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="modal-paciente-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150"
-        >
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div>
-                <h3 id="modal-paciente-title" className="text-base font-bold text-foreground">
-                  Ficha de Empadronamiento
-                </h3>
-                <p className="text-xs text-muted-foreground font-mono">DNI: {pacienteSeleccionado.dni}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPacienteSeleccionado(null)}
-                aria-label="Cerrar modal de ficha de paciente"
-                className="h-8 w-8 flex items-center justify-center rounded-lg border border-input hover:bg-muted transition cursor-pointer"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="space-y-1">
-                <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">
-                  Nombre Completo
-                </span>
-                <p className="font-medium text-foreground">
-                  {pacienteSeleccionado.nombre} {pacienteSeleccionado.apellido}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">
-                  Cobertura / Obra Social
-                </span>
-                <p className="font-medium text-foreground">
-                  {pacienteSeleccionado.obraSocial || 'Sin cobertura declarada'}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">
-                  N° Afiliado
-                </span>
-                <p className="font-mono font-medium text-foreground">
-                  {pacienteSeleccionado.nroAfiliado || '—'}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">
-                  Teléfono de Contacto
-                </span>
-                <p className="font-mono font-medium text-foreground">{pacienteSeleccionado.telefono}</p>
-              </div>
-              <div className="space-y-1 col-span-2">
-                <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">
-                  Correo Electrónico
-                </span>
-                <p className="font-mono font-medium text-foreground">{pacienteSeleccionado.email}</p>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-border flex justify-end">
-              <button
-                type="button"
-                onClick={() => setPacienteSeleccionado(null)}
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition cursor-pointer"
-              >
-                Entendido
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

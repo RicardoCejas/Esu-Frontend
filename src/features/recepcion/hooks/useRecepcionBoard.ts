@@ -3,7 +3,6 @@ import { turnosService } from '@/api/turnosService';
 import { profesionalesService } from '@/api/profesionalesService';
 import { centrosService } from '@/api/centrosService';
 import { pacientesService } from '@/api/pacientesService';
-import { useDebounce } from '@/lib/useDebounce';
 import { getFechaLocalHoy } from '@/lib/dateUtils';
 import type { Turno, CentroSalud, Profesional, User } from '@/types';
 
@@ -17,9 +16,9 @@ export function useRecepcionBoard(centroId?: string | number) {
 
   // Filtros reactivos
   const [busqueda, setBusqueda] = useState('');
-  const debouncedBusqueda = useDebounce(busqueda, 300);
   const [filtroProfesional, setFiltroProfesional] = useState<string>('TODOS');
   const [filtroConsultorio, setFiltroConsultorio] = useState<string>('TODOS');
+  const [verTodosLosDias, setVerTodosLosDias] = useState(false);
   const [alerta, setAlerta] = useState<string | null>(null);
 
   const mostrarAlerta = useCallback((mensaje: string) => {
@@ -92,21 +91,39 @@ export function useRecepcionBoard(centroId?: string | number) {
     return turnos.filter((t) => !t.fecha || t.fecha === hoyStr);
   }, [turnos, hoyStr]);
 
+  const mostrandoTodosLosDias = verTodosLosDias || (turnosHoy.length === 0 && turnos.length > 0);
+
+  const turnosBase = useMemo(() => {
+    return mostrandoTodosLosDias ? turnos : turnosHoy;
+  }, [mostrandoTodosLosDias, turnos, turnosHoy]);
+
   const turnosFiltrados = useMemo(() => {
-    return turnosHoy.filter((t) => {
+    const q = busqueda.toLowerCase().trim();
+    return turnosBase.filter((t) => {
       const matchBusqueda =
-        !debouncedBusqueda ||
-        (t.pacienteDni ?? '').includes(debouncedBusqueda) ||
-        (t.pacienteNombre ?? '').toLowerCase().includes(debouncedBusqueda.toLowerCase()) ||
-        (t.codigoVerificacion ? t.codigoVerificacion.toLowerCase().includes(debouncedBusqueda.toLowerCase()) : false) ||
-        t.id.includes(debouncedBusqueda);
+        !q ||
+        (t.pacienteDni ?? '').toLowerCase().includes(q) ||
+        (t.pacienteNombre ?? '').toLowerCase().includes(q) ||
+        (t.codigoVerificacion ?? '').toLowerCase().includes(q) ||
+        (t.centroSaludNombre ?? '').toLowerCase().includes(q) ||
+        (t.profesionalNombre ?? '').toLowerCase().includes(q) ||
+        (t.especialidadNombre ?? '').toLowerCase().includes(q) ||
+        (t.consultorioNumero ?? '').toLowerCase().includes(q) ||
+        (t.consultorioNumero ? `consultorio ${t.consultorioNumero}`.toLowerCase().includes(q) : false) ||
+        (t.id ?? '').toLowerCase().includes(q);
 
       const matchProf = filtroProfesional === 'TODOS' || t.profesionalId === filtroProfesional;
       const matchConsultorio = filtroConsultorio === 'TODOS' || t.consultorioNumero === filtroConsultorio;
 
       return matchBusqueda && matchProf && matchConsultorio;
     });
-  }, [turnosHoy, debouncedBusqueda, filtroProfesional, filtroConsultorio]);
+  }, [turnosBase, busqueda, filtroProfesional, filtroConsultorio]);
+
+  const limpiarFiltros = useCallback(() => {
+    setBusqueda('');
+    setFiltroProfesional('TODOS');
+    setFiltroConsultorio('TODOS');
+  }, []);
 
   const kpis = useMemo(() => ({
     total: turnosHoy.length,
@@ -130,8 +147,14 @@ export function useRecepcionBoard(centroId?: string | number) {
     setFiltroProfesional,
     filtroConsultorio,
     setFiltroConsultorio,
+    verTodosLosDias,
+    setVerTodosLosDias,
+    mostrandoTodosLosDias,
+    turnosHoyCount: turnosHoy.length,
+    totalTurnosCount: turnos.length,
     consultoriosDisponibles,
     turnosFiltrados,
+    limpiarFiltros,
     kpis,
     alerta,
     mostrarAlerta,

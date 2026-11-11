@@ -5,6 +5,7 @@ import type { Turno } from '@/types';
 interface RecepcionTurnosTableProps {
   turnos: Turno[];
   loading: boolean;
+  mostrarFecha?: boolean;
   onCheckIn: (turno: Turno) => void;
   onOpenCopago: (turno: Turno) => void;
   onOpenCancelar: (turno: Turno) => void;
@@ -13,6 +14,7 @@ interface RecepcionTurnosTableProps {
 export const RecepcionTurnosTable: React.FC<RecepcionTurnosTableProps> = ({
   turnos,
   loading,
+  mostrarFecha = false,
   onCheckIn,
   onOpenCopago,
   onOpenCancelar,
@@ -43,7 +45,7 @@ export const RecepcionTurnosTable: React.FC<RecepcionTurnosTableProps> = ({
         <table className="w-full text-left text-xs">
           <thead className="border-b border-border bg-muted/40 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">
             <tr>
-              <th className="p-3.5">Hora</th>
+              <th className="p-3.5">{mostrarFecha ? 'Fecha y Hora' : 'Hora'}</th>
               <th className="p-3.5">Paciente / DNI</th>
               <th className="p-3.5">Cobertura & Copago</th>
               <th className="p-3.5">Médico / Especialidad</th>
@@ -61,8 +63,13 @@ export const RecepcionTurnosTable: React.FC<RecepcionTurnosTableProps> = ({
 
               return (
                 <tr key={t.id} className="hover:bg-muted/30 transition">
-                  <td className="p-3.5 font-bold font-mono text-sm text-foreground">
-                    {t.hora} hs
+                  <td className="p-3.5 font-bold tabular-nums text-sm text-foreground">
+                    {mostrarFecha && t.fecha && (
+                      <div className="text-[11px] text-muted-foreground font-normal">
+                        {t.fecha}
+                      </div>
+                    )}
+                    <div>{t.hora} hs</div>
                     {t.horaCheckIn && (
                       <div className="text-[10px] text-muted-foreground font-normal">
                         Check-in: {t.horaCheckIn}
@@ -79,7 +86,7 @@ export const RecepcionTurnosTable: React.FC<RecepcionTurnosTableProps> = ({
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-muted-foreground font-mono">
+                    <div className="text-[11px] text-muted-foreground tabular-nums">
                       DNI: {t.pacienteDni} • Tel: {t.pacienteTelefono ?? 'S/N'}
                     </div>
                   </td>
@@ -133,31 +140,35 @@ export const RecepcionTurnosTable: React.FC<RecepcionTurnosTableProps> = ({
                     <div className="flex items-center justify-end gap-1.5">
                       {!esEnEspera && !esAtendiendo && !esCompletado && !esCancelado && (
                         <button
+                          type="button"
                           onClick={() => onCheckIn(t)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white px-2.5 py-1.5 text-xs font-semibold shadow-xs transition"
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white px-2.5 py-1.5 text-xs font-semibold shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600 cursor-pointer"
                           title="Marcar llegada presencial"
                         >
-                          <UserCheck className="h-3.5 w-3.5" />
+                          <UserCheck className="h-3.5 w-3.5" aria-hidden="true" />
                           <span>Presente</span>
                         </button>
                       )}
 
                       <button
+                        type="button"
                         onClick={() => onOpenCopago(t)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-border bg-card hover:bg-muted text-foreground px-2 py-1.5 text-xs font-medium transition"
+                        className="inline-flex items-center gap-1 rounded-lg border border-border bg-card hover:bg-muted text-foreground px-2 py-1.5 text-xs font-medium transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
                         title="Verificar copago"
                       >
-                        <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+                        <DollarSign className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
                         <span>Copago</span>
                       </button>
 
                       {!esCompletado && !esCancelado && (
                         <button
+                          type="button"
                           onClick={() => onOpenCancelar(t)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-rose-300 hover:bg-rose-50 text-rose-700 px-2 py-1.5 text-xs font-medium transition"
+                          className="inline-flex items-center gap-1 rounded-lg border border-rose-300 hover:bg-rose-50 text-rose-700 px-2 py-1.5 text-xs font-medium transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-600 cursor-pointer"
                           title="Cancelar turno"
+                          aria-label="Cancelar turno"
                         >
-                          <RotateCcw className="h-3 w-3" />
+                          <RotateCcw className="h-3 w-3" aria-hidden="true" />
                         </button>
                       )}
                     </div>

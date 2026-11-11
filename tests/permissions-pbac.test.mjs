@@ -36,7 +36,7 @@ describe('HU-INT-06: Catálogo de Permisos Granulares y PBAC', () => {
       assert.ok(perms.includes('TURNOS_CANCELAR'));
     });
 
-    it('RECEPCIONISTA debe poseer permisos de mostrador y excluir administración global', () => {
+    it('RECEPCIONISTA debe poseer permisos de gestión de centro y excluir fusión global de pacientes', () => {
       const perms = DEFAULT_PERMISSIONS_BY_ROLE.RECEPCIONISTA;
       assert.ok(perms.includes('TURNOS_VER'));
       assert.ok(perms.includes('TURNOS_CREAR'));
@@ -44,9 +44,11 @@ describe('HU-INT-06: Catálogo de Permisos Granulares y PBAC', () => {
       assert.ok(perms.includes('SOBRETURNOS_CREAR'));
       assert.ok(perms.includes('SALA_ESPERA_GESTIONAR'));
       assert.ok(perms.includes('CONSULTORIOS_VER'));
-      // No debe tener administración de usuarios ni de consultorios
-      assert.equal(perms.includes('USUARIOS_ADMINISTRAR'), false);
-      assert.equal(perms.includes('CONSULTORIOS_ADMINISTRAR'), false);
+      assert.ok(perms.includes('CONSULTORIOS_ADMINISTRAR'));
+      assert.ok(perms.includes('REPORTES_VER'));
+      assert.ok(perms.includes('USUARIOS_ADMINISTRAR'));
+      // Fusión global reservada exclusivamente a ADMIN de plataforma
+      assert.equal(perms.includes('PACIENTES_FUSIONAR'), false);
     });
 
     it('MEDICO / PROFESIONAL debe tener permisos clínicos acotados', () => {

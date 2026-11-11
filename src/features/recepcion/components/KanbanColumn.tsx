@@ -32,7 +32,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
           <div className={`h-2.5 w-2.5 rounded-full ${dotColor}`} />
           <h3 className="font-bold text-xs uppercase tracking-wider text-foreground">{title}</h3>
         </div>
-        <span className={`rounded-full ${badgeBg} px-2.5 py-0.5 text-xs font-mono font-bold text-white shadow-2xs`}>
+        <span className={`rounded-full ${badgeBg} px-2.5 py-0.5 text-xs tabular-nums font-bold text-white shadow-2xs`}>
           {listaTurnos.length}
         </span>
       </div>
