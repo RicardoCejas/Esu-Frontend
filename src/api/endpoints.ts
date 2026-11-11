@@ -85,6 +85,7 @@ export const API_ENDPOINTS = {
     mostrador: '/turnos/mostrador',
     miAgenda: '/turnos/mi-agenda',
     hoyCentro: (centroId: string | number) => `/turnos/centro/${centroId}/hoy`,
+    centro: (centroId: string | number) => `/turnos/centro/${centroId}`,
     kanbanCentro: (centroId: string | number) => `/turnos/centro/${centroId}/kanban`,
     byId: (id: string | number) => `/turnos/obtener/${id}`,
     byPaciente: (pacienteId: string | number) => `/turnos/paciente/${pacienteId}`,

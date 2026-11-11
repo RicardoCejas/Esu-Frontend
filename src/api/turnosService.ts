@@ -92,6 +92,28 @@ export const turnosService = {
     }
   },
 
+  async getTurnosCentro(
+    centroId: string | number,
+    filtros?: { desde?: string; hasta?: string; estado?: string }
+  ): Promise<Turno[]> {
+    try {
+      const numId = toNumericId(centroId, 'centroSaludId');
+      const params = new URLSearchParams();
+      if (filtros?.desde) params.append('desde', filtros.desde);
+      if (filtros?.hasta) params.append('hasta', filtros.hasta);
+      if (filtros?.estado) params.append('estado', filtros.estado);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      const response = await apiClient.get<Record<string, unknown>[]>(
+        `${API_ENDPOINTS.turnos.centro(numId)}${query}`
+      );
+      return Array.isArray(response.data)
+        ? response.data.map(normalizeTurno)
+        : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los turnos del centro de salud.'), { cause: err });
+    }
+  },
+
   async getTurnosKanbanCentro(centroId: string | number): Promise<Turno[]> {
     try {
       const numId = toNumericId(centroId, 'centroSaludId');
@@ -274,6 +296,21 @@ export const turnosService = {
     }
   },
 
+  async marcarAusente(id: string | number): Promise<Turno | null> {
+    try {
+      const numId = toNumericId(id);
+      const response = await apiClient.put<Record<string, unknown>>(
+        API_ENDPOINTS.turnos.ausente(numId)
+      );
+      return response.data ? normalizeTurno(response.data) : null;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(
+          err,
+          'No se pudo marcar el turno como ausente.'
+        ), { cause: err });
+    }
+  },
+
   async registrarCopago(
     id: string,
     data: {
@@ -323,6 +360,7 @@ export const turnosService = {
         centroSaludId: toNumericId(data.centroSaludId),
         centroSaludNombre: data.centroSaludNombre,
         consultorioNumero: data.consultorioNumero,
+        planta: data.planta,
         motivoTurno: data.motivoConsulta,
         copagoMonto: data.copagoMonto,
         numeroBono: data.numeroBono,
