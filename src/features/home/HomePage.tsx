@@ -91,7 +91,7 @@ export const HomePage: React.FC = () => {
       <section className="relative overflow-hidden border-b border-[#c5d3e0] bg-[#d8e2ec] py-14 sm:py-20">
         <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
           <div className="max-w-4xl space-y-7">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#003855] font-heading leading-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#003855] leading-tight">
               Cuidamos la salud de <span className="text-[#005a87]">Cruz del Eje</span> en un solo lugar.
             </h1>
 
@@ -155,7 +155,7 @@ export const HomePage: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <ModalIcon className="h-7 w-7 text-white shrink-0" />
                     <div>
-                      <h3 className="text-lg font-bold font-heading">{especialidadSeleccionada.nombre}</h3>
+                      <h3 className="text-lg font-bold">{especialidadSeleccionada.nombre}</h3>
                       <p className="text-xs text-sky-100">{especialidadSeleccionada.descripcion}</p>
                     </div>
                   </div>
@@ -220,11 +220,11 @@ export const HomePage: React.FC = () => {
                               {med.nombre.charAt(0)}{med.apellido.charAt(0)}
                             </div>
                             <div>
-                              <h5 className="font-bold text-base text-foreground font-heading">
+                              <h5 className="font-bold text-base text-foreground">
                                 Dr(a). {med.nombre} {med.apellido}
                               </h5>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <span className="font-mono text-xs font-semibold text-white bg-sky-700 px-2 py-0.5 rounded">
+                                <span className="tabular-nums text-xs font-semibold text-white bg-sky-700 px-2 py-0.5 rounded">
                                   {med.matricula}
                                 </span>
                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -260,7 +260,7 @@ export const HomePage: React.FC = () => {
                               >
                                 <div className="flex items-start justify-between gap-1">
                                   <div>
-                                    <h6 className="font-bold text-xs text-foreground font-heading">
+                                    <h6 className="font-bold text-xs text-foreground">
                                       {centro.nombre}
                                     </h6>
                                     <span className="text-xs text-slate-500 font-normal">
@@ -328,7 +328,7 @@ export const HomePage: React.FC = () => {
               <div className="flex items-center gap-3">
                 <Building2 className="h-6 w-6 text-sky-200" />
                 <div>
-                  <h3 className="font-bold text-base font-heading">{centroDetalle.nombre}</h3>
+                  <h3 className="font-bold text-base">{centroDetalle.nombre}</h3>
                   <p className="text-xs text-sky-100">
                     {centroDetalle.tipo} • {centroDetalle.ciudad}
                   </p>
@@ -356,7 +356,7 @@ export const HomePage: React.FC = () => {
                   <Phone className="h-4 w-4 text-sky-600 shrink-0" />
                   <div>
                     <span className="font-bold text-foreground inline mr-1">Teléfono:</span>
-                    <span className="font-mono text-sky-700 font-semibold">{centroDetalle.telefono}</span>
+                    <span className="tabular-nums text-sky-700 font-semibold">{centroDetalle.telefono}</span>
                   </div>
                 </div>
 
@@ -409,7 +409,7 @@ export const HomePage: React.FC = () => {
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-700">
                 <UserCheck className="h-7 w-7" />
               </div>
-              <h3 className="text-2xl font-bold font-heading text-slate-900">
+              <h3 className="text-2xl font-bold text-slate-900">
                 Consultar Mis Turnos
               </h3>
               <p className="text-sm text-slate-600">

@@ -125,7 +125,7 @@ export const NuevoUsuarioPage: React.FC = () => {
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2 font-heading">
+            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
               <UserPlus className="h-5 w-5 text-primary" />
               <span>Alta de Nuevo Usuario</span>
             </h1>
@@ -218,7 +218,7 @@ export const NuevoUsuarioPage: React.FC = () => {
               placeholder="ej: 34567890"
               value={formData.dni}
               onChange={handleChange}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 

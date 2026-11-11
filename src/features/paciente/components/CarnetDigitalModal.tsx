@@ -194,7 +194,7 @@ export const CarnetDigitalModal: React.FC<CarnetDigitalModalProps> = ({
                   <h4 className="text-base font-extrabold text-slate-900 tracking-tight leading-snug">
                     {pacienteNombre}
                   </h4>
-                  <p className="text-xs font-mono font-bold text-sky-700 mt-0.5">
+                  <p className="text-xs tabular-nums font-bold text-sky-700 mt-0.5">
                     DNI: <span className="font-semibold text-slate-800">{dni}</span>
                   </p>
                 </div>
@@ -207,7 +207,7 @@ export const CarnetDigitalModal: React.FC<CarnetDigitalModalProps> = ({
                     <p className="font-bold text-slate-800 text-[11px] truncate mt-0.5">
                       {obraSocial}
                     </p>
-                    <p className="text-[9px] font-mono text-slate-500 truncate">{nroAfiliado}</p>
+                    <p className="text-[9px] tabular-nums text-slate-500 truncate">{nroAfiliado}</p>
                   </div>
 
                   <div className="rounded-xl bg-white p-2.5 border border-slate-200/80 shadow-2xs">
@@ -238,7 +238,7 @@ export const CarnetDigitalModal: React.FC<CarnetDigitalModalProps> = ({
                     alt={`Código QR de Admisión para ${pacienteNombre}`}
                   />
                 </div>
-                <span className="mt-1.5 font-mono text-[9px] font-bold text-slate-700 tracking-wider">
+                <span className="mt-1.5 text-[9px] font-bold text-slate-700 tracking-wider">
                   SCAN ADMISIÓN
                 </span>
                 <span className="text-[8px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded-full mt-0.5 border border-emerald-200">

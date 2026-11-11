@@ -426,7 +426,7 @@ export const ValidacionDniModal: React.FC<ValidacionDniModalProps> = ({
                 <ShieldAlert className="h-5 w-5 text-sky-300" />
               </div>
               <div>
-                <h2 className="text-base sm:text-lg font-bold font-heading leading-tight">
+                <h2 className="text-base sm:text-lg font-bold leading-tight">
                   Carga de Datos y Validación de Paciente
                 </h2>
                 <p className="text-[11px] sm:text-xs text-sky-200/90 mt-0.5">
@@ -579,7 +579,7 @@ export const ValidacionDniModal: React.FC<ValidacionDniModalProps> = ({
                     value={dni}
                     onChange={handleDniChange}
                     required
-                    className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3 py-2 text-xs sm:text-sm font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent transition"
+                    className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3 py-2 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent transition"
                   />
                 </div>
               </div>
@@ -629,7 +629,7 @@ export const ValidacionDniModal: React.FC<ValidacionDniModalProps> = ({
                     placeholder="Ej: 20-40026880-4/01"
                     value={nroAfiliado}
                     onChange={(e) => setNroAfiliado(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent transition"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent transition"
                   />
                 </div>
               </div>
@@ -660,7 +660,7 @@ export const ValidacionDniModal: React.FC<ValidacionDniModalProps> = ({
                     value={nroTramite}
                     onChange={handleTramiteChange}
                     required
-                    className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3 py-2 text-xs sm:text-sm font-mono font-bold tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent transition"
+                    className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3 py-2 text-xs sm:text-sm font-bold tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent transition"
                   />
                 </div>
               </div>

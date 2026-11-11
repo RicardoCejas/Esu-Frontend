@@ -232,7 +232,7 @@ export const Footer: React.FC = () => {
             <div className="flex items-center gap-3">
               <img src="/logo-icon.png" alt="Luvia Logo" width="36" height="36" className="h-9 w-9 object-contain" />
               <div>
-                <span className="font-extrabold text-xl tracking-tight text-white font-heading">
+                <span className="font-extrabold text-xl tracking-tight text-white">
                   Luvia <span className="text-sky-400">Cruz del Eje</span>
                 </span>
                 <p className="text-xs text-sky-300 font-medium">Ecosistema de Salud Unificado</p>
@@ -321,7 +321,7 @@ export const Footer: React.FC = () => {
 
           {/* Columna 2: Guías Comunitarias & Servicios Sanitarios (lg:col-span-3) */}
           <div className="space-y-3.5 lg:col-span-3">
-            <h4 className="font-bold text-sm sm:text-base text-white font-heading flex items-center gap-2">
+            <h4 className="font-bold text-sm sm:text-base text-white flex items-center gap-2">
               <Pill className="h-4 w-4 text-emerald-400" />
               <span>Salud en la Comunidad</span>
             </h4>
@@ -379,7 +379,7 @@ export const Footer: React.FC = () => {
 
           {/* Columna 3: Centros y Efectores Departamentales (lg:col-span-3) */}
           <div className="space-y-3.5 lg:col-span-3">
-            <h4 className="font-bold text-sm sm:text-base text-white font-heading flex items-center gap-2">
+            <h4 className="font-bold text-sm sm:text-base text-white flex items-center gap-2">
               <Building2 className="h-4 w-4 text-sky-400" />
               <span>Red Hospitalaria y Sanatorial</span>
             </h4>
@@ -436,7 +436,7 @@ export const Footer: React.FC = () => {
 
           {/* Columna 4: Mesa de Entrada & Portales (lg:col-span-2) */}
           <div className="space-y-3.5 lg:col-span-2">
-            <h4 className="font-bold text-sm sm:text-base text-white font-heading flex items-center gap-2">
+            <h4 className="font-bold text-sm sm:text-base text-white flex items-center gap-2">
               <UserCheck className="h-4 w-4 text-sky-400" />
               <span>Portales y Enlaces</span>
             </h4>
@@ -509,7 +509,7 @@ export const Footer: React.FC = () => {
                   {modalData.icono}
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base sm:text-lg text-white font-heading">
+                  <h3 className="font-extrabold text-base sm:text-lg text-white">
                     {modalData.titulo}
                   </h3>
                   <p className="text-[11px] text-slate-400">{modalData.subtitulo}</p>

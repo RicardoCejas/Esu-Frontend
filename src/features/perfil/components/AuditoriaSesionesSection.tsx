@@ -169,7 +169,7 @@ export const AuditoriaSesionesSection: React.FC = () => {
                         <CheckCircle2 className="h-2.5 w-2.5" /> Sesión actual
                       </span>
                     ) : (
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground font-mono">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums">
                         IP: {sesion.ip}
                       </span>
                     )}
@@ -216,7 +216,7 @@ export const AuditoriaSesionesSection: React.FC = () => {
             <div className="flex items-center justify-between pb-2 border-b border-border">
               <div className="flex items-center gap-2 text-rose-600">
                 <AlertTriangle className="h-5 w-5" />
-                <h3 className="font-heading text-sm font-bold text-foreground">
+                <h3 className="text-sm font-bold text-foreground">
                   Cerrar todas las demás sesiones
                 </h3>
               </div>

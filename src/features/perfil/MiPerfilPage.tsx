@@ -418,13 +418,13 @@ export const MiPerfilPage: React.FC = () => {
       {/* Encabezado Principal de Identidad */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-sky-100 bg-white p-5 shadow-xs">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sky-700 text-xl font-black text-white shadow-sm font-heading">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sky-700 text-xl font-black text-white shadow-sm">
             {user?.nombre?.charAt(0) || 'P'}
             {user?.apellido?.charAt(0) || ''}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black tracking-tight text-slate-900 font-heading">
+              <h1 className="text-xl font-black tracking-tight text-slate-900">
                 {user?.nombre || 'Paciente'} {user?.apellido || ''}
               </h1>
               <span className="rounded-full bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
@@ -432,7 +432,7 @@ export const MiPerfilPage: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Historia Clínica N° <strong className="text-slate-700 font-mono">HC-{hcDniMostrar}-CDE</strong> • Sistema Único de Salud de Cruz del Eje
+              Historia Clínica N° <strong className="text-slate-700 tabular-nums">HC-{hcDniMostrar}-CDE</strong> • Sistema Único de Salud de Cruz del Eje
             </p>
           </div>
         </div>
@@ -484,7 +484,7 @@ export const MiPerfilPage: React.FC = () => {
               <User className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 font-heading">
+              <h2 className="text-sm font-bold text-slate-900">
                 Datos Personales y de Identidad
               </h2>
               <p className="text-xs text-slate-500">
@@ -542,7 +542,7 @@ export const MiPerfilPage: React.FC = () => {
                   value={dniInput}
                   onChange={(e) => setDniInput(e.target.value.replace(/\s+/g, ''))}
                   placeholder="Ej: 38123456"
-                  className={`w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-mono font-bold transition ${
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-bold transition ${
                     isEditingDni
                       ? 'border-sky-500 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600'
                       : 'border-slate-200 bg-slate-50 text-slate-700 cursor-default'
@@ -601,7 +601,7 @@ export const MiPerfilPage: React.FC = () => {
                   type="text"
                   disabled
                   value={cuilMostrar}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs sm:text-sm font-mono text-slate-700 cursor-not-allowed"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs sm:text-sm text-slate-700 cursor-not-allowed"
                 />
               </div>
               <div>
@@ -625,7 +625,7 @@ export const MiPerfilPage: React.FC = () => {
                 <Phone className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900 font-heading">
+                <h2 className="text-sm font-bold text-slate-900">
                   Contacto y Notificaciones
                 </h2>
                 <p className="text-xs text-slate-500">
@@ -715,7 +715,7 @@ export const MiPerfilPage: React.FC = () => {
                 <MapPin className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900 font-heading">
+                <h2 className="text-sm font-bold text-slate-900">
                   Domicilio y Residencia
                 </h2>
                 <p className="text-xs text-slate-500">
@@ -792,7 +792,7 @@ export const MiPerfilPage: React.FC = () => {
                 <CreditCard className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900 font-heading">
+                <h2 className="text-sm font-bold text-slate-900">
                   Cobertura Médica y Obra Social
                 </h2>
                 <p className="text-xs text-slate-500">
@@ -831,7 +831,7 @@ export const MiPerfilPage: React.FC = () => {
                   value={formData.nroAfiliado}
                   onChange={(e) => handleChange('nroAfiliado', e.target.value)}
                   placeholder="ej: 20-38123456-01"
-                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
                 />
               </div>
               <div>
@@ -863,7 +863,7 @@ export const MiPerfilPage: React.FC = () => {
                 <HeartPulse className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900 font-heading">
+                <h2 className="text-sm font-bold text-slate-900">
                   Ficha Médica de Emergencia y Datos Críticos
                 </h2>
                 <p className="text-xs text-slate-500">
@@ -1030,7 +1030,7 @@ export const MiPerfilPage: React.FC = () => {
                   <Mail className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 font-heading">
+                  <h3 className="text-sm font-bold text-slate-900">
                     Solicitar Cambio de Correo Electrónico
                   </h3>
                   <p className="text-xs text-slate-500">

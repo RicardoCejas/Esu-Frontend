@@ -458,7 +458,7 @@ export const AtencionConsultaPage: React.FC = () => {
             </p>
 
             {hashGenerado ? (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left mb-6 font-mono text-xs text-slate-600 space-y-1">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left mb-6 tabular-nums text-xs text-slate-600 space-y-1">
                 <p><span className="font-bold text-slate-900">Hash SHA-256 de Integridad:</span> {hashGenerado}</p>
                 <p><span className="font-bold text-slate-900">Estado de la Evolución:</span> INALTERABLE / FIRMADA</p>
                 <p><span className="font-bold text-slate-900">Fecha y Hora de Cierre:</span> {new Date().toLocaleString()}</p>

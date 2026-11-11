@@ -46,12 +46,15 @@ const navItems: NavItem[] = [
   { title: 'Atención Clínica', path: '/dashboard/medico/atencion', icon: Stethoscope, roles: ['MEDICO'] },
 
   // Rutas Centro de Salud / Recepción
-  { title: 'Recepción (Daily Board)', path: '/dashboard/recepcion', icon: Clock, roles: ['RECEPCIONISTA', 'ADMIN'] },
-  { title: 'Tablero Kanban Espera', path: '/dashboard/recepcion/kanban', icon: Layers, roles: ['RECEPCIONISTA', 'MEDICO', 'ADMIN'] },
-  { title: 'Padrón de Pacientes', path: '/dashboard/recepcion/pacientes', icon: Users, roles: ['RECEPCIONISTA', 'MEDICO', 'ADMIN'] },
-  { title: 'Gestión de Turnos', path: '/dashboard/recepcion/turnos', icon: ListOrdered, roles: ['RECEPCIONISTA', 'ADMIN'] },
-  { title: 'Médicos del Centro', path: '/dashboard/recepcion/medicos', icon: Stethoscope, roles: ['RECEPCIONISTA', 'ADMIN'] },
-  { title: 'Especialidades del Centro', path: '/dashboard/recepcion/especialidades', icon: Building2, roles: ['RECEPCIONISTA', 'ADMIN'] },
+  { title: 'Recepción (Daily Board)', path: '/dashboard/recepcion', icon: Clock, roles: ['RECEPCIONISTA'] },
+  { title: 'Tablero Kanban Espera', path: '/dashboard/recepcion/kanban', icon: Layers, roles: ['RECEPCIONISTA', 'MEDICO'] },
+  { title: 'Padrón de Pacientes', path: '/dashboard/recepcion/pacientes', icon: Users, roles: ['RECEPCIONISTA', 'MEDICO'] },
+  { title: 'Gestión de Turnos', path: '/dashboard/recepcion/turnos', icon: ListOrdered, roles: ['RECEPCIONISTA'] },
+  { title: 'Médicos del Centro', path: '/dashboard/recepcion/medicos', icon: Stethoscope, roles: ['RECEPCIONISTA'] },
+  { title: 'Especialidades del Centro', path: '/dashboard/recepcion/especialidades', icon: Layers, roles: ['RECEPCIONISTA'] },
+  { title: 'Métricas del Centro', path: '/dashboard/recepcion/metricas', icon: TrendingUp, roles: ['RECEPCIONISTA'] },
+  { title: 'Mi Sede y Consultorios', path: '/dashboard/recepcion/sede', icon: Building2, roles: ['RECEPCIONISTA'] },
+  { title: 'Personal del Centro', path: '/dashboard/recepcion/personal', icon: ShieldCheck, roles: ['RECEPCIONISTA'] },
 
   // Rutas Administrador (HU-56 & HU-70)
   { title: 'Dashboard y Métricas', path: '/dashboard/admin', icon: Layers, roles: ['ADMIN'] },
@@ -80,7 +83,7 @@ export const Sidebar: React.FC = () => {
         >
           <img src="/logo-icon.png" alt="ESU" className="h-9 w-9 shrink-0 object-contain" />
           <div className="flex min-w-0 flex-col">
-            <span className="truncate font-heading text-sm font-bold leading-tight text-foreground">
+            <span className="truncate text-sm font-bold leading-tight text-foreground">
               ESU <span className="text-xs text-primary">Cruz del Eje</span>
             </span>
             <span className="truncate text-[10px] leading-none text-muted-foreground">

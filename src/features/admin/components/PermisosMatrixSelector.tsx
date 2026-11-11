@@ -11,6 +11,7 @@ export interface PermisosMatrixSelectorProps {
   onChange: (permisos: PermissionCode[]) => void;
   rolBase?: string;
   disabled?: boolean;
+  excludePermissionCodes?: PermissionCode[];
 }
 
 export const PermisosMatrixSelector: React.FC<PermisosMatrixSelectorProps> = ({
@@ -19,16 +20,20 @@ export const PermisosMatrixSelector: React.FC<PermisosMatrixSelectorProps> = ({
   onChange,
   rolBase = 'RECEPCIONISTA',
   disabled = false,
+  excludePermissionCodes = [],
 }) => {
+  const excludedSet = useMemo(() => new Set(excludePermissionCodes), [excludePermissionCodes]);
+
   const modulos = useMemo(() => {
     const map = new Map<string, Permiso[]>();
     for (const p of catalogo) {
+      if (excludedSet.has(p.codigo)) continue;
       const list = map.get(p.modulo) ?? [];
       list.push(p);
       map.set(p.modulo, list);
     }
     return Array.from(map.entries());
-  }, [catalogo]);
+  }, [catalogo, excludedSet]);
 
   const selectedSet = useMemo(() => new Set(selectedPermisos), [selectedPermisos]);
 
@@ -53,16 +58,18 @@ export const PermisosMatrixSelector: React.FC<PermisosMatrixSelectorProps> = ({
   };
 
   const aplicarRecomendados = () => {
-    const preset = DEFAULT_PERMISSIONS_BY_ROLE[rolBase] ?? [];
+    const preset = (DEFAULT_PERMISSIONS_BY_ROLE[rolBase] ?? []).filter(
+      (code) => !excludedSet.has(code)
+    );
     onChange(preset);
   };
 
   return (
-    <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+    <div className="space-y-4 rounded-xl border border-border bg-muted/30 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-sky-700" />
-          <h3 className="text-sm font-semibold text-slate-900">
+          <ShieldCheck className="h-5 w-5 text-primary" aria-hidden="true" />
+          <h3 className="text-sm font-semibold text-foreground">
             Catálogo de Permisos Granulares ({selectedPermisos.length} asignados)
           </h3>
         </div>
@@ -70,9 +77,9 @@ export const PermisosMatrixSelector: React.FC<PermisosMatrixSelectorProps> = ({
           type="button"
           onClick={aplicarRecomendados}
           disabled={disabled}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-sky-600 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-input bg-card px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 cursor-pointer"
         >
-          <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
+          <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           Aplicar recomendados para {rolBase}
         </button>
       </div>
@@ -81,16 +88,16 @@ export const PermisosMatrixSelector: React.FC<PermisosMatrixSelectorProps> = ({
         {modulos.map(([modulo, permisos]) => {
           const allSelected = permisos.every((p) => selectedSet.has(p.codigo));
           return (
-            <div key={modulo} className="rounded-lg border border-slate-200 bg-white p-3 shadow-xs">
-              <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-1.5">
-                <span className="text-xs font-bold tracking-wider text-slate-700 uppercase">
+            <div key={modulo} className="rounded-lg border border-border bg-card p-3 shadow-xs">
+              <div className="mb-2 flex items-center justify-between border-b border-border/70 pb-1.5">
+                <span className="text-xs font-bold tracking-wider text-foreground uppercase">
                   {modulo.replace('_', ' ')}
                 </span>
                 <button
                   type="button"
                   onClick={() => toggleModulo(permisos)}
                   disabled={disabled}
-                  className="text-[11px] font-medium text-sky-700 hover:underline disabled:opacity-50"
+                  className="text-[11px] font-semibold text-primary hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-sm disabled:opacity-50 cursor-pointer"
                 >
                   {allSelected ? 'Desmarcar módulo' : 'Marcar módulo'}
                 </button>
@@ -101,8 +108,10 @@ export const PermisosMatrixSelector: React.FC<PermisosMatrixSelectorProps> = ({
                   return (
                     <label
                       key={p.codigo}
-                      className={`flex cursor-pointer items-start gap-2 rounded-md p-1.5 transition-colors ${
-                        isChecked ? 'bg-sky-50/60' : 'hover:bg-slate-50'
+                      className={`flex cursor-pointer items-start gap-2 rounded-md border p-1.5 transition-colors ${
+                        isChecked
+                          ? 'border-primary/40 bg-card'
+                          : 'border-transparent hover:bg-muted/50'
                       }`}
                     >
                       <input
@@ -110,11 +119,11 @@ export const PermisosMatrixSelector: React.FC<PermisosMatrixSelectorProps> = ({
                         checked={isChecked}
                         onChange={() => togglePermiso(p.codigo)}
                         disabled={disabled}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-600"
+                        className="mt-0.5 h-4 w-4 rounded border-input text-primary focus:ring-primary"
                       />
                       <div className="min-w-0 flex-1 text-xs">
-                        <p className="font-medium text-slate-900">{p.nombre}</p>
-                        {p.descripcion && <p className="truncate text-slate-500">{p.descripcion}</p>}
+                        <p className="font-medium text-foreground">{p.nombre}</p>
+                        {p.descripcion && <p className="truncate text-muted-foreground">{p.descripcion}</p>}
                       </div>
                     </label>
                   );

@@ -178,7 +178,7 @@ export const AdminSedesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Gestión de Sedes, Centros y Consultorios Físicos
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -363,7 +363,7 @@ export const AdminSedesPage: React.FC = () => {
                         <td className="p-3 font-semibold text-foreground">
                           {centroPertenece?.nombre || 'Sede No Identificada'}
                         </td>
-                        <td className="p-3 font-mono font-bold text-primary">{cs.numero}</td>
+                        <td className="p-3 tabular-nums font-bold text-primary">{cs.numero}</td>
                         <td className="p-3 text-muted-foreground">{cs.planta}</td>
                         <td className="p-3">
                           <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
@@ -553,7 +553,7 @@ export const AdminSedesPage: React.FC = () => {
                     value={consultorioForm.numero}
                     onChange={(e) => setConsultorioForm({ ...consultorioForm, numero: e.target.value })}
                     placeholder="Ej. 104 o Box A"
-                    className="w-full rounded-xl border border-input bg-background p-2 font-mono focus:ring-2 focus:ring-primary"
+                    className="w-full rounded-xl border border-input bg-background p-2 focus:ring-2 focus:ring-primary"
                   />
                 </div>
                 <div>

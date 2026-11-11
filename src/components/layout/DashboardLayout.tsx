@@ -72,7 +72,7 @@ export const DashboardLayout: React.FC = () => {
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 mb-4 shadow-sm">
                   <ShieldAlert className="h-8 w-8" />
                 </div>
-                <h2 className="text-lg sm:text-xl font-bold font-heading text-slate-800">
+                <h2 className="text-lg sm:text-xl font-bold text-slate-800">
                   Validación de Identidad Obligatoria
                 </h2>
                 <p className="mt-2 max-w-md text-xs sm:text-sm text-slate-600 leading-relaxed">

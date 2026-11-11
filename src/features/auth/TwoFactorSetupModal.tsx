@@ -232,7 +232,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({
                   <span className="ml-1">Copiar</span>
                 </Button>
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl border border-border bg-muted/30 p-3 font-mono text-xs">
+              <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl border border-border bg-muted/30 p-3 tabular-nums text-xs">
                 {setupData.backupCodes.map((backupCode) => (
                   <span key={backupCode}>{backupCode}</span>
                 ))}

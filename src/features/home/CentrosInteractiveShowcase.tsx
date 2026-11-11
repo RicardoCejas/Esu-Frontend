@@ -110,7 +110,7 @@ export const CentrosInteractiveShowcase: React.FC = () => {
             <Building2 className="h-4 w-4 text-white" />
             <span>Infraestructura Sanitaria de Cruz del Eje</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-heading text-foreground">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
             Galería Interactiva de Hospitales y Clínicas
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -158,7 +158,7 @@ export const CentrosInteractiveShowcase: React.FC = () => {
                 <span className="inline-block self-start rounded-full bg-sky-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white mb-1 shadow-sm">
                   {selectedCentro.badge}
                 </span>
-                <h3 className="text-xl font-bold font-heading">{selectedCentro.nombre}</h3>
+                <h3 className="text-xl font-bold">{selectedCentro.nombre}</h3>
                 <p className="text-xs text-sky-100 flex items-center gap-1.5 mt-0.5">
                   <MapPin className="h-3.5 w-3.5 text-sky-300 shrink-0" />
                   <span>{selectedCentro.direccion}</span>
@@ -194,7 +194,7 @@ export const CentrosInteractiveShowcase: React.FC = () => {
                 <span className="text-xs font-extrabold text-sky-600 uppercase tracking-wider">
                   {selectedCentro.tipo}
                 </span>
-                <h3 className="text-2xl font-bold font-heading text-foreground">
+                <h3 className="text-2xl font-bold text-foreground">
                   {selectedCentro.nombre}
                 </h3>
               </div>

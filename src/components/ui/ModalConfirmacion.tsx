@@ -24,87 +24,84 @@ export const ModalConfirmacion: React.FC<ModalConfirmacionProps> = ({
   variant = 'danger',
   isLoading = false,
 }) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Scroll lock obligatorio (SSOT 7.2)
   useEffect(() => {
-    if (!isOpen) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
 
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    // Focus en el botón de confirmación para accesibilidad WCAG
-    const timer = setTimeout(() => {
-      confirmButtonRef.current?.focus();
-    }, 50);
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isLoading) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      window.removeEventListener('keydown', handleKeyDown);
-      clearTimeout(timer);
-    };
-  }, [isOpen, isLoading, onClose]);
-
-  if (!isOpen) return null;
+    if (isOpen && !dialog.open) {
+      dialog.showModal();
+      const targetFocus =
+        variant === 'danger' ? cancelButtonRef.current : confirmButtonRef.current;
+      targetFocus?.focus();
+    } else if (!isOpen && dialog.open) {
+      dialog.close();
+    }
+  }, [isOpen, variant]);
 
   const iconMap = {
-    danger: <AlertTriangle className="h-6 w-6 text-rose-600" />,
-    warning: <AlertCircle className="h-6 w-6 text-amber-600" />,
-    primary: <Info className="h-6 w-6 text-sky-600" />,
+    danger: <AlertTriangle className="h-6 w-6 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />,
+    warning: <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />,
+    primary: <Info className="h-6 w-6 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />,
   };
 
   const buttonStyleMap = {
-    danger: 'bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-500',
-    warning: 'bg-amber-600 hover:bg-amber-700 text-white focus:ring-amber-500',
-    primary: 'bg-sky-600 hover:bg-sky-700 text-white focus:ring-sky-500',
+    danger: 'bg-rose-700 hover:bg-rose-800 text-white focus-visible:ring-rose-600',
+    warning: 'bg-amber-600 hover:bg-amber-700 text-white focus-visible:ring-amber-500',
+    primary: 'bg-sky-600 hover:bg-sky-700 text-white focus-visible:ring-sky-500',
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      ref={dialogRef}
       aria-labelledby="confirm-modal-title"
       aria-describedby="confirm-modal-description"
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+      closedby={isLoading ? 'none' : 'closerequest'}
+      onCancel={(e) => {
+        if (isLoading) {
+          e.preventDefault();
+          return;
+        }
+        onClose();
+      }}
+      onClose={() => {
+        if (isOpen) onClose();
+      }}
+      className="m-auto w-full max-w-md rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-2xl backdrop:bg-slate-900/60 backdrop:backdrop-blur-xs open:animate-in open:fade-in open:zoom-in-95"
     >
-      <div className="relative w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200">
+      <div className="relative space-y-4">
         <button
           type="button"
           onClick={onClose}
           disabled={isLoading}
-          className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400"
-          aria-label="Cerrar modal"
+          className="absolute right-0 top-0 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+          aria-label="Cerrar diálogo de confirmación"
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" aria-hidden="true" />
         </button>
 
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 shrink-0">
-            {iconMap[variant]}
-          </div>
-          <div className="space-y-1 pr-6">
-            <h3 id="confirm-modal-title" className="text-base font-bold text-slate-900">
+        <div className="flex items-start gap-3.5 pr-8">
+          <div className="pt-0.5">{iconMap[variant]}</div>
+          <div className="space-y-1.5">
+            <h2 id="confirm-modal-title" className="text-base font-bold text-foreground">
               {title}
-            </h3>
-            <p id="confirm-modal-description" className="text-xs text-slate-600 leading-relaxed">
+            </h2>
+            <p id="confirm-modal-description" className="text-xs text-muted-foreground leading-relaxed">
               {description}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-2">
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
           <button
+            ref={cancelButtonRef}
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:opacity-50"
+            className="min-h-[38px] rounded-xl border border-input bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
           >
             {cancelText}
           </button>
@@ -113,12 +110,12 @@ export const ModalConfirmacion: React.FC<ModalConfirmacionProps> = ({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className={`px-4 py-2 text-xs font-semibold rounded-xl shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 ${buttonStyleMap[variant]}`}
+            className={`min-h-[38px] rounded-xl px-4 py-2 text-xs font-bold shadow-xs transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 ${buttonStyleMap[variant]}`}
           >
             {isLoading ? 'Procesando...' : confirmText}
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };

@@ -177,7 +177,7 @@ export const AgendaMedicaPage: React.FC = () => {
               {user?.nombre || 'Dr. Carlos'} {user?.apellido || 'Bustos'}
             </span>
             <span>•</span>
-            <span className="font-mono">{user?.matricula || 'MP-34982'}</span>
+            <span className="tabular-nums">{user?.matricula || 'MP-34982'}</span>
             <span>•</span>
             <span className="flex items-center gap-1 font-medium text-foreground">
               <Building2 className="h-3.5 w-3.5 text-primary" />
@@ -200,15 +200,15 @@ export const AgendaMedicaPage: React.FC = () => {
           >
             <Flame className="h-4 w-4 text-amber-600 shrink-0" />
             <span>Sobreturnos:</span>
-            <span className="font-mono text-xs font-black">{countSobreturnos}/3</span>
+            <span className="tabular-nums text-xs font-black">{countSobreturnos}/3</span>
           </div>
 
           <div className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs">
-            <span className="font-mono">{countEnEspera}</span> en espera
+            <span className="tabular-nums">{countEnEspera}</span> en espera
           </div>
 
           <div className="rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs">
-            <span className="font-mono">{countAtendidos}</span> atendidos hoy
+            <span className="tabular-nums">{countAtendidos}</span> atendidos hoy
           </div>
         </div>
       </div>
@@ -237,7 +237,7 @@ export const AgendaMedicaPage: React.FC = () => {
           >
             <Building2 className="h-3.5 w-3.5" />
             <span>Todas las Sedes</span>
-            <span className="rounded-full bg-white/20 dark:bg-black/20 px-2 py-0.5 text-[10px] font-mono">
+            <span className="rounded-full bg-white/20 dark:bg-black/20 px-2 py-0.5 text-[10px] tabular-nums">
               {turnos.length}
             </span>
           </button>
@@ -259,7 +259,7 @@ export const AgendaMedicaPage: React.FC = () => {
               >
                 <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
                 <span className="truncate max-w-[220px]">{c.nombre}</span>
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-mono text-foreground font-semibold">
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] tabular-nums text-foreground font-semibold">
                   {countTurnosCentro}
                 </span>
               </button>
@@ -324,7 +324,7 @@ export const AgendaMedicaPage: React.FC = () => {
                     <span className="rounded bg-slate-800 text-white dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
                       BLOQUEADO
                     </span>
-                    <span className="font-mono text-xs font-bold text-foreground">
+                    <span className="tabular-nums text-xs font-bold text-foreground">
                       {b.fechaInicio} al {b.fechaFin}
                     </span>
                   </div>
@@ -395,7 +395,7 @@ export const AgendaMedicaPage: React.FC = () => {
                   {/* Hora y Día */}
                   <div className="flex flex-col items-center justify-center">
                     <div
-                      className={`flex h-12 w-20 shrink-0 items-center justify-center rounded-xl border font-mono font-bold text-sm ${
+                      className={`flex h-12 w-20 shrink-0 items-center justify-center rounded-xl border tabular-nums font-bold text-sm ${
                         isSobreturno
                           ? 'border-amber-400 bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200'
                           : isBloqueadoOCancelado
@@ -416,7 +416,7 @@ export const AgendaMedicaPage: React.FC = () => {
                       <span className="font-bold text-base text-foreground">
                         {turno.pacienteNombre}
                       </span>
-                      <span className="font-mono text-xs text-muted-foreground">
+                      <span className="tabular-nums text-xs text-muted-foreground">
                         DNI: {turno.pacienteDni}
                       </span>
 

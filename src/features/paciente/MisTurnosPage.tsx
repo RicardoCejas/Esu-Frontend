@@ -342,7 +342,7 @@ export const MisTurnosPage: React.FC = () => {
                     <div className="space-y-1.5 text-xs text-muted-foreground pt-1">
                       <div className="flex items-center gap-2 font-medium text-foreground">
                         <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
-                        <span className="font-mono">
+                        <span className="tabular-nums">
                           {turno.fecha} — {turno.hora} hs
                         </span>
                       </div>
@@ -465,7 +465,7 @@ export const MisTurnosPage: React.FC = () => {
                   alt={`QR Comprobante Turno ${selectedTurnoQr.codigoVerificacion || selectedTurnoQr.id}`}
                 />
               </div>
-              <span className="mt-3 font-mono text-xs font-bold text-slate-800">
+              <span className="mt-3 tabular-nums text-xs font-bold text-slate-800">
                 {selectedTurnoQr.codigoVerificacion || `Turno #${selectedTurnoQr.id}`}
               </span>
               <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full mt-1 border border-emerald-200">
@@ -481,7 +481,7 @@ export const MisTurnosPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">DNI:</span>
-                <span className="font-semibold font-mono text-foreground">{selectedTurnoQr.pacienteDni}</span>
+                <span className="font-semibold tabular-nums text-foreground">{selectedTurnoQr.pacienteDni}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Profesional:</span>
@@ -493,7 +493,7 @@ export const MisTurnosPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Fecha y Hora:</span>
-                <span className="font-bold font-mono text-sky-700 dark:text-sky-400">
+                <span className="font-bold tabular-nums text-sky-700 dark:text-sky-400">
                   {selectedTurnoQr.fecha} a las {selectedTurnoQr.hora} hs
                 </span>
               </div>

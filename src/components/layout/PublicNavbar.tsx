@@ -68,7 +68,7 @@ export const PublicNavbar: React.FC = () => {
         <Link to="/" className="flex items-center gap-2.5 transition hover:opacity-90">
           <img src="/logo-icon.png" alt="Luvia Logo" width="40" height="40" className="h-10 w-10 object-contain drop-shadow-xs" />
           <div className="flex flex-col">
-            <span className="text-xl font-extrabold tracking-tight text-slate-900 font-heading leading-tight">
+            <span className="text-xl font-extrabold tracking-tight text-slate-900 leading-tight">
               Luvia <span className="text-xs font-bold text-sky-600">Cruz del Eje</span>
             </span>
             <span className="text-[10px] text-muted-foreground font-semibold leading-none">

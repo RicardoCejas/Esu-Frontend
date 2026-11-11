@@ -139,7 +139,7 @@ export const AdminUsuariosPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 font-heading">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <Users className="h-6 w-6 text-primary" />
             <span>Administración de Usuarios del Sistema</span>
           </h1>
@@ -311,7 +311,7 @@ export const AdminUsuariosPage: React.FC = () => {
                   <div className="space-y-1.5 text-xs text-muted-foreground pt-1 border-t border-border/50">
                     <p className="flex items-center gap-2">
                       <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="truncate font-mono">{cuenta.email}</span>
+                      <span className="truncate">{cuenta.email}</span>
                     </p>
                     {cuenta.dni && (
                       <p className="flex items-center gap-2">
