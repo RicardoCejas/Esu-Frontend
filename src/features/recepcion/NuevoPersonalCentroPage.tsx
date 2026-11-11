@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Building2, RotateCcw, UserPlus } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Building2, RefreshCw, RotateCcw, UserPlus } from 'lucide-react';
 import { PermisosMatrixSelector } from '@/features/admin/components/PermisosMatrixSelector';
 import { CENTER_STAFF_ALLOWED_ROLES } from './utils/centroStaffHelpers';
 import { useNuevoPersonalCentro } from './hooks/useNuevoPersonalCentro';
@@ -10,6 +10,8 @@ export const NuevoPersonalCentroPage: React.FC = () => {
     centroNombre,
     catalogoPermisos,
     loadingCatalogo,
+    catalogoError,
+    loadCatalogo,
     values,
     permisos,
     setPermisos,
@@ -242,6 +244,22 @@ export const NuevoPersonalCentroPage: React.FC = () => {
               );
             })}
           </div>
+
+          {values.rol === 'PROFESIONAL' && (
+            <div className="rounded-lg border border-sky-200 dark:border-sky-900/50 bg-sky-50 dark:bg-sky-950/30 p-3 text-xs text-sky-900 dark:text-sky-200">
+              <p className="font-semibold">Alta exclusiva de cuenta y permisos</p>
+              <p className="mt-0.5 leading-relaxed">
+                Esta pantalla crea únicamente las credenciales de acceso. Para configurar matrícula, especialidad médica y consultorios del profesional, completá el alta clínica en{' '}
+                <Link
+                  to="/dashboard/recepcion/medicos/nuevo"
+                  className="font-bold underline hover:text-sky-700 dark:hover:text-sky-100"
+                >
+                  Médicos del Centro → Vincular Nuevo Médico
+                </Link>
+                .
+              </p>
+            </div>
+          )}
         </fieldset>
 
         <div className="space-y-3">
@@ -259,6 +277,24 @@ export const NuevoPersonalCentroPage: React.FC = () => {
 
           {loadingCatalogo ? (
             <p className="text-xs text-muted-foreground py-4">Cargando catálogo de permisos...</p>
+          ) : catalogoError ? (
+            <div
+              role="alert"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 p-3.5 text-xs text-rose-800 dark:text-rose-200"
+            >
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>{catalogoError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => void loadCatalogo()}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 px-3 py-1.5 text-[11px] font-semibold text-white transition cursor-pointer"
+              >
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                Reintentar
+              </button>
+            </div>
           ) : catalogoPermisos.length > 0 ? (
             <PermisosMatrixSelector
               catalogo={catalogoPermisos}
@@ -270,7 +306,7 @@ export const NuevoPersonalCentroPage: React.FC = () => {
             />
           ) : (
             <p className="text-xs text-muted-foreground">
-              Se asignarán los permisos base correspondientes al perfil elegido.
+              El catálogo no devolvió permisos configurables. Se aplicará la plantilla estándar del perfil elegido.
             </p>
           )}
         </div>

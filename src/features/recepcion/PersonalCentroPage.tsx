@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { UserPlus, AlertCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { ModalConfirmacion } from '@/components/ui/ModalConfirmacion';
 import { usePersonalCentro } from './hooks/usePersonalCentro';
 import { PersonalCentroFiltersBar } from './components/PersonalCentroFiltersBar';
@@ -9,6 +10,8 @@ import { PersonalCentroTable } from './components/PersonalCentroTable';
 
 export const PersonalCentroPage: React.FC = () => {
   const { user } = useAuth();
+  const { can } = usePermissions();
+  const canManageUsers = can('USUARIOS_ADMINISTRAR');
   const state = usePersonalCentro(user);
   const toggleActivo = state.cuentaAToggle?.activo !== false;
 
@@ -21,13 +24,15 @@ export const PersonalCentroPage: React.FC = () => {
             Cuentas de recepción y profesionales vinculadas a {user?.centroSaludNombre || 'esta institución'}.
           </p>
         </div>
-        <Link
-          to="/dashboard/recepcion/personal/nuevo"
-          className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 px-4 py-2 text-xs font-semibold text-white transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600 self-start sm:self-auto"
-        >
-          <UserPlus className="h-4 w-4" aria-hidden="true" />
-          <span>Nuevo Integrante</span>
-        </Link>
+        {canManageUsers && (
+          <Link
+            to="/dashboard/recepcion/personal/nuevo"
+            className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 px-4 py-2 text-xs font-semibold text-white transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600 self-start sm:self-auto"
+          >
+            <UserPlus className="h-4 w-4" aria-hidden="true" />
+            <span>Nuevo Integrante</span>
+          </Link>
+        )}
       </div>
 
       <PersonalCentroFiltersBar
@@ -57,6 +62,7 @@ export const PersonalCentroPage: React.FC = () => {
         <PersonalCentroTable
           staff={state.personalFiltrado}
           currentUser={user}
+          canManageUsers={canManageUsers}
           onToggleEstado={state.setCuentaAToggle}
           onEliminar={state.setCuentaAEliminar}
         />

@@ -1,11 +1,16 @@
 import type { BackendUserRole, PermissionCode, User } from '../../../types/index.ts';
+import { DNI_VALIDATION_ERROR, isValidDniFormat } from '../../../lib/dniValidation.ts';
 
 export const CENTER_STAFF_ALLOWED_ROLES: { value: BackendUserRole; label: string }[] = [
   { value: 'RECEPCIONISTA', label: 'Personal de Recepción' },
   { value: 'PROFESIONAL', label: 'Profesional Médico' },
 ];
 
-export const EXCLUDED_CENTER_PERMISSIONS: PermissionCode[] = ['PACIENTES_FUSIONAR'];
+export const EXCLUDED_CENTER_PERMISSIONS: PermissionCode[] = [
+  'PACIENTES_FUSIONAR',
+  'USUARIOS_ADMINISTRAR',
+  'CONSULTORIOS_ADMINISTRAR',
+];
 
 /**
  * Normalizes a user role string for institutional comparison.
@@ -91,4 +96,28 @@ export function sanitizePermissionsForCenterStaff(
 ): PermissionCode[] {
   const excluded = new Set<PermissionCode>(EXCLUDED_CENTER_PERMISSIONS);
   return permisos.filter((p) => !excluded.has(p));
+}
+
+/**
+ * Maps any backend or frontend role representation to the two allowed center staff roles.
+ */
+export function resolveCenterBackendRole(rawRole?: string): BackendUserRole {
+  const r = normalizeRole(rawRole || 'RECEPCIONISTA');
+  return r === 'MEDICO' || r === 'PROFESIONAL' ? 'PROFESIONAL' : 'RECEPCIONISTA';
+}
+
+/**
+ * Validates editable operational staff identity fields before PUT /perfil-operativo.
+ */
+export function validatePerfilOperativo(values: {
+  nombre: string;
+  apellido: string;
+  dni: string;
+}): { nombre?: string; apellido?: string; dni?: string } {
+  const errs: { nombre?: string; apellido?: string; dni?: string } = {};
+  if (values.nombre.trim().length < 2) errs.nombre = 'Ingresá un nombre válido.';
+  if (values.apellido.trim().length < 2) errs.apellido = 'Ingresá un apellido válido.';
+  const dniClean = values.dni.trim();
+  if (dniClean && !isValidDniFormat(dniClean)) errs.dni = DNI_VALIDATION_ERROR;
+  return errs;
 }

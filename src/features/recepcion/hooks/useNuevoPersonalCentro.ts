@@ -6,6 +6,7 @@ import { extractApiErrorMessage } from '@/api/endpoints';
 import { permisosService } from '@/api/permisosService';
 import { usuariosService } from '@/api/usuariosService';
 import { DEFAULT_PERMISSIONS_BY_ROLE } from '@/features/admin/components/PermisosMatrixSelector';
+import { DNI_VALIDATION_ERROR, isValidDniFormat } from '@/lib/dniValidation';
 import {
   EXCLUDED_CENTER_PERMISSIONS,
   sanitizePermissionsForCenterStaff,
@@ -43,6 +44,7 @@ export function useNuevoPersonalCentro() {
 
   const [catalogoPermisos, setCatalogoPermisos] = useState<Permiso[]>([]);
   const [loadingCatalogo, setLoadingCatalogo] = useState(true);
+  const [catalogoError, setCatalogoError] = useState<string | null>(null);
   const [values, setValues] = useState<NuevoPersonalFormValues>({
     nombre: '',
     apellido: '',
@@ -61,11 +63,15 @@ export function useNuevoPersonalCentro() {
 
   const loadCatalogo = useCallback(async () => {
     setLoadingCatalogo(true);
+    setCatalogoError(null);
     try {
       const cat = await permisosService.getCatalogo();
       setCatalogoPermisos(Array.isArray(cat) ? cat : []);
-    } catch {
+    } catch (err) {
       setCatalogoPermisos([]);
+      setCatalogoError(
+        extractApiErrorMessage(err, 'No se pudo cargar el catálogo de permisos desde el servidor.')
+      );
     } finally {
       setLoadingCatalogo(false);
     }
@@ -101,8 +107,8 @@ export function useNuevoPersonalCentro() {
       next.email = 'Ingresá un correo electrónico institucional válido.';
     }
     const dniClean = values.dni.trim();
-    if (dniClean && !/^\d{7,8}$/.test(dniClean)) {
-      next.dni = 'El DNI debe contener 7 u 8 dígitos numéricos.';
+    if (dniClean && !isValidDniFormat(dniClean)) {
+      next.dni = DNI_VALIDATION_ERROR;
     }
     if (values.password.length < 6) {
       next.password = 'La contraseña debe tener al menos 6 caracteres.';
@@ -156,6 +162,8 @@ export function useNuevoPersonalCentro() {
     centroNombre,
     catalogoPermisos,
     loadingCatalogo,
+    catalogoError,
+    loadCatalogo,
     values,
     permisos,
     setPermisos,

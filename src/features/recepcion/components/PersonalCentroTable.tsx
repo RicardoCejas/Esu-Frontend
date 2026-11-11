@@ -7,6 +7,7 @@ import { isSelfAccount } from '../utils/centroStaffHelpers';
 interface PersonalCentroTableProps {
   staff: User[];
   currentUser: User | null;
+  canManageUsers?: boolean;
   onToggleEstado: (u: User) => void;
   onEliminar: (u: User) => void;
 }
@@ -14,6 +15,7 @@ interface PersonalCentroTableProps {
 export const PersonalCentroTable: React.FC<PersonalCentroTableProps> = ({
   staff,
   currentUser,
+  canManageUsers = true,
   onToggleEstado,
   onEliminar,
 }) => {
@@ -27,7 +29,12 @@ export const PersonalCentroTable: React.FC<PersonalCentroTableProps> = ({
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="overflow-x-auto">
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label="Listado de personal habilitado del centro de salud"
+        className="overflow-x-auto focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+      >
         <table className="w-full text-xs text-left text-foreground">
           <caption className="sr-only">Personal habilitado del centro de salud</caption>
           <thead className="bg-muted text-muted-foreground uppercase text-[10px]">
@@ -83,35 +90,50 @@ export const PersonalCentroTable: React.FC<PersonalCentroTableProps> = ({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Link
-                        to={`/dashboard/recepcion/personal/${cuenta.id}/permisos`}
-                        className="inline-flex items-center gap-1 rounded-lg border border-input bg-background hover:bg-muted px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                      >
-                        <Shield className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-                        <span>Permisos</span>
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => onToggleEstado(cuenta)}
-                        disabled={self}
-                        aria-label={activo ? `Desactivar a ${cuenta.email}` : `Activar a ${cuenta.email}`}
-                        title={self ? 'No podés desactivar tu propia cuenta' : activo ? 'Desactivar acceso' : 'Reactivar acceso'}
-                        className="min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-lg border border-input bg-background hover:bg-muted p-1.5 text-foreground transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <Power className={`h-3.5 w-3.5 ${activo ? 'text-amber-700' : 'text-emerald-700'}`} aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onEliminar(cuenta)}
-                        disabled={self}
-                        aria-label={`Eliminar cuenta ${cuenta.email}`}
-                        title={self ? 'No podés eliminar tu propia cuenta' : 'Eliminar cuenta'}
-                        className="min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-lg border border-input bg-background hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30 p-1.5 text-muted-foreground transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-600 disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      </button>
-                    </div>
+                    {canManageUsers && (
+                      <div className="flex items-center justify-end gap-1.5">
+                        {self ? (
+                          <button
+                            type="button"
+                            disabled
+                            title="Por seguridad no podés modificar tus propios permisos ni rol"
+                            aria-label="Permisos deshabilitados para tu propia cuenta"
+                            className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2.5 py-1.5 text-[11px] font-semibold text-foreground opacity-40 cursor-not-allowed"
+                          >
+                            <Shield className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                            <span>Permisos</span>
+                          </button>
+                        ) : (
+                          <Link
+                            to={`/dashboard/recepcion/personal/${cuenta.id}/permisos`}
+                            className="inline-flex items-center gap-1 rounded-lg border border-input bg-background hover:bg-muted px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                          >
+                            <Shield className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                            <span>Permisos</span>
+                          </Link>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onToggleEstado(cuenta)}
+                          disabled={self}
+                          aria-label={activo ? `Desactivar a ${cuenta.email}` : `Activar a ${cuenta.email}`}
+                          title={self ? 'No podés desactivar tu propia cuenta' : activo ? 'Desactivar acceso' : 'Reactivar acceso'}
+                          className="min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-lg border border-input bg-background hover:bg-muted p-1.5 text-foreground transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Power className={`h-3.5 w-3.5 ${activo ? 'text-amber-700' : 'text-emerald-700'}`} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onEliminar(cuenta)}
+                          disabled={self}
+                          aria-label={`Eliminar cuenta ${cuenta.email}`}
+                          title={self ? 'No podés eliminar tu propia cuenta' : 'Eliminar cuenta'}
+                          className="min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-lg border border-input bg-background hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30 p-1.5 text-muted-foreground transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               );
