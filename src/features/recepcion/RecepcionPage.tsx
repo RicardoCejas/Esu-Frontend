@@ -81,9 +81,10 @@ export const RecepcionPage: React.FC = () => {
             </Link>
           )}
           <Link
-            to="/pantalla-turnos"
+            to={user?.centroSaludId ? `/pantalla-turnos?centroId=${user.centroSaludId}` : '/pantalla-turnos'}
             target="_blank"
             className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-foreground shadow-xs transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sky-600"
+            title="Abrir pantalla de turnos exclusiva de este centro de salud"
           >
             <MonitorPlay className="h-4 w-4 text-sky-700" aria-hidden="true" />
             <span>Pantalla TV</span>
