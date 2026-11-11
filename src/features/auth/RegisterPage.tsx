@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { GoogleAuthButton } from './components/GoogleAuthButton';
+import { isGoogleAuthEnabled } from './googleGsi';
 import { extractApiErrorMessage } from '@/api/endpoints';
 
 export const RegisterPage: React.FC = () => {
@@ -54,6 +55,10 @@ export const RegisterPage: React.FC = () => {
   const [rememberFields, setRememberFields] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const googleAuthEnabled = isGoogleAuthEnabled({
+    VITE_GOOGLE_AUTH_ENABLED: import.meta.env.VITE_GOOGLE_AUTH_ENABLED,
+    VITE_GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+  });
 
   useEffect(() => {
     try {
@@ -368,20 +373,24 @@ export const RegisterPage: React.FC = () => {
               <span>{isSubmitting ? 'Registrando paciente...' : 'Crear Cuenta de Paciente'}</span>
             </button>
 
-            <div className="relative my-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200" />
-              </div>
-              <div className="relative flex justify-center text-[10px] uppercase">
-                <span className="bg-white px-2 font-bold text-slate-400">O registrarse con</span>
-              </div>
-            </div>
+            {googleAuthEnabled && (
+              <>
+                <div className="relative my-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200" />
+                  </div>
+                  <div className="relative flex justify-center text-[10px] uppercase">
+                    <span className="bg-white px-2 font-bold text-slate-400">O registrarse con</span>
+                  </div>
+                </div>
 
-            <GoogleAuthButton
-              mode="signup"
-              onSuccess={(user) => redirectByRole(user.rol)}
-              onError={(msg) => setError(msg)}
-            />
+                <GoogleAuthButton
+                  mode="signup"
+                  onSuccess={(user) => redirectByRole(user.rol)}
+                  onError={(msg) => setError(msg)}
+                />
+              </>
+            )}
           </form>
         </div>
 
