@@ -19,7 +19,8 @@ import {
   MonitorPlay,
   RotateCcw,
   CheckCircle2,
-  DollarSign
+  DollarSign,
+  X
 } from 'lucide-react';
 import { ModalAltaRapidaPaciente } from './components/ModalAltaRapidaPaciente';
 import { ModalVerificarCoberturaCopago } from './components/ModalVerificarCoberturaCopago';
@@ -34,12 +35,16 @@ export const RecepcionPage: React.FC = () => {
   const [pacientes, setPacientes] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filtros reactivos de cabecera
-  const [busqueda, setBusqueda] = useState('');
-  const debouncedBusqueda = useDebounce(busqueda, 300); // 300ms Debounce según criterio DoD HU-53
-  const [filtroCentro, setFiltroCentro] = useState<string>('TODOS');
-  const [filtroProfesional, setFiltroProfesional] = useState<string>('TODOS');
-  const [filtroConsultorio, setFiltroConsultorio] = useState<string>('TODOS');
+  // Búsquedas individuales reactivas por campo
+  const [busquedaPaciente, setBusquedaPaciente] = useState('');
+  const [busquedaCentro, setBusquedaCentro] = useState('');
+  const [busquedaProfesional, setBusquedaProfesional] = useState('');
+  const [busquedaConsultorio, setBusquedaConsultorio] = useState('');
+
+  const debouncedPaciente = useDebounce(busquedaPaciente, 250);
+  const debouncedCentro = useDebounce(busquedaCentro, 250);
+  const debouncedProfesional = useDebounce(busquedaProfesional, 250);
+  const debouncedConsultorio = useDebounce(busquedaConsultorio, 250);
 
   // Modales HU-54
   const [isModalAltaOpen, setIsModalAltaOpen] = useState(false);
@@ -102,27 +107,41 @@ export const RecepcionPage: React.FC = () => {
   }, [turnos, hoyStr]);
 
   const turnosFiltrados = useMemo(() => {
+    const qPac = debouncedPaciente.toLowerCase().trim();
+    const qCentro = debouncedCentro.toLowerCase().trim();
+    const qProf = debouncedProfesional.toLowerCase().trim();
+    const qCons = debouncedConsultorio.toLowerCase().trim();
+
     return turnosHoy.filter((t) => {
-      const q = debouncedBusqueda.toLowerCase().trim();
-      const matchBusqueda =
-        !q ||
-        (t.pacienteDni && t.pacienteDni.toLowerCase().includes(q)) ||
-        (t.pacienteNombre && t.pacienteNombre.toLowerCase().includes(q)) ||
-        (t.codigoVerificacion && t.codigoVerificacion.toLowerCase().includes(q)) ||
-        (t.centroSaludNombre && t.centroSaludNombre.toLowerCase().includes(q)) ||
-        (t.profesionalNombre && t.profesionalNombre.toLowerCase().includes(q)) ||
-        (t.especialidadNombre && t.especialidadNombre.toLowerCase().includes(q)) ||
-        (t.consultorioNumero && t.consultorioNumero.toLowerCase().includes(q)) ||
-        (t.consultorioNumero && ('consultorio ' + t.consultorioNumero).toLowerCase().includes(q)) ||
-        (t.id && t.id.toLowerCase().includes(q));
+      const matchPaciente =
+        !qPac ||
+        (t.pacienteDni && t.pacienteDni.toLowerCase().includes(qPac)) ||
+        (t.pacienteNombre && t.pacienteNombre.toLowerCase().includes(qPac)) ||
+        (t.codigoVerificacion && t.codigoVerificacion.toLowerCase().includes(qPac)) ||
+        (t.id && t.id.toLowerCase().includes(qPac));
 
-      const matchCentro = filtroCentro === 'TODOS' || t.centroSaludId === filtroCentro;
-      const matchProf = filtroProfesional === 'TODOS' || t.profesionalId === filtroProfesional;
-      const matchConsultorio = filtroConsultorio === 'TODOS' || t.consultorioNumero === filtroConsultorio;
+      const matchCentro =
+        !qCentro ||
+        qCentro === 'todas las sedes' ||
+        (t.centroSaludNombre && t.centroSaludNombre.toLowerCase().includes(qCentro)) ||
+        (t.centroSaludId && t.centroSaludId.toLowerCase().includes(qCentro));
 
-      return matchBusqueda && matchCentro && matchProf && matchConsultorio;
+      const matchProf =
+        !qProf ||
+        qProf === 'todos los médicos' ||
+        (t.profesionalNombre && t.profesionalNombre.toLowerCase().includes(qProf)) ||
+        (t.especialidadNombre && t.especialidadNombre.toLowerCase().includes(qProf)) ||
+        (t.profesionalId && t.profesionalId.toLowerCase().includes(qProf));
+
+      const matchConsultorio =
+        !qCons ||
+        qCons === 'todos los consultorios' ||
+        (t.consultorioNumero && t.consultorioNumero.toLowerCase().includes(qCons)) ||
+        (t.consultorioNumero && ('consultorio ' + t.consultorioNumero).toLowerCase().includes(qCons));
+
+      return matchPaciente && matchCentro && matchProf && matchConsultorio;
     });
-  }, [turnosHoy, debouncedBusqueda, filtroCentro, filtroProfesional, filtroConsultorio]);
+  }, [turnosHoy, debouncedPaciente, debouncedCentro, debouncedProfesional, debouncedConsultorio]);
 
   // Contadores para métricas operativas
   const enSalaDeEspera = turnosHoy.filter((t) => t.estado === 'EN_SALA_DE_ESPERA' || t.estado === 'EN_ESPERA');
@@ -231,69 +250,147 @@ export const RecepcionPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Barra de Filtros y Buscador Reactivo (Debounce 300ms) */}
+      {/* Barra de Búsquedas Individuales por Campo (Sedes, Médicos, Consultorios y Pacientes) */}
       <div className="rounded-2xl border border-border bg-card p-4 shadow-xs space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          {/* Buscador reactivo */}
-          <div className="relative md:col-span-1">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-foreground uppercase tracking-wider">
+              Búsquedas de Sala
+            </span>
+            {(busquedaPaciente || busquedaCentro || busquedaProfesional || busquedaConsultorio) && (
+              <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-[10px] font-bold">
+                Filtros activos
+              </span>
+            )}
+          </div>
+          {(busquedaPaciente || busquedaCentro || busquedaProfesional || busquedaConsultorio) && (
+            <button
+              type="button"
+              onClick={() => {
+                setBusquedaPaciente('');
+                setBusquedaCentro('');
+                setBusquedaProfesional('');
+                setBusquedaConsultorio('');
+              }}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer"
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span>Limpiar todas las búsquedas</span>
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Búsqueda 1: Paciente / DNI */}
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
             <input
               type="text"
-              placeholder="Buscar por Médico, Sede, Consultorio, Paciente o DNI..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+              placeholder="Buscar Paciente o DNI..."
+              value={busquedaPaciente}
+              onChange={(e) => setBusquedaPaciente(e.target.value)}
+              className="w-full rounded-xl border border-input bg-background pl-9 pr-8 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-mono shadow-2xs"
             />
+            {busquedaPaciente && (
+              <button
+                type="button"
+                onClick={() => setBusquedaPaciente('')}
+                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                title="Limpiar búsqueda de paciente"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Filtro Sede */}
+          {/* Búsqueda 2: Sede / Centro de Salud */}
           <div className="relative">
             <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <select
-              value={filtroCentro}
-              onChange={(e) => setFiltroCentro(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="TODOS">Todas las Sedes</option>
+            <input
+              type="text"
+              list="lista-sedes-rec"
+              placeholder="Buscar Sede..."
+              value={busquedaCentro}
+              onChange={(e) => setBusquedaCentro(e.target.value)}
+              className="w-full rounded-xl border border-input bg-background pl-9 pr-8 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary shadow-2xs"
+            />
+            <datalist id="lista-sedes-rec">
+              <option value="Todas las Sedes" />
               {centros.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
+                <option key={c.id} value={c.nombre} />
               ))}
-            </select>
+            </datalist>
+            {busquedaCentro && (
+              <button
+                type="button"
+                onClick={() => setBusquedaCentro('')}
+                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                title="Limpiar búsqueda de sede"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Filtro Médico */}
+          {/* Búsqueda 3: Médico o Especialidad */}
           <div className="relative">
             <Stethoscope className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <select
-              value={filtroProfesional}
-              onChange={(e) => setFiltroProfesional(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="TODOS">Todos los Médicos</option>
+            <input
+              type="text"
+              list="lista-medicos-rec"
+              placeholder="Buscar Médico / Especialidad..."
+              value={busquedaProfesional}
+              onChange={(e) => setBusquedaProfesional(e.target.value)}
+              className="w-full rounded-xl border border-input bg-background pl-9 pr-8 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary shadow-2xs"
+            />
+            <datalist id="lista-medicos-rec">
+              <option value="Todos los Médicos" />
               {profesionales.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nombre} {p.apellido} ({p.especialidadNombre.split('/')[0]})
-                </option>
+                <option
+                  key={p.id}
+                  value={p.nombre + ' ' + p.apellido + ' (' + (p.especialidadNombre ? p.especialidadNombre.split('/')[0] : '') + ')'}
+                />
               ))}
-            </select>
+            </datalist>
+            {busquedaProfesional && (
+              <button
+                type="button"
+                onClick={() => setBusquedaProfesional('')}
+                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                title="Limpiar búsqueda de médico"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Filtro Consultorio Físico */}
-          <div>
-            <select
-              value={filtroConsultorio}
-              onChange={(e) => setFiltroConsultorio(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="TODOS">Todos los Consultorios</option>
+          {/* Búsqueda 4: Consultorio */}
+          <div className="relative">
+            <Layers className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              list="lista-consultorios-rec"
+              placeholder="Buscar Consultorio..."
+              value={busquedaConsultorio}
+              onChange={(e) => setBusquedaConsultorio(e.target.value)}
+              className="w-full rounded-xl border border-input bg-background pl-9 pr-8 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary shadow-2xs"
+            />
+            <datalist id="lista-consultorios-rec">
+              <option value="Todos los Consultorios" />
               {consultoriosDisponibles.map((c) => (
-                <option key={c} value={c}>
-                  Consultorio {c}
-                </option>
+                <option key={c} value={'Consultorio ' + c} />
               ))}
-            </select>
+            </datalist>
+            {busquedaConsultorio && (
+              <button
+                type="button"
+                onClick={() => setBusquedaConsultorio('')}
+                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                title="Limpiar búsqueda de consultorio"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </div>
