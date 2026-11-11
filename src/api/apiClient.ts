@@ -6,7 +6,7 @@ import { authSessionStorage } from '@/lib/authSessionStorage';
 
 function normalizeBaseUrl(rawUrl?: string): string {
   if (!rawUrl || !rawUrl.trim()) {
-    return import.meta.env.DEV ? 'http://localhost:8080/api' : '/api';
+    return import.meta.env.DEV ? 'http://localhost:8080/api' : 'https://esu-backend.onrender.com/api';
   }
   let clean = rawUrl.trim().replace(/\/+$/, '');
   if (clean.startsWith('http') && !clean.endsWith('/api')) {
