@@ -36,9 +36,9 @@ export const NuevoMedicoPage: React.FC = () => {
   const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
   const inputCls =
-    'w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 px-3 py-2 text-xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100 shadow-2xs transition';
+    'w-full rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 shadow-2xs transition';
   const selectCls =
-    'w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-2 text-xs focus:outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100 shadow-2xs transition cursor-pointer';
+    'w-full rounded-xl border border-input bg-background text-foreground px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 shadow-2xs transition cursor-pointer';
 
   useEffect(() => {
     profesionalesService.getEspecialidades().then((data) => {
