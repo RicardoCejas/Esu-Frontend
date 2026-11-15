@@ -22,8 +22,28 @@ export const pacientesService = {
   async getAll(): Promise<User[]> {
     try {
       const res = await apiClient.get<Record<string, unknown>[]>(API_ENDPOINTS.pacientes.base);
-      return Array.isArray(res.data) ? res.data.map(normalizePaciente) : [];
+      const items = Array.isArray(res.data) ? res.data.map(normalizePaciente) : [];
+      if (items.length > 0) {
+        try {
+          localStorage.setItem('esu_padron_cache', JSON.stringify(items));
+        } catch {
+          // ignore storage error
+        }
+      }
+      return items;
     } catch (err: unknown) {
+      // Fallback a caché local si la red o el servicio falla
+      try {
+        const cached = localStorage.getItem('esu_padron_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch {
+        // ignore cache parse
+      }
       throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el padrón de pacientes.'), { cause: err });
     }
   },
@@ -43,15 +63,62 @@ export const pacientesService = {
   },
 
   async getByDni(dni: string): Promise<User | undefined> {
+    const cleanDni = String(dni ?? '').trim();
+    if (!cleanDni) return undefined;
+
     try {
-      const res = await apiClient.get<Record<string, unknown>>(API_ENDPOINTS.pacientes.byDni(dni));
-      return res.data ? normalizePaciente(res.data) : undefined;
+      const res = await apiClient.get<Record<string, unknown>>(API_ENDPOINTS.pacientes.byDni(cleanDni));
+      if (res.data) return normalizePaciente(res.data);
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 404) {
-        return undefined;
+      if (status !== 404 && status !== 500) {
+        throw new Error(extractApiErrorMessage(err, 'Error al buscar paciente por DNI.'), { cause: err });
       }
-      throw new Error(extractApiErrorMessage(err, 'Error al buscar paciente por DNI.'), { cause: err });
+    }
+
+    // Fallback 1: Query param /buscar/dni?dni=...
+    try {
+      const resQuery = await apiClient.get<Record<string, unknown>>(API_ENDPOINTS.pacientes.buscarDni(cleanDni));
+      if (resQuery.data) return normalizePaciente(resQuery.data);
+    } catch {
+      // continuar a fallback de cache
+    }
+
+    // Fallback 2: Buscar en caché de padrón local
+    try {
+      const cached = localStorage.getItem('esu_padron_cache');
+      if (cached) {
+        const list: User[] = JSON.parse(cached);
+        const match = list.find((p) => p.dni === cleanDni || p.dni?.replace(/\D/g, '') === cleanDni.replace(/\D/g, ''));
+        if (match) return match;
+      }
+    } catch {
+      // ignore
+    }
+
+    return undefined;
+  },
+
+  async buscarPorApellido(apellido: string): Promise<User[]> {
+    const clean = String(apellido ?? '').trim();
+    if (!clean) return [];
+
+    try {
+      const res = await apiClient.get<Record<string, unknown>[]>(API_ENDPOINTS.pacientes.buscarApellido(clean));
+      return Array.isArray(res.data) ? res.data.map(normalizePaciente) : [];
+    } catch {
+      // Fallback a filtrado de caché local
+      try {
+        const cached = localStorage.getItem('esu_padron_cache');
+        if (cached) {
+          const list: User[] = JSON.parse(cached);
+          const q = clean.toLowerCase();
+          return list.filter((p) => (p.apellido || '').toLowerCase().includes(q) || (p.nombre || '').toLowerCase().includes(q));
+        }
+      } catch {
+        // ignore
+      }
+      return [];
     }
   },
 

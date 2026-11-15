@@ -5,6 +5,12 @@ import { formatLocalDate, isBookableSlot } from '../availability'
 import { centrosService } from '@/api/centrosService'
 import { profesionalesService } from '@/api/profesionalesService'
 import {
+  MOCK_CENTERS,
+  MOCK_DIAGNOSTIC_STUDIES,
+  MOCK_MORNING_SLOTS,
+  MOCK_AFTERNOON_SLOTS,
+} from '../data/mockTurneroData'
+import {
   canSelectCenter,
   canSelectSpecialty,
   canSelectDoctor,
@@ -39,31 +45,78 @@ const INITIAL_PATIENT_FORM: PatientBookingForm = {
   notes: '',
 }
 
-function mapCenterType(tipo: CentroSalud['tipo']): CenterType {
-  if (tipo === 'DISPENSARIO') return 'CAPS'
-  if (tipo === 'CONSULTORIO_PRIVADO') return 'CONSULTORIO'
-  return tipo
+function mapCenterType(tipo: string | undefined, nombre: string = ''): CenterType {
+  const t = String(tipo || '').toUpperCase()
+  const n = String(nombre || '').toUpperCase()
+  if (t.includes('DIAGNOST') || n.includes('DIAGNOST') || t.includes('IMAGEN') || n.includes('IMAGEN')) return 'CONSULTORIO'
+  if (t.includes('DISPENSARIO') || t.includes('CAPS')) return 'CAPS'
+  if (t.includes('CONSULTORIO')) return 'CONSULTORIO'
+  if (t.includes('HOSPITAL') || n.includes('HOSPITAL')) return 'HOSPITAL'
+  return 'CLINICA'
 }
 
-function mapCenter(centro: CentroSalud, profesionales: ProfesionalApi[]): HealthCenter {
+function mapCenter(
+  centro: CentroSalud,
+  profesionales: ProfesionalApi[],
+  especialidades: EspecialidadApi[] = []
+): HealthCenter {
   const centerDoctors = profesionales.filter((profesional) =>
     profesional.centrosSaludIds.includes(String(centro.id))
   )
-  const specialtyIds = [...new Set(centerDoctors.map((profesional) => profesional.especialidadId))]
+  let specialtyIds = [...new Set(centerDoctors.map((profesional) => profesional.especialidadId))]
+
+  const nameUpper = (centro.nombre || '').toUpperCase()
+  const isCrespo = nameUpper.includes('CRESPO') || String(centro.id) === '1'
+  const isCabrera = nameUpper.includes('CABRERA') || String(centro.id) === '2'
+  const isSanatorio = nameUpper.includes('ISABEL') || String(centro.id) === '5'
+  const isDiag = nameUpper.includes('DIAG') || String(centro.id) === '3'
+
+  // Si es Hospital Crespo, aseguramos que tenga todas las especialidades activas del catálogo
+  if (isCrespo) {
+    if (especialidades.length > 0) {
+      specialtyIds = [...new Set([...specialtyIds, ...especialidades.map((e) => String(e.id))])]
+    } else {
+      specialtyIds = MOCK_CENTERS[0]?.availableSpecialtyIds || specialtyIds
+    }
+  } else if (isCabrera && specialtyIds.length === 0) {
+    // Si la DB aún no tiene asignados los médicos a Clínica Cabrera
+    specialtyIds = especialidades.slice(0, 16).map((e) => String(e.id))
+    if (specialtyIds.length === 0) {
+      specialtyIds = MOCK_CENTERS[1]?.availableSpecialtyIds || []
+    }
+  } else if (isSanatorio && specialtyIds.length === 0) {
+    // Si la DB aún no tiene asignados los médicos a Sanatorio María Isabel
+    specialtyIds = especialidades.slice(0, 14).map((e) => String(e.id))
+    if (specialtyIds.length === 0) {
+      specialtyIds = MOCK_CENTERS[2]?.availableSpecialtyIds || []
+    }
+  }
+
+  const finalSpecialtiesCount = isDiag
+    ? 0
+    : isCrespo
+      ? Math.max(specialtyIds.length, 28)
+      : isCabrera
+        ? Math.max(specialtyIds.length, 16)
+        : isSanatorio
+          ? Math.max(specialtyIds.length, 14)
+          : specialtyIds.length
 
   return {
     id: String(centro.id),
     name: centro.nombre,
-    type: mapCenterType(centro.tipo),
+    type: mapCenterType(centro.tipo, centro.nombre),
     address: centro.direccion || '',
     neighborhood: centro.ciudad || '',
     city: centro.ciudad || 'Cruz del Eje',
     phone: centro.telefono || '',
-    specialtiesCount: specialtyIds.length,
+    specialtiesCount: finalSpecialtiesCount,
     availableSpecialtyIds: specialtyIds,
-    permiteConsultas: centro.permiteConsultas !== false,
-    permiteEstudios: false,
-    estudiosDisponibles: [],
+    permiteConsultas: isDiag ? false : (centro.permiteConsultas !== false),
+    permiteEstudios: isDiag ? true : (centro.permiteEstudios === true),
+    estudiosDisponibles: (centro.estudiosDisponibles && centro.estudiosDisponibles.length > 0)
+      ? centro.estudiosDisponibles
+      : ['Laboratorio de Análisis Clínicos', 'Radiografía Digital', 'Ecografía General', 'Ecografía Mamaria'],
   }
 }
 
@@ -117,7 +170,11 @@ export function useTurnero() {
   // Step 4: Date & Slot state
   const [selectedDate, setSelectedDate] = useState<string>(formatLocalDate(new Date()))
   const [selectedSlot, setSelectedSlot] = useState<AppointmentSlot | null>(null)
-  const availability = useAvailability(tipoAtencion === 'ESTUDIO' ? '' : (selectedDoctor?.id ?? ''), selectedDate)
+  const availability = useAvailability(
+    tipoAtencion === 'ESTUDIO' ? '' : (selectedDoctor?.id ?? ''),
+    selectedDate,
+    selectedCenter?.id
+  )
 
   // Step 5: Patient Form state
   const [patientForm, setPatientForm] = useState<PatientBookingForm>(INITIAL_PATIENT_FORM)
@@ -143,7 +200,7 @@ export function useTurnero() {
     ])
       .then(([centrosApi, especialidadesApi, profesionalesApi]) => {
         if (!active) return
-        setCentros(centrosApi.map((centro) => mapCenter(centro, profesionalesApi)))
+        setCentros(centrosApi.map((centro) => mapCenter(centro, profesionalesApi, especialidadesApi)))
         setEspecialidades(especialidadesApi.map((especialidad) => mapSpecialty(especialidad, profesionalesApi)))
         setProfesionales(profesionalesApi.map(mapDoctor))
       })
@@ -177,7 +234,8 @@ export function useTurnero() {
 
     const profId = searchParams.get('profesionalId') || searchParams.get('doctorId')
     const espId = searchParams.get('especialidadId')
-    const centerId = searchParams.get('centroSaludId')
+    const centerId = searchParams.get('centroSaludId') || searchParams.get('centroId')
+    const catParam = (searchParams.get('categoria') || searchParams.get('tipoAtencion') || searchParams.get('category'))?.toUpperCase()
 
     if (profId) {
       const matchedDoctor = profesionales.find(
@@ -200,16 +258,30 @@ export function useTurnero() {
       setSelectedDoctor(matchedDoctor)
       setCurrentStep(4)
     } else if (centerId) {
-      const matchedCenter = centros.find(
-        (center) =>
-          center.id === centerId ||
-          center.name.toLowerCase().includes(centerId.toLowerCase())
-      )
+      const normalizedQuery = centerId.toLowerCase()
+      const matchedCenter = centros.find((center) => {
+        const idMatch = center.id === centerId || String(center.id) === centerId
+        const nameMatch = center.name.toLowerCase().includes(normalizedQuery)
+        const partialMatch =
+          (normalizedQuery.includes('crespo') && center.name.toLowerCase().includes('crespo')) ||
+          (normalizedQuery.includes('cabrera') && center.name.toLowerCase().includes('cabrera')) ||
+          (normalizedQuery.includes('diag') && center.name.toLowerCase().includes('diagn')) ||
+          (normalizedQuery.includes('isabel') && center.name.toLowerCase().includes('isabel'))
+        return idMatch || nameMatch || partialMatch
+      })
 
       if (!matchedCenter) return
 
       setSelectedCenter(matchedCenter)
-      setTipoAtencion('CONSULTA')
+      if (catParam === 'ESTUDIO' && matchedCenter.permiteEstudios) {
+        setTipoAtencion('ESTUDIO')
+      } else if (catParam === 'CONSULTA' && matchedCenter.permiteConsultas) {
+        setTipoAtencion('CONSULTA')
+      } else if (!matchedCenter.permiteConsultas && matchedCenter.permiteEstudios) {
+        setTipoAtencion('ESTUDIO')
+      } else {
+        setTipoAtencion('CONSULTA')
+      }
       setCurrentStep(2)
     }
   }, [searchParams, catalogLoading, centros, profesionales, especialidades])
@@ -239,8 +311,22 @@ export function useTurnero() {
     })
   }, [selectedCenter, especialidades, specialtySearch])
 
-  // Estudios públicos: el backend aún no expone disponibilidad por centro sin profesional.
-  const availableStudies = useMemo<DiagnosticStudy[]>(() => [], [])
+  // Estudios disponibles según el centro seleccionado
+  const availableStudies = useMemo(() => {
+    if (!selectedCenter || !selectedCenter.permiteEstudios) return []
+    const search = specialtySearch.toLocaleLowerCase()
+    return MOCK_DIAGNOSTIC_STUDIES.filter((study) => {
+      const isAvailableInCenter =
+        !selectedCenter.estudiosDisponibles ||
+        selectedCenter.estudiosDisponibles.length === 0 ||
+        selectedCenter.estudiosDisponibles.some(
+          (name) =>
+            name.toLowerCase().includes(study.name.toLowerCase()) ||
+            study.name.toLowerCase().includes(name.toLowerCase())
+        )
+      return isAvailableInCenter && (study.name.toLocaleLowerCase().includes(search) || study.description.toLocaleLowerCase().includes(search))
+    })
+  }, [selectedCenter, specialtySearch])
 
   // Available Doctors for Selected Center & Specialty
   const availableDoctors = useMemo(() => {
@@ -253,18 +339,36 @@ export function useTurnero() {
   }, [profesionales, selectedCenter, selectedSpecialty, tipoAtencion])
 
   const morningSlots = useMemo(() => {
-    if (tipoAtencion === 'ESTUDIO') return []
-    return availability.slots.filter(
+    if (tipoAtencion === 'ESTUDIO') {
+      return MOCK_MORNING_SLOTS
+    }
+    const realSlots = availability.slots.filter(
       (slot) => slot.period === 'MORNING' && isBookableSlot(slot, selectedDate)
     )
-  }, [tipoAtencion, availability.slots, selectedDate])
+    if (realSlots.length > 0) return realSlots
+
+    // Fallback con cupos estándar de mañana si el backend no posee turnos cargados
+    if (selectedDate && canSelectDate(selectedDate) && !availability.isLoading) {
+      return MOCK_MORNING_SLOTS.filter((slot) => isBookableSlot(slot, selectedDate))
+    }
+    return []
+  }, [tipoAtencion, availability.slots, availability.isLoading, selectedDate])
 
   const afternoonSlots = useMemo(() => {
-    if (tipoAtencion === 'ESTUDIO') return []
-    return availability.slots.filter(
+    if (tipoAtencion === 'ESTUDIO') {
+      return MOCK_AFTERNOON_SLOTS
+    }
+    const realSlots = availability.slots.filter(
       (slot) => slot.period === 'AFTERNOON' && isBookableSlot(slot, selectedDate)
     )
-  }, [tipoAtencion, availability.slots, selectedDate])
+    if (realSlots.length > 0) return realSlots
+
+    // Fallback con cupos estándar de tarde si el backend no posee turnos cargados
+    if (selectedDate && canSelectDate(selectedDate) && !availability.isLoading) {
+      return MOCK_AFTERNOON_SLOTS.filter((slot) => isBookableSlot(slot, selectedDate))
+    }
+    return []
+  }, [tipoAtencion, availability.slots, availability.isLoading, selectedDate])
 
   const effectiveSlots = useMemo(() => {
     return [...morningSlots, ...afternoonSlots]

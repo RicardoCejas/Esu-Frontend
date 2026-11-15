@@ -82,9 +82,6 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
             <div>
               <h3 className="text-sm font-bold tracking-wide flex items-center gap-2">
                 Previsualización en Vivo de Evolución y Receta PDF
-                <span className="text-[10px] font-semibold bg-blue-500/30 text-blue-200 border border-blue-400/40 px-2 py-0.5 rounded">
-                  HU-79
-                </span>
               </h3>
               <p className="text-[11px] text-slate-400">
                 Documento clínico con membrete oficial y verificación inalterable previo a la firma

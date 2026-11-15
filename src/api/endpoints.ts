@@ -61,6 +61,8 @@ export const API_ENDPOINTS = {
     base: '/pacientes',
     byId: (id: string | number) => `/pacientes/${id}`,
     byDni: (dni: string) => `/pacientes/dni/${encodeURIComponent(dni.trim())}`,
+    buscarDni: (dni: string) => `/pacientes/buscar/dni?dni=${encodeURIComponent(dni.trim())}`,
+    buscarApellido: (apellido: string) => `/pacientes/buscar/apellido?apellido=${encodeURIComponent(apellido.trim())}`,
     contacto: (id: string | number) => `/pacientes/${id}/contacto`,
     paginado: '/pacientes/paginado',
     carnetDigital: (id: string | number) => `/pacientes/${id}/carnet-digital`,

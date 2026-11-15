@@ -15,11 +15,15 @@ import {
   Building2,
   MapPin,
   DoorClosed,
-  Trash2
+  Trash2,
+  CalendarClock,
+  CalendarX,
+  Clock,
 } from 'lucide-react';
 import { ConfigurarGrillaHorariaModal } from './components/ConfigurarGrillaHorariaModal';
 import { BloquearAgendaModal } from './components/BloquearAgendaModal';
 import { ModalCrearSobreturno } from './components/ModalCrearSobreturno';
+import { GestionTurnoModal } from './components/GestionTurnoModal';
 import { getFechaLocalHoy } from '@/lib/dateUtils';
 
 export const AgendaMedicaPage: React.FC = () => {
@@ -37,6 +41,8 @@ export const AgendaMedicaPage: React.FC = () => {
   const [isModalGrillaOpen, setIsModalGrillaOpen] = useState(false);
   const [isModalBloqueoOpen, setIsModalBloqueoOpen] = useState(false);
   const [isModalSobreturnoOpen, setIsModalSobreturnoOpen] = useState(false);
+  const [turnoParaGestionar, setTurnoParaGestionar] = useState<Turno | null>(null);
+  const [modoGestionTurno, setModoGestionTurno] = useState<'cancelar' | 'reprogramar' | null>(null);
 
   const hoyStr = getFechaLocalHoy();
 
@@ -435,7 +441,7 @@ export const AgendaMedicaPage: React.FC = () => {
                       {turno.hora}
                     </div>
                     <span className="text-[10px] text-muted-foreground font-semibold mt-1">
-                      {turno.fecha}
+                      {turno.fecha ? turno.fecha.split('-').reverse().join('/') : ''}
                     </span>
                   </div>
 
@@ -494,7 +500,7 @@ export const AgendaMedicaPage: React.FC = () => {
                 </div>
 
                 {/* Estado y Botones de Atención */}
-                <div className="flex items-center gap-2 self-end sm:self-center">
+                <div className="flex flex-wrap items-center gap-2 self-end sm:self-center">
                   {getEstadoBadge(turno)}
 
                   {isBloqueadoOCancelado && (
@@ -509,7 +515,37 @@ export const AgendaMedicaPage: React.FC = () => {
                     </button>
                   )}
 
-                  {turno.estado === 'CONFIRMADO' && (
+                  {!isBloqueadoOCancelado && turno.estado !== 'COMPLETADO' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTurnoParaGestionar(turno);
+                          setModoGestionTurno('reprogramar');
+                        }}
+                        className="inline-flex items-center gap-1 rounded-xl border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-800 hover:bg-sky-100 transition cursor-pointer"
+                        title="Reprogramar turno y notificar al paciente"
+                      >
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        <span>Reprogramar</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTurnoParaGestionar(turno);
+                          setModoGestionTurno('cancelar');
+                        }}
+                        className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition cursor-pointer"
+                        title="Cancelar turno y notificar al paciente"
+                      >
+                        <CalendarX className="h-3.5 w-3.5" />
+                        <span>Cancelar</span>
+                      </button>
+                    </>
+                  )}
+
+                  {turno.estado === 'CONFIRMADO' && (!turno.fecha || turno.fecha <= hoyStr) && (
                     <button
                       onClick={() => handleCambiarEstado(turno.id, 'EN_ESPERA')}
                       className="rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-amber-700 transition cursor-pointer shadow-xs"
@@ -518,17 +554,44 @@ export const AgendaMedicaPage: React.FC = () => {
                     </button>
                   )}
 
-                  {(turno.estado === 'EN_ESPERA' ||
+                  {(turno.estado === 'PENDIENTE' ||
+                    turno.estado === 'EN_ESPERA' ||
                     turno.estado === 'EN_SALA_DE_ESPERA' ||
                     turno.estado === 'CONFIRMADO' ||
                     turno.estado === 'ATENDIENDO') && (
-                    <button
-                      onClick={() => handleIniciarAtencion(turno)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition cursor-pointer"
-                    >
-                      <Stethoscope className="h-4 w-4" />
-                      <span>{turno.estado === 'ATENDIENDO' ? 'Continuar Atención' : 'Llamar y Atender'}</span>
-                    </button>
+                    (() => {
+                      const esFuturo = Boolean(turno.fecha && turno.fecha > hoyStr);
+                      const fechaLegible = turno.fecha ? turno.fecha.split('-').reverse().join('/') : '';
+                      return (
+                        <button
+                          type="button"
+                          disabled={esFuturo}
+                          onClick={() => handleIniciarAtencion(turno)}
+                          title={
+                            esFuturo
+                              ? `Turno programado para el ${fechaLegible}. No se puede atender antes de la fecha.`
+                              : 'Llamar y atender paciente'
+                          }
+                          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                            esFuturo
+                              ? 'bg-slate-200 text-slate-500 cursor-not-allowed shadow-none'
+                              : 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'
+                          }`}
+                        >
+                          {esFuturo ? (
+                            <>
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>Programado {fechaLegible}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Stethoscope className="h-4 w-4" />
+                              <span>{turno.estado === 'ATENDIENDO' ? 'Continuar Atención' : 'Llamar y Atender'}</span>
+                            </>
+                          )}
+                        </button>
+                      );
+                    })()
                   )}
                 </div>
               </div>
@@ -565,6 +628,16 @@ export const AgendaMedicaPage: React.FC = () => {
         onSobreturnoCreado={() => {
           cargarDatos();
         }}
+      />
+
+      <GestionTurnoModal
+        turno={turnoParaGestionar}
+        modo={modoGestionTurno}
+        onClose={() => {
+          setTurnoParaGestionar(null);
+          setModoGestionTurno(null);
+        }}
+        onSuccess={cargarDatos}
       />
     </div>
   );

@@ -139,9 +139,6 @@ export const ClinicalTemplatePicker: React.FC<ClinicalTemplatePickerProps> = ({
           <div>
             <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
               Plantillas Rápidas de Evolución (Macro-Textos)
-              <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                HU-80
-              </span>
             </h3>
             <p className="text-[11px] text-slate-500">
               Estandarización de anamnesis y examen físico por especialidad

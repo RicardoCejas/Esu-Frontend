@@ -17,11 +17,11 @@ interface AvailabilityState {
   error: string | null
 }
 
-export function useAvailability(professionalId: string, date: string): AvailabilityResult {
+export function useAvailability(professionalId: string, date: string, centerId?: string): AvailabilityResult {
   const [retryVersion, setRetryVersion] = useState(0)
   const [result, setResult] = useState<AvailabilityState | null>(null)
   const requestVersion = useRef(0)
-  const queryKey = `${professionalId}:${date}:${retryVersion}`
+  const queryKey = `${professionalId}:${date}:${centerId ?? ''}:${retryVersion}`
   const hasBackendProfessionalId = isBackendProfessionalId(professionalId)
 
   useEffect(() => {
@@ -29,8 +29,13 @@ export function useAvailability(professionalId: string, date: string): Availabil
 
     const controller = new AbortController()
     const currentVersion = ++requestVersion.current
+    const numericCenterId = centerId && /^\d+$/.test(String(centerId)) ? centerId : undefined
     apiClient.get<unknown>('/turnos/disponibles', {
-      params: { profesionalId: professionalId, fecha: date },
+      params: {
+        profesionalId: professionalId,
+        fecha: date,
+        ...(numericCenterId ? { centroSaludId: numericCenterId } : {}),
+      },
       signal: controller.signal,
     }).then(({ data }) => {
       if (requestVersion.current !== currentVersion) return
@@ -47,7 +52,7 @@ export function useAvailability(professionalId: string, date: string): Availabil
       controller.abort()
       requestVersion.current += 1
     }
-  }, [professionalId, date, queryKey, hasBackendProfessionalId])
+  }, [professionalId, date, centerId, queryKey, hasBackendProfessionalId])
 
   const retry = useCallback(() => setRetryVersion((version) => version + 1), [])
   const isCurrentResult = result?.queryKey === queryKey

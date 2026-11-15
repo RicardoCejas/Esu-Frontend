@@ -18,6 +18,7 @@ import {
   FileCheck,
   User,
   TrendingUp,
+  History,
 } from 'lucide-react';
 import type { PermissionCode, UserRole } from '@/types';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -46,6 +47,9 @@ const navItems: NavItem[] = [
   // Rutas Médico
   { title: 'Agenda Médica', path: '/dashboard/medico', icon: Calendar, roles: ['MEDICO'] },
   { title: 'Atención Clínica', path: '/dashboard/medico/atencion', icon: Stethoscope, roles: ['MEDICO'] },
+  { title: 'Mis Consultas', path: '/dashboard/medico/consultas', icon: History, roles: ['MEDICO'] },
+  { title: 'Recetas Médicas', path: '/dashboard/medico/recetas', icon: Pill, roles: ['MEDICO'] },
+  { title: 'Historia Clínica Seguimiento', path: '/dashboard/medico/seguimiento', icon: FileText, roles: ['MEDICO'] },
 
   // Rutas Centro de Salud / Recepción
   { title: 'Recepción del Día', path: '/dashboard/recepcion', icon: Clock, roles: ['RECEPCIONISTA'], requiredPermissions: ['TURNOS_VER', 'SALA_ESPERA_GESTIONAR'] },

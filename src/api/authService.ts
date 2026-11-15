@@ -235,6 +235,7 @@ export const authService = {
         const usuarioId = response.data.usuarioId != null ? String(response.data.usuarioId) : undefined;
         const centroSaludId = response.data.centroSaludId != null ? String(response.data.centroSaludId) : undefined;
         const centroSaludNombre = response.data.centroSaludNombre || undefined;
+        const safeDni = response.data.dni || (cleanCredentials.dni && !cleanCredentials.dni.includes('@') ? cleanCredentials.dni : '');
         const challengeUser: User = {
           id: usuarioId || '',
           usuarioId,
@@ -245,7 +246,7 @@ export const authService = {
           nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
           apellido: response.data.apellido || '',
           email: response.data.email || payload.email,
-          dni: response.data.dni || cleanCredentials.dni || '',
+          dni: safeDni,
         centroSaludId,
         centroSaludNombre,
           rol: normalizeUserRole(response.data.rol),
@@ -273,6 +274,7 @@ export const authService = {
       const centroSaludId = response.data.centroSaludId != null ? String(response.data.centroSaludId) : undefined;
       const centroSaludNombre = response.data.centroSaludNombre || undefined;
       const allowSimulatedRole = Boolean((import.meta.env.DEV || isDemoModeEnabled()) && credentials.rolSimulado);
+      const safeDni = response.data.dni || (cleanCredentials.dni && !cleanCredentials.dni.includes('@') ? cleanCredentials.dni : '');
       let user: User = {
         id: usuarioId || String(Date.now()),
         usuarioId,
@@ -283,7 +285,7 @@ export const authService = {
         nombre: response.data.nombre || (response.data.email ? response.data.email.split('@')[0] : 'Usuario'),
         apellido: response.data.apellido || '',
         email: response.data.email || payload.email,
-        dni: response.data.dni || cleanCredentials.dni || '',
+        dni: safeDni,
         centroSaludId,
         centroSaludNombre,
         rol: allowSimulatedRole ? credentials.rolSimulado! : normalizeUserRole(response.data.rol),
@@ -566,7 +568,7 @@ export const authService = {
             nombre: res.data.nombre || (res.data.email ? res.data.email.split('@')[0] : 'Usuario'),
             apellido: res.data.apellido || '',
             email: res.data.email,
-            dni: res.data.dni || (userRol === 'PACIENTE' ? '' : authUserId),
+            dni: res.data.dni || '',
             centroSaludId,
             centroSaludNombre,
             rol: userRol,

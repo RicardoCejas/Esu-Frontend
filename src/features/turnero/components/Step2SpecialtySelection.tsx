@@ -121,33 +121,44 @@ const KinesioIcon: React.FC<{ className?: string }> = ({ className }) => (
 
 // Mapeo canónico a títulos limpios y minimalistas (priorizando especialidades específicas para evitar duplicados)
 function getDisplaySpecialtyName(name: string): string {
-  const lower = name.toLowerCase()
+  const clean = name.trim()
+  const lower = clean.toLowerCase()
+
   if (lower.includes('cardio')) return 'Cardiología'
   if (lower.includes('oncol')) return 'Oncología'
+  if (lower.includes('psicomotric')) return 'Psicomotricidad'
+  if (lower.includes('psicopedagog')) return 'Psicopedagogía'
   if (lower.includes('psico')) return 'Psicología'
   if (lower.includes('pediatr')) return 'Pediatría'
-  if (lower.includes('gineco')) return 'Ginecología'
+  if (lower.includes('gineco')) return 'Ginecología y Obstetricia'
   if (lower.includes('traumato')) return 'Traumatología'
   if (lower.includes('derma')) return 'Dermatología'
   if (lower.includes('odonto')) return 'Odontología'
   if (lower.includes('oftalmo')) return 'Oftalmología'
   if (lower.includes('otorrino') || lower.includes('orl')) return 'Otorrinolaringología'
-  if (lower.includes('uro')) return 'Urología'
+  if (lower.includes('neuro')) return 'Neurología'
+  if (lower.includes('nefro')) return 'Nefrología'
+  if (lower.includes('urolog') || /^uro/i.test(clean)) return 'Urología'
   if (lower.includes('psiqui')) return 'Psiquiatría'
   if (lower.includes('nutri')) return 'Nutrición'
   if (lower.includes('kinesio')) return 'Kinesiología'
+  if (lower.includes('fisiat')) return 'Fisiatría'
+  if (lower.includes('fisioterap')) return 'Fisioterapia'
+  if (lower.includes('flebolog')) return 'Flebología'
+  if (lower.includes('hemoterap')) return 'Hemoterapia'
+  if (lower.includes('diabetolog')) return 'Diabetología'
+  if (lower.includes('trabajo social')) return 'Trabajo Social'
+  if (lower.includes('fonoaudio')) return 'Fonoaudiología'
   if (lower.includes('vacuna')) return 'Vacunación'
   if (lower.includes('laboratorio')) return 'Laboratorio'
   if (lower.includes('cirug')) return 'Cirugía General'
   if (lower.includes('gastro')) return 'Gastroenterología'
   if (lower.includes('endocrin')) return 'Endocrinología'
-  if (lower.includes('neuro')) return 'Neurología'
   if (lower.includes('reumat')) return 'Reumatología'
   if (lower.includes('alerg')) return 'Alergia e Inmunología'
   if (lower.includes('neumon')) return 'Neumonología'
-  if (lower.includes('nefro')) return 'Nefrología'
   if (lower.includes('clínica') || lower.includes('clinica') || lower.includes('general')) return 'Clínica Médica'
-  return name
+  return clean
 }
 
 // Asignación de ícono representativo para cada especialidad
@@ -161,11 +172,16 @@ function getSpecialtyIcon(name: string): React.ComponentType<{ className?: strin
   if (lower.includes('odonto')) return ToothIcon
   if (lower.includes('oftalmo')) return Eye
   if (lower.includes('otorrino') || lower.includes('orl')) return Ear
+  if (lower.includes('neuro')) return Brain
+  if (lower.includes('psicopedagog')) return Brain
+  if (lower.includes('psicomotric')) return Activity
   if (lower.includes('uro') || lower.includes('nefro')) return KidneyIcon
-  if (lower.includes('psiqui') || lower.includes('neuro')) return Brain
+  if (lower.includes('psiqui')) return Brain
   if (lower.includes('nutri')) return Apple
-  if (lower.includes('kinesio')) return KinesioIcon
+  if (lower.includes('kinesio') || lower.includes('fisioterap')) return KinesioIcon
+  if (lower.includes('fisiat')) return Bone
   if (lower.includes('vacuna')) return Syringe
+  if (lower.includes('hemoterap')) return Syringe
   if (lower.includes('laboratorio')) return FlaskConical
   if (lower.includes('cirug')) return Scissors
   if (lower.includes('alerg')) return ShieldCheck
@@ -174,7 +190,10 @@ function getSpecialtyIcon(name: string): React.ComponentType<{ className?: strin
   if (lower.includes('oncol')) return ShieldCheck
   if (lower.includes('neumon')) return Wind
   if (lower.includes('gastro')) return Pill
-  if (lower.includes('endocrin')) return Activity
+  if (lower.includes('diabetolog')) return Pill
+  if (lower.includes('endocrin') || lower.includes('flebolog')) return Activity
+  if (lower.includes('trabajo social')) return HeartHandshake
+  if (lower.includes('fonoaudio')) return Ear
   if (lower.includes('clínica') || lower.includes('clinica')) return Stethoscope
   return Stethoscope
 }
@@ -189,7 +208,7 @@ const FRECUENTES_KEYWORDS = [
 export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = ({
   selectedCenter,
   tipoAtencion = 'CONSULTA',
-  specialties,
+  specialties = [],
   selectedSpecialty,
   studies = [],
   selectedStudy,
@@ -219,7 +238,18 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
   }, [studies, searchTerm])
 
   const filteredSpecialties = useMemo(() => {
-    let list = [...specialties]
+    // 1. Deduplicar especialidades por nombre canónico para evitar botones duplicados
+    const seen = new Set<string>()
+    const deduplicated: MedicalSpecialty[] = []
+    for (const s of (specialties || [])) {
+      const canonical = getDisplaySpecialtyName(s.name).toLowerCase().trim()
+      if (!seen.has(canonical)) {
+        seen.add(canonical)
+        deduplicated.push(s)
+      }
+    }
+
+    let list = deduplicated
 
     // Filtro por texto de búsqueda
     if (searchTerm.trim()) {
@@ -330,31 +360,34 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
         <div className="space-y-3">
           {/* Selector de categoría si el centro ofrece ambas */}
           {selectedCenter.permiteConsultas && selectedCenter.permiteEstudios && onChangeCategory && (
-            <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
-              <button
-                type="button"
-                onClick={() => onChangeCategory('CONSULTA')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  tipoAtencion === 'CONSULTA'
-                    ? 'bg-[#005a87] text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Stethoscope className="size-3.5" />
-                <span>Consultas con Profesionales</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onChangeCategory('ESTUDIO')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  tipoAtencion === 'ESTUDIO'
-                    ? 'bg-[#00a896] text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <FlaskConical className="size-3.5" />
-                <span>Estudios y Prácticas</span>
-              </button>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-1.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 shadow-2xs">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2">Categoría del turno:</span>
+              <div className="grid grid-cols-2 gap-1.5 flex-1">
+                <button
+                  type="button"
+                  onClick={() => onChangeCategory('CONSULTA')}
+                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                    tipoAtencion === 'CONSULTA'
+                      ? 'bg-[#005a87] text-white shadow-sm scale-[1.01]'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/60'
+                  }`}
+                >
+                  <Stethoscope className="size-4 shrink-0" />
+                  <span>Consultorios y Especialidades</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeCategory('ESTUDIO')}
+                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                    tipoAtencion === 'ESTUDIO'
+                      ? 'bg-[#00a896] text-white shadow-sm scale-[1.01]'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/60'
+                  }`}
+                >
+                  <FlaskConical className="size-4 shrink-0" />
+                  <span>Estudios y Prácticas</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -368,8 +401,10 @@ export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = (
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
                 {tipoAtencion === 'ESTUDIO'
-                  ? `Mostrando ${filteredStudies.length} de ${studies.length} estudios habilitados en este centro`
-                  : `Mostrando ${filteredSpecialties.length} de ${specialties.length} especialidades habilitadas`}
+                  ? `Mostrando ${filteredStudies.length} de ${studies.length || 4} estudios habilitados en este centro`
+                  : (searchTerm.trim() || filterMode !== 'TODAS')
+                    ? `Mostrando ${filteredSpecialties.length} especialidades encontradas`
+                    : `Mostrando ${filteredSpecialties.length} especialidades habilitadas en esta sede`}
               </p>
             </div>
           </div>

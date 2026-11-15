@@ -6,6 +6,7 @@ import {
   Trash2,
   Fingerprint,
 } from 'lucide-react';
+import { OBRAS_SOCIALES_ARGENTINA } from '@/lib/obrasSociales';
 
 export interface Familiar {
   id: string;
@@ -33,33 +34,16 @@ export const GrupoFamiliarModal: React.FC<GrupoFamiliarModalProps> = ({
     const saved = localStorage.getItem('esu_grupo_familiar');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // Filtrar antiguos datos mocks de demostración si existían
+          return parsed.filter((f) => f.id !== 'fam-1' && f.id !== 'fam-2');
+        }
       } catch {
         // Fallback
       }
     }
-    return [
-      {
-        id: 'fam-1',
-        nombre: 'Sofía',
-        apellido: 'Cejas',
-        dni: '52.114.920',
-        fechaNacimiento: '2016-04-12',
-        vinculo: 'Hijo/a',
-        obraSocial: 'APROSS',
-        nroAfiliado: '20-52114920-4/02',
-      },
-      {
-        id: 'fam-2',
-        nombre: 'Elena',
-        apellido: 'Morales',
-        dni: '14.882.301',
-        fechaNacimiento: '1954-09-25',
-        vinculo: 'Padre/Madre',
-        obraSocial: 'PAMI',
-        nroAfiliado: '15049382100',
-      },
-    ];
+    return [];
   });
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -119,7 +103,7 @@ export const GrupoFamiliarModal: React.FC<GrupoFamiliarModalProps> = ({
             <div>
               <h3 className="text-base font-bold text-foreground">Mi Grupo Familiar</h3>
               <p className="text-xs text-muted-foreground">
-                Hijos, cónyuge y adultos mayores a cargo (HU-FE-66)
+                Hijos, cónyuge y adultos mayores a cargo
               </p>
             </div>
           </div>
@@ -187,9 +171,13 @@ export const GrupoFamiliarModal: React.FC<GrupoFamiliarModalProps> = ({
             </div>
           ))}
 
-          {familiares.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground text-xs">
-              No tienes familiares vinculados a tu cuenta todavía.
+          {familiares.length === 0 && !showAddForm && (
+            <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-8 text-center space-y-2">
+              <Users className="h-8 w-8 text-muted-foreground/60 mx-auto" />
+              <h4 className="text-sm font-bold text-foreground">Sin familiares registrados</h4>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                No tenés familiares a cargo registrados todavía. Podés asociar a tus hijos, cónyuge o adultos mayores haciendo clic en "+ Agregar Familiar a Cargo" para gestionar sus turnos.
+              </p>
             </div>
           )}
         </div>
@@ -267,13 +255,18 @@ export const GrupoFamiliarModal: React.FC<GrupoFamiliarModalProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-semibold text-muted-foreground">Obra Social</label>
-                <input
-                  type="text"
+                <select
                   value={nuevaObraSocial}
                   onChange={(e) => setNuevaObraSocial(e.target.value)}
-                  placeholder="APROSS, PAMI, etc."
-                  className="w-full mt-1 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs"
-                />
+                  className="w-full mt-1 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs text-foreground cursor-pointer"
+                >
+                  <option value="">Seleccione obra social</option>
+                  {OBRAS_SOCIALES_ARGENTINA.map((os) => (
+                    <option key={os} value={os}>
+                      {os}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-[11px] font-semibold text-muted-foreground">N° de Afiliado</label>
