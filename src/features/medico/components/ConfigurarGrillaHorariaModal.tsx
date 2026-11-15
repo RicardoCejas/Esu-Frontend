@@ -186,7 +186,7 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
               <Calendar className="h-5 w-5 text-sky-200" />
             </div>
             <div>
-              <h2 className="text-lg font-bold font-heading">
+              <h2 className="text-lg font-bold">
                 Configuración de Grilla Horaria y Slots
               </h2>
               <p className="text-xs text-sky-100">
@@ -276,7 +276,7 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
                     setHoraInicio(e.target.value);
                     setErrorValidacion(null);
                   }}
-                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   required
                 />
               </div>
@@ -293,7 +293,7 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
                     setHoraFin(e.target.value);
                     setErrorValidacion(null);
                   }}
-                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   required
                 />
               </div>
@@ -376,7 +376,7 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
                           <span className="rounded-md bg-sky-700 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
                             {diaNombre}
                           </span>
-                          <span className="font-mono font-bold text-xs text-foreground">
+                          <span className="tabular-nums font-bold text-xs text-foreground">
                             {d.horaInicio} - {d.horaFin} hs
                           </span>
                           <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">

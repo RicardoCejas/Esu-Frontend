@@ -129,7 +129,7 @@ export const CredencialPublicaPage: React.FC = () => {
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   {nombreParam}
                 </h1>
-                <p className="text-xs font-mono font-bold text-sky-700 mt-0.5">
+                <p className="text-xs tabular-nums font-bold text-sky-700 mt-0.5">
                   DNI: <span className="font-semibold text-slate-800">{dniParam}</span>
                 </p>
               </div>
@@ -147,7 +147,7 @@ export const CredencialPublicaPage: React.FC = () => {
                   <Building2 className="h-3.5 w-3.5 text-sky-600" /> Cobertura Médica
                 </span>
                 <p className="font-bold text-slate-900 text-sm truncate">{coberturaParam}</p>
-                <p className="text-[10px] font-mono font-medium text-slate-500">
+                <p className="text-[10px] tabular-nums font-medium text-slate-500">
                   Afiliado: <span className="text-slate-700 font-bold">{afiliadoParam}</span>
                 </p>
               </div>
@@ -182,7 +182,7 @@ export const CredencialPublicaPage: React.FC = () => {
                 <p className="text-[10px] text-slate-500">
                   Habilitado para atención ambulatoria, guardia y farmacia.
                 </p>
-                <div className="pt-1 text-[10px] font-mono text-slate-400 flex items-center gap-1">
+                <div className="pt-1 text-[10px] tabular-nums text-slate-400 flex items-center gap-1">
                   <Lock className="h-3 w-3 text-slate-400" />
                   Hash: {hashParam.slice(0, 18)}...
                 </div>
@@ -190,7 +190,7 @@ export const CredencialPublicaPage: React.FC = () => {
 
               <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-slate-200 shadow-xs shrink-0">
                 <ScannableQrCode value={window.location.href} size={84} alt="Código QR de Admisión" />
-                <span className="mt-1 font-mono text-[8px] font-bold text-slate-600">
+                <span className="mt-1 text-[8px] font-bold text-slate-600">
                   VALIDADO
                 </span>
               </div>

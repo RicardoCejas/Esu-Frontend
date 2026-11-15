@@ -156,7 +156,7 @@ export const ObrasSocialesCarousel: React.FC = () => {
               <Shield className="size-3.5 text-white" />
               <span>Coberturas y Convenios Activos</span>
             </div>
-            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#003855] font-heading tracking-tight">
+            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#003855] tracking-tight">
               Obras Sociales y Prepagas Aceptadas en Cruz del Eje
             </h3>
             <p className="text-sm sm:text-base text-slate-600 mt-1">
@@ -271,7 +271,7 @@ export const ObrasSocialesCarousel: React.FC = () => {
                   <span className="text-[11px] uppercase font-bold text-sky-200 tracking-wider">
                     {selectedOS.tipo}
                   </span>
-                  <h3 className="text-xl font-bold font-heading">{selectedOS.sigla}</h3>
+                  <h3 className="text-xl font-bold">{selectedOS.sigla}</h3>
                   <p className="text-xs text-sky-100 line-clamp-1">{selectedOS.nombre}</p>
                 </div>
               </div>

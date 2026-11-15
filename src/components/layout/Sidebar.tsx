@@ -14,22 +14,24 @@ import {
   ListOrdered,
   ArrowLeft,
   ChevronRight,
-  TrendingUp,
   Pill,
   FileCheck,
   User,
-  MapPin,
+  TrendingUp,
 } from 'lucide-react';
-import type { UserRole } from '@/types';
+import type { PermissionCode, UserRole } from '@/types';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useProximoTurno } from '@/hooks/useProximoTurno';
 import { ROLE_LABELS } from '@/lib/roles';
+import { filterSidebarItems } from '@/lib/sidebarPermissions';
 import { esPacienteDniVerificado, esRutaProtegidaDni } from '@/lib/identityValidation';
 
 interface NavItem {
   title: string;
   path: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; 'aria-hidden'?: React.AriaAttributes['aria-hidden'] }>;
   roles: UserRole[];
+  requiredPermissions?: PermissionCode[];
 }
 
 const navItems: NavItem[] = [
@@ -46,28 +48,31 @@ const navItems: NavItem[] = [
   { title: 'Atención Clínica', path: '/dashboard/medico/atencion', icon: Stethoscope, roles: ['MEDICO'] },
 
   // Rutas Centro de Salud / Recepción
-  { title: 'Recepción (Daily Board)', path: '/dashboard/recepcion', icon: Clock, roles: ['RECEPCIONISTA', 'ADMIN'] },
-  { title: 'Tablero Kanban Espera', path: '/dashboard/recepcion/kanban', icon: Layers, roles: ['RECEPCIONISTA', 'MEDICO', 'ADMIN'] },
-  { title: 'Padrón de Pacientes', path: '/dashboard/recepcion/pacientes', icon: Users, roles: ['RECEPCIONISTA', 'MEDICO', 'ADMIN'] },
-  { title: 'Gestión de Turnos', path: '/dashboard/recepcion/turnos', icon: ListOrdered, roles: ['RECEPCIONISTA', 'ADMIN'] },
-  { title: 'Médicos del Centro', path: '/dashboard/recepcion/medicos', icon: Stethoscope, roles: ['RECEPCIONISTA', 'ADMIN'] },
-  { title: 'Especialidades del Centro', path: '/dashboard/recepcion/especialidades', icon: Building2, roles: ['RECEPCIONISTA', 'ADMIN'] },
+  { title: 'Recepción del Día', path: '/dashboard/recepcion', icon: Clock, roles: ['RECEPCIONISTA'], requiredPermissions: ['TURNOS_VER', 'SALA_ESPERA_GESTIONAR'] },
+  { title: 'Salas de Espera', path: '/dashboard/recepcion/kanban', icon: Layers, roles: ['RECEPCIONISTA', 'MEDICO'], requiredPermissions: ['SALA_ESPERA_GESTIONAR', 'TURNOS_VER'] },
+  { title: 'Padrón de Pacientes', path: '/dashboard/recepcion/pacientes', icon: Users, roles: ['RECEPCIONISTA', 'MEDICO'], requiredPermissions: ['PACIENTES_VER'] },
+  { title: 'Gestión de Turnos', path: '/dashboard/recepcion/turnos', icon: ListOrdered, roles: ['RECEPCIONISTA'], requiredPermissions: ['TURNOS_VER'] },
+  { title: 'Médicos del Centro', path: '/dashboard/recepcion/medicos', icon: Stethoscope, roles: ['RECEPCIONISTA'], requiredPermissions: ['MEDICOS_VER'] },
+  { title: 'Especialidades del Centro', path: '/dashboard/recepcion/especialidades', icon: Layers, roles: ['RECEPCIONISTA'], requiredPermissions: ['MEDICOS_VER', 'CONSULTORIOS_VER'] },
+  { title: 'Métricas del Centro', path: '/dashboard/recepcion/metricas', icon: TrendingUp, roles: ['RECEPCIONISTA'], requiredPermissions: ['REPORTES_VER'] },
+  { title: 'Mi Sede y Consultorios', path: '/dashboard/recepcion/sede', icon: Building2, roles: ['RECEPCIONISTA'], requiredPermissions: ['CONSULTORIOS_VER', 'CONSULTORIOS_ADMINISTRAR'] },
+  { title: 'Personal del Centro', path: '/dashboard/recepcion/personal', icon: ShieldCheck, roles: ['RECEPCIONISTA'], requiredPermissions: ['USUARIOS_ADMINISTRAR'] },
 
   // Rutas Administrador (HU-56 & HU-70)
-  { title: 'Dashboard y Métricas', path: '/dashboard/admin', icon: Layers, roles: ['ADMIN'] },
+  { title: 'Panel de Métricas', path: '/dashboard/admin', icon: Layers, roles: ['ADMIN'] },
   { title: 'Ocupación y Ausentismo', path: '/dashboard/admin/ocupacion-ausentismo', icon: TrendingUp, roles: ['ADMIN'] },
   { title: 'Sedes y Consultorios', path: '/dashboard/admin/sedes', icon: Building2, roles: ['ADMIN'] },
   { title: 'Cuentas de Centros de Salud', path: '/dashboard/admin/usuarios', icon: ShieldCheck, roles: ['ADMIN'] },
   { title: 'Centros y Especialidades', path: '/dashboard/admin/especialidades', icon: Building2, roles: ['ADMIN'] },
-  { title: 'Mapa y Pines Cruz del Eje', path: '/dashboard/admin/mapa', icon: MapPin, roles: ['ADMIN'] },
 ];
 
-const INDEX_PATHS = ['/dashboard/paciente', '/dashboard/medico', '/dashboard/recepcion', '/dashboard/admin'];
+const INDEX_PATHS = ['/dashboard/paciente', '/dashboard/medico', '/dashboard/recepcion', '/dashboard/admin/sedes'];
 
 export const Sidebar: React.FC = () => {
   const { user } = useAuth();
+  const { canAny } = usePermissions();
   const userRole = user?.rol || 'PACIENTE';
-  const visibleItems = navItems.filter((item) => item.roles.includes(userRole));
+  const visibleItems = filterSidebarItems(navItems, userRole, canAny);
   const proximoTurno = useProximoTurno(user?.id, userRole === 'PACIENTE');
 
   return (
@@ -80,7 +85,7 @@ export const Sidebar: React.FC = () => {
         >
           <img src="/logo-icon.png" alt="ESU" className="h-9 w-9 shrink-0 object-contain" />
           <div className="flex min-w-0 flex-col">
-            <span className="truncate font-heading text-sm font-bold leading-tight text-foreground">
+            <span className="truncate text-sm font-bold leading-tight text-foreground">
               ESU <span className="text-xs text-primary">Cruz del Eje</span>
             </span>
             <span className="truncate text-[10px] leading-none text-muted-foreground">
@@ -114,7 +119,7 @@ export const Sidebar: React.FC = () => {
       )}
 
       {/* Navegación */}
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
+      <nav aria-label="Módulos del sistema" className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
         <div className="space-y-1">
           <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Módulos del Sistema
@@ -134,7 +139,7 @@ export const Sidebar: React.FC = () => {
                   }`
                 }
               >
-                <Icon className="h-4.5 w-4.5 shrink-0" />
+                <Icon className="h-4.5 w-4.5 shrink-0" aria-hidden="true" />
                 <span className="text-[14px] sm:text-[14.5px] font-semibold leading-snug">{item.title}</span>
                 {userRole === 'PACIENTE' && esRutaProtegidaDni(item.path) && !esPacienteDniVerificado(user) && (
                   <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0 ml-auto" />

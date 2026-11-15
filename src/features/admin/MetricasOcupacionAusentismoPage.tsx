@@ -223,7 +223,7 @@ export const MetricasOcupacionAusentismoPage: React.FC = () => {
           </span>
         </div>
         {horaActualizacion && (
-          <span className="text-[11px] font-mono text-blue-700 dark:text-blue-300">
+          <span className="text-[11px] tabular-nums text-blue-700 dark:text-blue-300">
             Actualizado: {horaActualizacion}
           </span>
         )}
@@ -285,7 +285,7 @@ export const MetricasOcupacionAusentismoPage: React.FC = () => {
               type="date"
               value={fechaDesde}
               onChange={(e) => setFechaDesde(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-primary"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:ring-2 focus:ring-primary"
             >
             </input>
           </div>
@@ -297,7 +297,7 @@ export const MetricasOcupacionAusentismoPage: React.FC = () => {
               type="date"
               value={fechaHasta}
               onChange={(e) => setFechaHasta(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-primary"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:ring-2 focus:ring-primary"
             >
             </input>
           </div>
@@ -516,7 +516,7 @@ export const MetricasOcupacionAusentismoPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-mono font-semibold text-muted-foreground">
+              <span className="text-xs font-semibold text-muted-foreground">
                 Semanal
               </span>
             </div>
@@ -548,7 +548,7 @@ export const MetricasOcupacionAusentismoPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-mono font-semibold text-muted-foreground">
+              <span className="text-xs font-semibold text-muted-foreground">
                 Semestral
               </span>
             </div>

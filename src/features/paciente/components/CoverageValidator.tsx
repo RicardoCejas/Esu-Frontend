@@ -65,7 +65,7 @@ export const CoverageValidator: React.FC<CoverageValidatorProps> = ({
 
       {nroAfiliado && (
         <div className="pt-1 border-t border-border/40 text-[10px] text-muted-foreground flex justify-between">
-          <span>Afiliado N°: <strong className="font-mono text-foreground">{nroAfiliado}</strong></span>
+          <span>Afiliado N°: <strong className="tabular-nums text-foreground">{nroAfiliado}</strong></span>
           <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Padrón Sincronizado</span>
         </div>
       )}

@@ -51,7 +51,7 @@ export function DemoStep5PatientConfirmation({
   return (
     <section aria-labelledby="demo-patient-heading" className="space-y-6 pb-20">
       <div>
-        <h2 id="demo-patient-heading" className="text-xl sm:text-2xl font-bold text-slate-900 font-heading">
+        <h2 id="demo-patient-heading" className="text-xl sm:text-2xl font-bold text-slate-900">
           5. Datos del Paciente y Confirmación
         </h2>
         <p className="text-sm sm:text-base text-slate-600 mt-1">
@@ -83,9 +83,9 @@ export function DemoStep5PatientConfirmation({
           <div className="inline-flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs sm:text-sm font-bold text-emerald-800">
             ✓ Turno Registrado con Éxito
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 font-heading">Comprobante de Turno</h3>
+          <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Comprobante de Turno</h3>
           <p className="text-sm sm:text-base">
-            <span className="font-semibold">Código de Gestión:</span> <span className="font-mono font-bold text-sky-800">{createdAppointment.code}</span>
+            <span className="font-semibold">Código de Gestión:</span> <span className="tabular-nums font-bold text-sky-800">{createdAppointment.code}</span>
           </p>
           <p className="text-sm sm:text-base">
             <span className="font-semibold">Paciente:</span> {createdAppointment.patient.firstName} {createdAppointment.patient.lastName} (DNI {createdAppointment.patient.dni})
@@ -99,7 +99,7 @@ export function DemoStep5PatientConfirmation({
         </div>
       ) : (
         <form noValidate onSubmit={handleSubmit(onConfirm)} className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-xs">
-          <h3 className="text-lg sm:text-xl font-bold text-slate-900 font-heading">Datos del paciente</h3>
+          <h3 className="text-lg sm:text-xl font-bold text-slate-900">Datos del paciente</h3>
 
           <div className="grid gap-5 sm:grid-cols-2">
             {/* DNI */}

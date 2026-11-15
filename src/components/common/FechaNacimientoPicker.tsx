@@ -309,7 +309,7 @@ export const FechaNacimientoPicker: React.FC<FechaNacimientoPickerProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 px-1">
                 <span>Selecciona tu año de nacimiento:</span>
-                <span className="font-mono text-sky-700">{decadeStart} - {decadeStart + 11}</span>
+                <span className="tabular-nums text-sky-700">{decadeStart} - {decadeStart + 11}</span>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {Array.from({ length: 12 }, (_, i) => decadeStart + i).map((year) => {

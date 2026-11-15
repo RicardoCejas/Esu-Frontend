@@ -256,7 +256,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                 </h4>
                 {data.cie10 ? (
                   <div className="flex items-center gap-2">
-                    <span className="bg-blue-700 text-white font-mono font-bold px-2 py-0.5 rounded text-[10px]">
+                    <span className="bg-blue-700 text-white tabular-nums font-bold px-2 py-0.5 rounded text-[10px]">
                       {data.cie10.codigo}
                     </span>
                     <span className="font-semibold text-slate-900 text-xs">
@@ -288,7 +288,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                     <Pill className="w-4 h-4 text-blue-700" />
                     Rp. / Receta Médica Electrónica Oficial (Ley 27.553)
                   </div>
-                  <span className="text-[10px] text-slate-500 font-mono">
+                  <span className="text-[10px] text-slate-500">
                     Validez: 30 días corridos
                   </span>
                 </div>
@@ -329,7 +329,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                     Validación Criptográfica Inalterable
                   </p>
                   <p>Escanee para verificar autenticidad en farmacias y centros ESU.</p>
-                  <p className="font-mono text-[8px] text-slate-400 truncate">
+                  <p className="tabular-nums text-[8px] text-slate-400 truncate">
                     Hash SHA-256: 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677...
                   </p>
                 </div>
@@ -342,7 +342,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                 </div>
                 <p className="font-bold text-slate-900 text-[10px]">{data.medicoNombre}</p>
                 <p className="text-slate-600 text-[9px]">{data.especialidad}</p>
-                <p className="text-slate-500 font-mono text-[9px]">
+                <p className="text-slate-500 tabular-nums text-[9px]">
                   Matrícula: {data.medicoMatricula}
                 </p>
               </div>

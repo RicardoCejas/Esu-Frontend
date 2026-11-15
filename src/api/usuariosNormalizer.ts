@@ -1,4 +1,4 @@
-import type { User, UserRole, BackendUserRole } from '../types/index.ts';
+import type { User, UserRole, BackendUserRole, PermissionCode } from '../types/index.ts';
 import { toFrontendRole, toBackendRole } from '../lib/roles.ts';
 
 export interface CreateUserRequest {
@@ -9,6 +9,7 @@ export interface CreateUserRequest {
   rol: UserRole | BackendUserRole;
   dni?: string;
   centroSaludId?: string | number;
+  permisos?: PermissionCode[];
 }
 
 export function toNumericId(raw: string | number | undefined, fieldName = 'usuarioId'): number {
@@ -26,6 +27,8 @@ export function validateAndBuildCreateUserPayload(data: CreateUserRequest): {
   nombre?: string;
   apellido?: string;
   dni?: string;
+  centroSaludId?: number;
+  permisos?: string[];
 } {
   const username = data.username?.trim().toLowerCase();
   if (!username) {
@@ -53,6 +56,8 @@ export function validateAndBuildCreateUserPayload(data: CreateUserRequest): {
     nombre: data.nombre?.trim() || undefined,
     apellido: data.apellido?.trim() || undefined,
     dni: data.dni?.trim() || undefined,
+    centroSaludId: data.centroSaludId ? Number(data.centroSaludId) : undefined,
+    permisos: data.permisos,
   };
 }
 
@@ -82,5 +87,6 @@ export function normalizeUsuario(d: Record<string, unknown>): User {
     activo: d.activo !== false,
     centroSaludId: d.centroSaludId != null ? String(d.centroSaludId) : undefined,
     centroSaludNombre: typeof d.centroSaludNombre === 'string' ? d.centroSaludNombre : undefined,
+    permisos: Array.isArray(d.permisos) ? (d.permisos as unknown as PermissionCode[]) : [],
   };
 }

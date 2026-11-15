@@ -100,7 +100,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
         <div className="absolute top-0 left-0 right-0 h-1 sm:h-1.5 bg-gradient-to-r from-[#005a87] via-[#0284c7] to-[#00a896]" />
 
         <div>
-          <h2 className="text-lg sm:text-2xl font-bold text-slate-900 font-heading">
+          <h2 className="text-lg sm:text-2xl font-bold text-slate-900">
             1. Seleccione el Centro de Salud o Consultorio
           </h2>
           <p className="text-xs sm:text-base text-slate-500 mt-0.5 sm:mt-1">
@@ -231,7 +231,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-bold text-slate-900 text-sm sm:text-base font-heading leading-tight min-h-[2.5rem] line-clamp-2 group-hover:text-[#005a87] transition-colors">
+                          <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-tight min-h-[2.5rem] line-clamp-2 group-hover:text-[#005a87] transition-colors">
                             {center.name}
                           </h3>
                         </div>
@@ -322,7 +322,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2.5 flex-wrap">
-                        <span className="font-bold text-base sm:text-lg text-slate-900 font-heading">
+                        <span className="font-bold text-base sm:text-lg text-slate-900">
                           {center.name}
                         </span>
                         <span className={`text-xs font-bold px-2.5 py-0.5 rounded-md border ${typeInfo.badgeClass}`}>
@@ -391,7 +391,7 @@ export const Step1CenterSelection: React.FC<Step1CenterSelectionProps> = ({
                   <span className="text-[11px] font-bold uppercase tracking-wider text-teal-200 block">
                     Centro de Salud Seleccionado
                   </span>
-                  <h3 className="text-lg sm:text-xl font-bold font-heading text-white leading-snug">
+                  <h3 className="text-lg sm:text-xl font-bold text-white leading-snug">
                     {modalCenter.name}
                   </h3>
                 </div>

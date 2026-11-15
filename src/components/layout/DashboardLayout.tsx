@@ -5,7 +5,7 @@ import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBann
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { DevRoleSwitcher } from '@/components/dev/DevRoleSwitcher';
 import { useAuth } from '@/context/AuthContext';
-import { Building2, ShieldAlert, Lock, ArrowLeft } from 'lucide-react';
+import { ShieldAlert, Lock, ArrowLeft } from 'lucide-react';
 import { ValidacionDniModal } from '@/components/auth/ValidacionDniModal';
 import { esPacienteDniVerificado, esRutaProtegidaDni } from '@/lib/identityValidation';
 
@@ -56,22 +56,9 @@ export const DashboardLayout: React.FC = () => {
         <Sidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Header Superior del Dashboard con Switcher Dev e Indicadores */}
-          <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-card/60 px-4 sm:px-6 backdrop-blur-xs">
+          <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-background/95 px-4 sm:px-6 border-b border-border/60">
             <div className="flex items-center gap-3 min-w-0">
               <DevRoleSwitcher />
-
-              {user?.centroSaludNombre && (
-                <div className="hidden md:flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs text-sky-800 dark:border-sky-800/60 dark:bg-sky-950/40 dark:text-sky-300">
-                  <Building2 className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
-                  <span className="font-semibold truncate max-w-[280px]">
-                    {user.rol === 'PACIENTE'
-                      ? `Ref: ${user.centroSaludNombre}`
-                      : user.rol === 'MEDICO'
-                      ? `Médico en ${user.centroSaludNombre}`
-                      : user.centroSaludNombre}
-                  </span>
-                </div>
-              )}
             </div>
 
             <div className="flex items-center gap-3">
@@ -79,13 +66,13 @@ export const DashboardLayout: React.FC = () => {
             </div>
           </header>
 
-          <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto bg-muted/20 p-4 sm:p-6 lg:p-8">
+          <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
             {accesoBloqueado ? (
               <div className="flex h-full min-h-[420px] flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 mb-4 shadow-sm">
                   <ShieldAlert className="h-8 w-8" />
                 </div>
-                <h2 className="text-lg sm:text-xl font-bold font-heading text-slate-800">
+                <h2 className="text-lg sm:text-xl font-bold text-slate-800">
                   Validación de Identidad Obligatoria
                 </h2>
                 <p className="mt-2 max-w-md text-xs sm:text-sm text-slate-600 leading-relaxed">

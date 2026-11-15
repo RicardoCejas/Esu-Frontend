@@ -225,11 +225,11 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
               </div>
               <div className="flex justify-between border-b border-border pb-1.5">
                 <span className="font-semibold text-muted-foreground">IP de Registro:</span>
-                <span className="font-mono text-foreground">{constanciaGenerada.ipFirma}</span>
+                <span className="tabular-nums text-foreground">{constanciaGenerada.ipFirma}</span>
               </div>
               <div className="space-y-1 pt-1">
                 <span className="font-semibold text-muted-foreground block">Sello Criptográfico SHA-256:</span>
-                <p className="font-mono text-[10px] break-all bg-background p-2 rounded-lg border border-border text-primary font-bold">
+                <p className="tabular-nums text-[10px] break-all bg-background p-2 rounded-lg border border-border text-primary font-bold">
                   {constanciaGenerada.hashIntegridadSha256}
                 </p>
               </div>
@@ -272,13 +272,13 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
             <div className="space-y-1">
               <label className="text-xs font-bold text-foreground flex items-center justify-between">
                 <span>Texto Legal del Consentimiento</span>
-                <span className="text-[10px] font-mono text-muted-foreground">Ley 26.529 Art. 5 a 10</span>
+                <span className="text-[10px] text-muted-foreground">Ley 26.529 Art. 5 a 10</span>
               </label>
               <textarea
                 rows={5}
                 value={textoLegal}
                 onChange={e => setTextoLegal(e.target.value)}
-                className="w-full rounded-xl border border-input bg-slate-50 dark:bg-slate-900/40 p-3 text-xs leading-relaxed text-foreground font-mono focus:outline-hidden focus:ring-2 focus:ring-primary"
+                className="w-full rounded-xl border border-input bg-slate-50 dark:bg-slate-900/40 p-3 text-xs leading-relaxed text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary"
               />
             </div>
 
@@ -358,7 +358,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
                   value={pin}
                   onChange={e => setPin(e.target.value)}
                   placeholder="PIN de 4 a 6 dígitos"
-                  className="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm tracking-widest text-center font-mono focus:outline-hidden focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm tracking-widest text-center focus:outline-hidden focus:ring-2 focus:ring-primary"
                 />
               </div>
             )}

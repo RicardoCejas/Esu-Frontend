@@ -132,7 +132,7 @@ export const EspecialidadesSection: React.FC<EspecialidadesSectionProps> = ({
         {/* Encabezado de la Sección */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-12">
           <div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight font-heading text-[#003855]">
+            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#003855]">
               Especialidades Médicas
             </h2>
             <p className="text-base sm:text-xl text-slate-700 mt-2 max-w-2xl font-normal leading-relaxed">
@@ -233,7 +233,7 @@ export const EspecialidadesSection: React.FC<EspecialidadesSectionProps> = ({
                   {/* Cuerpo de Tarjeta */}
                   <div className="relative z-10 -mt-3 px-6 sm:px-7">
                     {/* Título de la Especialidad - Grande y muy visible */}
-                    <h3 className="text-xl sm:text-2xl font-bold text-[#003d5c] font-heading leading-snug">
+                    <h3 className="text-xl sm:text-2xl font-bold text-[#003d5c] leading-snug">
                       {nombreEsp}
                     </h3>
 

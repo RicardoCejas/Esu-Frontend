@@ -194,7 +194,7 @@ export const MiHistorialPage: React.FC = () => {
       <div className="hidden print:block border-b-2 border-slate-900 pb-4 mb-6">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold font-heading">SISTEMA PÚBLICO Y PRIVADO DE SALUD UNIFICADA</h2>
+            <h2 className="text-xl font-bold">SISTEMA PÚBLICO Y PRIVADO DE SALUD UNIFICADA</h2>
             <p className="text-xs text-slate-600">Centro de Salud • Cruz del Eje, Córdoba</p>
           </div>
           <div className="text-right text-xs">
@@ -373,7 +373,7 @@ export const MiHistorialPage: React.FC = () => {
 
               {/* Hash de Integridad y Adendas Oficiales */}
               {consulta.hashIntegridad && (
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 text-[11px] font-mono text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 text-[11px] tabular-nums text-slate-600 dark:text-slate-400 flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
                   <span>Hash de Integridad (SHA-256): <strong className="text-foreground">{consulta.hashIntegridad}</strong></span>
                 </div>
@@ -401,7 +401,7 @@ export const MiHistorialPage: React.FC = () => {
                         <Pill className="h-4.5 w-4.5" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 font-heading">
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
                           Receta Electrónica Emitida
                         </h4>
                         <span className="text-xs font-medium text-sky-800 dark:text-sky-300">
@@ -409,7 +409,7 @@ export const MiHistorialPage: React.FC = () => {
                         </span>
                       </div>
                     </div>
-                    <span className="font-mono text-xs font-bold text-sky-900 dark:text-sky-200 bg-white dark:bg-slate-800 border border-sky-300 dark:border-sky-700 px-3 py-1 rounded-lg shadow-2xs">
+                    <span className="tabular-nums text-xs font-bold text-sky-900 dark:text-sky-200 bg-white dark:bg-slate-800 border border-sky-300 dark:border-sky-700 px-3 py-1 rounded-lg shadow-2xs">
                       {consulta.receta.codigoQR}
                     </span>
                   </div>
@@ -473,7 +473,7 @@ export const MiHistorialPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <Edit3 className="h-5 w-5 text-primary" />
-                <h3 className="font-bold text-base text-foreground font-heading">
+                <h3 className="font-bold text-base text-foreground">
                   Rectificar Registro Clínico
                 </h3>
               </div>

@@ -140,7 +140,7 @@ export const InteractiveDonutChart: React.FC<DonutChartProps> = ({ data }) => {
                 style={{ backgroundColor: item.color }}
               />
               <span className="text-muted-foreground truncate max-w-[140px]">{item.label}</span>
-              <span className="font-mono text-foreground font-semibold ml-auto">{porcentaje}%</span>
+              <span className="tabular-nums text-foreground font-semibold ml-auto">{porcentaje}%</span>
             </div>
           );
         })}

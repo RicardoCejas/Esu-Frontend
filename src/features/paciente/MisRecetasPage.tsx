@@ -77,7 +77,7 @@ export const MisRecetasPage: React.FC = () => {
       {/* Encabezado */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight font-heading text-foreground">
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
             Mis Recetas y Medicación
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -198,7 +198,7 @@ export const MisRecetasPage: React.FC = () => {
                   <div className="flex items-start justify-between gap-3 border-b border-border/70 pb-3">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-lg border border-primary/20">
+                        <span className="tabular-nums text-xs font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-lg border border-primary/20">
                           REC-CDE-{receta.id}
                         </span>
                         {esVigente && (
@@ -219,7 +219,7 @@ export const MisRecetasPage: React.FC = () => {
                       </div>
                       <p className="text-sm font-bold text-foreground mt-2">
                         {receta.diagnostico || 'Prescripción médica ambulatoria'}
-                        {receta.codigoCie10 && <span className="font-mono text-xs text-muted-foreground ml-1.5">[{receta.codigoCie10}]</span>}
+                        {receta.codigoCie10 && <span className="tabular-nums text-xs text-muted-foreground ml-1.5">[{receta.codigoCie10}]</span>}
                       </p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
                         Emisión: {receta.fechaEmision} • Vencimiento: {receta.fechaVencimiento}
@@ -318,7 +318,7 @@ export const MisRecetasPage: React.FC = () => {
                         Dispensada en: {receta.farmaciaDispensadoraNombre || 'Farmacia Oficial'}
                       </span>
                       {receta.fechaDispensacion && (
-                        <span className="text-muted-foreground font-mono">
+                        <span className="text-muted-foreground tabular-nums">
                           {receta.fechaDispensacion.replace('T', ' ').substring(0, 16)}
                         </span>
                       )}
@@ -360,7 +360,7 @@ export const MisRecetasPage: React.FC = () => {
 
             <div className="bg-white p-4 rounded-2xl border border-sky-200 inline-block mx-auto shadow-xs">
               <QrCode className="h-36 w-36 text-slate-900 mx-auto" />
-              <p className="font-mono text-xs font-bold text-slate-800 mt-2">
+              <p className="tabular-nums text-xs font-bold text-slate-800 mt-2">
                 REC-CDE-{selectedRecetaQr.id}
               </p>
             </div>

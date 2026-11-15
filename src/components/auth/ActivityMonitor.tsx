@@ -106,7 +106,7 @@ export const ActivityMonitor: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-xl font-extrabold font-heading text-foreground">
+          <h2 className="text-xl font-extrabold text-foreground">
             Aviso de Inactividad de Sesión
           </h2>
           <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto">
@@ -118,7 +118,7 @@ export const ActivityMonitor: React.FC = () => {
           <p className="text-xs font-semibold text-amber-900">
             Tu sesión se cerrará automáticamente en:
           </p>
-          <div className="font-mono text-3xl font-extrabold text-amber-700 tracking-wider">
+          <div className="tabular-nums text-3xl font-extrabold text-amber-700 tracking-wider">
             {formattedTime}
           </div>
         </div>

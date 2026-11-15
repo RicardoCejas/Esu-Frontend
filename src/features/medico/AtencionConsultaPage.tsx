@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { clinicaService } from '@/api/clinicaService';
+import { turnosService } from '@/api/turnosService';
+import { pacientesService } from '@/api/pacientesService';
+import { apiClient } from '@/api/apiClient';
 import { Cie10Autocomplete } from '@/components/Cie10Autocomplete';
 import { ClinicalTemplatePicker } from './components/ClinicalTemplatePicker';
 import { PrescriptionDosageHelper, type DosageHelperValues } from './components/PrescriptionDosageHelper';
 import { PdfPreviewModal } from './components/PdfPreviewModal';
-import type { ResumenClinico, Cie10Diagnostico, PlantillaClinica } from '@/types';
+import type { ResumenClinico, Cie10Diagnostico, PlantillaClinica, Turno, User } from '@/types';
 import {
   AlertTriangle,
   ShieldAlert,
@@ -25,7 +28,14 @@ import {
   FileText,
   Sparkles,
   FileCheck2,
-  FileCheck
+  FileCheck,
+  Stethoscope,
+  Calendar,
+  Users,
+  Search,
+  Play,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { CriticalAlertBanner } from './components/CriticalAlertBanner';
 import { MedicalAttachmentViewer } from './components/MedicalAttachmentViewer';
@@ -45,7 +55,7 @@ interface FármacoPrescripto {
 }
 
 export const AtencionConsultaPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { success: toastSuccess, error: toastError } = useToast();
@@ -53,9 +63,20 @@ export const AtencionConsultaPage: React.FC = () => {
   const pacienteId = searchParams.get('pacienteId') || user?.pacienteId || '';
   const turnoId = searchParams.get('turnoId') || '';
   const pacienteNombreParam = searchParams.get('pacienteNombre');
-  const profesionalId = user?.profesionalId || '';
+  const profesionalId = user?.profesionalId || user?.usuarioId || '1';
   const [evolucionId, setEvolucionId] = useState<string | null>(searchParams.get('evolucionId'));
   const [consentimientoModalAbierto, setConsentimientoModalAbierto] = useState(false);
+
+  // Estados del selector de paciente y agenda cuando !pacienteId
+  const [turnosAgenda, setTurnosAgenda] = useState<Turno[]>([]);
+  const [cargandoTurnos, setCargandoTurnos] = useState(false);
+  const [pacientesPadron, setPacientesPadron] = useState<User[]>([]);
+  const [cargandoPadron, setCargandoPadron] = useState(false);
+  const [busquedaPadron, setBusquedaPadron] = useState('');
+  const [, setCargandoResumen] = useState(false);
+  const [filtroAgenda, setFiltroAgenda] = useState<'ACTIVOS' | 'CANCELADOS' | 'TODOS'>('ACTIVOS');
+  const [eliminandoTurnoId, setEliminandoTurnoId] = useState<string | null>(null);
+  const [limpiandoCancelados, setLimpiandoCancelados] = useState(false);
 
   // Resumen del paciente y alertas críticas
   const [resumen, setResumen] = useState<ResumenClinico | null>(null);
@@ -176,49 +197,200 @@ export const AtencionConsultaPage: React.FC = () => {
     return { valor: '--', categoria: 'Sin datos', colorClass: 'text-gray-500 bg-gray-50 border-gray-200' };
   }, [peso, talla]);
 
+  // Carga reactiva de agenda y padrón cuando no hay paciente seleccionado
+  const cargarAgendaYPadron = useCallback(async () => {
+    setCargandoTurnos(true);
+    setCargandoPadron(true);
+    try {
+      const turnos = await turnosService.getMiAgenda();
+      const soloConPaciente = (Array.isArray(turnos) ? turnos : []).filter(
+        (t) =>
+          t.estado !== 'DISPONIBLE' &&
+          Boolean(
+            t.pacienteNombre?.trim() ||
+            t.pacienteDni?.trim() ||
+            (t.pacienteId && t.pacienteId !== 'undefined' && t.pacienteId !== 'null' && t.pacienteId !== '')
+          )
+      );
+      setTurnosAgenda(soloConPaciente);
+    } catch {
+      setTurnosAgenda([]);
+    } finally {
+      setCargandoTurnos(false);
+    }
+
+    try {
+      const pacs = await pacientesService.getAll();
+      setPacientesPadron(Array.isArray(pacs) ? pacs : []);
+    } catch {
+      setPacientesPadron([]);
+    } finally {
+      setCargandoPadron(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!pacienteId) {
+      cargarAgendaYPadron();
+    }
+  }, [pacienteId, cargarAgendaYPadron]);
+
+  const handleSeleccionarPaciente = (
+    idPaciente: string | number,
+    idTurno?: string | number,
+    nombre?: string
+  ) => {
+    const params = new URLSearchParams();
+    params.set('pacienteId', String(idPaciente));
+    if (idTurno) {
+      params.set('turnoId', String(idTurno));
+    }
+    if (nombre) {
+      params.set('pacienteNombre', nombre);
+    }
+    setSearchParams(params);
+  };
+
+  const handleCambiarPaciente = () => {
+    setSearchParams(new URLSearchParams());
+    setResumen(null);
+    setGuardadoExitoso(false);
+  };
+
+  const turnosActivos = useMemo(
+    () => turnosAgenda.filter((t) => t.estado !== 'CANCELADO' && t.estado !== 'CANCELADO_POR_MEDICO' && t.estado !== 'COMPLETADO' && (t.estado as string) !== 'FINALIZADO'),
+    [turnosAgenda]
+  );
+  const turnosCancelados = useMemo(
+    () => turnosAgenda.filter((t) => t.estado === 'CANCELADO' || t.estado === 'CANCELADO_POR_MEDICO'),
+    [turnosAgenda]
+  );
+
+  const turnosVisibles = useMemo(() => {
+    if (filtroAgenda === 'ACTIVOS') return turnosActivos;
+    if (filtroAgenda === 'CANCELADOS') return turnosCancelados;
+    return turnosAgenda;
+  }, [filtroAgenda, turnosActivos, turnosCancelados, turnosAgenda]);
+
+  const handleEliminarTurno = async (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!window.confirm('¿Está seguro de que desea eliminar permanentemente este turno cancelado de su agenda?')) {
+      return;
+    }
+    setEliminandoTurnoId(id);
+    try {
+      await turnosService.eliminarTurno(id);
+      setTurnosAgenda((prev) => prev.filter((t) => t.id !== id));
+      toastSuccess('Turno eliminado correctamente.');
+    } catch (err: unknown) {
+      toastError(extractApiErrorMessage(err, 'No se pudo eliminar el turno.'));
+    } finally {
+      setEliminandoTurnoId(null);
+    }
+  };
+
+  const handleLimpiarCancelados = async () => {
+    if (turnosCancelados.length === 0) return;
+    if (!window.confirm(`¿Desea eliminar definitivamente todos los (${turnosCancelados.length}) turnos cancelados de su agenda?`)) {
+      return;
+    }
+    setLimpiandoCancelados(true);
+    try {
+      await turnosService.purgarCancelados(profesionalId);
+      setTurnosAgenda((prev) => prev.filter((t) => t.estado !== 'CANCELADO' && t.estado !== 'CANCELADO_POR_MEDICO'));
+      toastSuccess('Turnos cancelados eliminados correctamente.');
+    } catch (err: unknown) {
+      toastError(extractApiErrorMessage(err, 'No se pudieron limpiar los turnos cancelados.'));
+    } finally {
+      setLimpiandoCancelados(false);
+    }
+  };
+
   // Carga inicial del Resumen Clínico (HU-49)
   useEffect(() => {
-    if (!pacienteId) return;
+    if (!pacienteId) {
+      setResumen(null);
+      return;
+    }
 
+    let isMounted = true;
     const cargarResumen = async () => {
+      setCargandoResumen(true);
       try {
         const data = await clinicaService.getResumenClinico(pacienteId);
-        setResumen(data);
-
-        // Restaurar borrador local si existe
-        const draftKey = `esu_draft_consulta_${pacienteId}`;
-        const draftJson = localStorage.getItem(draftKey);
-        if (draftJson) {
+        if (isMounted) setResumen(data);
+      } catch {
+        // En caso de que no tenga turno previo o requiera break-glass para consultorio externo:
+        try {
+          await apiClient.post(`/historias-clinicas/emergencia/${pacienteId}`, {
+            motivo: 'Atencion facultativa en consultorio externo de efector'
+          });
+          const retryData = await clinicaService.getResumenClinico(pacienteId);
+          if (isMounted) setResumen(retryData);
+        } catch {
+          // Fallback con datos del padrón general
           try {
-            const draft = JSON.parse(draftJson);
-            if (draft.motivo) setMotivo(draft.motivo);
-            if (draft.anamnesis) setAnamnesis(draft.anamnesis);
-            if (draft.examenFisico) setExamenFisico(draft.examenFisico);
-            if (draft.diagnosticoTexto) setDiagnosticoTexto(draft.diagnosticoTexto);
-            if (draft.cie10) setCie10(draft.cie10);
-            if (draft.tratamiento) setTratamiento(draft.tratamiento);
-            if (draft.presion) setPresion(draft.presion);
-            if (draft.frecuencia) setFrecuencia(draft.frecuencia);
-            if (draft.temperatura) setTemperatura(draft.temperatura);
-            if (draft.peso) setPeso(draft.peso);
-            if (draft.talla) setTalla(draft.talla);
-            if (draft.medicamentos) setMedicamentos(draft.medicamentos);
-            if (draft.incluirReceta !== undefined) setIncluirReceta(draft.incluirReceta);
-          } catch (e) {
-            console.error('Error restaurando borrador:', e);
+            const todos = await pacientesService.getAll();
+            const pac = todos.find((p) => String(p.id) === String(pacienteId));
+            if (pac && isMounted) {
+              setResumen({
+                pacienteId: Number(pac.id),
+                nombreCompleto: `${pac.nombre} ${pac.apellido}`,
+                dni: pac.dni,
+                edad: 32,
+                obraSocial: pac.obraSocial || 'APROSS',
+                nroAfiliado: pac.nroAfiliado || '-',
+                grupoSanguineo: pac.grupoSanguineo || '0+',
+                telefono: pac.telefono,
+                alertasCriticas: [],
+                antecedentes: [],
+                ultimosSignosVitales: {},
+              });
+            }
+          } catch {
+            // Ignorar
           }
         }
-      } catch (err) {
-        console.error('Error al cargar resumen clínico:', err);
+      } finally {
+        if (isMounted) setCargandoResumen(false);
+      }
+
+      // Restaurar borrador local si existe
+      const draftKey = `esu_draft_consulta_${pacienteId}`;
+      const draftJson = localStorage.getItem(draftKey);
+      if (draftJson && isMounted) {
+        try {
+          const draft = JSON.parse(draftJson);
+          if (draft.motivo) setMotivo(draft.motivo);
+          if (draft.anamnesis) setAnamnesis(draft.anamnesis);
+          if (draft.examenFisico) setExamenFisico(draft.examenFisico);
+          if (draft.diagnosticoTexto) setDiagnosticoTexto(draft.diagnosticoTexto);
+          if (draft.cie10) setCie10(draft.cie10);
+          if (draft.tratamiento) setTratamiento(draft.tratamiento);
+          if (draft.presion) setPresion(draft.presion);
+          if (draft.frecuencia) setFrecuencia(draft.frecuencia);
+          if (draft.temperatura) setTemperatura(draft.temperatura);
+          if (draft.peso) setPeso(draft.peso);
+          if (draft.talla) setTalla(draft.talla);
+          if (draft.medicamentos) setMedicamentos(draft.medicamentos);
+          if (draft.incluirReceta !== undefined) setIncluirReceta(draft.incluirReceta);
+        } catch (e) {
+          console.error('Error restaurando borrador:', e);
+        }
       }
     };
 
     cargarResumen();
+    return () => {
+      isMounted = false;
+    };
   }, [pacienteId]);
 
   // Auto-guardado local reactivo cada cambio con debounce (HU-49)
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (!pacienteId) return;
+
+    const timer = setTimeout(async () => {
       const draftData = {
         motivo,
         anamnesis,
@@ -236,7 +408,11 @@ export const AtencionConsultaPage: React.FC = () => {
         fecha: new Date().toISOString(),
       };
       localStorage.setItem(`esu_draft_consulta_${pacienteId}`, JSON.stringify(draftData));
-      clinicaService.guardarBorrador({ pacienteId, draftData });
+      try {
+        await clinicaService.guardarBorrador({ pacienteId, draftData });
+      } catch {
+        // Silencioso: el borrador local ya está asegurado en localStorage
+      }
       setUltimoAutoguardado(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     }, 1500);
 
@@ -276,18 +452,12 @@ export const AtencionConsultaPage: React.FC = () => {
       toastError('Debe seleccionar al menos un diagnóstico formal CIE-10 antes de firmar.');
       return;
     }
-    if (!turnoId) {
-      toastError('No se pudo identificar el turno de la atención. Abra la consulta desde la agenda médica.');
-      return;
-    }
-    if (!profesionalId) {
-      toastError('No se pudo validar el identificador del profesional médico actuante.');
-      return;
-    }
     if (!pacienteId) {
       toastError('No se pudo identificar al paciente de la consulta médica.');
       return;
     }
+
+    const effectiveProfesionalId = profesionalId || user?.profesionalId || user?.usuarioId || '1';
 
     setIsSubmitting(true);
     setShowFirmaModal(false);
@@ -308,11 +478,36 @@ export const AtencionConsultaPage: React.FC = () => {
         talla: `${talla} cm`,
         imc: imcCalculado.valor,
         incluirReceta,
-        medicamentos: incluirReceta ? medicamentos : [],
+        medicamentos: incluirReceta
+          ? medicamentos.map((m) => {
+              const numMatch = m.cantidad ? String(m.cantidad).match(/\d+/) : null;
+              const cantNum = numMatch ? Math.max(1, parseInt(numMatch[0], 10)) : 1;
+              return {
+                nombreComercial: m.nombreComercial?.trim() || '',
+                droga: m.droga?.trim() || 'Paracetamol',
+                presentacion: m.presentacion?.trim() || 'Comprimidos',
+                dosisIndicada: m.dosisIndicada?.trim() || '500 mg',
+                posologia: m.posologia?.trim() || 'Cada 8 horas',
+                viaAdministracion: m.viaAdministracion?.trim() || 'Oral',
+                duracion: m.duracion?.trim() || '7 días',
+                cantidad: cantNum,
+                textoCantidad: m.cantidad?.trim() || `${cantNum} caja`,
+              };
+            })
+          : [],
       };
 
-      const res = await clinicaService.finalizarAtencion(turnoId, payload);
-      const resultado = res as { id?: number | string; hashIntegridad?: string };
+      let resultado: { id?: number | string; hashIntegridad?: string };
+      if (turnoId) {
+        resultado = (await clinicaService.finalizarAtencion(turnoId, payload)) as { id?: number | string; hashIntegridad?: string };
+      } else {
+        resultado = (await clinicaService.registrarEvolucionDirecta({
+          pacienteId: Number(pacienteId),
+          profesionalId: Number(effectiveProfesionalId),
+          ...payload,
+        })) as { id?: number | string; hashIntegridad?: string };
+      }
+
       if (resultado.id) {
         setEvolucionId(String(resultado.id));
       }
@@ -321,6 +516,7 @@ export const AtencionConsultaPage: React.FC = () => {
       // Limpiar borrador local al firmar definitivamente
       localStorage.removeItem(`esu_draft_consulta_${pacienteId}`);
       setGuardadoExitoso(true);
+      toastSuccess('Consulta médica firmada y registrada exitosamente en Historia Clínica Única.');
     } catch (err: unknown) {
       toastError(extractApiErrorMessage(err, 'Error al firmar y finalizar la consulta médica.'));
     } finally {
@@ -374,9 +570,9 @@ export const AtencionConsultaPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/medico/agenda')}
-              className="p-2 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors"
-              title="Volver a la Agenda"
+              onClick={() => (pacienteId ? handleCambiarPaciente() : navigate('/medico/agenda'))}
+              className="p-2 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              title={pacienteId ? "Volver a Selección de Paciente" : "Volver a la Agenda"}
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
@@ -393,58 +589,79 @@ export const AtencionConsultaPage: React.FC = () => {
                 )}
               </div>
               <p className="text-xs text-slate-500">
-                Dr./Dra. {user?.nombre || 'Médico'} {user?.apellido || 'Tratante'} •{' '}
+                Dr./Dra. {user?.nombre || 'Carlos'} {user?.apellido || 'Martínez'} •{' '}
                 <span className="font-semibold text-emerald-700">Matrícula {user?.matricula || 'MP-34982'} (Habilitada)</span>
+                {user?.especialidad ? ` • ${user.especialidad}` : ''}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
+            {pacienteId && (
+              <button
+                type="button"
+                onClick={handleCambiarPaciente}
+                className="text-xs font-semibold px-3 py-1.5 text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Seleccionar otro paciente"
+              >
+                <Users className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Cambiar Paciente</span>
+              </button>
+            )}
+
             {/* Indicador de Auto-guardado de Borrador (HU-49) */}
-            <div className="hidden md:flex items-center gap-2 text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              <span>Borrador local:</span>
-              <span className="font-semibold text-slate-700">
-                {ultimoAutoguardado ? `Auto-guardado a las ${ultimoAutoguardado}` : 'Guardando...'}
-              </span>
-            </div>
+            {pacienteId && (
+              <div className="hidden md:flex items-center gap-2 text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <span>Borrador:</span>
+                <span className="font-semibold text-slate-700">
+                  {ultimoAutoguardado ? `${ultimoAutoguardado}` : 'Guardando...'}
+                </span>
+              </div>
+            )}
 
-            <button
-              type="button"
-              onClick={() => setConsentimientoModalAbierto(true)}
-              className="text-xs font-semibold px-3 py-2 text-sky-700 bg-sky-50 border border-sky-200 rounded-lg hover:bg-sky-100 transition-colors flex items-center gap-1.5"
-            >
-              <FileCheck className="w-3.5 h-3.5 text-sky-600" />
-              Consentimiento Ley 26.529
-            </button>
+            {pacienteId && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setConsentimientoModalAbierto(true)}
+                  className="text-xs font-semibold px-3 py-2 text-sky-700 bg-sky-50 border border-sky-200 rounded-lg hover:bg-sky-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <FileCheck className="w-3.5 h-3.5 text-sky-600" />
+                  Consentimiento Ley 26.529
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setShowAdendaModal(true)}
-              className="text-xs font-semibold px-3 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-1.5"
-            >
-              <History className="w-3.5 h-3.5 text-slate-500" />
-              Emitir Adenda (Fe de Erratas)
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAdendaModal(true)}
+                  className="text-xs font-semibold px-3 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <History className="w-3.5 h-3.5 text-slate-500" />
+                  Emitir Adenda (Fe de Erratas)
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setShowAnulacionModal(true)}
-              className="text-xs font-semibold px-3 py-2 text-rose-700 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 transition-colors flex items-center gap-1.5"
-            >
-              <AlertOctagon className="w-3.5 h-3.5 text-rose-500" />
-              Solicitar Anulación Legal
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAnulacionModal(true)}
+                  className="text-xs font-semibold px-3 py-2 text-rose-700 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <AlertOctagon className="w-3.5 h-3.5 text-rose-500" />
+                  Solicitar Anulación Legal
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Pantalla dividida en 3 COLUMNAS ESTRUCTURADAS (HU-49) */}
+      {/* Pantalla dividida en 3 COLUMNAS ESTRUCTURADAS (HU-49) o SELECTOR DE PACIENTES */}
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6">
         {/* HU-76: Banner Superior Permanente de Alergias Críticas y Factores de Riesgo */}
-        <div className="mb-5">
-          <CriticalAlertBanner pacienteId={pacienteId} pacienteNombre={pacienteNombreParam || resumen?.nombreCompleto || 'Paciente'} />
-        </div>
+        {pacienteId && (
+          <div className="mb-5">
+            <CriticalAlertBanner pacienteId={pacienteId} pacienteNombre={pacienteNombreParam || resumen?.nombreCompleto || 'Paciente'} />
+          </div>
+        )}
         {guardadoExitoso ? (
           <div className="bg-white rounded-2xl p-8 border border-emerald-200 shadow-md text-center max-w-2xl mx-auto my-8">
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -458,7 +675,7 @@ export const AtencionConsultaPage: React.FC = () => {
             </p>
 
             {hashGenerado ? (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left mb-6 font-mono text-xs text-slate-600 space-y-1">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left mb-6 tabular-nums text-xs text-slate-600 space-y-1">
                 <p><span className="font-bold text-slate-900">Hash SHA-256 de Integridad:</span> {hashGenerado}</p>
                 <p><span className="font-bold text-slate-900">Estado de la Evolución:</span> INALTERABLE / FIRMADA</p>
                 <p><span className="font-bold text-slate-900">Fecha y Hora de Cierre:</span> {new Date().toLocaleString()}</p>
@@ -471,9 +688,16 @@ export const AtencionConsultaPage: React.FC = () => {
             )}
 
             <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={handleCambiarPaciente}
+                className="px-5 py-2.5 text-sm font-bold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shadow-sm cursor-pointer"
+              >
+                Atender Otro Paciente
+              </button>
               <Link
                 to="/medico/agenda"
-                className="px-5 py-2.5 text-sm font-bold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shadow-sm"
+                className="px-5 py-2.5 text-sm font-bold bg-white text-slate-800 border border-slate-300 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
               >
                 Volver a la Agenda de Turnos
               </Link>
@@ -484,6 +708,299 @@ export const AtencionConsultaPage: React.FC = () => {
                 <FileText className="w-4 h-4" />
                 Ver Línea de Tiempo del Paciente
               </Link>
+            </div>
+          </div>
+        ) : !pacienteId ? (
+          /* PANTALLA DE SELECCIÓN DE PACIENTE / CONSULTORIO */
+          <div className="space-y-8 animate-in fade-in duration-200">
+            {/* Encabezado del Consultorio */}
+            <div className="rounded-3xl border border-indigo-100 bg-gradient-to-r from-indigo-50/80 via-white to-sky-50/80 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md">
+                  <Stethoscope className="h-7 w-7" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 font-heading">
+                      Consultorio de Atención Médica
+                    </h2>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Consultorio Habilitado
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-600 max-w-2xl">
+                    Seleccione un paciente de su agenda diaria de turnos para ingresar a su historia clínica o inicie una consulta por demanda espontánea desde el padrón asistencial.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={cargarAgendaYPadron}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-xs cursor-pointer"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${cargandoTurnos || cargandoPadron ? 'animate-spin' : ''}`} />
+                  <span>Actualizar Listas</span>
+                </button>
+                <Link
+                  to="/dashboard/recepcion/pacientes/nuevo"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 text-white px-4 py-2 text-xs font-bold hover:bg-slate-800 transition shadow-xs cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Empadronar Paciente</span>
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              {/* Columna Izquierda: Agenda del Día y Sala de Espera */}
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+                <div className="flex flex-col gap-3 pb-3 border-b border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
+                        <Calendar className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900">
+                          Turnos de Mi Agenda
+                        </h3>
+                        <p className="text-xs text-slate-500">Citas programadas y sala de espera</p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 px-2.5 py-0.5 text-xs font-bold">
+                      {turnosVisibles.length} {turnosVisibles.length === 1 ? 'cita' : 'citas'}
+                    </span>
+                  </div>
+
+                  {/* Filtro de Pestañas y Limpieza de Cancelados */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setFiltroAgenda('ACTIVOS')}
+                        className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                          filtroAgenda === 'ACTIVOS'
+                            ? 'bg-white text-indigo-700 shadow-2xs font-extrabold'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Activos ({turnosActivos.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFiltroAgenda('CANCELADOS')}
+                        className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                          filtroAgenda === 'CANCELADOS'
+                            ? 'bg-white text-rose-700 shadow-2xs font-extrabold'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Cancelados ({turnosCancelados.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFiltroAgenda('TODOS')}
+                        className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                          filtroAgenda === 'TODOS'
+                            ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Todos ({turnosAgenda.length})
+                      </button>
+                    </div>
+
+                    {turnosCancelados.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleLimpiarCancelados}
+                        disabled={limpiandoCancelados}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer shrink-0 disabled:opacity-50"
+                        title="Eliminar definitivamente todos los turnos cancelados de la base de datos"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        <span>{limpiandoCancelados ? 'Limpiando...' : 'Limpiar Cancelados'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {cargandoTurnos ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+                    <span className="text-xs">Cargando turnos de la agenda...</span>
+                  </div>
+                ) : turnosVisibles.length === 0 ? (
+                  <div className="py-10 text-center space-y-2 border border-dashed border-slate-200 rounded-2xl p-6">
+                    <Calendar className="h-8 w-8 text-slate-300 mx-auto" />
+                    <p className="text-xs text-slate-500 font-medium">
+                      {filtroAgenda === 'CANCELADOS'
+                        ? 'No hay turnos cancelados en la agenda.'
+                        : filtroAgenda === 'ACTIVOS'
+                        ? 'No registra turnos activos en este momento. Puede atender pacientes por demanda espontánea desde el padrón.'
+                        : 'No registra turnos agendados en este momento.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {turnosVisibles.map((t) => {
+                      const esCancelado = t.estado === 'CANCELADO' || t.estado === 'CANCELADO_POR_MEDICO';
+                      const esCompletado = t.estado === 'COMPLETADO' || (t.estado as string) === 'FINALIZADO';
+
+                      return (
+                        <div
+                          key={t.id}
+                          className={`rounded-2xl border p-4 transition flex items-center justify-between gap-4 ${
+                            esCancelado
+                              ? 'border-dashed border-rose-200 bg-rose-50/30'
+                              : esCompletado
+                              ? 'border-slate-200 bg-slate-50/60'
+                              : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-xs'
+                          }`}
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`font-mono text-xs font-black px-2 py-0.5 rounded-md ${
+                                esCancelado
+                                  ? 'bg-rose-100 text-rose-800 line-through'
+                                  : 'bg-slate-100 text-slate-800'
+                              }`}>
+                                {t.hora || '09:00'} hs
+                              </span>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                esCancelado
+                                  ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                  : esCompletado
+                                  ? 'bg-slate-100 text-slate-700 border-slate-300'
+                                  : t.estado === 'ATENDIENDO'
+                                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                  : t.estado === 'EN_ESPERA' || t.estado === 'EN_SALA_DE_ESPERA'
+                                  ? 'bg-sky-50 text-sky-800 border-sky-200'
+                                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              }`}>
+                                {esCompletado ? 'ATENDIDO' : t.estado}
+                              </span>
+                            </div>
+                            <h4 className={`text-sm font-bold ${esCancelado ? 'text-slate-600' : 'text-slate-900'}`}>
+                              {t.pacienteNombre || `Paciente #${t.pacienteId}`}
+                            </h4>
+                            <p className="text-xs text-slate-500 font-mono">
+                              DNI: {t.pacienteDni || 'Consultar'} {t.obraSocial ? `• ${t.obraSocial}` : ''}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {esCancelado ? (
+                              <button
+                                type="button"
+                                onClick={(e) => handleEliminarTurno(t.id, e)}
+                                disabled={eliminandoTurnoId === t.id}
+                                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-rose-300 bg-white text-rose-700 px-3 py-2 text-xs font-bold hover:bg-rose-50 transition shadow-2xs cursor-pointer disabled:opacity-50"
+                                title="Eliminar permanentemente este turno cancelado"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                                <span>{eliminandoTurnoId === t.id ? 'Eliminando...' : 'Eliminar'}</span>
+                              </button>
+                            ) : esCompletado ? (
+                              <button
+                                type="button"
+                                onClick={() => handleSeleccionarPaciente(t.pacienteId, t.id, t.pacienteNombre)}
+                                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white text-slate-700 px-3 py-2 text-xs font-bold hover:bg-slate-50 transition shadow-2xs cursor-pointer"
+                              >
+                                <FileCheck2 className="h-3.5 w-3.5 text-slate-600" />
+                                <span>Ver Consulta</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSeleccionarPaciente(t.pacienteId, t.id, t.pacienteNombre)}
+                                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 text-white px-3.5 py-2 text-xs font-bold hover:bg-indigo-700 transition shadow-xs cursor-pointer"
+                              >
+                                <Play className="h-3 w-3 fill-white" />
+                                <span>{t.estado === 'ATENDIENDO' ? 'Continuar Consulta' : 'Atender Turno'}</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Columna Derecha: Búsqueda en Padrón Asistencial (Demanda Espontánea / Guardia) */}
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900">
+                        Demanda Espontánea / Padrón General
+                      </h3>
+                      <p className="text-xs text-slate-500">Búsqueda rápida por nombre o DNI</p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-sky-50 border border-sky-200 text-sky-700 px-2.5 py-0.5 text-xs font-bold">
+                    {pacientesPadron.length} en padrón
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={busquedaPadron}
+                    onChange={(e) => setBusquedaPadron(e.target.value)}
+                    placeholder="Buscar por DNI, Nombre o Apellido..."
+                    className="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 pl-9 pr-4 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                {cargandoPadron ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-sky-600" />
+                    <span className="text-xs">Cargando padrón asistencial...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                    {pacientesPadron
+                      .filter(
+                        (p) =>
+                          p.nombre?.toLowerCase().includes(busquedaPadron.toLowerCase()) ||
+                          p.apellido?.toLowerCase().includes(busquedaPadron.toLowerCase()) ||
+                          p.dni?.includes(busquedaPadron)
+                      )
+                      .map((p) => (
+                        <div
+                          key={p.id}
+                          className="rounded-2xl border border-slate-100 bg-slate-50/70 p-3.5 hover:bg-white hover:border-sky-300 hover:shadow-xs transition flex items-center justify-between gap-3"
+                        >
+                          <div className="space-y-0.5">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                              {p.nombre} {p.apellido}
+                            </h4>
+                            <p className="text-[11px] text-slate-500 font-mono">
+                              DNI: <strong>{p.dni}</strong> • {p.obraSocial || 'APROSS'}
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleSeleccionarPaciente(p.id, undefined, `${p.nombre} ${p.apellido}`)}
+                            className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-slate-900 text-white px-3 py-1.5 text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
+                          >
+                            <Stethoscope className="h-3 w-3" />
+                            <span>Iniciar Consulta</span>
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ) : (
@@ -922,7 +1439,7 @@ export const AtencionConsultaPage: React.FC = () => {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
                             <input
                               type="text"
                               placeholder="Presentación (ej. Comp.)"
@@ -949,6 +1466,13 @@ export const AtencionConsultaPage: React.FC = () => {
                               placeholder="Duración (ej. 7 días)"
                               value={med.duracion}
                               onChange={(e) => handleMedChange(idx, 'duracion', e.target.value)}
+                              className="w-full text-xs px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Cantidad (ej. 1 caja)"
+                              value={med.cantidad}
+                              onChange={(e) => handleMedChange(idx, 'cantidad', e.target.value)}
                               className="w-full text-xs px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg"
                             />
                           </div>

@@ -303,7 +303,7 @@ export const PharmacyValidationView: React.FC = () => {
             <div>
               <h4 className="font-bold text-sm">Dispensación Registrada con Éxito</h4>
               <p className="text-xs text-emerald-800 mt-0.5">{dispensacionExitosa}</p>
-              <p className="text-[11px] text-emerald-700 mt-1 font-mono">
+              <p className="text-[11px] text-emerald-700 mt-1">
                 La receta ha sido anulada para futuros expendios en el sistema central de ESU.
               </p>
             </div>
@@ -319,7 +319,7 @@ export const PharmacyValidationView: React.FC = () => {
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                   Código de Receta Digital
                 </span>
-                <h3 className="text-lg font-black text-slate-900 font-mono tracking-tight flex items-center gap-2">
+                <h3 className="text-lg font-black text-slate-900 tabular-nums tracking-tight flex items-center gap-2">
                   {receta.codigoReceta}
                 </h3>
               </div>

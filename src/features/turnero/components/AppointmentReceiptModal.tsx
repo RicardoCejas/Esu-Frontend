@@ -108,7 +108,7 @@ Guardia Hospital Aurelio Crespo: 107 / (03549) 422111
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-500 text-white shadow-xl shadow-emerald-500/30 animate-bounce">
             <CheckCircle2 className="h-9 w-9" />
           </div>
-          <DialogTitle className="text-2xl font-extrabold text-foreground font-heading">
+          <DialogTitle className="text-2xl font-extrabold text-foreground">
             ¡Turno Confirmado Exitosamente!
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground max-w-xs mx-auto">
@@ -132,7 +132,7 @@ Guardia Hospital Aurelio Crespo: 107 / (03549) 422111
               <span className="text-[10px] font-extrabold uppercase tracking-widest text-sky-700">
                 Código de Turno Oficial
               </span>
-              <p className="text-2xl font-mono font-extrabold text-sky-950 tracking-tight">
+              <p className="text-2xl tabular-nums font-extrabold text-sky-950 tracking-tight">
                 {appointment.bookingCode}
               </p>
             </div>
@@ -146,7 +146,7 @@ Guardia Hospital Aurelio Crespo: 107 / (03549) 422111
           <div className="flex items-center justify-center rounded-2xl border border-dashed border-sky-300 bg-white p-4 shadow-inner">
             <div className="flex flex-col items-center gap-2">
               <QrCode className="h-24 w-24 text-slate-800" />
-              <span className="text-[10px] font-mono font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded">
+              <span className="text-[10px] tabular-nums font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded">
                 {appointment.bookingCode}
               </span>
             </div>
@@ -185,7 +185,7 @@ Guardia Hospital Aurelio Crespo: 107 / (03549) 422111
                 Paciente: <strong className="text-foreground">{appointment.patient.firstName} {appointment.patient.lastName}</strong>
               </div>
               <div>
-                DNI: <strong className="font-mono text-foreground">{appointment.patient.dni}</strong>
+                DNI: <strong className="tabular-nums text-foreground">{appointment.patient.dni}</strong>
               </div>
             </div>
           </div>

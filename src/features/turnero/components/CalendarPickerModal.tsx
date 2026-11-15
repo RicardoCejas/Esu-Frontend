@@ -154,7 +154,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-teal-200 block">
                   Calendario de Turnos
                 </span>
-                <h3 className="text-base sm:text-lg font-bold font-heading text-white leading-tight">
+                <h3 className="text-base sm:text-lg font-bold text-white leading-tight">
                   Seleccionar Fecha de Atención
                 </h3>
               </div>
@@ -198,7 +198,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
               <ChevronLeft className="size-4" />
             </button>
 
-            <span className="text-sm sm:text-base font-extrabold text-slate-900 font-heading">
+            <span className="text-sm sm:text-base font-extrabold text-slate-900">
               {monthNameCapitalized}
             </span>
 

@@ -143,7 +143,7 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
               <ShieldCheck className="h-4 w-4 text-white" />
               <span>Profesionales Matriculados • Cruz del Eje</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-heading text-slate-900 dark:text-white leading-tight">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
               Nuestro Cuerpo Médico
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl">
@@ -277,10 +277,10 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
                         <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-white bg-emerald-700 px-2 py-0.5 rounded-full mb-1">
                           ✓ En Cartilla Activa
                         </span>
-                        <h3 className="font-extrabold text-base text-slate-900 dark:text-white font-heading leading-tight truncate">
+                        <h3 className="font-extrabold text-base text-slate-900 dark:text-white leading-tight truncate">
                           Dr(a). {med.nombre} {med.apellido}
                         </h3>
-                        <p className="font-mono text-[11px] font-bold text-sky-700 dark:text-sky-400 mt-0.5">
+                        <p className="tabular-nums text-[11px] font-bold text-sky-700 dark:text-sky-400 mt-0.5">
                           {med.matricula}
                         </p>
                       </div>
@@ -357,7 +357,7 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
                         <div className="flex items-center gap-2 pb-2 border-b border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300">
                           <Award className="h-4 w-4 text-amber-500 shrink-0" />
                           <span className="font-semibold">
-                            Matrícula Provincial: <strong className="font-mono text-sky-700 dark:text-sky-400">{med.matricula}</strong>
+                            Matrícula Provincial: <strong className="tabular-nums text-sky-700 dark:text-sky-400">{med.matricula}</strong>
                           </span>
                         </div>
 
@@ -429,7 +429,7 @@ export const StaffMedicosSection: React.FC<StaffMedicosSectionProps> = ({
               <Activity className="h-7 w-7" />
             </div>
             <div>
-              <h4 className="font-extrabold text-lg text-white font-heading">
+              <h4 className="font-extrabold text-lg text-white">
                 ¿Sos profesional médico en Cruz del Eje y querés sumar tu agenda a Luvia?
               </h4>
               <p className="text-xs sm:text-sm text-sky-100/80 mt-1">

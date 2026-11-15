@@ -3,6 +3,7 @@ import type { Turno, EstadoTurno } from '@/types';
 export function normalizeEstado(raw: unknown): EstadoTurno {
   const s = String(raw ?? 'PENDIENTE').trim().toUpperCase();
   if (s === 'ATENDIDO' || s === 'FINALIZADO' || s === 'COMPLETADO') return 'COMPLETADO';
+  if (s === 'DISPONIBLE') return 'DISPONIBLE';
   if (
     s === 'PENDIENTE' ||
     s === 'CONFIRMADO' ||

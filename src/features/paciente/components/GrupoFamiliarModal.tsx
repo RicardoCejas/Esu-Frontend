@@ -153,7 +153,7 @@ export const GrupoFamiliarModal: React.FC<GrupoFamiliarModalProps> = ({
                     </span>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                    <span className="flex items-center gap-1 font-mono">
+                    <span className="flex items-center gap-1 tabular-nums">
                       <Fingerprint className="h-3 w-3" /> {fam.dni}
                     </span>
                     <span>•</span>
@@ -246,7 +246,7 @@ export const GrupoFamiliarModal: React.FC<GrupoFamiliarModalProps> = ({
                   value={nuevoDni}
                   onChange={(e) => setNuevoDni(e.target.value)}
                   placeholder="Sin puntos"
-                  className="w-full mt-1 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-mono"
+                  className="w-full mt-1 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs"
                 />
               </div>
               <div>
@@ -282,7 +282,7 @@ export const GrupoFamiliarModal: React.FC<GrupoFamiliarModalProps> = ({
                   value={nuevoNroAfiliado}
                   onChange={(e) => setNuevoNroAfiliado(e.target.value)}
                   placeholder="Opcional"
-                  className="w-full mt-1 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-mono"
+                  className="w-full mt-1 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs"
                 />
               </div>
             </div>

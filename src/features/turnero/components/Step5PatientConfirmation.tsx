@@ -81,7 +81,7 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
   return (
     <section className="space-y-4">
       <div>
-        <h2 className="text-base font-bold text-slate-900 sm:text-lg font-heading">
+        <h2 className="text-base font-bold text-slate-900 sm:text-lg">
           5. Confirmación de Cita y Datos del Paciente
         </h2>
         <p className="text-xs text-slate-500">
@@ -97,7 +97,7 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
               <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                 Resumen de Cita
               </span>
-              <h3 className="text-sm font-bold text-white font-heading">
+              <h3 className="text-sm font-bold text-white">
                 Verificación de Turno
               </h3>
             </div>
@@ -134,7 +134,7 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Atención</p>
                       <p className="font-bold text-slate-900">Servicio Diagnóstico Centralizado</p>
-                      <p className="text-slate-600 font-mono text-[11px]">Asignado por equipamiento y orden de llegada</p>
+                      <p className="text-slate-600 text-[11px]">Asignado por equipamiento y orden de llegada</p>
                     </div>
                   </div>
                 </>
@@ -157,7 +157,7 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Profesional</p>
                       <p className="font-bold text-slate-900">{selectedDoctor?.name || 'Profesional'}</p>
-                      <p className="text-slate-600 font-mono text-[11px]">{selectedDoctor?.licenseNumber || ''}</p>
+                      <p className="text-slate-600 tabular-nums text-[11px]">{selectedDoctor?.licenseNumber || ''}</p>
                     </div>
                   </div>
                 </>
@@ -200,7 +200,7 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                   <span>Reserva Registrada en el Sistema de Salud</span>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900 font-heading">
+                  <h3 className="text-xl font-bold text-slate-900">
                     Turno Confirmado con Éxito
                   </h3>
                   <p className="text-xs text-slate-600 mt-1">
@@ -213,7 +213,7 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
                     <span className="font-semibold text-slate-500">
                       {createdAppointment.codigoVerificacion ? 'Código de Turno:' : 'Identificador de Turno:'}
                     </span>{' '}
-                    <span className="font-mono font-bold text-sky-800 text-sm">
+                    <span className="tabular-nums font-bold text-sky-800 text-sm">
                       {createdAppointment.codigoVerificacion || `#${createdAppointment.id}`}
                     </span>
                   </p>
@@ -256,7 +256,7 @@ export const Step5PatientConfirmation: React.FC<Step5PatientConfirmationProps> =
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 font-heading">
+                    <h3 className="text-sm font-bold text-slate-900">
                       Datos Personales del Paciente
                     </h3>
                     <p className="text-xs text-slate-500">

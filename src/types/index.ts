@@ -1,6 +1,49 @@
 export type BackendUserRole = 'PACIENTE' | 'PROFESIONAL' | 'RECEPCIONISTA' | 'ADMIN';
 export type UserRole = 'PACIENTE' | 'MEDICO' | 'PROFESIONAL' | 'RECEPCIONISTA' | 'ADMIN';
 
+export type PermissionCode =
+  | 'TURNOS_VER'
+  | 'TURNOS_CREAR'
+  | 'TURNOS_CANCELAR'
+  | 'TURNOS_REAGENDAR'
+  | 'SOBRETURNOS_CREAR'
+  | 'SALA_ESPERA_GESTIONAR'
+  | 'PACIENTES_VER'
+  | 'PACIENTES_REGISTRAR'
+  | 'PACIENTES_FUSIONAR'
+  | 'CONSULTORIOS_VER'
+  | 'CONSULTORIOS_ADMINISTRAR'
+  | 'MEDICOS_VER'
+  | 'MEDICOS_ASIGNAR_CONSULTORIO'
+  | 'REPORTES_VER'
+  | 'USUARIOS_ADMINISTRAR';
+
+export const DEFAULT_PERMISSIONS_BY_ROLE: Record<string, PermissionCode[]> = {
+  ADMIN: [
+    'TURNOS_VER', 'TURNOS_CREAR', 'TURNOS_CANCELAR', 'TURNOS_REAGENDAR', 'SOBRETURNOS_CREAR',
+    'SALA_ESPERA_GESTIONAR', 'PACIENTES_VER', 'PACIENTES_REGISTRAR', 'PACIENTES_FUSIONAR',
+    'CONSULTORIOS_VER', 'CONSULTORIOS_ADMINISTRAR', 'MEDICOS_VER', 'MEDICOS_ASIGNAR_CONSULTORIO',
+    'REPORTES_VER', 'USUARIOS_ADMINISTRAR',
+  ],
+  RECEPCIONISTA: [
+    'TURNOS_VER', 'TURNOS_CREAR', 'TURNOS_CANCELAR', 'TURNOS_REAGENDAR', 'SOBRETURNOS_CREAR',
+    'SALA_ESPERA_GESTIONAR', 'PACIENTES_VER', 'PACIENTES_REGISTRAR', 'CONSULTORIOS_VER',
+    'CONSULTORIOS_ADMINISTRAR', 'MEDICOS_VER', 'MEDICOS_ASIGNAR_CONSULTORIO',
+    'REPORTES_VER', 'USUARIOS_ADMINISTRAR',
+  ],
+  MEDICO: ['TURNOS_VER', 'PACIENTES_VER', 'CONSULTORIOS_VER', 'MEDICOS_VER'],
+  PROFESIONAL: ['TURNOS_VER', 'PACIENTES_VER', 'CONSULTORIOS_VER', 'MEDICOS_VER'],
+  PACIENTE: [],
+};
+
+export interface Permiso {
+  id: number;
+  codigo: PermissionCode;
+  nombre: string;
+  modulo: string;
+  descripcion?: string;
+}
+
 export interface User {
   id: string;
   usuarioId?: string;
@@ -25,6 +68,7 @@ export interface User {
   isDeveloper?: boolean;
   fechaNacimiento?: string;
   dniVerificado?: boolean;
+  permisos?: PermissionCode[];
 }
 
 export interface CentroSalud {
@@ -36,9 +80,12 @@ export interface CentroSalud {
   ciudad: string;
   horarioAtencion: string;
   disponibleGuardia: boolean;
+  latitud?: number;
+  longitud?: number;
   activo?: boolean;
   permiteConsultas?: boolean;
   permiteEstudios?: boolean;
+  cantidadPlantas?: number;
   estudiosDisponibles?: string[];
 }
 
@@ -54,6 +101,8 @@ export interface Profesional {
   nombre: string;
   apellido: string;
   matricula: string;
+  telefono?: string;
+  activo?: boolean;
   especialidadId: string;
   especialidadNombre: string;
   centrosSaludIds: string[];
@@ -93,6 +142,9 @@ export interface DisponibilidadProfesional {
   intervaloMinutos: number; // 15, 20, 30
   centroSaludId: string;
   centroSaludNombre?: string;
+  consultorioId?: string;
+  consultorioNumero?: string;
+  planta?: string;
   activo?: boolean;
 }
 
@@ -103,6 +155,7 @@ export interface DisponibilidadRequest {
   horaFin: string;
   intervaloMinutos: number;
   centroSaludId: string;
+  consultorioId?: string;
 }
 
 // HU-FE-62: Bloqueo de Agenda Médica
@@ -146,7 +199,8 @@ export type EstadoTurno =
   | 'COMPLETADO'
   | 'CANCELADO'
   | 'CANCELADO_POR_MEDICO'
-  | 'AUSENTE';
+  | 'AUSENTE'
+  | 'DISPONIBLE';
 
 export interface ConsultorioFisico {
   id: string;
@@ -205,6 +259,8 @@ export interface SobreturnoRequest {
   centroSaludId: string;
   fecha: string; // YYYY-MM-DD
   hora?: string;  // HH:mm
+  consultorioNumero?: string;
+  planta?: string;
   motivoSobreturno: string;
 }
 
@@ -483,3 +539,53 @@ export interface RecetaDigitalDto {
   fechaAnulacion?: string;
   medicamentos: MedicamentoRecetaDto[];
 }
+
+export interface CarnetDigital {
+  pacienteId: number | string;
+  nombreCompleto: string;
+  dni: string;
+  nroAfiliado: string;
+  obraSocial: string;
+  grupoSanguineo?: string;
+  fechaEmision: string;
+  estadoActivo: boolean;
+  tokenVerificacion: string;
+  qrPayload: string;
+}
+
+export interface Familiar {
+  id: string | number;
+  titularId: string | number;
+  nombre: string;
+  apellido: string;
+  dni: string;
+  tipoVinculo: string;
+  obraSocial?: string;
+  nroAfiliado?: string;
+  fechaCreacion?: string;
+}
+
+export interface FamiliarRequest {
+  nombre: string;
+  apellido: string;
+  dni: string;
+  tipoVinculo: string;
+  obraSocial?: string;
+  nroAfiliado?: string;
+}
+
+export interface PacienteFormValues {
+  nombre: string;
+  apellido: string;
+  dni: string;
+  telefono: string;
+  email: string;
+  obraSocial: string;
+  otraObraSocial: string;
+  nroAfiliado: string;
+  grupoSanguineo: string;
+  fechaNacimiento: string;
+  activo: boolean;
+}
+
+export type PacienteFormErrors = Partial<Record<keyof PacienteFormValues, string>>;

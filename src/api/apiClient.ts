@@ -2,10 +2,11 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { tokenStorage, refreshSingleFlight } from './tokenStorage';
 import { getCsrfTokenFromCookie } from '@/lib/sanitizer';
 import { authBroadcast } from '@/lib/authBroadcast';
+import { authSessionStorage } from '@/lib/authSessionStorage';
 
 function normalizeBaseUrl(rawUrl?: string): string {
   if (!rawUrl || !rawUrl.trim()) {
-    return import.meta.env.DEV ? 'http://localhost:8080/api' : '/api';
+    return import.meta.env.DEV ? 'http://localhost:8080/api' : 'https://esu-backend.onrender.com/api';
   }
   let clean = rawUrl.trim().replace(/\/+$/, '');
   if (clean.startsWith('http') && !clean.endsWith('/api')) {
@@ -120,7 +121,7 @@ apiClient.interceptors.response.use(
         processQueue(refreshErr, null);
         if (typeof window !== 'undefined') {
           tokenStorage.clearToken();
-          window.sessionStorage.removeItem('esu_session_active');
+          authSessionStorage.clearSessionActive();
           authBroadcast.postMessage({ type: 'LOGOUT', reason: 'expired' });
         }
         return Promise.reject(refreshErr);

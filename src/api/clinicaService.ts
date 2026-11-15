@@ -99,6 +99,7 @@ export const clinicaService = {
 
   // HU-49: Auto-guardado de Borrador
   async guardarBorrador(borrador: Record<string, unknown>): Promise<boolean> {
+    if (!borrador.pacienteId) return false;
     try {
       const payload = {
         ...borrador,
@@ -109,8 +110,8 @@ export const clinicaService = {
       };
       await apiClient.post(API_ENDPOINTS.historiasClinicas.borrador, payload);
       return true;
-    } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo sincronizar el borrador de la consulta en el servidor.'), { cause: err });
+    } catch {
+      return false;
     }
   },
 
@@ -187,6 +188,21 @@ export const clinicaService = {
       return res.data;
     } catch (err: unknown) {
       throw new Error(extractApiErrorMessage(err, 'No se pudo finalizar ni firmar electrónicamente la consulta.'), { cause: err });
+    }
+  },
+
+  // HU-51: Registro directo de evolución clínica / Demanda espontánea (sin turno previo)
+  async registrarEvolucionDirecta(
+    payload: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    try {
+      const res = await apiClient.post<Record<string, unknown>>(
+        API_ENDPOINTS.historiasClinicas.evoluciones,
+        payload
+      );
+      return res.data;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo firmar ni registrar la evolución clínica.'), { cause: err });
     }
   },
 

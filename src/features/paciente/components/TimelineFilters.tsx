@@ -152,7 +152,7 @@ export const TimelineFilters: React.FC<TimelineFiltersProps> = ({
           })}
         </div>
 
-        <span className="text-xs text-muted-foreground font-mono">
+        <span className="text-xs text-muted-foreground tabular-nums">
           {resultadosCount} {resultadosCount === 1 ? 'coincidencia' : 'coincidencias'}
         </span>
       </div>

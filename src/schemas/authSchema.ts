@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DNI_REGEX, DNI_VALIDATION_ERROR } from '../lib/dniValidation.ts';
 
 export const loginSchema = z.object({
   emailOrDni: z
@@ -17,9 +18,8 @@ export const registerSchema = z.object({
   apellido: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
   dni: z
     .string()
-    .min(7, 'El DNI debe tener al menos 7 dígitos')
-    .max(8, 'El DNI no puede superar los 8 dígitos')
-    .regex(/^\d+$/, 'El DNI debe contener solo números'),
+    .trim()
+    .regex(DNI_REGEX, DNI_VALIDATION_ERROR),
   email: z.string().email('Ingrese un email válido'),
   telefono: z.string().min(10, 'Ingrese un teléfono de contacto válido'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
