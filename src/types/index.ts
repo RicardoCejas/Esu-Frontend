@@ -276,6 +276,7 @@ export interface ConsultaMedica {
   centroSaludId?: string | number;
   centroSaludNombre?: string;
   fecha: string;
+  hora?: string;
   motivo: string;
   diagnostico: string;
   codigoCie10?: string;
@@ -518,6 +519,9 @@ export interface RecetaDigitalDto {
   pacienteId: number | string;
   pacienteNombre?: string;
   pacienteDni?: string;
+  pacienteObraSocial?: string;
+  pacienteNroAfiliado?: string;
+  tokenObraSocial?: string;
   profesionalId: number | string;
   profesionalNombre: string;
   profesionalMatricula?: string;

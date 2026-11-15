@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { centrosService, type ConsultorioItem } from '@/api/centrosService';
+import { CENTROS_QUERY_KEY } from '@/hooks/queries/useCentrosQuery';
 import { extractApiErrorMessage } from '@/api/endpoints';
 import type { CentroSalud } from '@/types';
 import {
@@ -18,6 +20,7 @@ import {
 import { useToast } from '@/context/ToastContext';
 
 export const AdminSedesPage: React.FC = () => {
+  const queryClient = useQueryClient();
   const { success, error: toastError } = useToast();
   const [centros, setCentros] = useState<CentroSalud[]>([]);
   const [consultorios, setConsultorios] = useState<ConsultorioItem[]>([]);
@@ -36,6 +39,8 @@ export const AdminSedesPage: React.FC = () => {
     ciudad: 'Cruz del Eje',
     horarioAtencion: 'Lunes a Viernes 08:00 a 20:00',
     disponibleGuardia: false,
+    permiteConsultas: true,
+    permiteEstudios: false,
   });
 
   const [sedeAEliminar, setSedeAEliminar] = useState<CentroSalud | null>(null);
@@ -71,6 +76,8 @@ export const AdminSedesPage: React.FC = () => {
       ciudad: 'Cruz del Eje',
       horarioAtencion: 'Lunes a Viernes 08:00 a 20:00',
       disponibleGuardia: false,
+      permiteConsultas: true,
+      permiteEstudios: false,
     });
     setModalCentroOpen(true);
   };
@@ -85,6 +92,8 @@ export const AdminSedesPage: React.FC = () => {
       ciudad: centro.ciudad,
       horarioAtencion: centro.horarioAtencion,
       disponibleGuardia: centro.disponibleGuardia,
+      permiteConsultas: centro.permiteConsultas !== false,
+      permiteEstudios: centro.permiteEstudios === true,
     });
     setModalCentroOpen(true);
   };
@@ -101,6 +110,7 @@ export const AdminSedesPage: React.FC = () => {
         success(`Sede "${centroForm.nombre}" creada con éxito.`);
       }
       setModalCentroOpen(false);
+      await queryClient.invalidateQueries({ queryKey: CENTROS_QUERY_KEY });
       cargarDatos();
     } catch (err: unknown) {
       toastError(extractApiErrorMessage(err, 'No se pudo guardar la información de la sede.'));
@@ -116,6 +126,7 @@ export const AdminSedesPage: React.FC = () => {
       await centrosService.deleteCentro(sedeAEliminar.id);
       success(`Sede "${sedeAEliminar.nombre}" eliminada del sistema.`);
       setSedeAEliminar(null);
+      await queryClient.invalidateQueries({ queryKey: CENTROS_QUERY_KEY });
       cargarDatos();
     } catch (err: unknown) {
       toastError(extractApiErrorMessage(err, 'No se pudo eliminar la sede seleccionada.'));
@@ -327,17 +338,43 @@ export const AdminSedesPage: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="disponibleGuardia"
-                  checked={centroForm.disponibleGuardia}
-                  onChange={(e) => setCentroForm({ ...centroForm, disponibleGuardia: e.target.checked })}
-                  className="h-4 w-4 rounded cursor-pointer"
-                />
-                <label htmlFor="disponibleGuardia" className="cursor-pointer select-none">
-                  Dispone de servicio de guardia médica activa 24h
-                </label>
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="permiteConsultas"
+                    checked={centroForm.permiteConsultas}
+                    onChange={(e) => setCentroForm({ ...centroForm, permiteConsultas: e.target.checked })}
+                    className="h-4 w-4 rounded cursor-pointer"
+                  />
+                  <label htmlFor="permiteConsultas" className="cursor-pointer select-none">
+                    Habilitado en el Turnero para consultas médicas
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="permiteEstudios"
+                    checked={centroForm.permiteEstudios}
+                    onChange={(e) => setCentroForm({ ...centroForm, permiteEstudios: e.target.checked })}
+                    className="h-4 w-4 rounded cursor-pointer"
+                  />
+                  <label htmlFor="permiteEstudios" className="cursor-pointer select-none">
+                    Habilitado para estudios diagnósticos
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="disponibleGuardia"
+                    checked={centroForm.disponibleGuardia}
+                    onChange={(e) => setCentroForm({ ...centroForm, disponibleGuardia: e.target.checked })}
+                    className="h-4 w-4 rounded cursor-pointer"
+                  />
+                  <label htmlFor="disponibleGuardia" className="cursor-pointer select-none">
+                    Dispone de servicio de guardia médica activa 24h
+                  </label>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t border-border mt-4">

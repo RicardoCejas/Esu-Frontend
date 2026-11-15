@@ -28,6 +28,8 @@ export const NuevoMedicoPage: React.FC = () => {
     password: '',
     telefono: '',
     diasAtencion: ['Lunes', 'Miércoles', 'Viernes'] as string[],
+    horaInicio: '08:00',
+    horaFin: '13:00',
     duracionTurnoMin: 20,
   });
 
@@ -95,6 +97,8 @@ export const NuevoMedicoPage: React.FC = () => {
         telefono: formData.telefono.trim(),
         centrosSaludIds: centrosIds,
         diasAtencion: formData.diasAtencion,
+        horaInicio: formData.horaInicio,
+        horaFin: formData.horaFin,
         duracionTurnoMin: Number(formData.duracionTurnoMin),
       });
 
@@ -282,6 +286,36 @@ export const NuevoMedicoPage: React.FC = () => {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Franja Horaria de Atención */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label htmlFor="medico-hora-inicio" className="text-xs font-bold text-foreground">
+              Hora de Inicio
+            </label>
+            <input
+              id="medico-hora-inicio"
+              type="time"
+              name="horaInicio"
+              value={formData.horaInicio}
+              onChange={handleChange}
+              className={inputCls}
+            />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="medico-hora-fin" className="text-xs font-bold text-foreground">
+              Hora de Fin
+            </label>
+            <input
+              id="medico-hora-fin"
+              type="time"
+              name="horaFin"
+              value={formData.horaFin}
+              onChange={handleChange}
+              className={inputCls}
+            />
           </div>
         </div>
 

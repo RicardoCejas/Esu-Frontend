@@ -109,6 +109,8 @@ export type CreateProfesionalPayload = Partial<Profesional> & {
   email?: string;
   password?: string;
   telefono?: string;
+  horaInicio?: string;
+  horaFin?: string;
 };
 
 export const profesionalesService = {
@@ -183,14 +185,16 @@ export const profesionalesService = {
       if (Array.isArray(data.diasAtencion) && data.diasAtencion.length > 0 && Array.isArray(data.centrosSaludIds) && data.centrosSaludIds.length > 0) {
         const centroId = String(data.centrosSaludIds[0]);
         const duracion = Number(data.duracionTurnoMin ?? 20);
+        const horaInicio = data.horaInicio || '08:00';
+        const horaFin = data.horaFin || '13:00';
         for (const dia of data.diasAtencion) {
           try {
             await this.configurarDisponibilidad(nuevo.id, {
               profesionalId: nuevo.id,
               centroSaludId: centroId,
               diaSemana: dia,
-              horaInicio: '08:00',
-              horaFin: '13:00',
+              horaInicio,
+              horaFin,
               intervaloMinutos: duracion,
             });
           } catch {

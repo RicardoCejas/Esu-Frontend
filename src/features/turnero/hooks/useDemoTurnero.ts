@@ -64,7 +64,12 @@ export function useDemoTurnero() {
         (centerId.includes('isabel') ? MOCK_CENTERS.find(c => c.id.includes('isabel')) : null)
       if (matchedCenter) {
         setSelectedCenter(matchedCenter)
-        if (!matchedCenter.permiteConsultas && matchedCenter.permiteEstudios) {
+        const catParam = (searchParams.get('categoria') || searchParams.get('tipoAtencion') || searchParams.get('category'))?.toUpperCase()
+        if (catParam === 'ESTUDIO' && matchedCenter.permiteEstudios) {
+          setTipoAtencion('ESTUDIO')
+        } else if (catParam === 'CONSULTA' && matchedCenter.permiteConsultas) {
+          setTipoAtencion('CONSULTA')
+        } else if (!matchedCenter.permiteConsultas && matchedCenter.permiteEstudios) {
           setTipoAtencion('ESTUDIO')
         } else {
           setTipoAtencion('CONSULTA')

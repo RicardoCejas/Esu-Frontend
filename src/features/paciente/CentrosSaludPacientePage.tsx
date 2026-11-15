@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Phone, Clock } from 'lucide-react';
+import { MapPin, Phone, Clock, Stethoscope, FlaskConical } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const CentrosSaludPacientePage: React.FC = () => {
@@ -13,6 +13,8 @@ export const CentrosSaludPacientePage: React.FC = () => {
       horario: 'Guardia Médica General y Pediátrica: 24 Horas Permanente',
       servicios: ['Guardia 24hs', 'Unidad de Terapia Intensiva (UTI)', 'Quirófanos', 'Internación', 'Laboratorio Central'],
       badge: 'Hospital Cabecera Regional',
+      permiteConsultas: true,
+      permiteEstudios: true,
     },
     {
       id: 'cde-clin-cabrera',
@@ -23,6 +25,8 @@ export const CentrosSaludPacientePage: React.FC = () => {
       horario: 'Lunes a Viernes de 08:00 a 20:00 hs',
       servicios: ['Consultorios Ambulatorios', 'Medicina General', 'Especialidades', 'Convenio APROSS / PAMI'],
       badge: 'Atención Obras Sociales',
+      permiteConsultas: true,
+      permiteEstudios: true,
     },
     {
       id: 'cde-centro-diag',
@@ -33,6 +37,20 @@ export const CentrosSaludPacientePage: React.FC = () => {
       horario: 'Lunes a Viernes de 07:30 a 20:00 hs',
       servicios: ['Tomografía Computada', 'Ecografía 4D & Doppler', 'Radiología Digital', 'Mamografía'],
       badge: 'Diagnóstico e Imágenes',
+      permiteConsultas: false,
+      permiteEstudios: true,
+    },
+    {
+      id: 'cde-sanat-isabel',
+      nombre: 'Sanatorio María Isabel',
+      tipo: 'Sanatorio Médico Quirúrgico',
+      direccion: 'España 230, Cruz del Eje',
+      telefono: '03549-422250',
+      horario: 'Lunes a Viernes de 08:00 a 20:00 hs',
+      servicios: ['Consultorios Externos', 'Cirugía Ambulatoria', 'Medicina Preventiva'],
+      badge: 'Clínica Privada',
+      permiteConsultas: true,
+      permiteEstudios: false,
     },
   ];
 
@@ -96,12 +114,49 @@ export const CentrosSaludPacientePage: React.FC = () => {
               </div>
             </div>
 
-            <Link
-              to={`/turnero?centroSaludId=${centro.id}`}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white py-2.5 text-xs font-bold transition shadow-xs"
-            >
-              <span>Solicitar Turno en este Centro</span>
-            </Link>
+            {centro.permiteConsultas && centro.permiteEstudios ? (
+              <div className="space-y-2 pt-3 border-t border-slate-100">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Seleccionar tipo de atención:
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to={`/turnero?centroSaludId=${centro.id}&categoria=CONSULTA`}
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white py-2.5 px-2 text-xs font-bold transition shadow-xs text-center"
+                  >
+                    <Stethoscope className="h-4 w-4 shrink-0" />
+                    <span>Consultorios</span>
+                  </Link>
+                  <Link
+                    to={`/turnero?centroSaludId=${centro.id}&categoria=ESTUDIO`}
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white py-2.5 px-2 text-xs font-bold transition shadow-xs text-center"
+                  >
+                    <FlaskConical className="h-4 w-4 shrink-0" />
+                    <span>Estudios</span>
+                  </Link>
+                </div>
+              </div>
+            ) : centro.permiteEstudios ? (
+              <div className="pt-3 border-t border-slate-100">
+                <Link
+                  to={`/turnero?centroSaludId=${centro.id}&categoria=ESTUDIO`}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white py-2.5 text-xs font-bold transition shadow-xs"
+                >
+                  <FlaskConical className="h-4 w-4 shrink-0" />
+                  <span>Solicitar Turno para Estudio Diagnóstico</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="pt-3 border-t border-slate-100">
+                <Link
+                  to={`/turnero?centroSaludId=${centro.id}&categoria=CONSULTA`}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white py-2.5 text-xs font-bold transition shadow-xs"
+                >
+                  <Stethoscope className="h-4 w-4 shrink-0" />
+                  <span>Solicitar Turno en Consultorios</span>
+                </Link>
+              </div>
+            )}
           </div>
         ))}
       </div>

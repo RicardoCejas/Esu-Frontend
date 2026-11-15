@@ -29,6 +29,9 @@ const CredencialPublicaPage = React.lazy(() => import('@/features/paciente/Crede
 // Vistas Médico
 const AgendaMedicaPage = React.lazy(() => import('@/features/medico/AgendaMedicaPage').then(m => ({ default: m.AgendaMedicaPage })));
 const AtencionConsultaPage = React.lazy(() => import('@/features/medico/AtencionConsultaPage').then(m => ({ default: m.AtencionConsultaPage })));
+const MedicoConsultasPage = React.lazy(() => import('@/features/medico/MedicoConsultasPage').then(m => ({ default: m.MedicoConsultasPage })));
+const MedicoRecetasPage = React.lazy(() => import('@/features/medico/MedicoRecetasPage').then(m => ({ default: m.MedicoRecetasPage })));
+const MedicoHistoriaClinicaPage = React.lazy(() => import('@/features/medico/MedicoHistoriaClinicaPage').then(m => ({ default: m.MedicoHistoriaClinicaPage })));
 
 // Vistas Recepción
 const RecepcionPage = React.lazy(() => import('@/features/recepcion/RecepcionPage').then(m => ({ default: m.RecepcionPage })));
@@ -131,6 +134,9 @@ export const AppRoutes: React.FC = () => {
               <Route element={<RoleGuard allowedRoles={['MEDICO']} />}>
                 <Route path="medico" element={<AgendaMedicaPage />} />
                 <Route path="medico/atencion" element={<AtencionConsultaPage />} />
+                <Route path="medico/consultas" element={<MedicoConsultasPage />} />
+                <Route path="medico/recetas" element={<MedicoRecetasPage />} />
+                <Route path="medico/seguimiento" element={<MedicoHistoriaClinicaPage />} />
               </Route>
 
               {/* Módulo Compartido Sala de Espera y Padrón (Recepción y Médico) */}

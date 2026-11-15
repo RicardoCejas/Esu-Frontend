@@ -174,6 +174,24 @@ export const clinicaService = {
     }
   },
 
+  // Emisión directa de receta digital oficial según Ley 27.553 (sin requerir turno activo)
+  async emitirReceta(datos: Record<string, unknown>): Promise<RecetaDigitalDto> {
+    try {
+      const payload = {
+        ...datos,
+        pacienteId: toNumericId(datos.pacienteId as string | number),
+        profesionalId: toNumericId(datos.profesionalId as string | number),
+        centroSaludEmisorId: datos.centroSaludEmisorId
+          ? toNumericId(datos.centroSaludEmisorId as string | number)
+          : undefined,
+      };
+      const res = await apiClient.post<RecetaDigitalDto>(API_ENDPOINTS.recetas.base, payload);
+      return res.data;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo emitir la receta médica digital.'), { cause: err });
+    }
+  },
+
   // HU-51: Finalización de atención médica y firma definitiva inalterable
   async finalizarAtencion(
     turnoId: string | number,

@@ -6,9 +6,11 @@ import { pacientesService } from '@/api/pacientesService';
 import { extractApiErrorMessage } from '@/api/endpoints';
 import { AuditoriaSesionesSection } from './components/AuditoriaSesionesSection';
 import { CambiarPasswordSection } from './components/CambiarPasswordSection';
+import { PerfilMedicoSection } from './components/PerfilMedicoSection';
 import { TwoFactorSetupModal } from '@/features/auth/TwoFactorSetupModal';
 import { ValidacionDniModal } from '@/components/auth/ValidacionDniModal';
 import { esPacienteDniVerificado } from '@/lib/identityValidation';
+import { OBRAS_SOCIALES_ARGENTINA } from '@/lib/obrasSociales';
 import {
   User,
   Phone,
@@ -46,19 +48,6 @@ interface PatientProfileData {
   condicionesCronicas: string;
   centroReferencia: string;
 }
-
-const BARRIOS_CRUZ_DEL_EJE = [
-  'Barrio Centro',
-  'Barrio San Cayetano',
-  'Barrio Hospital',
-  'Barrio Central',
-  'Barrio Las Playas',
-  'Barrio Rincón',
-  'Barrio Malvinas',
-  'Barrio La Rinconada',
-  'Barrio Palo Parado',
-  'Otro sector de Cruz del Eje',
-];
 
 const GRUPOS_SANGUINEOS = ['0+', '0-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
@@ -413,6 +402,10 @@ export const MiPerfilPage: React.FC = () => {
   const hcDniMostrar =
     user?.dni && !isPlaceholderValue(user.dni) ? user.dni.trim() : 'PENDIENTE';
 
+  if (user?.rol === 'MEDICO' || user?.rol === 'PROFESIONAL') {
+    return <PerfilMedicoSection />;
+  }
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
       {/* Encabezado Principal de Identidad */}
@@ -747,18 +740,14 @@ export const MiPerfilPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-slate-700">Barrio de Cruz del Eje</label>
-              <select
+              <label className="text-[11px] font-bold text-slate-700">Barrio</label>
+              <input
+                type="text"
                 value={formData.barrio}
                 onChange={(e) => handleChange('barrio', e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition cursor-pointer"
-              >
-                {BARRIOS_CRUZ_DEL_EJE.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
+                placeholder="Escribí tu barrio (ej: Centro, San Cayetano, Las Playas...)"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -814,13 +803,41 @@ export const MiPerfilPage: React.FC = () => {
           <div className="space-y-3 text-xs">
             <div>
               <label className="text-[11px] font-bold text-slate-700">Obra Social / Prepaga / Cobertura</label>
-              <input
-                type="text"
-                value={formData.obraSocial}
-                onChange={(e) => handleChange('obraSocial', e.target.value)}
-                placeholder="ej: APROSS, PAMI, SUMAR o Particular"
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
-              />
+              <select
+                value={
+                  OBRAS_SOCIALES_ARGENTINA.includes(formData.obraSocial)
+                    ? formData.obraSocial
+                    : formData.obraSocial && formData.obraSocial.trim() !== ''
+                    ? 'Otra Obra Social / Prepaga'
+                    : 'Particular'
+                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'Otra Obra Social / Prepaga') {
+                    if (OBRAS_SOCIALES_ARGENTINA.includes(formData.obraSocial)) {
+                      handleChange('obraSocial', 'Otra');
+                    }
+                  } else {
+                    handleChange('obraSocial', val);
+                  }
+                }}
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition cursor-pointer"
+              >
+                {OBRAS_SOCIALES_ARGENTINA.map((os) => (
+                  <option key={os} value={os}>
+                    {os}
+                  </option>
+                ))}
+              </select>
+              {(!OBRAS_SOCIALES_ARGENTINA.includes(formData.obraSocial) || formData.obraSocial === 'Otra Obra Social / Prepaga' || formData.obraSocial === 'Otra') && (
+                <input
+                  type="text"
+                  value={formData.obraSocial === 'Otra Obra Social / Prepaga' || formData.obraSocial === 'Otra' ? '' : formData.obraSocial}
+                  onChange={(e) => handleChange('obraSocial', e.target.value || 'Otra')}
+                  placeholder="Especificá el nombre de tu Obra Social o Prepaga..."
+                  className="mt-2 w-full rounded-xl border border-sky-400 bg-sky-50/50 px-3.5 py-2 text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
