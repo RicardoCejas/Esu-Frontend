@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { centrosService } from '@/api/centrosService';
+import { usuariosService } from '@/api/usuariosService';
 import { CENTROS_QUERY_KEY } from '@/hooks/queries/useCentrosQuery';
 import { extractApiErrorMessage } from '@/api/endpoints';
 import { mapaCentrosService } from '@/features/home/mapaCentrosData';
@@ -464,10 +465,34 @@ export const AdminSedesPage: React.FC = () => {
         pinCoords.lng
       );
 
-      // 2. Guardar credenciales de recepcionista para que pueda ingresar
+      // 2. Registrar credenciales de recepcionista en el backend y sincronizar estado local
       if (centroForm.usuarioEmail.trim()) {
         const emailNorm = centroForm.usuarioEmail.toLowerCase().trim();
         const pwd = centroForm.usuarioPassword.trim() || 'recepcion123';
+
+        if (!editandoCentro && centroGuardadoId) {
+          await usuariosService.crearUsuario({
+            username: emailNorm,
+            password: pwd,
+            nombre: 'Recepción',
+            apellido: centroForm.nombre.trim(),
+            rol: 'RECEPCIONISTA',
+            centroSaludId: centroGuardadoId,
+          });
+        } else if (editandoCentro && centroGuardadoId && centroForm.usuarioPassword.trim()) {
+          try {
+            await usuariosService.crearUsuario({
+              username: emailNorm,
+              password: pwd,
+              nombre: 'Recepción',
+              apellido: centroForm.nombre.trim(),
+              rol: 'RECEPCIONISTA',
+              centroSaludId: centroGuardadoId,
+            });
+          } catch {
+            // Si el usuario ya existe en el backend, conservamos su registro actual
+          }
+        }
 
         const cuentas = JSON.parse(localStorage.getItem('esu_cuentas_recepcion') || '{}');
         cuentas[emailNorm] = {
