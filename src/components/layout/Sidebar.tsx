@@ -63,8 +63,6 @@ const navItems: NavItem[] = [
   { title: 'Personal del Centro', path: '/dashboard/recepcion/personal', icon: ShieldCheck, roles: ['RECEPCIONISTA'], requiredPermissions: ['USUARIOS_ADMINISTRAR'] },
 
   // Rutas Administrador (HU-56 & HU-70)
-  { title: 'Panel de Métricas', path: '/dashboard/admin', icon: Layers, roles: ['ADMIN'] },
-  { title: 'Ocupación y Ausentismo', path: '/dashboard/admin/ocupacion-ausentismo', icon: TrendingUp, roles: ['ADMIN'] },
   { title: 'Sedes y Consultorios', path: '/dashboard/admin/sedes', icon: Building2, roles: ['ADMIN'] },
   { title: 'Cuentas de Centros de Salud', path: '/dashboard/admin/usuarios', icon: ShieldCheck, roles: ['ADMIN'] },
   { title: 'Centros y Especialidades', path: '/dashboard/admin/especialidades', icon: Building2, roles: ['ADMIN'] },

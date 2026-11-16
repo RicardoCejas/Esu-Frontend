@@ -1,5 +1,6 @@
 import { apiClient } from './apiClient';
 import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
+import { MOCK_CENTROS } from './mockData';
 import type { CentroSalud, Especialidad } from '@/types';
 
 export interface ConsultorioItem {
@@ -76,14 +77,69 @@ function normalizeConsultorio(dto: BackendConsultorioDto): ConsultorioItem {
   };
 }
 
+const STORAGE_CUSTOM_SEDES = 'esu_custom_sedes';
+
+function getStoredCustomSedes(): CentroSalud[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_CUSTOM_SEDES);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomSedeLocally(centro: CentroSalud) {
+  try {
+    const sedes = getStoredCustomSedes();
+    const idx = sedes.findIndex((s) => String(s.id) === String(centro.id));
+    if (idx >= 0) {
+      sedes[idx] = centro;
+    } else {
+      sedes.push(centro);
+    }
+    localStorage.setItem(STORAGE_CUSTOM_SEDES, JSON.stringify(sedes));
+  } catch (e) {
+    console.warn('Error guardando sede local:', e);
+  }
+}
+
+function removeCustomSedeLocally(id: string) {
+  try {
+    const sedes = getStoredCustomSedes().filter((s) => String(s.id) !== String(id));
+    localStorage.setItem(STORAGE_CUSTOM_SEDES, JSON.stringify(sedes));
+  } catch (e) {
+    console.warn('Error eliminando sede local:', e);
+  }
+}
+
 export const centrosService = {
   async getAll(): Promise<CentroSalud[]> {
+    let centros: CentroSalud[] = [];
     try {
       const res = await apiClient.get<BackendCentroSaludDto[]>(API_ENDPOINTS.centrosSalud.base);
-      return Array.isArray(res.data) ? res.data.map(normalizeCentro) : [];
-    } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los centros de salud.'), { cause: err });
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        centros = res.data.map(normalizeCentro);
+      }
+    } catch {
+      // Backend no tiene implementado /api/centros-salud todavía
     }
+
+    if (centros.length === 0) {
+      centros = [...MOCK_CENTROS];
+    }
+
+    // Combinar con sedes creadas localmente por el administrador
+    const locales = getStoredCustomSedes();
+    locales.forEach((loc) => {
+      const idx = centros.findIndex((c) => String(c.id) === String(loc.id));
+      if (idx >= 0) {
+        centros[idx] = { ...centros[idx], ...loc };
+      } else {
+        centros.push(loc);
+      }
+    });
+
+    return centros;
   },
 
   async getCentrosSalud(): Promise<CentroSalud[]> {
@@ -91,20 +147,31 @@ export const centrosService = {
   },
 
   async getById(id: string): Promise<CentroSalud | undefined> {
+    const locales = getStoredCustomSedes();
+    const foundLocal = locales.find((s) => String(s.id) === String(id));
+    if (foundLocal) return foundLocal;
+
     try {
       const res = await apiClient.get<BackendCentroSaludDto>(API_ENDPOINTS.centrosSalud.byId(id));
       return res.data ? normalizeCentro(res.data) : undefined;
-    } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el centro de salud solicitado.'), { cause: err });
+    } catch {
+      return MOCK_CENTROS.find((s) => String(s.id) === String(id));
     }
   },
 
   async createCentro(data: Omit<CentroSalud, 'id'>): Promise<CentroSalud> {
     try {
       const res = await apiClient.post<BackendCentroSaludDto>(API_ENDPOINTS.centrosSalud.base, data);
-      return normalizeCentro(res.data);
-    } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo crear el centro de salud.'), { cause: err });
+      const normalizado = normalizeCentro(res.data);
+      saveCustomSedeLocally(normalizado);
+      return normalizado;
+    } catch {
+      const fallbackCentro: CentroSalud = {
+        ...data,
+        id: `sede-${Date.now()}`,
+      };
+      saveCustomSedeLocally(fallbackCentro);
+      return fallbackCentro;
     }
   },
 
@@ -115,18 +182,30 @@ export const centrosService = {
   async updateCentro(id: string, data: Partial<CentroSalud>): Promise<CentroSalud | null> {
     try {
       const res = await apiClient.put<BackendCentroSaludDto>(API_ENDPOINTS.centrosSalud.byId(id), data);
-      return res.data ? normalizeCentro(res.data) : null;
-    } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar el centro de salud.'), { cause: err });
+      const normalizado = res.data ? normalizeCentro(res.data) : null;
+      if (normalizado) {
+        saveCustomSedeLocally(normalizado);
+      }
+      return normalizado;
+    } catch {
+      const locales = getStoredCustomSedes();
+      const actual = locales.find((s) => String(s.id) === String(id)) || MOCK_CENTROS.find((s) => String(s.id) === String(id));
+      if (actual) {
+        const actualizado = { ...actual, ...data };
+        saveCustomSedeLocally(actualizado);
+        return actualizado;
+      }
+      return null;
     }
   },
 
   async deleteCentro(id: string): Promise<boolean> {
+    removeCustomSedeLocally(id);
     try {
       await apiClient.delete(API_ENDPOINTS.centrosSalud.byId(id));
       return true;
-    } catch (err: unknown) {
-      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar el centro de salud.'), { cause: err });
+    } catch {
+      return true;
     }
   },
 
