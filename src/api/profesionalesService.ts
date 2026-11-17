@@ -51,9 +51,9 @@ function normalizeProfesional(d: Record<string, unknown>): Profesional {
     especialidadId,
     especialidadNombre,
     centrosSaludIds,
-    diasAtencion: Array.isArray(d.diasAtencion)
+    diasAtencion: Array.isArray(d.diasAtencion) && d.diasAtencion.length > 0
       ? (d.diasAtencion as string[])
-      : ['Lunes', 'Miércoles', 'Viernes'],
+      : ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
     duracionTurnoMin: typeof d.duracionTurnoMin === 'number' ? d.duracionTurnoMin : 20,
     foto: typeof d.foto === 'string' ? d.foto : undefined,
   };

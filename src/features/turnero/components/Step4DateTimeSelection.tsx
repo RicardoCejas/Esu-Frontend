@@ -137,9 +137,13 @@ export function Step4DateTimeSelection({
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
 
   // Próximas fechas donde ÚNICAMENTE atiende el doctor seleccionado
+  const doctorDays = selectedDoctor?.availableDays && selectedDoctor.availableDays.length > 0
+    ? selectedDoctor.availableDays
+    : ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+
   const upcomingDates = useMemo(() => {
-    return getUpcomingDates((selectedDoctor?.availableDays || ['Lunes', 'Miércoles', 'Viernes']))
-  }, [(selectedDoctor?.availableDays || ['Lunes', 'Miércoles', 'Viernes'])])
+    return getUpcomingDates(doctorDays)
+  }, [doctorDays])
 
   // Si la fecha actual no es un día de atención del doctor, seleccionar automáticamente la primera fecha disponible
   useEffect(() => {

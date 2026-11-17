@@ -88,6 +88,8 @@ export const AppRoutes: React.FC = () => {
           <Route path="/agenda-medica" element={<AgendaMedicaPublicaPage />} />
           <Route path="/agenda" element={<Navigate to="/agenda-medica" replace />} />
           <Route path="/especialidades/agenda" element={<Navigate to="/agenda-medica" replace />} />
+          <Route path="/medico/agenda" element={<Navigate to="/dashboard/medico" replace />} />
+          <Route path="/paciente/historial" element={<Navigate to="/dashboard/medico/seguimiento" replace />} />
           <Route path="/turnero" element={<TurneroContainer />} />
           <Route path="/turnero/demo" element={<TurneroContainer isDemoMode={true} />} />
           <Route path="/profesionales" element={<ProfesionalesPage />} />
@@ -133,6 +135,7 @@ export const AppRoutes: React.FC = () => {
               {/* Módulo Médico */}
               <Route element={<RoleGuard allowedRoles={['MEDICO']} />}>
                 <Route path="medico" element={<AgendaMedicaPage />} />
+                <Route path="medico/agenda" element={<Navigate to="/dashboard/medico" replace />} />
                 <Route path="medico/atencion" element={<AtencionConsultaPage />} />
                 <Route path="medico/consultas" element={<MedicoConsultasPage />} />
                 <Route path="medico/recetas" element={<MedicoRecetasPage />} />
@@ -149,9 +152,6 @@ export const AppRoutes: React.FC = () => {
                     <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
                     <Route path="recepcion/pacientes/:id" element={<PacienteDetallePage />} />
                   </Route>
-                  <Route element={<PermissionGuard anyOf={['PACIENTES_REGISTRAR', 'PACIENTES_VER']} />}>
-                    <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
-                  </Route>
                 </Route>
               </Route>
 
@@ -160,6 +160,9 @@ export const AppRoutes: React.FC = () => {
                 <Route element={<RequireCentroSaludGuard />}>
                   <Route element={<PermissionGuard anyOf={['TURNOS_VER', 'SALA_ESPERA_GESTIONAR']} />}>
                     <Route path="recepcion" element={<RecepcionPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard anyOf={['PACIENTES_REGISTRAR']} />}>
+                    <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
                   </Route>
                   <Route element={<PermissionGuard anyOf={['TURNOS_VER']} />}>
                     <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />

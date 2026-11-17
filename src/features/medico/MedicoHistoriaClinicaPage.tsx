@@ -223,12 +223,15 @@ export const MedicoHistoriaClinicaPage: React.FC = () => {
       const horaActual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       // Registrar como evolución directa
+      const diag = notaDiagnostico.trim() || 'Control evolutivo programado';
+      const profId = Number(user?.profesionalId || user?.usuarioId || user?.id || 1);
       await clinicaService.registrarEvolucionDirecta({
         pacienteId: Number(targetId),
-        profesionalId: Number(user?.id || 1),
+        profesionalId: profId,
         motivoConsulta: `[SEGUIMIENTO HCU] ${notaMotivo.trim()}`,
         anamnesis: notaEvolucion.trim(),
-        diagnosticoTexto: notaDiagnostico.trim() || 'Control evolutivo programado',
+        diagnostico: diag,
+        diagnosticoTexto: diag,
         codigoCie10: notaCie10.trim() || undefined,
         tratamiento: notaTratamiento.trim() || undefined,
       });
