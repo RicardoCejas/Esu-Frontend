@@ -78,10 +78,10 @@ export const KanbanTurnoCard: React.FC<KanbanTurnoCardProps> = ({
               <button
                 type="button"
                 onClick={() => onMarcarAusente(turno)}
-                className="flex-1 inline-flex items-center justify-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 bg-background hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 py-1 text-[11px] font-medium transition cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-1 rounded-md border border-slate-400 bg-slate-100 hover:bg-slate-200 text-slate-900 py-1 text-[11px] font-semibold transition cursor-pointer"
                 title="Marcar como ausente"
               >
-                <UserX className="h-3 w-3 text-slate-500" />
+                <UserX className="h-3 w-3 text-slate-700" />
                 <span>Ausente</span>
               </button>
             )}
@@ -123,9 +123,10 @@ export const KanbanTurnoCard: React.FC<KanbanTurnoCardProps> = ({
               <button
                 type="button"
                 onClick={() => onMarcarAusente(turno)}
-                className="flex-1 inline-flex items-center justify-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 bg-background hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 py-1 text-[11px] font-medium transition cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-1 rounded-md border border-slate-400 bg-slate-100 hover:bg-slate-200 text-slate-900 py-1 text-[11px] font-semibold transition cursor-pointer"
+                title="Marcar como ausente"
               >
-                <UserX className="h-3 w-3 text-slate-500" />
+                <UserX className="h-3 w-3 text-slate-700" />
                 <span>Ausente</span>
               </button>
             )}
