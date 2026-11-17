@@ -149,6 +149,9 @@ export const AppRoutes: React.FC = () => {
                     <Route path="recepcion/pacientes" element={<PadronPacientesPage />} />
                     <Route path="recepcion/pacientes/:id" element={<PacienteDetallePage />} />
                   </Route>
+                  <Route element={<PermissionGuard anyOf={['PACIENTES_REGISTRAR', 'PACIENTES_VER']} />}>
+                    <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
+                  </Route>
                 </Route>
               </Route>
 
@@ -157,9 +160,6 @@ export const AppRoutes: React.FC = () => {
                 <Route element={<RequireCentroSaludGuard />}>
                   <Route element={<PermissionGuard anyOf={['TURNOS_VER', 'SALA_ESPERA_GESTIONAR']} />}>
                     <Route path="recepcion" element={<RecepcionPage />} />
-                  </Route>
-                  <Route element={<PermissionGuard anyOf={['PACIENTES_REGISTRAR']} />}>
-                    <Route path="recepcion/pacientes/nuevo" element={<NuevoPacientePage />} />
                   </Route>
                   <Route element={<PermissionGuard anyOf={['TURNOS_VER']} />}>
                     <Route path="recepcion/turnos" element={<GestionTurnosAdminPage />} />

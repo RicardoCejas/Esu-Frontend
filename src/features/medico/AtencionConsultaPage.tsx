@@ -10,7 +10,7 @@ import { ClinicalTemplatePicker } from './components/ClinicalTemplatePicker';
 import { PrescriptionDosageHelper, type DosageHelperValues } from './components/PrescriptionDosageHelper';
 import { PdfPreviewModal } from './components/PdfPreviewModal';
 import { GestionTurnoModal } from './components/GestionTurnoModal';
-import type { ResumenClinico, Cie10Diagnostico, PlantillaClinica, Turno, User } from '@/types';
+import type { ResumenClinico, Cie10Diagnostico, PlantillaClinica, Turno } from '@/types';
 import {
   AlertTriangle,
   ShieldAlert,
@@ -33,7 +33,6 @@ import {
   Stethoscope,
   Calendar,
   Users,
-  Search,
   Play,
   RefreshCw,
   Loader2,
@@ -74,9 +73,6 @@ export const AtencionConsultaPage: React.FC = () => {
   // Estados del selector de paciente y agenda cuando !pacienteId
   const [turnosAgenda, setTurnosAgenda] = useState<Turno[]>([]);
   const [cargandoTurnos, setCargandoTurnos] = useState(false);
-  const [pacientesPadron, setPacientesPadron] = useState<User[]>([]);
-  const [cargandoPadron, setCargandoPadron] = useState(false);
-  const [busquedaPadron, setBusquedaPadron] = useState('');
   const [, setCargandoResumen] = useState(false);
   const [filtroAgenda, setFiltroAgenda] = useState<'ACTIVOS' | 'CANCELADOS' | 'TODOS'>('ACTIVOS');
   const [eliminandoTurnoId, setEliminandoTurnoId] = useState<string | null>(null);
@@ -204,10 +200,9 @@ export const AtencionConsultaPage: React.FC = () => {
     return { valor: '--', categoria: 'Sin datos', colorClass: 'text-gray-500 bg-gray-50 border-gray-200' };
   }, [peso, talla]);
 
-  // Carga reactiva de agenda y padrón cuando no hay paciente seleccionado
+  // Carga reactiva de agenda cuando no hay paciente seleccionado
   const cargarAgendaYPadron = useCallback(async () => {
     setCargandoTurnos(true);
-    setCargandoPadron(true);
     try {
       const turnos = await turnosService.getMiAgenda();
       const soloConPaciente = (Array.isArray(turnos) ? turnos : []).filter(
@@ -224,15 +219,6 @@ export const AtencionConsultaPage: React.FC = () => {
       setTurnosAgenda([]);
     } finally {
       setCargandoTurnos(false);
-    }
-
-    try {
-      const pacs = await pacientesService.getAll();
-      setPacientesPadron(Array.isArray(pacs) ? pacs : []);
-    } catch {
-      setPacientesPadron([]);
-    } finally {
-      setCargandoPadron(false);
     }
   }, []);
 
@@ -736,7 +722,7 @@ export const AtencionConsultaPage: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-600 max-w-2xl">
-                    Seleccione un paciente de su agenda diaria de turnos para ingresar a su historia clínica o inicie una consulta por demanda espontánea desde el padrón asistencial.
+                    Seleccione un paciente de su agenda diaria de turnos para ingresar a su historia clínica y registrar su atención.
                   </p>
                 </div>
               </div>
@@ -747,8 +733,8 @@ export const AtencionConsultaPage: React.FC = () => {
                   onClick={cargarAgendaYPadron}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-xs cursor-pointer"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${cargandoTurnos || cargandoPadron ? 'animate-spin' : ''}`} />
-                  <span>Actualizar Listas</span>
+                  <RefreshCw className={`h-3.5 w-3.5 ${cargandoTurnos ? 'animate-spin' : ''}`} />
+                  <span>Actualizar Lista</span>
                 </button>
                 <Link
                   to="/dashboard/recepcion/pacientes/nuevo"
@@ -760,7 +746,7 @@ export const AtencionConsultaPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div className="grid grid-cols-1 gap-8 items-start">
               {/* Columna Izquierda: Agenda del Día y Sala de Espera */}
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
                 <div className="flex flex-col gap-3 pb-3 border-b border-slate-100">
@@ -846,7 +832,7 @@ export const AtencionConsultaPage: React.FC = () => {
                       {filtroAgenda === 'CANCELADOS'
                         ? 'No hay turnos cancelados en la agenda.'
                         : filtroAgenda === 'ACTIVOS'
-                        ? 'No registra turnos activos en este momento. Puede atender pacientes por demanda espontánea desde el padrón.'
+                        ? 'No registra turnos activos en este momento.'
                         : 'No registra turnos agendados en este momento.'}
                     </p>
                   </div>
@@ -985,78 +971,6 @@ export const AtencionConsultaPage: React.FC = () => {
                         </div>
                       );
                     })}
-                  </div>
-                )}
-              </div>
-
-              {/* Columna Derecha: Búsqueda en Padrón Asistencial (Demanda Espontánea / Guardia) */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
-                      <Users className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-black text-slate-900">
-                        Demanda Espontánea / Padrón General
-                      </h3>
-                      <p className="text-xs text-slate-500">Búsqueda rápida por nombre o DNI</p>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-sky-50 border border-sky-200 text-sky-700 px-2.5 py-0.5 text-xs font-bold">
-                    {pacientesPadron.length} en padrón
-                  </span>
-                </div>
-
-                <div className="relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    value={busquedaPadron}
-                    onChange={(e) => setBusquedaPadron(e.target.value)}
-                    placeholder="Buscar por DNI, Nombre o Apellido..."
-                    className="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 pl-9 pr-4 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-
-                {cargandoPadron ? (
-                  <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
-                    <Loader2 className="h-6 w-6 animate-spin text-sky-600" />
-                    <span className="text-xs">Cargando padrón asistencial...</span>
-                  </div>
-                ) : (
-                  <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                    {pacientesPadron
-                      .filter(
-                        (p) =>
-                          p.nombre?.toLowerCase().includes(busquedaPadron.toLowerCase()) ||
-                          p.apellido?.toLowerCase().includes(busquedaPadron.toLowerCase()) ||
-                          p.dni?.includes(busquedaPadron)
-                      )
-                      .map((p) => (
-                        <div
-                          key={p.id}
-                          className="rounded-2xl border border-slate-100 bg-slate-50/70 p-3.5 hover:bg-white hover:border-sky-300 hover:shadow-xs transition flex items-center justify-between gap-3"
-                        >
-                          <div className="space-y-0.5">
-                            <h4 className="text-xs sm:text-sm font-bold text-slate-900">
-                              {p.nombre} {p.apellido}
-                            </h4>
-                            <p className="text-[11px] text-slate-500 font-mono">
-                              DNI: <strong>{p.dni}</strong> • {p.obraSocial || 'APROSS'}
-                            </p>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleSeleccionarPaciente(p.id, undefined, `${p.nombre} ${p.apellido}`)}
-                            className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-slate-900 text-white px-3 py-1.5 text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
-                          >
-                            <Stethoscope className="h-3 w-3" />
-                            <span>Iniciar Consulta</span>
-                          </button>
-                        </div>
-                      ))}
                   </div>
                 )}
               </div>
