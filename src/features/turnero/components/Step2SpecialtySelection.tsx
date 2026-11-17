@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import {
   Search,
   Stethoscope,
@@ -6,342 +6,698 @@ import {
   ChevronRight,
   Building2,
   X,
-  LayoutGrid,
-  List,
+  Baby,
+  HeartPulse,
+  Bone,
+  Eye,
+  Ear,
+  Brain,
+  Apple,
+  Syringe,
+  FlaskConical,
+  Scissors,
+  Check,
+  ListFilter,
+  ArrowDownAZ,
+  ShieldCheck,
+  Pill,
+  HeartHandshake,
+  Activity,
+  Wind,
+  Venus,
+  MapPin,
+  CalendarCheck,
+  UserCheck,
+  Clock,
+  Sparkles,
 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import type { HealthCenter, MedicalSpecialty } from '../types'
+import type { HealthCenter, MedicalSpecialty, DiagnosticStudy, TipoAtencionTurno } from '../types'
 
 interface Step2SpecialtySelectionProps {
   selectedCenter: HealthCenter
+  tipoAtencion?: TipoAtencionTurno
   specialties: MedicalSpecialty[]
   selectedSpecialty: MedicalSpecialty | null
+  studies?: DiagnosticStudy[]
+  selectedStudy?: DiagnosticStudy | null
   searchTerm: string
   onSearchChange: (value: string) => void
   onSelectSpecialty: (specialty: MedicalSpecialty) => void
+  onSelectStudy?: (study: DiagnosticStudy) => void
+  onChangeCategory?: (category: TipoAtencionTurno) => void
   onBackToCenter: () => void
+  onProceed?: () => void
 }
 
-const ITEMS_PER_PAGE = 12
+// Íconos vectoriales a medida con estética idéntica a Lucide (24x24, stroke 2)
+const ToothIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 2C8.5 2 6 4.5 6 8.5c0 3 1.2 6.5 2 10.5.4 2 2.2 2.5 3 1 1-1.8 1-3.5 1-3.5s0 1.7 1 3.5c.8 1.5 2.6 1 3-1 .8-4 2-7.5 2-10.5 0-4-2.5-6.5-6.5Z" />
+    <path d="M9 8c1 1.2 5 1.2 6 0" />
+  </svg>
+)
+
+const DermaIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 2v9" />
+    <path d="M12 19a3.5 3.5 0 0 0 3.5-3.5c0-2-3.5-5.5-3.5-5.5S8.5 13.5 8.5 15.5A3.5 3.5 0 0 0 12 19Z" />
+    <path d="M3 11h18" />
+  </svg>
+)
+
+const KidneyIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 3.5c-4.2 0-7.5 3.2-7.5 8 0 5.5 3.3 9 7.5 9 3.5 0 4.5-2.8 4.5-5s-1.5-3.2-1.5-4.5 1.5-3.2 1.5-4.5c0-1.8-1.5-3-4.5-3Z" />
+    <circle cx="9.5" cy="11.5" r="1.5" />
+  </svg>
+)
+
+const KinesioIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <circle cx="6" cy="7" r="2" />
+    <circle cx="16.5" cy="6" r="2" />
+    <path d="M2 17h20" />
+    <path d="M5 17v4" />
+    <path d="M19 17v4" />
+    <path d="M4 14h14" />
+    <path d="M15 9l-3 4" />
+    <path d="M17 12l2 2" />
+  </svg>
+)
+
+// Mapeo canónico a títulos limpios y minimalistas (priorizando especialidades específicas para evitar duplicados)
+function getDisplaySpecialtyName(name: string): string {
+  const clean = name.trim()
+  const lower = clean.toLowerCase()
+
+  if (lower.includes('cardio')) return 'Cardiología'
+  if (lower.includes('oncol')) return 'Oncología'
+  if (lower.includes('psicomotric')) return 'Psicomotricidad'
+  if (lower.includes('psicopedagog')) return 'Psicopedagogía'
+  if (lower.includes('psico')) return 'Psicología'
+  if (lower.includes('pediatr')) return 'Pediatría'
+  if (lower.includes('gineco')) return 'Ginecología y Obstetricia'
+  if (lower.includes('traumato')) return 'Traumatología'
+  if (lower.includes('derma')) return 'Dermatología'
+  if (lower.includes('odonto')) return 'Odontología'
+  if (lower.includes('oftalmo')) return 'Oftalmología'
+  if (lower.includes('otorrino') || lower.includes('orl')) return 'Otorrinolaringología'
+  if (lower.includes('neuro')) return 'Neurología'
+  if (lower.includes('nefro')) return 'Nefrología'
+  if (lower.includes('urolog') || /^uro/i.test(clean)) return 'Urología'
+  if (lower.includes('psiqui')) return 'Psiquiatría'
+  if (lower.includes('nutri')) return 'Nutrición'
+  if (lower.includes('kinesio')) return 'Kinesiología'
+  if (lower.includes('fisiat')) return 'Fisiatría'
+  if (lower.includes('fisioterap')) return 'Fisioterapia'
+  if (lower.includes('flebolog')) return 'Flebología'
+  if (lower.includes('hemoterap')) return 'Hemoterapia'
+  if (lower.includes('diabetolog')) return 'Diabetología'
+  if (lower.includes('trabajo social')) return 'Trabajo Social'
+  if (lower.includes('fonoaudio')) return 'Fonoaudiología'
+  if (lower.includes('vacuna')) return 'Vacunación'
+  if (lower.includes('laboratorio')) return 'Laboratorio'
+  if (lower.includes('cirug')) return 'Cirugía General'
+  if (lower.includes('gastro')) return 'Gastroenterología'
+  if (lower.includes('endocrin')) return 'Endocrinología'
+  if (lower.includes('reumat')) return 'Reumatología'
+  if (lower.includes('alerg')) return 'Alergia e Inmunología'
+  if (lower.includes('neumon')) return 'Neumonología'
+  if (lower.includes('clínica') || lower.includes('clinica') || lower.includes('general')) return 'Clínica Médica'
+  return clean
+}
+
+// Asignación de ícono representativo para cada especialidad
+function getSpecialtyIcon(name: string): React.ComponentType<{ className?: string }> {
+  const lower = name.toLowerCase()
+  if (lower.includes('cardio')) return HeartPulse
+  if (lower.includes('pediatr')) return Baby
+  if (lower.includes('gineco')) return Venus
+  if (lower.includes('traumato')) return Bone
+  if (lower.includes('derma')) return DermaIcon
+  if (lower.includes('odonto')) return ToothIcon
+  if (lower.includes('oftalmo')) return Eye
+  if (lower.includes('otorrino') || lower.includes('orl')) return Ear
+  if (lower.includes('neuro')) return Brain
+  if (lower.includes('psicopedagog')) return Brain
+  if (lower.includes('psicomotric')) return Activity
+  if (lower.includes('uro') || lower.includes('nefro')) return KidneyIcon
+  if (lower.includes('psiqui')) return Brain
+  if (lower.includes('nutri')) return Apple
+  if (lower.includes('kinesio') || lower.includes('fisioterap')) return KinesioIcon
+  if (lower.includes('fisiat')) return Bone
+  if (lower.includes('vacuna')) return Syringe
+  if (lower.includes('hemoterap')) return Syringe
+  if (lower.includes('laboratorio')) return FlaskConical
+  if (lower.includes('cirug')) return Scissors
+  if (lower.includes('alerg')) return ShieldCheck
+  if (lower.includes('psico')) return HeartHandshake
+  if (lower.includes('reumat')) return Bone
+  if (lower.includes('oncol')) return ShieldCheck
+  if (lower.includes('neumon')) return Wind
+  if (lower.includes('gastro')) return Pill
+  if (lower.includes('diabetolog')) return Pill
+  if (lower.includes('endocrin') || lower.includes('flebolog')) return Activity
+  if (lower.includes('trabajo social')) return HeartHandshake
+  if (lower.includes('fonoaudio')) return Ear
+  if (lower.includes('clínica') || lower.includes('clinica')) return Stethoscope
+  return Stethoscope
+}
+
+// Especialidades de alta demanda para el filtro "Más frecuentes"
+const FRECUENTES_KEYWORDS = [
+  'clínica', 'clinica', 'pediatr', 'cardio', 'gineco',
+  'traumato', 'derma', 'odonto', 'oftalmo', 'otorrino',
+  'uro', 'psiqui', 'nutri', 'kinesio', 'vacuna', 'laboratorio'
+]
 
 export const Step2SpecialtySelection: React.FC<Step2SpecialtySelectionProps> = ({
   selectedCenter,
-  specialties,
+  tipoAtencion = 'CONSULTA',
+  specialties = [],
   selectedSpecialty,
+  studies = [],
+  selectedStudy,
   searchTerm,
   onSearchChange,
   onSelectSpecialty,
+  onSelectStudy,
+  onChangeCategory,
   onBackToCenter,
+  onProceed,
 }) => {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [alphaFilter, setAlphaFilter] = useState<string>('ALL')
-  const [sortBy] = useState<'name' | 'doctors'>('name')
-  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [filterMode, setFilterMode] = useState<'TODAS' | 'FRECUENTES'>('TODAS')
+  const [sortAlphabetical, setSortAlphabetical] = useState<boolean>(false)
+  const [modalSpecialty, setModalSpecialty] = useState<MedicalSpecialty | null>(null)
+  const [modalStudy, setModalStudy] = useState<DiagnosticStudy | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 
-  // Filter and sort for high density
+  // Filtrado y ordenamiento dinámico
+  const filteredStudies = useMemo(() => {
+    if (!studies) return []
+    let list = [...studies]
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase().trim()
+      list = list.filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q))
+    }
+    return list
+  }, [studies, searchTerm])
+
   const filteredSpecialties = useMemo(() => {
-    let result = [...specialties]
+    // 1. Deduplicar especialidades por nombre canónico para evitar botones duplicados
+    const seen = new Set<string>()
+    const deduplicated: MedicalSpecialty[] = []
+    for (const s of (specialties || [])) {
+      const canonical = getDisplaySpecialtyName(s.name).toLowerCase().trim()
+      if (!seen.has(canonical)) {
+        seen.add(canonical)
+        deduplicated.push(s)
+      }
+    }
 
-    if (alphaFilter !== 'ALL') {
-      const [start, end] = alphaFilter.split('-')
-      result = result.filter((s) => {
-        const firstChar = s.name.trim().charAt(0).toUpperCase()
-        return firstChar >= start && firstChar <= end
+    let list = deduplicated
+
+    // Filtro por texto de búsqueda
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase().trim()
+      list = list.filter((s) => {
+        const clean = getDisplaySpecialtyName(s.name).toLowerCase()
+        return clean.includes(q) || s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
       })
     }
 
-    if (sortBy === 'name') {
-      result.sort((a, b) => a.name.localeCompare(b.name))
-    } else if (sortBy === 'doctors') {
-      result.sort((a, b) => b.totalDoctors - a.totalDoctors)
+    // Filtro de "Más frecuentes"
+    if (filterMode === 'FRECUENTES') {
+      list = list.filter((s) => {
+        const lower = s.name.toLowerCase()
+        return FRECUENTES_KEYWORDS.some((kw) => lower.includes(kw))
+      })
     }
 
-    return result
-  }, [specialties, alphaFilter, sortBy])
+    // Orden alfabético A-Z
+    if (sortAlphabetical) {
+      list.sort((a, b) => {
+        const nameA = getDisplaySpecialtyName(a.name)
+        const nameB = getDisplaySpecialtyName(b.name)
+        return nameA.localeCompare(nameB, 'es', { sensitivity: 'base' })
+      })
+    }
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredSpecialties.length / ITEMS_PER_PAGE) || 1
-  const paginatedSpecialties = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-    return filteredSpecialties.slice(startIndex, startIndex + ITEMS_PER_PAGE)
-  }, [filteredSpecialties, currentPage])
+    return list
+  }, [specialties, searchTerm, filterMode, sortAlphabetical])
 
-  // Reset page when filter changes
-  const handleAlphaChange = (filter: string) => {
-    setAlphaFilter(filter)
-    setCurrentPage(1)
+  // Cierre de modal con tecla Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        setIsModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isModalOpen])
+
+  // Al hacer clic en una especialidad: se selecciona y abre el Pop-Up interactivo
+  const handleStudyCardClick = (study: DiagnosticStudy) => {
+    onSelectStudy?.(study)
+    setModalStudy(study)
+    setIsModalOpen(true)
   }
 
+  const handleCardClick = (specialty: MedicalSpecialty) => {
+    onSelectSpecialty(specialty)
+    setModalSpecialty(specialty)
+    setIsModalOpen(true)
+  }
+
+  // Confirmar desde el Pop-up y avanzar a la selección de turnos / médicos
+  const handleConfirmModal = () => {
+    setIsModalOpen(false)
+    if (modalStudy && onSelectStudy) {
+      onSelectStudy(modalStudy)
+    }
+    if (onProceed) {
+      onProceed()
+    }
+  }
+
+      const modalDisplayName = modalSpecialty ? getDisplaySpecialtyName(modalSpecialty.name) : ''
+
   return (
-    <section className="space-y-4">
-      {/* Context Banner: Selected Institution */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-            <Building2 className="size-5" />
+    <section className="space-y-4 sm:space-y-6 pb-12 sm:pb-16">
+      {/* 1. Context Banner: Institución Seleccionada (Mantiene exactamente lo marcado en rojo en Imagen 1) */}
+      <div className="flex flex-col gap-3 rounded-2xl sm:rounded-3xl border border-sky-200/90 bg-white/95 backdrop-blur-md p-4 sm:p-5 shadow-xs sm:flex-row sm:items-center sm:justify-between relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 sm:h-1.5 bg-gradient-to-r from-[#005a87] via-[#0284c7] to-[#00a896]" />
+        
+        <div className="flex items-center gap-3.5 sm:gap-4">
+          <div className="flex size-11 sm:size-13 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-[#00a896] text-white shadow-md shadow-[#00a896]/25">
+            <Building2 className="size-6 text-white" />
           </div>
-          <div>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+          <div className="min-w-0">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#005a87]">
               Institución Seleccionada
             </span>
-            <h3 className="text-sm font-bold text-slate-900 font-heading">{selectedCenter.name}</h3>
-            <span className="text-xs text-slate-500">{selectedCenter.address}</span>
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">
+              {selectedCenter.name}
+            </h3>
+            <span className="text-xs sm:text-sm text-slate-500 truncate block">
+              {selectedCenter.address}
+            </span>
           </div>
         </div>
+
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={onBackToCenter}
-          className="h-8 cursor-pointer gap-1.5 px-3 text-xs font-semibold rounded-lg border-slate-200 text-slate-700 hover:bg-slate-50 self-start sm:self-auto"
+          className="h-9 sm:h-10 cursor-pointer gap-1.5 px-4 text-xs sm:text-sm font-bold rounded-xl border-2 border-[#005a87] text-[#005a87] hover:bg-[#005a87] hover:text-white transition-all self-start sm:self-auto shrink-0 shadow-2xs"
         >
-          <ChevronLeft className="size-3.5" />
+          <ChevronLeft className="size-4" />
           <span>Cambiar Centro</span>
         </Button>
       </div>
 
-      {/* Controls Bar for High Density: Search, Alphabetical Filters, View Mode */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h2 className="text-base font-bold text-slate-900 sm:text-lg font-heading">
-            2. Seleccione la Especialidad Médica
-          </h2>
-          <p className="text-xs text-slate-500">
-            Mostrando {filteredSpecialties.length} de {specialties.length} especialidades habilitadas
-          </p>
+      {/* 2. Barra de Controles: Título, Contador, Buscador y Filtros estilo minimalista */}
+      <div className="flex flex-col gap-4 rounded-2xl sm:rounded-3xl border border-sky-100 bg-white/95 backdrop-blur-md p-4 sm:p-5 shadow-xs lg:flex-row lg:items-center lg:justify-between relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#005a87] via-[#0284c7] to-[#00a896]" />
+
+        {/* Título y selector de categoría */}
+        <div className="space-y-3">
+          {/* Selector de categoría si el centro ofrece ambas */}
+          {selectedCenter.permiteConsultas && selectedCenter.permiteEstudios && onChangeCategory && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-1.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 shadow-2xs">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2">Categoría del turno:</span>
+              <div className="grid grid-cols-2 gap-1.5 flex-1">
+                <button
+                  type="button"
+                  onClick={() => onChangeCategory('CONSULTA')}
+                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                    tipoAtencion === 'CONSULTA'
+                      ? 'bg-[#005a87] text-white shadow-sm scale-[1.01]'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/60'
+                  }`}
+                >
+                  <Stethoscope className="size-4 shrink-0" />
+                  <span>Consultorios y Especialidades</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeCategory('ESTUDIO')}
+                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                    tipoAtencion === 'ESTUDIO'
+                      ? 'bg-[#00a896] text-white shadow-sm scale-[1.01]'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/60'
+                  }`}
+                >
+                  <FlaskConical className="size-4 shrink-0" />
+                  <span>Estudios y Prácticas</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-start gap-3">
+            <div className={`w-1.5 h-10 sm:h-11 rounded-full shrink-0 mt-0.5 ${tipoAtencion === 'ESTUDIO' ? 'bg-[#00a896]' : 'bg-[#005a87]'}`} />
+            <div>
+              <h2 className="text-lg sm:text-2xl font-bold text-slate-900 leading-tight">
+                {tipoAtencion === 'ESTUDIO'
+                  ? '2. Seleccione el Estudio o Práctica Diagnóstica'
+                  : '2. Seleccione la Especialidad Médica'}
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
+                {tipoAtencion === 'ESTUDIO'
+                  ? `Mostrando ${filteredStudies.length} de ${studies.length || 4} estudios habilitados en este centro`
+                  : (searchTerm.trim() || filterMode !== 'TODAS')
+                    ? `Mostrando ${filteredSpecialties.length} especialidades encontradas`
+                    : `Mostrando ${filteredSpecialties.length} especialidades habilitadas en esta sede`}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center flex-wrap">
-          {/* Instant Search Bar */}
-          <div className="relative min-w-[240px]">
-            <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+        {/* Buscador y Filtros estilo pills */}
+        <div className="flex flex-col gap-2.5 sm:gap-3 sm:flex-row sm:items-center flex-wrap">
+          {/* Input de Búsqueda instantánea */}
+          <div className="relative w-full sm:w-auto min-w-0 sm:min-w-[280px]">
+            <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
             <Input
               type="text"
               placeholder="Buscar especialidad médica..."
               value={searchTerm}
-              onChange={(e) => {
-                onSearchChange(e.target.value)
-                setCurrentPage(1)
-              }}
-              className="h-9 pl-8 pr-8 text-xs rounded-xl border-slate-200 bg-slate-50/60 focus:bg-white focus:ring-slate-900"
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="h-10 sm:h-11 pl-10 pr-9 text-xs sm:text-sm rounded-xl border-slate-200 bg-slate-50/70 focus:bg-white focus:ring-2 focus:ring-[#005a87] focus:border-[#00a896]"
             />
             {searchTerm && (
               <button
                 type="button"
-                onClick={() => {
-                  onSearchChange('')
-                  setCurrentPage(1)
-                }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                onClick={() => onSearchChange('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                title="Limpiar búsqueda"
               >
-                <X className="size-3.5" />
+                <X className="size-4" />
               </button>
             )}
           </div>
 
-          {/* Quick Alphabetical Filter Group */}
-          <div className="flex items-center gap-1 flex-wrap">
-            {['ALL', 'A-D', 'E-H', 'I-M', 'N-R', 'S-Z'].map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                onClick={() => handleAlphaChange(filter)}
-                className={`cursor-pointer rounded-lg px-2 py-1 text-xs font-semibold transition-all ${
-                  alphaFilter === filter
-                    ? 'bg-slate-900 text-white shadow-2xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900'
-                }`}
-              >
-                {filter === 'ALL' ? 'Todas' : filter}
-              </button>
-            ))}
-          </div>
-
-          {/* View Mode Switcher */}
-          <div className="hidden sm:flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 ml-auto">
+          {/* Grupo de Filtros tipo botón como en imagen de referencia */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none w-full sm:w-auto">
+            {/* Todas */}
             <button
               type="button"
-              onClick={() => setViewMode('grid')}
-              title="Vista en Tarjetas"
-              className={`p-1.5 rounded-md transition-all cursor-pointer ${
-                viewMode === 'grid' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+              onClick={() => setFilterMode('TODAS')}
+              className={`cursor-pointer shrink-0 rounded-full px-4 py-2 text-xs sm:text-sm font-bold transition-all ${
+                filterMode === 'TODAS'
+                  ? 'bg-[#005a87] text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
               }`}
             >
-              <LayoutGrid className="size-3.5" />
+              Todas
             </button>
+
+            {/* Más frecuentes */}
             <button
               type="button"
-              onClick={() => setViewMode('list')}
-              title="Vista en Directorio"
-              className={`p-1.5 rounded-md transition-all cursor-pointer ${
-                viewMode === 'list' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+              onClick={() => setFilterMode(filterMode === 'FRECUENTES' ? 'TODAS' : 'FRECUENTES')}
+              className={`cursor-pointer shrink-0 rounded-full px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all inline-flex items-center gap-1.5 ${
+                filterMode === 'FRECUENTES'
+                  ? 'bg-[#005a87] text-white shadow-xs'
+                  : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
               }`}
             >
-              <List className="size-3.5" />
+              <ListFilter className="size-3.5 sm:size-4" />
+              <span>Más frecuentes</span>
+            </button>
+
+            {/* Orden alfabético */}
+            <button
+              type="button"
+              onClick={() => setSortAlphabetical((prev) => !prev)}
+              className={`cursor-pointer shrink-0 rounded-full px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all inline-flex items-center gap-1.5 ${
+                sortAlphabetical
+                  ? 'bg-[#005a87] text-white shadow-xs'
+                  : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+              title="Ordenar de la A a la Z"
+            >
+              <ArrowDownAZ className="size-3.5 sm:size-4" />
+              <span>Orden alfabético</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Grid or List View */}
-      {viewMode === 'grid' ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {paginatedSpecialties.map((specialty) => {
-            const isSelected = selectedSpecialty?.id === specialty.id
-
-            return (
-              <Card
-                key={specialty.id}
-                className={`group rounded-2xl border transition-all duration-200 hover:shadow-md cursor-pointer bg-white text-left ${
-                  isSelected
-                    ? 'border-slate-900 ring-2 ring-slate-900/10 shadow-sm'
-                    : 'border-slate-200 hover:border-slate-300'
-                }`}
-                onClick={() => onSelectSpecialty(specialty)}
-              >
-                <CardContent className="flex h-full flex-col justify-between p-5 space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 group-hover:bg-slate-900 group-hover:text-white transition-colors">
-                        <Stethoscope className="size-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-bold text-slate-900 text-sm font-heading leading-tight truncate">
-                          {specialty.name}
-                        </h3>
-                        <span className="inline-block mt-1 text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80">
-                          {specialty.totalDoctors} {specialty.totalDoctors === 1 ? 'médico' : 'médicos'}
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                      {specialty.description}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-end border-t border-slate-100 pt-3">
-                    <Button
-                      type="button"
-                      aria-label={`Elegir especialidad ${specialty.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onSelectSpecialty(specialty)
-                      }}
-                      size="sm"
-                      className={`h-8 cursor-pointer gap-1 px-3 text-xs font-semibold rounded-lg transition-all ${
-                        isSelected
-                          ? 'bg-slate-900 text-white'
-                          : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                      }`}
-                    >
-                      <span>{isSelected ? 'Seleccionada' : 'Elegir'}</span>
-                      <ChevronRight className="size-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      ) : (
-        /* High-Density Directory List Mode */
-        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs divide-y divide-slate-100">
-          {paginatedSpecialties.map((specialty) => {
-            const isSelected = selectedSpecialty?.id === specialty.id
-
+      {/* 3. Cuadrícula en GRUPOS DE 4 COLUMNAS (1 col móvil, 2 en tablet, 4 en desktop) */}
+      {/* Scroll fluido y continuo: bajan naturalmente con el scroll de la página */}
+      {tipoAtencion === 'ESTUDIO' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+          {filteredStudies.map((study) => {
+            const isSelected = selectedStudy?.id === study.id;
             return (
               <div
-                key={specialty.id}
-                onClick={() => onSelectSpecialty(specialty)}
-                className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 transition-colors hover:bg-slate-50/80 cursor-pointer ${
-                  isSelected ? 'bg-slate-50 ring-2 ring-slate-900' : ''
+                key={study.id}
+                onClick={() => handleStudyCardClick(study)}
+                className={`rounded-2xl border-2 p-5 transition-all cursor-pointer flex flex-col justify-between gap-4 bg-white shadow-xs hover:shadow-md ${
+                  isSelected
+                    ? 'border-[#00a896] ring-2 ring-[#00a896]/20 bg-teal-50/20'
+                    : 'border-slate-200 hover:border-[#00a896]'
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 group-hover:bg-slate-900 group-hover:text-white transition-colors">
-                    <Stethoscope className="size-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-sm text-slate-900 font-heading truncate">
-                        {specialty.name}
-                      </span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex size-12 items-center justify-center rounded-xl bg-teal-50 border border-teal-200 text-[#00a896]">
+                      <FlaskConical className="size-6" />
                     </div>
-                    <p className="text-xs text-slate-500 truncate mt-0.5">
-                      {specialty.description}
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
+                      {study.category}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                      {study.name}
+                    </h3>
+                    <p className="text-xs text-slate-600 mt-1">
+                      {study.description}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pl-12 sm:pl-0">
-                  <span className="text-xs font-semibold text-slate-700">
-                    {specialty.totalDoctors} {specialty.totalDoctors === 1 ? 'profesional' : 'profesionales'}
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                  <span className="text-xs font-semibold text-teal-700">
+                    Servicio institucional
                   </span>
                   <Button
                     type="button"
-                    aria-label={`Elegir especialidad ${specialty.name}`}
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      onSelectSpecialty(specialty)
-                    }}
                     size="sm"
-                    className={`h-8 px-3 text-xs font-semibold rounded-lg ${
-                      isSelected
-                        ? 'bg-slate-900 text-white'
-                        : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                    }`}
+                    className="h-9 px-4 text-xs font-bold rounded-lg bg-[#00a896] hover:bg-[#008f80] text-white cursor-pointer"
                   >
-                    <span>{isSelected ? 'Seleccionada' : 'Elegir'}</span>
+                    <span>Elegir Estudio</span>
                     <ChevronRight className="size-3.5 ml-1" />
                   </Button>
                 </div>
               </div>
-            )
+            );
           })}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+        {filteredSpecialties.map((specialty) => {
+          const isSelected = selectedSpecialty?.id === specialty.id
+          const displayName = getDisplaySpecialtyName(specialty.name)
+          const IconComponent = getSpecialtyIcon(specialty.name)
+
+          return (
+            <div
+              key={specialty.id}
+              onClick={() => handleCardClick(specialty)}
+              className={`group relative flex items-center gap-3.5 p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer bg-white text-left ${
+                isSelected
+                  ? 'border-[#005a87] bg-sky-50/60 ring-2 ring-[#005a87]/25 shadow-md -translate-y-0.5'
+                  : 'border-slate-200/90 shadow-2xs hover:border-[#005a87]/80 hover:shadow-md hover:bg-slate-50/40 hover:-translate-y-0.5'
+              }`}
+            >
+              {/* Ícono de especialidad en azul institucional */}
+              <div className="flex size-10 shrink-0 items-center justify-center text-[#005a87] group-hover:scale-110 transition-transform">
+                <IconComponent className="size-6 sm:size-7 stroke-[1.8]" />
+              </div>
+
+              {/* Nombre de la especialidad */}
+              <div className="min-w-0 flex-1">
+                <span className="font-semibold text-slate-800 text-sm group-hover:text-[#005a87] transition-colors leading-snug line-clamp-2 block">
+                  {displayName}
+                </span>
+              </div>
+
+              {/* Checkmark sutil cuando está seleccionada */}
+              {isSelected && (
+                <div className="absolute top-2.5 right-2.5 flex size-5 items-center justify-center rounded-full bg-[#005a87] text-white shadow-xs animate-in zoom-in-75 duration-150">
+                  <Check className="size-3 stroke-[2.5]" />
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      )}
+
+      {/* Estado vacío cuando no hay resultados de búsqueda */}
+      {filteredSpecialties.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center bg-white shadow-2xs">
+          <Stethoscope className="mx-auto size-10 text-slate-300 mb-3" />
+          <p className="text-sm sm:text-base font-semibold text-slate-700">
+            No se encontraron especialidades médicas que coincidan con la búsqueda.
+          </p>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            Intentá buscando con otro término o seleccioná "Todas".
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              onSearchChange('')
+              setFilterMode('TODAS')
+            }}
+            className="mt-4 rounded-xl border-slate-200 text-xs font-semibold cursor-pointer"
+          >
+            Restablecer Filtros
+          </Button>
         </div>
       )}
 
-      {/* Pagination Footer Controls for Large Catalogs */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-slate-200/80 pt-4 px-1">
-          <p className="text-xs text-slate-500">
-            Página <span className="font-semibold text-slate-900">{currentPage}</span> de <span className="font-semibold text-slate-900">{totalPages}</span>
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
+      {/* 4. Pop-up Modal Elaborado para Confirmar y Avanzar a Sacar Turnos */}
+      {isModalOpen && (modalSpecialty || modalStudy) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div
+            className="w-full max-w-lg rounded-3xl border border-sky-100 bg-white shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200 text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Franja superior del logo */}
+            <div className="h-2 w-full bg-gradient-to-r from-[#005a87] via-[#0284c7] to-[#00a896]" />
+
+            {/* Botón cerrar X */}
+            <button
               type="button"
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="h-8 text-xs font-medium border-slate-200 cursor-pointer disabled:opacity-40"
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              title="Cerrar ventana"
             >
-              Anterior
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="h-8 text-xs font-medium border-slate-200 cursor-pointer disabled:opacity-40"
-            >
-              Siguiente
-            </Button>
+              <X className="size-5" />
+            </button>
+
+            <div className="p-6 sm:p-7 space-y-5">
+              {/* Encabezado del Pop-up con ícono prominente */}
+              <div className="flex items-start gap-4">
+                <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#005a87] to-[#0284c7] text-white shadow-lg shadow-[#005a87]/25">
+                  {React.createElement(modalSpecialty ? getSpecialtyIcon(modalSpecialty.name) : Stethoscope, { className: 'size-7 stroke-[1.8]' })}
+                </div>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#005a87] bg-sky-50 px-2.5 py-0.5 rounded-md border border-sky-200/60">
+                    <Sparkles className="size-3" /> Especialidad Seleccionada
+                  </span>
+                  <h3 className="text-xl font-bold text-slate-900 mt-1">
+                    {modalStudy ? modalStudy.name : modalDisplayName}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
+                    {modalStudy ? modalStudy.description : modalSpecialty?.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Tarjeta de Contexto Institucional y Disponibilidad */}
+              <div className="rounded-2xl border border-sky-100 bg-sky-50/40 p-4 space-y-2.5 text-xs sm:text-sm text-slate-700">
+                <div className="flex items-center gap-2.5 font-semibold text-slate-900">
+                  <Building2 className="size-4 text-[#00a896] shrink-0" />
+                  <span className="truncate">{selectedCenter.name}</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-slate-500">
+                  <MapPin className="size-4 text-[#005a87] shrink-0" />
+                  <span className="truncate">{selectedCenter.address}, Cruz del Eje</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-slate-600 pt-2 border-t border-sky-100/70">
+                  <UserCheck className="size-4 text-emerald-600 shrink-0" />
+                  <span>
+                    {modalStudy ? <strong>Servicio diagnóstico institucional habilitado</strong> : <><strong>{modalSpecialty?.totalDoctors || 0} profesionales</strong> disponibles para esta especialidad</>}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 text-slate-500">
+                  <Clock className="size-4 text-sky-600 shrink-0" />
+                  <span>Atención presencial en consultorios externos (turnos cada 20-30 min)</span>
+                </div>
+              </div>
+
+              {/* Botones de acción del Pop-up */}
+              <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-full sm:w-auto h-11 px-5 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold text-xs sm:text-sm cursor-pointer"
+                >
+                  Elegir otra especialidad
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={handleConfirmModal}
+                  className="w-full sm:w-auto h-11 px-6 rounded-xl bg-gradient-to-r from-[#005a87] to-[#00a896] hover:opacity-95 text-white font-bold text-xs sm:text-sm shadow-md shadow-[#005a87]/25 flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-102"
+                >
+                  <CalendarCheck className="size-4" />
+                  <span>Siguiente: Sacar Turno</span>
+                  <ChevronRight className="size-4 ml-0.5" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {filteredSpecialties.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center bg-white">
-          <Stethoscope className="mx-auto size-8 text-slate-300 mb-2" />
-          <p className="text-xs font-medium text-slate-600">
-            No se encontraron especialidades médicas activas que coincidan con la búsqueda.
-          </p>
-        </div>
-      )}
+      {/* Botón inferior discreto para volver a centros de salud */}
+      <div className="mt-8 flex justify-start">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onBackToCenter}
+          className="h-10 px-4 rounded-xl border-2 border-[#005a87] text-[#005a87] hover:bg-[#005a87] hover:text-white font-bold gap-1.5 cursor-pointer text-xs sm:text-sm"
+        >
+          <ChevronLeft className="size-4" />
+          <span>Volver a Centros de Salud</span>
+        </Button>
+      </div>
     </section>
   )
 }

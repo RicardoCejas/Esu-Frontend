@@ -1,26 +1,7 @@
 import { apiClient } from './apiClient';
+import { API_ENDPOINTS, extractApiErrorMessage } from './endpoints';
 import { MOCK_CENTROS } from './mockData';
-import type { CentroSalud } from '@/types';
-
-const STORAGE_KEY_CENTROS = 'esu_centros_list';
-
-const getInitialCentros = (): CentroSalud[] => {
-  const saved = localStorage.getItem(STORAGE_KEY_CENTROS);
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-  }
-  return [...MOCK_CENTROS];
-};
-
-let centrosState: CentroSalud[] = getInitialCentros();
-
-const saveState = () => {
-  localStorage.setItem(STORAGE_KEY_CENTROS, JSON.stringify(centrosState));
-};
+import type { CentroSalud, Especialidad } from '@/types';
 
 export interface ConsultorioItem {
   id: string;
@@ -31,97 +12,304 @@ export interface ConsultorioItem {
   activo: boolean;
 }
 
-const MOCK_CONSULTORIOS: ConsultorioItem[] = [
-  { id: 'cs-1', centroSaludId: 'c1', numero: '101', planta: 'Planta Baja', especialidadAsignada: 'Clínica Médica / Medicina General', activo: true },
-  { id: 'cs-2', centroSaludId: 'c1', numero: '102', planta: 'Planta Baja', especialidadAsignada: 'Clínica Médica / Medicina General', activo: true },
-  { id: 'cs-3', centroSaludId: 'c1', numero: '105', planta: 'Planta Baja', especialidadAsignada: 'Pediatría', activo: true },
-  { id: 'cs-4', centroSaludId: 'c1', numero: '204', planta: '1° Piso', especialidadAsignada: 'Cardiología', activo: true },
-  { id: 'cs-5', centroSaludId: 'c2', numero: '1', planta: 'Planta Única', especialidadAsignada: 'Clínica Médica / Medicina General', activo: true },
-  { id: 'cs-6', centroSaludId: 'c3', numero: '301', planta: '2° Piso', especialidadAsignada: 'Ginecología y Obstetricia', activo: true },
-];
+export interface ConsultorioUpdateInput {
+  numero: string;
+  planta: string;
+  especialidadAsignada?: string;
+  activo?: boolean;
+}
 
-let consultoriosState: ConsultorioItem[] = [...MOCK_CONSULTORIOS];
+interface BackendCentroSaludDto {
+  id: number | string;
+  nombre: string;
+  tipo?: CentroSalud['tipo'];
+  direccion?: string;
+  telefono?: string;
+  ciudad?: string;
+  horarioAtencion?: string;
+  disponibleGuardia?: boolean;
+  latitud?: number | null;
+  longitud?: number | null;
+  activo?: boolean;
+  permiteConsultas?: boolean;
+  permiteEstudios?: boolean;
+  cantidadPlantas?: number;
+  estudiosDisponibles?: string[];
+}
+
+interface BackendConsultorioDto {
+  id: number | string;
+  centroSaludId: number | string;
+  numero: string;
+  planta?: string;
+  especialidadAsignada?: string;
+  activo?: boolean;
+}
+
+function normalizeCentro(dto: BackendCentroSaludDto): CentroSalud {
+  return {
+    id: String(dto.id),
+    nombre: dto.nombre,
+    tipo: dto.tipo || 'HOSPITAL',
+    direccion: dto.direccion || '',
+    telefono: dto.telefono || '',
+    ciudad: dto.ciudad || 'Cruz del Eje, Córdoba',
+    horarioAtencion: dto.horarioAtencion || '08:00 a 20:00 hs',
+    disponibleGuardia: Boolean(dto.disponibleGuardia),
+    latitud: typeof dto.latitud === 'number' ? dto.latitud : undefined,
+    longitud: typeof dto.longitud === 'number' ? dto.longitud : undefined,
+    activo: dto.activo !== false,
+    permiteConsultas: dto.permiteConsultas !== false,
+    permiteEstudios: Boolean(dto.permiteEstudios),
+    cantidadPlantas: typeof dto.cantidadPlantas === 'number' && dto.cantidadPlantas >= 1 ? dto.cantidadPlantas : 1,
+    estudiosDisponibles: Array.isArray(dto.estudiosDisponibles) ? dto.estudiosDisponibles : [],
+  };
+}
+
+function normalizeConsultorio(dto: BackendConsultorioDto): ConsultorioItem {
+  return {
+    id: String(dto.id),
+    centroSaludId: String(dto.centroSaludId),
+    numero: dto.numero,
+    planta: dto.planta || 'Planta Baja',
+    especialidadAsignada: dto.especialidadAsignada,
+    activo: dto.activo !== false,
+  };
+}
+
+const STORAGE_CUSTOM_SEDES = 'esu_custom_sedes';
+
+function getStoredCustomSedes(): CentroSalud[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_CUSTOM_SEDES);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomSedeLocally(centro: CentroSalud) {
+  try {
+    const sedes = getStoredCustomSedes();
+    const idx = sedes.findIndex((s) => String(s.id) === String(centro.id));
+    if (idx >= 0) {
+      sedes[idx] = centro;
+    } else {
+      sedes.push(centro);
+    }
+    localStorage.setItem(STORAGE_CUSTOM_SEDES, JSON.stringify(sedes));
+  } catch (e) {
+    console.warn('Error guardando sede local:', e);
+  }
+}
+
+function removeCustomSedeLocally(id: string) {
+  try {
+    const sedes = getStoredCustomSedes().filter((s) => String(s.id) !== String(id));
+    localStorage.setItem(STORAGE_CUSTOM_SEDES, JSON.stringify(sedes));
+  } catch (e) {
+    console.warn('Error eliminando sede local:', e);
+  }
+}
 
 export const centrosService = {
   async getAll(): Promise<CentroSalud[]> {
+    let centros: CentroSalud[] = [];
     try {
-      const res = await apiClient.get<CentroSalud[]>('/centros-salud');
-      return res.data;
+      const res = await apiClient.get<BackendCentroSaludDto[]>(API_ENDPOINTS.centrosSalud.base);
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        centros = res.data.map(normalizeCentro);
+      }
     } catch {
-      return [...centrosState];
+      // Backend no tiene implementado /api/centros-salud todavía
     }
+
+    if (centros.length === 0) {
+      centros = [...MOCK_CENTROS];
+    }
+
+    // Combinar con sedes creadas localmente por el administrador
+    const locales = getStoredCustomSedes();
+    locales.forEach((loc) => {
+      const idx = centros.findIndex((c) => String(c.id) === String(loc.id));
+      if (idx >= 0) {
+        centros[idx] = { ...centros[idx], ...loc };
+      } else {
+        centros.push(loc);
+      }
+    });
+
+    return centros;
+  },
+
+  async getCentrosSalud(): Promise<CentroSalud[]> {
+    return this.getAll();
   },
 
   async getById(id: string): Promise<CentroSalud | undefined> {
+    const locales = getStoredCustomSedes();
+    const foundLocal = locales.find((s) => String(s.id) === String(id));
+    if (foundLocal) return foundLocal;
+
     try {
-      const res = await apiClient.get<CentroSalud>(`/centros-salud/${id}`);
-      return res.data;
+      const res = await apiClient.get<BackendCentroSaludDto>(API_ENDPOINTS.centrosSalud.byId(id));
+      return res.data ? normalizeCentro(res.data) : undefined;
     } catch {
-      return centrosState.find((c) => c.id === id);
+      return MOCK_CENTROS.find((s) => String(s.id) === String(id));
     }
   },
 
   async createCentro(data: Omit<CentroSalud, 'id'>): Promise<CentroSalud> {
     try {
-      const res = await apiClient.post<CentroSalud>('/centros-salud', data);
-      return res.data;
+      const res = await apiClient.post<BackendCentroSaludDto>(API_ENDPOINTS.centrosSalud.base, data);
+      const normalizado = normalizeCentro(res.data);
+      saveCustomSedeLocally(normalizado);
+      return normalizado;
     } catch {
-      const nuevo: CentroSalud = {
+      const fallbackCentro: CentroSalud = {
         ...data,
-        id: `c-${Date.now()}`,
+        id: `sede-${Date.now()}`,
       };
-      centrosState = [...centrosState, nuevo];
-      saveState();
-      return nuevo;
+      saveCustomSedeLocally(fallbackCentro);
+      return fallbackCentro;
     }
+  },
+
+  async createCentroSalud(data: Omit<CentroSalud, 'id'>): Promise<CentroSalud> {
+    return this.createCentro(data);
   },
 
   async updateCentro(id: string, data: Partial<CentroSalud>): Promise<CentroSalud | null> {
     try {
-      const res = await apiClient.put<CentroSalud>(`/centros-salud/${id}`, data);
-      return res.data;
+      const res = await apiClient.put<BackendCentroSaludDto>(API_ENDPOINTS.centrosSalud.byId(id), data);
+      const normalizado = res.data ? normalizeCentro(res.data) : null;
+      if (normalizado) {
+        saveCustomSedeLocally(normalizado);
+      }
+      return normalizado;
     } catch {
-      const idx = centrosState.findIndex(c => c.id === id);
-      if (idx !== -1) {
-        centrosState[idx] = { ...centrosState[idx], ...data };
-        saveState();
-        return centrosState[idx];
+      const locales = getStoredCustomSedes();
+      const actual = locales.find((s) => String(s.id) === String(id)) || MOCK_CENTROS.find((s) => String(s.id) === String(id));
+      if (actual) {
+        const actualizado = { ...actual, ...data };
+        saveCustomSedeLocally(actualizado);
+        return actualizado;
       }
       return null;
     }
   },
 
   async deleteCentro(id: string): Promise<boolean> {
+    removeCustomSedeLocally(id);
     try {
-      await apiClient.delete(`/centros-salud/${id}`);
-      centrosState = centrosState.filter(c => c.id !== id);
-      saveState();
+      await apiClient.delete(API_ENDPOINTS.centrosSalud.byId(id));
       return true;
     } catch {
-      centrosState = centrosState.filter(c => c.id !== id);
-      saveState();
       return true;
     }
   },
 
   async getConsultorios(centroId?: string): Promise<ConsultorioItem[]> {
-    if (centroId) {
-      return consultoriosState.filter(c => c.centroSaludId === centroId);
+    try {
+      const hasNumericCentro = Boolean(centroId && /^\d+$/.test(centroId));
+      const url = hasNumericCentro
+        ? API_ENDPOINTS.centrosSalud.consultoriosPorCentro(centroId!)
+        : API_ENDPOINTS.centrosSalud.consultorios;
+      const res = await apiClient.get<BackendConsultorioDto[]>(url);
+      return Array.isArray(res.data) ? res.data.map(normalizeConsultorio) : [];
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudieron obtener los consultorios físicos.'), { cause: err });
     }
-    return [...consultoriosState];
+  },
+
+  async getConsultorioById(id: string): Promise<ConsultorioItem> {
+    try {
+      const res = await apiClient.get<BackendConsultorioDto>(API_ENDPOINTS.centrosSalud.consultorioById(id));
+      return normalizeConsultorio(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo obtener el consultorio físico.'), { cause: err });
+    }
   },
 
   async createConsultorio(data: Omit<ConsultorioItem, 'id'>): Promise<ConsultorioItem> {
-    const nuevo: ConsultorioItem = {
-      ...data,
-      id: `cs-${Date.now()}`,
-    };
-    consultoriosState = [...consultoriosState, nuevo];
-    return nuevo;
+    try {
+      const payload = {
+        centroSaludId: (() => {
+        const id = Number(String(data.centroSaludId).replace(/\D/g, ''));
+        if (!Number.isFinite(id) || id <= 0) {
+          throw new Error('Debe especificar un centro de salud válido para crear el consultorio.');
+        }
+        return id;
+      })(),
+        numero: data.numero,
+        planta: data.planta,
+        especialidadAsignada: data.especialidadAsignada,
+        activo: data.activo !== false,
+      };
+      const res = await apiClient.post<BackendConsultorioDto>(
+        API_ENDPOINTS.centrosSalud.consultorios,
+        payload
+      );
+      return normalizeConsultorio(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo registrar el consultorio físico.'), { cause: err });
+    }
+  },
+
+  async updateConsultorio(id: string, data: ConsultorioUpdateInput): Promise<ConsultorioItem> {
+    try {
+      const payload = {
+        numero: data.numero,
+        planta: data.planta,
+        especialidadAsignada: data.especialidadAsignada,
+        activo: data.activo,
+      };
+      const res = await apiClient.put<BackendConsultorioDto>(
+        API_ENDPOINTS.centrosSalud.consultorioById(id),
+        payload
+      );
+      return normalizeConsultorio(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo actualizar el consultorio físico.'), { cause: err });
+    }
+  },
+
+  async cambiarEstadoConsultorio(id: string, activo: boolean): Promise<ConsultorioItem> {
+    try {
+      const res = await apiClient.patch<BackendConsultorioDto>(
+        API_ENDPOINTS.centrosSalud.consultorioEstado(id),
+        { activo }
+      );
+      return normalizeConsultorio(res.data);
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo cambiar el estado del consultorio físico.'), { cause: err });
+    }
   },
 
   async deleteConsultorio(id: string): Promise<boolean> {
-    consultoriosState = consultoriosState.filter(c => c.id !== id);
-    return true;
+    try {
+      await apiClient.delete(API_ENDPOINTS.centrosSalud.consultorioById(id));
+      return true;
+    } catch (err: unknown) {
+      throw new Error(extractApiErrorMessage(err, 'No se pudo eliminar el consultorio físico.'), { cause: err });
+    }
+  },
+
+  async getEspecialidadesPorCentro(centroId: string | number): Promise<Especialidad[]> {
+    try {
+      const res = await apiClient.get<Record<string, unknown>[]>(
+        API_ENDPOINTS.centrosSalud.especialidadesPorCentro(centroId)
+      );
+      return Array.isArray(res.data)
+        ? res.data.map((d) => ({
+            id: String(d.id),
+            nombre: String(d.nombre ?? ''),
+            descripcion: String(d.descripcion ?? ''),
+            categoria: typeof d.categoria === 'string' ? d.categoria : undefined,
+          }))
+        : [];
+    } catch {
+      return [];
+    }
   },
 };

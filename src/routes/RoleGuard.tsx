@@ -10,9 +10,10 @@ interface RoleGuardProps {
 
 export const RoleGuard: React.FC<RoleGuardProps> = ({ allowedRoles }) => {
   const { user } = useAuth();
+  const isDev = Boolean(import.meta.env.DEV && (user?.isDeveloper || user?.email === 'dev@esu.gob.ar'));
 
-  if (!user || !allowedRoles.includes(user.rol)) {
-    // Redirigir al dashboard correspondiente a su rol si intenta entrar a una vista no permitida
+  // En producción, solo el rol verificado por backend concede acceso
+  if (!user || (!allowedRoles.includes(user.rol) && !isDev)) {
     const target = user?.rol ? ROLE_HOME[user.rol] : '/login';
     return <Navigate to={target} replace />;
   }

@@ -1,26 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { LogIn, Lock, Mail, ShieldAlert, ArrowLeft, User, Stethoscope, UserCheck, Shield, Clock } from 'lucide-react';
+import {
+  LogIn,
+  Lock,
+  Mail,
+  ShieldAlert,
+  ArrowLeft,
+  Clock,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import type { UserRole } from '@/types';
+import { GoogleAuthButton } from './components/GoogleAuthButton';
+import { isGoogleAuthEnabled } from './googleGsi';
 import { TwoFactorChallengeModal } from './TwoFactorChallengeModal';
+import { extractApiErrorMessage, isDemoModeEnabled } from '@/api/endpoints';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const reason = searchParams.get('reason');
+  const redirectUrl = searchParams.get('redirect');
 
   const [emailOrDni, setEmailOrDni] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberLogin, setRememberLogin] = useState(false);
+  const googleAuthEnabled = isGoogleAuthEnabled({
+    VITE_GOOGLE_AUTH_ENABLED: import.meta.env.VITE_GOOGLE_AUTH_ENABLED,
+    VITE_GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+  });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Estados para desafío 2FA bloqueante (HU-42)
-  const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
+  const [is2FAOpen, setIs2FAOpen] = useState(false);
   const [tempToken2FA, setTempToken2FA] = useState('');
 
+  // Cargar usuario recordado (solo identificador, nunca contraseñas en claro)
+  useEffect(() => {
+    try {
+      // Limpieza proactiva de cualquier contraseña persistida en versiones anteriores
+      localStorage.removeItem('esu_remember_password');
+      const savedUser = localStorage.getItem('esu_remember_login');
+      if (savedUser) {
+        setEmailOrDni(savedUser);
+        setRememberLogin(true);
+      } else if (import.meta.env.DEV && isDemoModeEnabled()) {
+        setEmailOrDni('dev@esu.gob.ar');
+        setPassword('Dev12345!');
+        setRememberLogin(true);
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
   const redirectByRole = (rol: UserRole) => {
+    if (redirectUrl && redirectUrl.startsWith('/')) {
+      navigate(redirectUrl);
+      return;
+    }
     switch (rol) {
       case 'MEDICO':
         navigate('/dashboard/medico');
@@ -44,16 +84,22 @@ export const LoginPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
+      if (rememberLogin) {
+        localStorage.setItem('esu_remember_login', emailOrDni.trim());
+      } else {
+        localStorage.removeItem('esu_remember_login');
+      }
+      localStorage.removeItem('esu_remember_password');
+
       const authResponse = await login({
         email: emailOrDni || undefined,
         dni: emailOrDni || undefined,
         password: password || undefined,
       });
 
-      // Si requiere 2FA, activar modal bloqueante (HU-42)
       if (authResponse.requires2FA && authResponse.tempToken) {
         setTempToken2FA(authResponse.tempToken);
-        setIs2FAModalOpen(true);
+        setIs2FAOpen(true);
         return;
       }
 
@@ -61,197 +107,203 @@ export const LoginPage: React.FC = () => {
         redirectByRole(authResponse.user.rol);
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al iniciar sesión. Verifique sus credenciales.';
+      const message = extractApiErrorMessage(err, 'Error al iniciar sesión. Verifique sus credenciales.');
       setError(message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleQuickLogin = async (role: UserRole) => {
-    setIsSubmitting(true);
-    try {
-      const authResponse = await login({ rolSimulado: role });
-      if (authResponse.requires2FA && authResponse.tempToken) {
-        setTempToken2FA(authResponse.tempToken);
-        setIs2FAModalOpen(true);
-        return;
-      }
-      if (authResponse.user) {
-        redirectByRole(authResponse.user.rol);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-muted/20 p-4 sm:p-6 selection:bg-sky-600 selection:text-white">
-      <div className="w-full max-w-md space-y-6">
-        {/* Volver */}
+    <div
+      className="min-h-screen flex flex-col justify-center items-center bg-cover bg-center bg-no-repeat p-4 sm:p-6 relative selection:bg-sky-600 selection:text-white"
+      style={{ backgroundImage: `url('/auth-bg.webp')` }}
+    >
+      <div className="absolute inset-0 bg-slate-900/5 backdrop-blur-[0.5px] pointer-events-none" />
+
+      <main id="main-content" className="w-full max-w-md space-y-4 relative z-10 py-6">
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-sky-700 transition"
+          className="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-slate-700 hover:text-sky-800 transition px-3 py-1.5 rounded-xl hover:bg-white/80 shadow-xs"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4.5 w-4.5" />
           <span>Volver al inicio</span>
         </Link>
 
-        {/* Card de Login */}
-        <div className="rounded-3xl border border-sky-100 bg-card p-6 sm:p-8 shadow-xl space-y-6">
-          <div className="text-center space-y-3">
+        <div className="rounded-3xl border border-sky-100 bg-white/95 p-6 sm:p-8 shadow-2xl backdrop-blur-sm space-y-5">
+          <div className="text-center space-y-2">
             <div className="flex justify-center">
-              <img src="/logo-icon.png" alt="Luvia Logo" className="h-16 w-16 object-contain drop-shadow-md" />
+              <img src="/logo-icon.png" alt="Luvia Logo" width="56" height="56" className="h-14 w-14 object-contain drop-shadow-sm" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold tracking-tight font-heading text-foreground">
-                Ingreso al Sistema Luvia
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                Ingreso al Sistema
               </h1>
-              <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1">
-                Tu Salud, Unificada • Cruz del Eje
+              <p className="text-xs text-slate-600 mt-0.5">
+                Luvia • Cruz del Eje • Tu Salud, Unificada
               </p>
             </div>
           </div>
 
-          {/* Aviso de cierre de sesión por inactividad (HU-44) */}
+          {redirectUrl && (
+            <div className="rounded-2xl bg-sky-50 border border-sky-200 p-3 text-xs text-sky-900 space-y-1">
+              <div className="flex items-center gap-2 font-bold">
+                <LogIn className="h-4 w-4 text-sky-700 shrink-0" />
+                <span>Identificación requerida para consultar turnos</span>
+              </div>
+              <p className="text-slate-600">
+                Inicia sesión con tu cuenta o{' '}
+                <Link
+                  to={`/registro?redirect=${encodeURIComponent(redirectUrl)}`}
+                  className="font-bold text-sky-700 underline"
+                >
+                  regístrate como nuevo paciente
+                </Link>{' '}
+                si aún no tienes usuario.
+              </p>
+            </div>
+          )}
+
           {reason === 'inactivity' && (
             <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
               <Clock className="h-4 w-4 text-amber-600 shrink-0" />
-              <span>Tu sesión se cerró automáticamente tras 15 minutos de inactividad por seguridad clínica.</span>
+              <span>Tu sesión se cerró por inactividad preventiva para resguardar tus datos de salud.</span>
             </div>
           )}
 
           {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive">
-              <ShieldAlert className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
+            <div className="flex items-start gap-2 rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700">
+              <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span>{error}</span>
+                {error.toLowerCase().includes('confirmar su direcci') && (
+                  <p className="mt-1 font-medium">
+                    ¿No recibiste el correo?{' '}
+                    <Link
+                      to={`/verificar-email?email=${encodeURIComponent(emailOrDni.trim())}`}
+                      className="font-semibold text-rose-800 underline hover:text-rose-950"
+                    >
+                      Reenviar correo de verificación
+                    </Link>
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Formulario Principal Único: DNI / Email + Contraseña */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700">
                 Correo electrónico o DNI
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
                   required
                   placeholder="ej: 38123456 o usuario@email.com"
                   value={emailOrDni}
                   onChange={(e) => setEmailOrDni(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600 transition shadow-inner"
+                  className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
                 />
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                El sistema detectará automáticamente tu perfil (Paciente, Médico o Administración).
-              </p>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-foreground">Contraseña</label>
-                {/* Enlace funcional a recuperación de contraseña (HU-43) */}
+                <label className="text-xs font-bold text-slate-700">Contraseña</label>
                 <Link
-                  to="/olvido-password"
+                  to="/recuperar-password"
                   className="text-[11px] font-semibold text-sky-700 hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background pl-10 pr-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600 transition shadow-inner"
+                  className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-10 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-600 transition"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-700 transition cursor-pointer p-0.5"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
-            <button
+            <div className="flex items-center gap-2 pt-0.5">
+              <input
+                type="checkbox"
+                id="rememberLogin"
+                checked={rememberLogin}
+                onChange={(e) => setRememberLogin(e.target.checked)}
+                className="rounded border-slate-300 text-sky-600 focus:ring-sky-600 h-4 w-4 cursor-pointer"
+              />
+              <label htmlFor="rememberLogin" className="text-xs text-slate-600 font-medium cursor-pointer select-none">
+                Recordar mi usuario y contraseña en este equipo
+              </label>
+            </div>
+
+
+                          <button
               type="submit"
               disabled={isSubmitting}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 py-3 text-sm font-bold text-white shadow-md shadow-sky-600/20 hover:bg-sky-700 hover:scale-[1.01] transition-all disabled:opacity-50 cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-700 py-3 text-sm font-bold text-white shadow-md shadow-sky-700/20 hover:bg-sky-800 transition disabled:opacity-50 cursor-pointer"
             >
               <LogIn className="h-4 w-4" />
-              <span>{isSubmitting ? 'Verificando...' : 'Ingresar al Sistema'}</span>
+              <span>{isSubmitting ? 'Iniciando sesión...' : 'Ingresar a la Plataforma'}</span>
             </button>
+
+            {googleAuthEnabled && (
+              <>
+                <div className="relative my-3">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200" />
+                  </div>
+                  <div className="relative flex justify-center text-[10px] uppercase">
+                    <span className="bg-white px-2 font-bold text-slate-600">O continuar con</span>
+                  </div>
+                </div>
+
+                <GoogleAuthButton
+                  onSuccess={(user) => redirectByRole(user.rol)}
+                  onError={(msg) => setError(msg)}
+                />
+              </>
+            )}
           </form>
-
-          {/* Acceso Rápido 1-Clic para Evaluación de la Cátedra */}
-          <div className="border-t border-border pt-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Acceso Rápido para Evaluación:
-              </p>
-              <span className="text-[10px] bg-sky-50 text-sky-700 font-bold px-2 py-0.5 rounded-full">
-                1 Clic
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('PACIENTE')}
-                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 hover:border-sky-600 hover:bg-sky-50/50 font-semibold text-foreground transition cursor-pointer"
-              >
-                <User className="h-4 w-4 text-sky-600 shrink-0" />
-                <span className="truncate">👤 Paciente</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('MEDICO')}
-                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 hover:border-sky-600 hover:bg-sky-50/50 font-semibold text-foreground transition cursor-pointer"
-              >
-                <Stethoscope className="h-4 w-4 text-sky-600 shrink-0" />
-                <span className="truncate">🩺 Médico</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('RECEPCIONISTA')}
-                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 hover:border-sky-600 hover:bg-sky-50/50 font-semibold text-foreground transition cursor-pointer"
-              >
-                <UserCheck className="h-4 w-4 text-sky-600 shrink-0" />
-                <span className="truncate">📋 Recepción</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('ADMIN')}
-                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 hover:border-sky-600 hover:bg-sky-50/50 font-semibold text-foreground transition cursor-pointer"
-              >
-                <Shield className="h-4 w-4 text-sky-600 shrink-0" />
-                <span className="truncate">🛡️ Administrador</span>
-              </button>
-            </div>
-          </div>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-sm sm:text-[15px] text-slate-700 font-medium pt-1">
           ¿No tienes una cuenta de paciente?{' '}
-          <Link to="/registro" className="font-bold text-sky-700 hover:underline">
+          <Link
+            to={redirectUrl ? `/registro?redirect=${encodeURIComponent(redirectUrl)}` : '/registro'}
+            className="font-bold text-sky-700 hover:text-sky-900 underline underline-offset-2"
+          >
             Regístrate aquí
           </Link>
         </p>
-      </div>
+      </main>
 
-      {/* Modal Bloqueante de Desafío 2FA (HU-42) */}
       <TwoFactorChallengeModal
-        isOpen={is2FAModalOpen}
+        isOpen={is2FAOpen}
         tempToken={tempToken2FA}
         onSuccess={(rol) => {
-          setIs2FAModalOpen(false);
+          setIs2FAOpen(false);
+          setTempToken2FA('');
           redirectByRole(rol);
         }}
         onCancel={() => {
-          setIs2FAModalOpen(false);
+          setIs2FAOpen(false);
           setTempToken2FA('');
         }}
       />

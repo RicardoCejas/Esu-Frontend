@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { profesionalesService } from '@/api/profesionalesService';
 import { turnosService } from '@/api/turnosService';
 import { useToast } from '@/context/ToastContext';
+import { getFechaLocalHoy } from '@/lib/dateUtils';
 import type { Turno } from '@/types';
 import {
   X,
@@ -41,8 +42,8 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
 }) => {
   const { success, error, warning } = useToast();
   const [esDiaCompleto, setEsDiaCompleto] = useState(true);
-  const [fechaInicio, setFechaInicio] = useState(new Date().toISOString().split('T')[0]);
-  const [fechaFin, setFechaFin] = useState(new Date().toISOString().split('T')[0]);
+  const [fechaInicio, setFechaInicio] = useState(getFechaLocalHoy());
+  const [fechaFin, setFechaFin] = useState(getFechaLocalHoy());
   const [horaInicio, setHoraInicio] = useState('08:00');
   const [horaFin, setHoraFin] = useState('18:00');
   const [motivoCategoria, setMotivoCategoria] = useState(MOTIVOS_PREDEFINIDOS[0]);
@@ -89,10 +90,15 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
       ? `${motivoCategoria}: ${motivoDetalle.trim()}`
       : motivoCategoria;
 
+    if (!profesionalId) {
+      error('Identificador de profesional no disponible en la sesión.');
+      return;
+    }
+
     setGuardando(true);
     try {
-      await profesionalesService.bloquearAgenda(profesionalId || 'p1', {
-        profesionalId: profesionalId || 'p1',
+      await profesionalesService.bloquearAgenda(profesionalId, {
+        profesionalId,
         fechaInicio,
         fechaFin,
         horaInicio: esDiaCompleto ? '00:00' : horaInicio,
@@ -116,8 +122,8 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
 
       if (onBloqueoCreado) onBloqueoCreado();
       onClose();
-    } catch (err: any) {
-      error(err.message || 'Error al registrar el bloqueo de agenda.');
+    } catch (err: unknown) {
+      error((err instanceof Error ? err.message : null) || 'Error al registrar el bloqueo de agenda.');
     } finally {
       setGuardando(false);
     }
@@ -133,7 +139,7 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
               <CalendarOff className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold font-heading">
+              <h2 className="text-lg font-bold">
                 Bloqueo de Agenda por Licencia, Vacaciones o Feriados
               </h2>
               <p className="text-xs text-slate-300">
@@ -221,7 +227,7 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
                   type="time"
                   value={horaInicio}
                   onChange={(e) => setHoraInicio(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   required={!esDiaCompleto}
                 />
               </div>
@@ -235,7 +241,7 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
                   type="time"
                   value={horaFin}
                   onChange={(e) => setHoraFin(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   required={!esDiaCompleto}
                 />
               </div>
@@ -294,9 +300,9 @@ export const BloquearAgendaModal: React.FC<BloquearAgendaModalProps> = ({
                   <div key={t.id} className="py-1.5 px-2 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-foreground">{t.pacienteNombre}</span>
-                      <span className="font-mono text-[11px] text-muted-foreground">DNI: {t.pacienteDni}</span>
+                      <span className="tabular-nums text-[11px] text-muted-foreground">DNI: {t.pacienteDni}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] font-mono text-amber-700 dark:text-amber-300 font-bold">
+                    <div className="flex items-center gap-2 text-[11px] tabular-nums text-amber-700 dark:text-amber-300 font-bold">
                       <span>{t.fecha}</span>
                       <span>{t.hora} hs</span>
                     </div>

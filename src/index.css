@@ -2,11 +2,11 @@
 
 @theme {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Outfit', 'Plus Jakarta Sans', sans-serif;
-  /* Tipografía numérica única de ESU: una sola fuente para DNI, horas, códigos y métricas. */
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+  /* Unified Plus Jakarta Sans font family across headings, navigation, controls, and metrics */
+  --font-heading: var(--font-sans);
+  --font-mono: var(--font-sans);
 
-  --color-background: #f4f8fb;
+  --color-background: #e3eff6;
   --color-foreground: #0f172a;
   --color-card: #ffffff;
   --color-card-foreground: #0f172a;
@@ -28,21 +28,168 @@
 }
 
 @layer base {
+  html {
+    min-height: 100%;
+    background-color: #e3eff6;
+    font-family: var(--font-sans);
+    font-size-adjust: from-font;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100%;
+    font-family: inherit;
+    line-height: 1.5;
     color: var(--color-foreground);
-    background-color: #f4f8fb;
+    background-color: #e3eff6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
-    letter-spacing: -0.02em;
+    font-family: inherit;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
   }
 
-  /* Los datos numéricos usan cifras tabulares para alinear columnas de horas, DNI y códigos. */
+  input, select, textarea, button {
+    font-family: inherit;
+  }
+
+  th {
+    text-wrap: balance;
+  }
+
+  /* Keep numeric columns aligned while preserving the unified Plus Jakarta Sans typeface. */
   .font-mono {
-    font-variant-numeric: tabular-nums slashed-zero;
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
   }
 }
+
+/* HU-FE-68: Clases de Accesibilidad Visual (A11y) */
+html.high-contrast {
+  --color-background: #000000 !important;
+  --color-foreground: #ffff00 !important; /* Amarillo de alto contraste */
+  --color-card: #0a0a0a !important;
+  --color-card-foreground: #ffffff !important;
+  --color-border: #ffff00 !important;
+  --color-input: #ffffff !important;
+  --color-muted: #1a1a1a !important;
+  --color-muted-foreground: #e5e5e5 !important;
+  --color-primary: #facc15 !important;
+  --color-primary-foreground: #000000 !important;
+}
+
+html.text-scale-large {
+  font-size: 115% !important;
+}
+
+html.text-scale-xlarge {
+  font-size: 130% !important;
+}
+
+@keyframes turnero-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-turnero-marquee {
+  display: flex;
+  width: max-content;
+  animation: turnero-marquee 30s linear infinite;
+}
+
+.animate-turnero-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes subtle-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-float-1 {
+  animation: subtle-float 5s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: subtle-float 5s ease-in-out infinite;
+  animation-delay: 1.6s;
+}
+
+.animate-float-3 {
+  animation: subtle-float 5s ease-in-out infinite;
+  animation-delay: 3.2s;
+}
+
+/* Transiciones fluidas, calmadas y accesibles para pestañas y modales de ESU */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoomIn95 {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes stepFadeSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation-duration: 260ms;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.zoom-in-95 {
+  animation-name: zoomIn95;
+}
+
+.animate-step-enter {
+  animation: stepFadeSlide 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+

@@ -59,18 +59,16 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
   const [centroSaludId, setCentroSaludId] = useState('c1');
   const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      cargarDatos();
-    }
-  }, [isOpen, profesionalId]);
-
   const cargarDatos = async () => {
+    if (!profesionalId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [c, d] = await Promise.all([
         centrosService.getAll(),
-        profesionalesService.getDisponibilidad(profesionalId || 'p1'),
+        profesionalesService.getDisponibilidad(profesionalId),
       ]);
       setCentros(c);
       if (c.length > 0 && !centroSaludId) {
@@ -83,6 +81,14 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      cargarDatos();
+    }
+  }, [isOpen, profesionalId]);
+
+
 
   if (!isOpen) return null;
 
@@ -129,10 +135,15 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
       return;
     }
 
+    if (!profesionalId) {
+      error('Identificador de profesional no disponible en la sesión.');
+      return;
+    }
+
     setGuardando(true);
     try {
       const guardada = await profesionalesService.guardarDisponibilidad({
-        profesionalId: profesionalId || 'p1',
+        profesionalId,
         diaSemana,
         horaInicio,
         horaFin,
@@ -143,8 +154,8 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
       setDisponibilidades((prev) => [...prev, guardada]);
       success('Grilla horaria guardada y turnero online abastecido exitosamente.');
       if (onSaved) onSaved();
-    } catch (err: any) {
-      error(err.message || 'Error al persistir la disponibilidad.');
+    } catch (err: unknown) {
+      error((err instanceof Error ? err.message : null) || 'Error al persistir la disponibilidad.');
     } finally {
       setGuardando(false);
     }
@@ -175,7 +186,7 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
               <Calendar className="h-5 w-5 text-sky-200" />
             </div>
             <div>
-              <h2 className="text-lg font-bold font-heading">
+              <h2 className="text-lg font-bold">
                 Configuración de Grilla Horaria y Slots
               </h2>
               <p className="text-xs text-sky-100">
@@ -265,7 +276,7 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
                     setHoraInicio(e.target.value);
                     setErrorValidacion(null);
                   }}
-                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   required
                 />
               </div>
@@ -282,7 +293,7 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
                     setHoraFin(e.target.value);
                     setErrorValidacion(null);
                   }}
-                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   required
                 />
               </div>
@@ -365,16 +376,19 @@ export const ConfigurarGrillaHorariaModal: React.FC<ConfigurarGrillaHorariaModal
                           <span className="rounded-md bg-sky-700 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
                             {diaNombre}
                           </span>
-                          <span className="font-mono font-bold text-xs text-foreground">
+                          <span className="tabular-nums font-bold text-xs text-foreground">
                             {d.horaInicio} - {d.horaFin} hs
                           </span>
                           <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
                             {d.intervaloMinutos} min
                           </span>
                         </div>
-                        <p className="text-[11px] text-muted-foreground truncate max-w-[240px]">
-                          {d.centroSaludNombre || getNombreCentro(d.centroSaludId)}
-                        </p>
+                        <div className="flex items-center gap-1.5 pt-0.5">
+                          <Building2 className="h-3 w-3 text-sky-600 shrink-0" />
+                          <span className="text-[11px] font-bold text-sky-900 dark:text-sky-300 truncate max-w-[240px]">
+                            {d.centroSaludNombre || getNombreCentro(d.centroSaludId)}
+                          </span>
+                        </div>
                       </div>
 
                       <button

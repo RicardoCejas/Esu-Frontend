@@ -3,43 +3,72 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { turnosService } from '@/api/turnosService';
 import { profesionalesService } from '@/api/profesionalesService';
-import type { Turno, EstadoTurno, BloqueoAgenda } from '@/types';
+import { centrosService } from '@/api/centrosService';
+import type { Turno, EstadoTurno, BloqueoAgenda, CentroSalud } from '@/types';
 import {
   Stethoscope,
   Calendar,
   CalendarOff,
   Flame,
   Plus,
-  Lock
+  Lock,
+  Building2,
+  MapPin,
+  DoorClosed,
+  Trash2,
+  CalendarClock,
+  CalendarX,
+  Clock,
 } from 'lucide-react';
 import { ConfigurarGrillaHorariaModal } from './components/ConfigurarGrillaHorariaModal';
 import { BloquearAgendaModal } from './components/BloquearAgendaModal';
 import { ModalCrearSobreturno } from './components/ModalCrearSobreturno';
+import { GestionTurnoModal } from './components/GestionTurnoModal';
+import { getFechaLocalHoy } from '@/lib/dateUtils';
 
 export const AgendaMedicaPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const profesionalId = user?.profesionalId || '';
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [bloqueos, setBloqueos] = useState<BloqueoAgenda[]>([]);
+  const [centros, setCentros] = useState<CentroSalud[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState<string>('TODOS');
+  const [filtroCentroId, setFiltroCentroId] = useState<string>('TODOS');
 
   // Modales
   const [isModalGrillaOpen, setIsModalGrillaOpen] = useState(false);
   const [isModalBloqueoOpen, setIsModalBloqueoOpen] = useState(false);
   const [isModalSobreturnoOpen, setIsModalSobreturnoOpen] = useState(false);
+  const [turnoParaGestionar, setTurnoParaGestionar] = useState<Turno | null>(null);
+  const [modoGestionTurno, setModoGestionTurno] = useState<'cancelar' | 'reprogramar' | null>(null);
 
-  const hoyStr = new Date().toISOString().split('T')[0];
+  const hoyStr = getFechaLocalHoy();
 
   const cargarDatos = async () => {
     setLoading(true);
     try {
-      const [turnosData, bloqueosData] = await Promise.all([
-        turnosService.getAll(),
-        profesionalesService.getBloqueos(user?.id || 'p1'),
+      const [turnosData, bloqueosData, centrosData] = await Promise.all([
+        turnosService.getMiAgenda({
+          centroSaludId: filtroCentroId !== 'TODOS' ? filtroCentroId : undefined,
+        }),
+        profesionalId ? profesionalesService.getBloqueos(profesionalId) : Promise.resolve([]),
+        centrosService.getAll()
       ]);
-      setTurnos(turnosData);
+
+      const turnosAsignados = (turnosData || []).filter(
+        (t) =>
+          t.estado !== 'DISPONIBLE' &&
+          Boolean(
+            t.pacienteNombre?.trim() ||
+            t.pacienteDni?.trim() ||
+            (t.pacienteId && t.pacienteId !== 'undefined' && t.pacienteId !== 'null' && t.pacienteId !== '')
+          )
+      );
+      setTurnos(turnosAsignados);
       setBloqueos(bloqueosData);
+      setCentros(centrosData);
     } finally {
       setLoading(false);
     }
@@ -47,7 +76,14 @@ export const AgendaMedicaPage: React.FC = () => {
 
   useEffect(() => {
     cargarDatos();
-  }, [user]);
+  }, [user, filtroCentroId]);
+
+  // Obtener los centros de salud donde presta servicios el profesional
+  const centrosDelProfesional = centros.filter((c) => {
+    const enUser = user?.centroSaludId === c.id;
+    const enTurnos = turnos.some((t) => t.centroSaludId === c.id);
+    return enUser || enTurnos || c.id === 'c1' || c.id === 'c2';
+  });
 
   const handleCambiarEstado = async (id: string, nuevoEstado: EstadoTurno) => {
     await turnosService.updateEstado(id, nuevoEstado);
@@ -63,6 +99,18 @@ export const AgendaMedicaPage: React.FC = () => {
         turno.pacienteNombre
       )}&pacienteDni=${turno.pacienteDni}`
     );
+  };
+
+  const handleEliminarTurno = async (id: string) => {
+    if (!window.confirm('¿Desea eliminar definitivamente este turno cancelado de su agenda?')) {
+      return;
+    }
+    try {
+      await turnosService.eliminarTurno(id);
+      setTurnos((prev) => prev.filter((t) => t.id !== id));
+    } catch (err: unknown) {
+      console.error(err);
+    }
   };
 
   const getEstadoBadge = (turno: Turno) => {
@@ -101,6 +149,18 @@ export const AgendaMedicaPage: React.FC = () => {
   };
 
   const turnosFiltrados = turnos.filter((t) => {
+    // 0. Excluir turnos libres sin paciente asignado
+    if (
+      t.estado === 'DISPONIBLE' ||
+      (!t.pacienteNombre?.trim() && !t.pacienteDni?.trim() && (!t.pacienteId || t.pacienteId === 'undefined' || t.pacienteId === 'null'))
+    ) {
+      return false;
+    }
+    // 1. Filtro por centro
+    if (filtroCentroId !== 'TODOS' && t.centroSaludId !== filtroCentroId) {
+      return false;
+    }
+    // 2. Filtro por estado
     if (filtroEstado === 'TODOS') return true;
     if (filtroEstado === 'EN_ESPERA') {
       return t.estado === 'EN_ESPERA' || t.estado === 'EN_SALA_DE_ESPERA';
@@ -116,32 +176,55 @@ export const AgendaMedicaPage: React.FC = () => {
   ).length;
   const countAtendidos = turnos.filter((t) => t.estado === 'COMPLETADO').length;
 
-  // HU-FE-63: Contador visible de sobreturnos asignados con alerta de cupo máximo (máx. 3)
   const sobreturnosHoy = turnos.filter(
     (t) => t.esSobreturno && t.fecha === hoyStr && t.estado !== 'CANCELADO'
   );
   const countSobreturnos = sobreturnosHoy.length;
 
-  // HU-FE-62: Bloqueos activos para hoy o próximos días
   const bloqueosActivos = bloqueos.filter((b) => b.fechaFin >= hoyStr);
+
+  const getCentroBadgeColor = (centroId?: string) => {
+    switch (centroId) {
+      case 'c1':
+      case '1':
+        return 'border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300';
+      case 'c2':
+      case '2':
+        return 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300';
+      case 'c3':
+      case '3':
+        return 'border-purple-300 bg-purple-50 text-purple-800 dark:border-purple-800 dark:bg-purple-950/60 dark:text-purple-300';
+      default:
+        return 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300';
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header del Médico con Acciones Rápidas */}
+      {/* Header del Médico con Sedes Dinámicas y KPIs */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
+        <div className="space-y-1.5">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Agenda Médica y Consultas
+            Agenda Médica y Gestión por Sede
           </h1>
-          <p className="text-xs text-muted-foreground">
-            {user?.nombre || 'Dr. Carlos'} {user?.apellido || 'Bustos'} •{' '}
-            <span className="font-mono">{user?.matricula || 'MP-34982'}</span> • Hospital Prov. Aurelio Crespo
-          </p>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">
+              {user?.nombre || 'Dr. Carlos'} {user?.apellido || 'Bustos'}
+            </span>
+            <span>•</span>
+            <span className="tabular-nums">{user?.matricula || 'MP-34982'}</span>
+            <span>•</span>
+            <span className="flex items-center gap-1 font-medium text-foreground">
+              <Building2 className="h-3.5 w-3.5 text-primary" />
+              {centrosDelProfesional.length > 1
+                ? `${centrosDelProfesional.length} Centros Asignados`
+                : user?.centroSaludNombre || 'Hospital Regional Aurelio Crespo'}
+            </span>
+          </div>
         </div>
 
         {/* Acciones y KPIs de Disponibilidad */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Contador de Sobreturnos (DoD HU-FE-63) */}
           <div
             className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold border transition ${
               countSobreturnos >= 3
@@ -152,33 +235,86 @@ export const AgendaMedicaPage: React.FC = () => {
           >
             <Flame className="h-4 w-4 text-amber-600 shrink-0" />
             <span>Sobreturnos:</span>
-            <span className="font-mono text-xs font-black">{countSobreturnos}/3</span>
+            <span className="tabular-nums text-xs font-black">{countSobreturnos}/3</span>
           </div>
 
           <div className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs">
-            <span className="font-mono">{countEnEspera}</span> en espera
+            <span className="tabular-nums">{countEnEspera}</span> en espera
           </div>
 
           <div className="rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs">
-            <span className="font-mono">{countAtendidos}</span> atendidos hoy
+            <span className="tabular-nums">{countAtendidos}</span> atendidos hoy
           </div>
         </div>
       </div>
 
-      {/* Botonera de Acciones de Agenda (HU-FE-61, HU-FE-62, HU-FE-63) */}
+      {/* Selector de Sede de Trabajo (Fase 2: Gestión Multicentro) */}
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-2xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <Building2 className="h-4 w-4 text-primary" />
+            <span>Sede de Atención Activa</span>
+          </div>
+          <span className="text-[11px] text-muted-foreground">
+            Seleccione una sede específica o consulte la visión general consolidada
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFiltroCentroId('TODOS')}
+            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer shadow-xs ${
+              filtroCentroId === 'TODOS'
+                ? 'bg-primary text-primary-foreground'
+                : 'border border-border bg-card text-muted-foreground hover:bg-accent'
+            }`}
+          >
+            <Building2 className="h-3.5 w-3.5" />
+            <span>Todas las Sedes</span>
+            <span className="rounded-full bg-white/20 dark:bg-black/20 px-2 py-0.5 text-[10px] tabular-nums">
+              {turnos.length}
+            </span>
+          </button>
+
+          {centrosDelProfesional.map((c) => {
+            const countTurnosCentro = turnos.filter((t) => t.centroSaludId === c.id).length;
+            const isSelected = filtroCentroId === c.id;
+
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setFiltroCentroId(c.id)}
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer shadow-xs ${
+                  isSelected
+                    ? 'bg-sky-700 text-white dark:bg-sky-800'
+                    : 'border border-border bg-card text-muted-foreground hover:bg-accent'
+                }`}
+              >
+                <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="truncate max-w-[220px]">{c.nombre}</span>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] tabular-nums text-foreground font-semibold">
+                  {countTurnosCentro}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Botonera de Acciones de Agenda */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 shadow-2xs">
         <div className="flex flex-wrap items-center gap-2">
-          {/* HU-FE-61: Configurar Grilla Horaria */}
           <button
             type="button"
             onClick={() => setIsModalGrillaOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
           >
             <Calendar className="h-4 w-4" />
-            <span>Configurar Grilla Horaria</span>
+            <span>Configurar Grilla Horaria por Sede</span>
           </button>
 
-          {/* HU-FE-62: Bloquear Agenda */}
           <button
             type="button"
             onClick={() => setIsModalBloqueoOpen(true)}
@@ -189,7 +325,6 @@ export const AgendaMedicaPage: React.FC = () => {
           </button>
         </div>
 
-        {/* HU-FE-63: Botón de Acción Rápida "+ Agregar Sobreturno" */}
         <button
           type="button"
           onClick={() => setIsModalSobreturnoOpen(true)}
@@ -200,7 +335,7 @@ export const AgendaMedicaPage: React.FC = () => {
         </button>
       </div>
 
-      {/* HU-FE-62: Representación Visual Distintiva de Bloqueos Activos (Grisáceo/Inhabilitado) */}
+      {/* Bloqueos Activos */}
       {bloqueosActivos.length > 0 && (
         <div className="rounded-2xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/60 p-4 space-y-2.5">
           <div className="flex items-center justify-between">
@@ -224,7 +359,7 @@ export const AgendaMedicaPage: React.FC = () => {
                     <span className="rounded bg-slate-800 text-white dark:bg-slate-700 px-2 py-0.5 text-[10px] font-bold">
                       BLOQUEADO
                     </span>
-                    <span className="font-mono text-xs font-bold text-foreground">
+                    <span className="tabular-nums text-xs font-bold text-foreground">
                       {b.fechaInicio} al {b.fechaFin}
                     </span>
                   </div>
@@ -243,7 +378,7 @@ export const AgendaMedicaPage: React.FC = () => {
         </div>
       )}
 
-      {/* Barra de Filtros */}
+      {/* Barra de Filtros por Estado */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-3">
         {['TODOS', 'EN_ESPERA', 'CONFIRMADO', 'ATENDIENDO', 'COMPLETADO', 'CANCELADO'].map((st) => (
           <button
@@ -260,14 +395,14 @@ export const AgendaMedicaPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Lista / Tabla de Turnos del Día */}
+      {/* Lista de Turnos con Identificación Rigurosa de Sede y Consultorio */}
       {loading ? (
         <div className="flex h-48 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       ) : turnosFiltrados.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center text-xs text-muted-foreground">
-          No hay turnos registrados en este estado.
+          No hay turnos registrados para la sede y criterios seleccionados.
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3.5">
@@ -292,29 +427,51 @@ export const AgendaMedicaPage: React.FC = () => {
                 }`}
               >
                 <div className="flex items-start sm:items-center gap-4">
-                  {/* Hora */}
-                  <div
-                    className={`flex h-12 w-16 shrink-0 items-center justify-center rounded-xl border font-mono font-bold text-sm ${
-                      isSobreturno
-                        ? 'border-amber-400 bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200'
-                        : isBloqueadoOCancelado
-                        ? 'border-slate-300 bg-slate-200 text-slate-600 line-through'
-                        : 'border-border bg-card text-foreground'
-                    }`}
-                  >
-                    {turno.hora}
+                  {/* Hora y Día */}
+                  <div className="flex flex-col items-center justify-center">
+                    <div
+                      className={`flex h-12 w-20 shrink-0 items-center justify-center rounded-xl border tabular-nums font-bold text-sm ${
+                        isSobreturno
+                          ? 'border-amber-400 bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200'
+                          : isBloqueadoOCancelado
+                          ? 'border-slate-300 bg-slate-200 text-slate-600 line-through'
+                          : 'border-border bg-muted/30 text-foreground'
+                      }`}
+                    >
+                      {turno.hora}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-semibold mt-1">
+                      {turno.fecha ? turno.fecha.split('-').reverse().join('/') : ''}
+                    </span>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
+                    {/* Paciente y Badges de Sede */}
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-bold text-base text-foreground">
                         {turno.pacienteNombre}
                       </span>
-                      <span className="font-mono text-xs text-muted-foreground">
+                      <span className="tabular-nums text-xs text-muted-foreground">
                         DNI: {turno.pacienteDni}
                       </span>
 
-                      {/* HU-FE-63: Badge Distintivo Ámbar "Sobreturno" (DoD) */}
+                      {/* Identificación Explícita de Sede / Centro Médico */}
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-bold shadow-2xs ${getCentroBadgeColor(
+                          turno.centroSaludId
+                        )}`}
+                      >
+                        <Building2 className="h-3 w-3 shrink-0" />
+                        <span>{turno.centroSaludNombre || 'Hospital Regional Aurelio Crespo'}</span>
+                      </span>
+
+                      {/* Identificación de Consultorio / Planta */}
+                      <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-foreground">
+                        <DoorClosed className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span>{turno.consultorioNumero ? `Consultorio ${turno.consultorioNumero}` : 'Consultorio 101'}</span>
+                      </span>
+
+                      {/* Badge Sobreturno */}
                       {isSobreturno && (
                         <span className="rounded-md bg-amber-500 text-white font-black px-2 py-0.5 text-[10px] tracking-wide shadow-2xs flex items-center gap-1">
                           <Flame className="h-3 w-3" />
@@ -331,7 +488,7 @@ export const AgendaMedicaPage: React.FC = () => {
 
                     <p className="text-xs text-muted-foreground">
                       <span className="font-semibold text-foreground">Motivo:</span>{' '}
-                      {turno.motivoConsulta || 'Consulta general'} • Centro: {turno.centroSaludNombre}
+                      {turno.motivoConsulta || 'Consulta general y chequeo de salud'}
                     </p>
 
                     {turno.justificativoCancelacion && (
@@ -342,11 +499,53 @@ export const AgendaMedicaPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Estado y Botones de Llamado */}
-                <div className="flex items-center gap-2 self-end sm:self-center">
+                {/* Estado y Botones de Atención */}
+                <div className="flex flex-wrap items-center gap-2 self-end sm:self-center">
                   {getEstadoBadge(turno)}
 
-                  {turno.estado === 'CONFIRMADO' && (
+                  {isBloqueadoOCancelado && (
+                    <button
+                      type="button"
+                      onClick={() => handleEliminarTurno(turno.id)}
+                      className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition cursor-pointer shadow-2xs flex items-center gap-1.5"
+                      title="Eliminar turno cancelado"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Eliminar</span>
+                    </button>
+                  )}
+
+                  {!isBloqueadoOCancelado && turno.estado !== 'COMPLETADO' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTurnoParaGestionar(turno);
+                          setModoGestionTurno('reprogramar');
+                        }}
+                        className="inline-flex items-center gap-1 rounded-xl border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-800 hover:bg-sky-100 transition cursor-pointer"
+                        title="Reprogramar turno y notificar al paciente"
+                      >
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        <span>Reprogramar</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTurnoParaGestionar(turno);
+                          setModoGestionTurno('cancelar');
+                        }}
+                        className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition cursor-pointer"
+                        title="Cancelar turno y notificar al paciente"
+                      >
+                        <CalendarX className="h-3.5 w-3.5" />
+                        <span>Cancelar</span>
+                      </button>
+                    </>
+                  )}
+
+                  {turno.estado === 'CONFIRMADO' && (!turno.fecha || turno.fecha <= hoyStr) && (
                     <button
                       onClick={() => handleCambiarEstado(turno.id, 'EN_ESPERA')}
                       className="rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-amber-700 transition cursor-pointer shadow-xs"
@@ -355,17 +554,44 @@ export const AgendaMedicaPage: React.FC = () => {
                     </button>
                   )}
 
-                  {(turno.estado === 'EN_ESPERA' ||
+                  {(turno.estado === 'PENDIENTE' ||
+                    turno.estado === 'EN_ESPERA' ||
                     turno.estado === 'EN_SALA_DE_ESPERA' ||
                     turno.estado === 'CONFIRMADO' ||
                     turno.estado === 'ATENDIENDO') && (
-                    <button
-                      onClick={() => handleIniciarAtencion(turno)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition cursor-pointer"
-                    >
-                      <Stethoscope className="h-4 w-4" />
-                      <span>{turno.estado === 'ATENDIENDO' ? 'Continuar Atención' : 'Llamar y Atender'}</span>
-                    </button>
+                    (() => {
+                      const esFuturo = Boolean(turno.fecha && turno.fecha > hoyStr);
+                      const fechaLegible = turno.fecha ? turno.fecha.split('-').reverse().join('/') : '';
+                      return (
+                        <button
+                          type="button"
+                          disabled={esFuturo}
+                          onClick={() => handleIniciarAtencion(turno)}
+                          title={
+                            esFuturo
+                              ? `Turno programado para el ${fechaLegible}. No se puede atender antes de la fecha.`
+                              : 'Llamar y atender paciente'
+                          }
+                          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                            esFuturo
+                              ? 'bg-slate-200 text-slate-500 cursor-not-allowed shadow-none'
+                              : 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'
+                          }`}
+                        >
+                          {esFuturo ? (
+                            <>
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>Programado {fechaLegible}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Stethoscope className="h-4 w-4" />
+                              <span>{turno.estado === 'ATENDIENDO' ? 'Continuar Atención' : 'Llamar y Atender'}</span>
+                            </>
+                          )}
+                        </button>
+                      );
+                    })()
                   )}
                 </div>
               </div>
@@ -374,36 +600,44 @@ export const AgendaMedicaPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal HU-FE-61: Configurar Grilla Horaria */}
+      {/* Modales */}
       <ConfigurarGrillaHorariaModal
         isOpen={isModalGrillaOpen}
         onClose={() => setIsModalGrillaOpen(false)}
-        profesionalId={user?.id || 'p1'}
+        profesionalId={profesionalId}
         profesionalNombre={`${user?.nombre || 'Dr. Carlos'} ${user?.apellido || 'Bustos'}`}
         onSaved={cargarDatos}
       />
 
-      {/* Modal HU-FE-62: Bloquear Agenda Médica */}
       <BloquearAgendaModal
         isOpen={isModalBloqueoOpen}
         onClose={() => setIsModalBloqueoOpen(false)}
-        profesionalId={user?.id || 'p1'}
+        profesionalId={profesionalId}
         profesionalNombre={`${user?.nombre || 'Dr. Carlos'} ${user?.apellido || 'Bustos'}`}
         turnosActuales={turnos}
         onBloqueoCreado={cargarDatos}
       />
 
-      {/* Modal HU-FE-63: Agregar Sobreturno */}
       <ModalCrearSobreturno
         isOpen={isModalSobreturnoOpen}
         onClose={() => setIsModalSobreturnoOpen(false)}
-        profesionalId={user?.id || 'p1'}
-        centroSaludId={user?.centroSaludId || 'c1'}
+        profesionalId={profesionalId}
+        centroSaludId={filtroCentroId !== 'TODOS' ? filtroCentroId : (user?.centroSaludId || 'c1')}
         fecha={hoyStr}
         sobreturnosHoyCount={countSobreturnos}
         onSobreturnoCreado={() => {
           cargarDatos();
         }}
+      />
+
+      <GestionTurnoModal
+        turno={turnoParaGestionar}
+        modo={modoGestionTurno}
+        onClose={() => {
+          setTurnoParaGestionar(null);
+          setModoGestionTurno(null);
+        }}
+        onSuccess={cargarDatos}
       />
     </div>
   );

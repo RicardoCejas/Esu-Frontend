@@ -10,6 +10,38 @@ export function parseAvailabilityResponse(payload: unknown): AppointmentSlot[] {
   }
 
   return payload.map((slot: unknown, index: number) => {
+    if (typeof slot === 'string') {
+      const isoMatch = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(?::\d{2})?$/.exec(slot)
+      if (!isoMatch || !isValidDate(isoMatch[1] ?? '') || !isValidTime(isoMatch[2] ?? '')) {
+        throw new Error(`El horario ${index + 1} no tiene el formato de disponibilidad esperado.`)
+      }
+      const time = isoMatch[2]!
+      const hour = Number(time.slice(0, 2))
+      return {
+        id: slot,
+        time,
+        period: hour < 12 ? 'MORNING' : 'AFTERNOON',
+        isAvailable: true,
+      }
+    }
+
+    if (typeof slot === 'object' && slot !== null && 'fechaHora' in slot) {
+      const fechaHora = typeof slot.fechaHora === 'string' ? slot.fechaHora : ''
+      const hora = 'hora' in slot && typeof slot.hora === 'string' ? slot.hora : fechaHora.slice(11, 16)
+      const disponible = !('disponible' in slot) || slot.disponible !== false
+
+      if (!isValidDate(fechaHora.slice(0, 10)) || !isValidTime(hora)) {
+        throw new Error(`El horario ${index + 1} no tiene el formato de disponibilidad esperado.`)
+      }
+
+      return {
+        id: fechaHora,
+        time: hora,
+        period: Number(hora.slice(0, 2)) < 12 ? 'MORNING' : 'AFTERNOON',
+        isAvailable: disponible,
+      }
+    }
+
     if (
       typeof slot !== 'object' || slot === null ||
       !('id' in slot) || typeof slot.id !== 'string' ||

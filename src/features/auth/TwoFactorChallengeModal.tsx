@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
-import { authService } from '@/api/authService';
+import React, { useEffect, useState } from 'react';
+import { KeyRound, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { ShieldAlert, KeyRound, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { classifyApiError } from '@/api/apiErrors';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import type { UserRole } from '@/types';
 
 interface TwoFactorChallengeModalProps {
   isOpen: boolean;
   tempToken: string;
-  onSuccess: (role: UserRole) => void;
+  onSuccess: (rol: UserRole) => void;
   onCancel: () => void;
 }
 
@@ -17,128 +26,146 @@ export const TwoFactorChallengeModal: React.FC<TwoFactorChallengeModalProps> = (
   onSuccess,
   onCancel,
 }) => {
-  const { updateUser } = useAuth();
+  const { verify2FALogin } = useAuth();
   const [code, setCode] = useState('');
-  const [useBackupCode, setUseBackupCode] = useState(false);
+  const [isBackupCode, setIsBackupCode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (isOpen) {
+      setCode('');
+      setIsBackupCode(false);
+      setIsExpired(false);
+      setError(null);
+    }
+  }, [isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    const cleanCode = code.trim();
-    if (!useBackupCode && cleanCode.length !== 6) {
-      setError('Por favor ingresa el código de 6 dígitos de tu app autenticadora.');
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (isExpired) {
+      onCancel();
       return;
     }
-    if (useBackupCode && cleanCode.length !== 8) {
-      setError('El código de respaldo debe tener exactamente 8 caracteres.');
+    const longitud = isBackupCode ? 8 : 6;
+    if (!new RegExp(`^\\d{${longitud}}$`).test(code.trim())) {
+      setError(isBackupCode
+        ? 'Ingresá un código de respaldo de 8 dígitos.'
+        : 'Ingresá el código TOTP de 6 dígitos.');
       return;
     }
 
     setIsSubmitting(true);
+    setError(null);
     try {
-      const authData = await authService.verify2FALogin(tempToken, cleanCode, useBackupCode);
-      updateUser(authData.user);
-      onSuccess(authData.user.rol);
+      const response = await verify2FALogin(tempToken, code.trim(), isBackupCode);
+      onSuccess(response.user.rol);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Código incorrecto o expirado.';
-      setError(message);
+      const classified = classifyApiError(err, 'No se pudo validar el código de seguridad.');
+      const msg = (classified.message || '').toLowerCase();
+      const expired =
+        classified.status === 401 ||
+        classified.status === 410 ||
+        msg.includes('expir') ||
+        msg.includes('vencid') ||
+        (msg.includes('inválid') && (msg.includes('token') || msg.includes('desafío')));
+
+      if (expired) {
+        setIsExpired(true);
+        setError('El token temporal del desafío ha expirado o no es válido. Por favor, volvé a iniciar sesión.');
+      } else {
+        setIsExpired(false);
+        setError(classified.message);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-md rounded-3xl border border-sky-200/50 bg-card p-6 sm:p-8 shadow-2xl space-y-6">
-        <div className="text-center space-y-2">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 shadow-inner">
-            <KeyRound className="h-7 w-7" />
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onCancel(); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div>
+              <DialogTitle>Verificación en dos pasos</DialogTitle>
+              <DialogDescription>
+                Ingresá el código de tu aplicación autenticadora para completar el acceso.
+              </DialogDescription>
+            </div>
           </div>
-          <h2 className="text-xl font-extrabold font-heading text-foreground">
-            Verificación en Dos Pasos
-          </h2>
-          <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-            {useBackupCode
-              ? 'Ingresa uno de tus códigos de respaldo de emergencia (8 dígitos)'
-              : 'Ingresa el código temporal de 6 dígitos generado por tu app autenticadora'}
-          </p>
-        </div>
-
-        {error && (
-          <div className="flex items-center gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive">
-            <ShieldAlert className="h-4 w-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
+        </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <input
-              type="text"
-              maxLength={useBackupCode ? 8 : 6}
-              placeholder={useBackupCode ? 'ej: 82947192' : '000000'}
-              value={code}
-              onChange={(e) =>
-                setCode(useBackupCode ? e.target.value.toUpperCase().slice(0, 8) : e.target.value.replace(/\D/g, '').slice(0, 6))
-              }
-              className="w-full text-center tracking-[0.35em] font-mono text-2xl py-3 rounded-2xl border border-input bg-background focus:ring-2 focus:ring-sky-600 focus:outline-none transition shadow-inner"
-              autoFocus
-              required
-            />
+            <label htmlFor="two-factor-code" className="text-xs font-bold text-foreground">
+              {isBackupCode ? 'Código de respaldo' : 'Código de 6 dígitos'}
+            </label>
+            <div className="relative">
+              <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <input
+                id="two-factor-code"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                disabled={isSubmitting || isExpired}
+                maxLength={isBackupCode ? 8 : 6}
+                value={code}
+                onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
+                placeholder={isBackupCode ? '12345678' : '123456'}
+                className="w-full rounded-xl border border-input bg-background py-2.5 pl-10 pr-3 text-sm tracking-[0.3em] focus:outline-none focus:ring-2 focus:ring-sky-600 disabled:opacity-50"
+              />
+            </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting || (useBackupCode ? code.length !== 8 : code.length !== 6)}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 py-3 text-sm font-bold text-white shadow-md shadow-sky-600/20 hover:bg-sky-700 transition disabled:opacity-50 cursor-pointer"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Verificando...</span>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Verificar y Continuar</span>
-              </>
-            )}
-          </button>
-        </form>
+          {error && (
+            <div role="alert" className="flex flex-col gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+              {isExpired && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={onCancel}
+                  className="mt-1 self-start border-rose-300 bg-white text-rose-800 hover:bg-rose-100"
+                >
+                  Volver a iniciar sesión
+                </Button>
+              )}
+            </div>
+          )}
 
-        {/* Opción de contingencia: código de respaldo de 8 dígitos (DoD HU-42) */}
-        <div className="border-t border-border pt-4 text-center space-y-2">
           <button
             type="button"
+            disabled={isSubmitting || isExpired}
             onClick={() => {
-              setUseBackupCode(!useBackupCode);
+              setIsBackupCode((prev) => !prev);
               setCode('');
               setError(null);
             }}
-            className="text-xs font-semibold text-sky-700 hover:underline cursor-pointer"
+            className="text-xs font-semibold text-sky-700 hover:underline disabled:opacity-50"
           >
-            {useBackupCode
-              ? '← Volver a ingresar código TOTP de 6 dígitos'
-              : '¿No tienes acceso a tu app autenticadora? Usar código de respaldo de 8 dígitos'}
+            {isBackupCode ? 'Usar código TOTP' : 'Usar un código de respaldo'}
           </button>
 
-          <div>
-            <button
-              type="button"
-              onClick={onCancel}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition cursor-pointer"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Cancelar y volver al login</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+              {isExpired ? 'Cerrar' : 'Cancelar'}
+            </Button>
+            <Button type="submit" disabled={isSubmitting || isExpired}>
+              {isSubmitting ? 'Verificando...' : 'Verificar e ingresar'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };

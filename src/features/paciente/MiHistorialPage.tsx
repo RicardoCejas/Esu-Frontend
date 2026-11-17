@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { pacientesService } from '@/api/pacientesService';
+import { extractApiErrorMessage } from '@/api/endpoints';
 import type { ConsultaMedica } from '@/types';
 import {
   FileText,
@@ -9,19 +11,26 @@ import {
   Pill,
   ShieldCheck,
   Download,
-  Filter,
   Edit3,
   X,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  RotateCcw
 } from 'lucide-react';
+import { TimelineFilters, highlightMatches, type TipoPastilla } from './components/TimelineFilters';
+import { MedicalAttachmentViewer } from '../medico/components/MedicalAttachmentViewer';
 
 export const MiHistorialPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const pacienteId = searchParams.get('pacienteId') || user?.pacienteId || '';
   const [consultas, setConsultas] = useState<ConsultaMedica[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // HU-33: Filtro por Rango de Fechas
+  // HU-74: Buscador y Filtro Multifactor en el Timeline de Historia Clínica
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState<TipoPastilla>('TODAS');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
 
@@ -32,13 +41,27 @@ export const MiHistorialPage: React.FC = () => {
   const [consultaAAnular, setConsultaAAnular] = useState<ConsultaMedica | null>(null);
 
   useEffect(() => {
-    if (user) {
-      pacientesService.getHistoriaClinica(user.id).then((data) => {
-        setConsultas(data);
+    if (!pacienteId) {
+      setLoading(false);
+      setError(null);
+      setConsultas([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    pacientesService.getHistoriaClinica(pacienteId)
+      .then((data) => {
+        setConsultas(data || []);
+      })
+      .catch((err) => {
+        setError(extractApiErrorMessage(err, 'No se pudo recuperar el historial clínico del paciente.'));
+        setConsultas([]);
+      })
+      .finally(() => {
         setLoading(false);
       });
-    }
-  }, [user]);
+  }, [pacienteId]);
 
   // Bloqueo de scroll cuando un modal está abierto
   useEffect(() => {
@@ -52,11 +75,38 @@ export const MiHistorialPage: React.FC = () => {
     };
   }, [consultaAEditar, consultaAAnular]);
 
-  // HU-33: Filtrado por fechas
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setFiltroTipo('TODAS');
+    setFechaDesde('');
+    setFechaHasta('');
+  };
+
+  // HU-74: Filtrado Multifactor sobre diagnóstico, tratamiento, adendas, profesional y pastillas
   const consultasFiltradas = consultas.filter((c) => {
     const matchDesde = !fechaDesde || c.fecha >= fechaDesde;
     const matchHasta = !fechaHasta || c.fecha <= fechaHasta;
-    return matchDesde && matchHasta;
+
+    let matchTipo = true;
+    if (filtroTipo === 'CONSULTAS') {
+      matchTipo = !c.receta;
+    } else if (filtroTipo === 'RECETAS') {
+      matchTipo = Boolean(c.receta);
+    } else if (filtroTipo === 'ADENDAS') {
+      matchTipo = c.diagnostico.includes('[CORRECCIÓN') || c.motivo.includes('[CORRECCIÓN');
+    }
+
+    let matchBusqueda = true;
+    if (busqueda.trim()) {
+      const q = busqueda.toLowerCase().trim();
+      const inDiag = c.diagnostico.toLowerCase().includes(q);
+      const inMotivo = c.motivo.toLowerCase().includes(q);
+      const inTrat = (c.tratamiento || '').toLowerCase().includes(q);
+      const inProf = c.profesionalNombre.toLowerCase().includes(q);
+      matchBusqueda = inDiag || inMotivo || inTrat || inProf;
+    }
+
+    return matchDesde && matchHasta && matchTipo && matchBusqueda;
   });
 
   // HU-35: Aplicar corrección / nota médica
@@ -124,57 +174,28 @@ export const MiHistorialPage: React.FC = () => {
         </div>
       </div>
 
-      {/* HU-33: Panel de Filtro de Atenciones Médicas por Rango de Fechas */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-xs print:hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-            <Filter className="h-4 w-4 text-primary" />
-            <span>Filtrar Consultas por Rango de Fechas:</span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 text-xs">
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground">Desde:</span>
-              <input
-                type="date"
-                value={fechaDesde}
-                onChange={(e) => setFechaDesde(e.target.value)}
-                className="rounded-lg border border-input bg-background px-2.5 py-1 text-xs font-mono"
-              />
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground">Hasta:</span>
-              <input
-                type="date"
-                value={fechaHasta}
-                onChange={(e) => setFechaHasta(e.target.value)}
-                className="rounded-lg border border-input bg-background px-2.5 py-1 text-xs font-mono"
-              />
-            </div>
-
-            {(fechaDesde || fechaHasta) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setFechaDesde('');
-                  setFechaHasta('');
-                }}
-                className="rounded-lg border border-input px-2.5 py-1 text-muted-foreground hover:bg-accent transition text-xs cursor-pointer"
-              >
-                Limpiar Fechas
-              </button>
-            )}
-          </div>
-        </div>
+      {/* HU-74: Buscador y Filtro Multifactor en el Timeline */}
+      <div className="print:hidden">
+        <TimelineFilters
+          busqueda={busqueda}
+          onBusquedaChange={setBusqueda}
+          filtroTipo={filtroTipo}
+          onFiltroTipoChange={setFiltroTipo}
+          fechaDesde={fechaDesde}
+          onFechaDesdeChange={setFechaDesde}
+          fechaHasta={fechaHasta}
+          onFechaHastaChange={setFechaHasta}
+          onLimpiarFiltros={limpiarFiltros}
+          resultadosCount={consultasFiltradas.length}
+        />
       </div>
 
       {/* Membrete oficial visible únicamente en impresión/PDF (HU-36) */}
       <div className="hidden print:block border-b-2 border-slate-900 pb-4 mb-6">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold font-heading">SISTEMA PÚBLICO Y PRIVADO DE SALUD UNIFICADA</h2>
-            <p className="text-xs text-slate-600">Hospital Provincial Aurelio Crespo • Cruz del Eje, Córdoba</p>
+            <h2 className="text-xl font-bold">SISTEMA PÚBLICO Y PRIVADO DE SALUD UNIFICADA</h2>
+            <p className="text-xs text-slate-600">Centro de Salud • Cruz del Eje, Córdoba</p>
           </div>
           <div className="text-right text-xs">
             <p><strong>Paciente:</strong> {user?.nombre} {user?.apellido}</p>
@@ -184,17 +205,63 @@ export const MiHistorialPage: React.FC = () => {
         </div>
       </div>
 
-      {loading ? (
+      {/* Estado si el paciente no tiene pacienteId vinculado */}
+      {!pacienteId ? (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-8 text-center space-y-3">
+          <FileText className="mx-auto h-10 w-10 text-amber-600 dark:text-amber-400" />
+          <h3 className="font-bold text-base text-amber-950 dark:text-amber-200">
+            Historia clínica no vinculada
+          </h3>
+          <p className="text-xs text-amber-800 dark:text-amber-300 max-w-md mx-auto">
+            Esta cuenta no posee un identificador de paciente activo emitido por el backend. Por favor acérquese a recepción o vuelva a iniciar sesión.
+          </p>
+        </div>
+      ) : filtroTipo === 'ESTUDIOS' ? (
+        <MedicalAttachmentViewer pacienteId={pacienteId} readOnly={true} />
+      ) : loading ? (
         <div className="flex h-48 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-8 text-center space-y-3">
+          <AlertCircle className="mx-auto h-10 w-10 text-destructive" />
+          <h3 className="font-bold text-base text-foreground">Error al cargar la historia clínica</h3>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">{error}</p>
+          <button
+            type="button"
+            onClick={() => {
+              if (!pacienteId) return;
+              setLoading(true);
+              setError(null);
+              pacientesService
+                .getHistoriaClinica(pacienteId)
+                .then((data) => setConsultas(data || []))
+                .catch((err) => setError(extractApiErrorMessage(err, 'No se pudo recuperar el historial clínico.')))
+                .finally(() => setLoading(false));
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition cursor-pointer"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Reintentar</span>
+          </button>
         </div>
       ) : consultasFiltradas.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center space-y-3">
           <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="font-bold text-base">Sin registros médicos en este período</h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            No se encontraron consultas registradas que coincidan con las fechas seleccionadas.
+            No se encontraron consultas registradas que coincidan con los criterios de búsqueda o filtros seleccionados.
           </p>
+          {(busqueda || fechaDesde || fechaHasta || filtroTipo !== 'TODAS') && (
+            <button
+              type="button"
+              onClick={limpiarFiltros}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-accent transition cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Limpiar filtros y ver todo</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
@@ -210,11 +277,24 @@ export const MiHistorialPage: React.FC = () => {
                     <Activity className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-base text-foreground">{consulta.profesionalNombre}</h3>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                      <Calendar className="h-3.5 w-3.5 text-primary" />
-                      <span>Atención realizada el {consulta.fecha}</span>
-                    </p>
+                    <h3 className="font-bold text-base text-foreground">
+                      {highlightMatches(consulta.profesionalNombre, busqueda)}
+                      {consulta.profesionalMatricula && (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          (MP {consulta.profesionalMatricula})
+                        </span>
+                      )}
+                    </h3>
+                    <div className="space-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                      <p className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-primary" />
+                        <span>Atención realizada el: <strong className="text-foreground">{consulta.fecha}</strong></span>
+                      </p>
+                      <p className="flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-sky-500 shrink-0" />
+                        <span>Centro de atención: <strong className="text-foreground">{consulta.centroSaludNombre || 'Centro de Salud'}</strong></span>
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -239,31 +319,31 @@ export const MiHistorialPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Signos Vitales */}
+              {/* Signos Vitales Reales (Cero Fallbacks Inventados) */}
               {consulta.signosVitales && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-xl bg-muted/40 p-3.5 text-xs">
                   <div>
                     <span className="text-muted-foreground block">Presión Arterial</span>
                     <span className="font-bold text-foreground">
-                      {consulta.signosVitales.presionArterial || '120/80 mmHg'}
+                      {consulta.signosVitales.presionArterial || 'No registrada'}
                     </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground block">Frecuencia Cardíaca</span>
                     <span className="font-bold text-foreground">
-                      {consulta.signosVitales.frecuenciaCardiaca || '72 lpm'}
+                      {consulta.signosVitales.frecuenciaCardiaca || 'No registrada'}
                     </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground block">Temperatura</span>
                     <span className="font-bold text-foreground">
-                      {consulta.signosVitales.temperatura || '36.5 °C'}
+                      {consulta.signosVitales.temperatura || 'No registrada'}
                     </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground block">Peso Corporal</span>
                     <span className="font-bold text-foreground">
-                      {consulta.signosVitales.peso || '75 kg'}
+                      {consulta.signosVitales.peso || 'No registrado'}
                     </span>
                   </div>
                 </div>
@@ -274,54 +354,113 @@ export const MiHistorialPage: React.FC = () => {
                 <div className="space-y-1">
                   <span className="font-semibold text-foreground">Motivo de Consulta:</span>
                   <p className="rounded-lg border border-border bg-background p-3 text-muted-foreground">
-                    {consulta.motivo}
+                    {highlightMatches(consulta.motivo, busqueda)}
                   </p>
                 </div>
 
                 <div className="space-y-1">
                   <span className="font-semibold text-foreground">Diagnóstico / Evolución:</span>
-                  <p className="rounded-lg border border-border bg-background p-3 font-medium text-foreground">
-                    {consulta.diagnostico}
-                  </p>
+                  <div className="rounded-lg border border-border bg-background p-3 font-medium text-foreground space-y-1">
+                    <p>{highlightMatches(consulta.diagnostico, busqueda)}</p>
+                    {consulta.codigoCie10 && (
+                      <span className="inline-block rounded bg-sky-100 dark:bg-sky-900/60 px-2 py-0.5 text-[11px] font-bold text-sky-800 dark:text-sky-300">
+                        CIE-10: {consulta.codigoCie10} {consulta.descripcionCie10 ? `— ${consulta.descripcionCie10}` : ''}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
+              {/* Hash de Integridad y Adendas Oficiales */}
+              {consulta.hashIntegridad && (
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 text-[11px] tabular-nums text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span>Hash de Integridad (SHA-256): <strong className="text-foreground">{consulta.hashIntegridad}</strong></span>
+                </div>
+              )}
+
+              {Array.isArray(consulta.adendas) && consulta.adendas.length > 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/60 dark:bg-amber-950/20 p-3.5 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
+                  <span className="font-bold flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
+                    <Edit3 className="h-3.5 w-3.5" /> Adendas / Fe de Erratas Oficiales:
+                  </span>
+                  <ul className="list-disc pl-4 space-y-1">
+                    {consulta.adendas.map((ad, idx) => (
+                      <li key={idx}>{ad}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Receta Digital Asociada */}
-              {consulta.receta && (
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-3 print:border-slate-300">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Pill className="h-4 w-4 text-primary" />
-                      <h4 className="font-bold text-xs text-primary">Receta Electrónica Emitida</h4>
+              {consulta.receta ? (
+                <div className="rounded-2xl border border-sky-300 dark:border-sky-800 bg-sky-50/70 dark:bg-slate-900/90 p-4 sm:p-5 space-y-3.5 shadow-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-200/80 dark:border-sky-800/60 pb-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-700 text-white shadow-2xs">
+                        <Pill className="h-4.5 w-4.5" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                          Receta Electrónica Emitida
+                        </h4>
+                        <span className="text-xs font-medium text-sky-800 dark:text-sky-300">
+                          Prescripción digital oficial (Ley 27.553) • {consulta.centroSaludNombre || 'Centro de Salud'}
+                        </span>
+                      </div>
                     </div>
-                    <span className="font-mono text-[11px] font-bold text-muted-foreground">
+                    <span className="tabular-nums text-xs font-bold text-sky-900 dark:text-sky-200 bg-white dark:bg-slate-800 border border-sky-300 dark:border-sky-700 px-3 py-1 rounded-lg shadow-2xs">
                       {consulta.receta.codigoQR}
                     </span>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {consulta.receta.medicamentos.map((med, idx) => (
                       <div
                         key={idx}
-                        className="rounded-lg border border-border bg-card p-2.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1"
+                        className="rounded-xl border border-sky-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs"
                       >
                         <div>
-                          <span className="font-bold text-foreground">{med.nombreComercial}</span>{' '}
-                          <span className="text-muted-foreground">({med.droga} - {med.presentacion})</span>
-                          <p className="text-[11px] text-primary font-medium mt-0.5">{med.dosisIndicada}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
+                              {med.nombreComercial}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/70 px-2 py-0.5 rounded-md border border-slate-200/70 dark:border-slate-600">
+                              {med.droga} • {med.presentacion}
+                            </span>
+                          </div>
+                          <p className="text-xs sm:text-sm text-sky-800 dark:text-sky-300 font-bold mt-1">
+                            Dosis indicada: {med.dosisIndicada}
+                          </p>
                         </div>
-                        <span className="text-[11px] font-semibold text-muted-foreground sm:text-right">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 sm:text-right shrink-0">
                           Cantidad: {med.cantidad}
                         </span>
                       </div>
                     ))}
                   </div>
 
-                  <p className="text-[11px] text-muted-foreground italic">
-                    Indicaciones: {consulta.receta.indicacionesGenerales}
-                  </p>
+                  {consulta.receta.indicacionesGenerales && (
+                    <div className="rounded-xl bg-white dark:bg-slate-800 border border-sky-200/70 dark:border-slate-700 p-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                      <strong className="text-sky-900 dark:text-sky-300 font-bold">Indicaciones Médicas:</strong>{' '}
+                      <span>{consulta.receta.indicacionesGenerales}</span>
+                    </div>
+                  )}
                 </div>
-              )}
+              ) : consulta.recetaId ? (
+                <div className="rounded-xl border border-sky-200 bg-sky-50 dark:bg-slate-900 p-3 text-xs text-sky-900 dark:text-sky-300 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Pill className="h-4 w-4 text-sky-700" />
+                    <span>Receta electrónica emitida y asociada a la consulta (N° #{consulta.recetaId})</span>
+                  </div>
+                  <Link
+                    to="/paciente/recetas"
+                    className="text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline"
+                  >
+                    Ver Recetas
+                  </Link>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
@@ -334,7 +473,7 @@ export const MiHistorialPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <Edit3 className="h-5 w-5 text-primary" />
-                <h3 className="font-bold text-base text-foreground font-heading">
+                <h3 className="font-bold text-base text-foreground">
                   Rectificar Registro Clínico
                 </h3>
               </div>

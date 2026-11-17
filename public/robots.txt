@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://esuluvia.vercel.app/sitemap.xml

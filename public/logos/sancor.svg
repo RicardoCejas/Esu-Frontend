@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 50" width="170" height="50">
+    <circle cx="25" cy="25" r="14" fill="#16a34a"/>
+    <path d="M20 25 L24 29 L31 21" stroke="white" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="45" y="25" font-family="Arial, sans-serif" font-weight="900" font-size="16" fill="#15803d">SanCor</text>
+    <text x="108" y="25" font-family="Arial, sans-serif" font-weight="800" font-size="16" fill="#0284c7">Salud</text>
+    <text x="46" y="36" font-family="Arial, sans-serif" font-weight="600" font-size="8" fill="#64748b" letter-spacing="1">GRUPO DE MEDICINA</text>
+  </svg>

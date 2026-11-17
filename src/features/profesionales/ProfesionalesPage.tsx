@@ -67,7 +67,7 @@ export const ProfesionalesPage: React.FC = () => {
               <div className="flex items-center gap-3">
                 <Building2 className="h-6 w-6 text-sky-200" />
                 <div>
-                  <h3 className="font-bold text-base font-heading">{centroDetalle.nombre}</h3>
+                  <h3 className="font-bold text-base">{centroDetalle.nombre}</h3>
                   <span className="text-[10px] bg-sky-800 px-2 py-0.5 rounded-full font-bold">
                     {centroDetalle.tipo} • {centroDetalle.ciudad}
                   </span>
@@ -96,7 +96,7 @@ export const ProfesionalesPage: React.FC = () => {
                   <Phone className="h-4 w-4 text-sky-600 shrink-0" />
                   <div>
                     <span className="font-bold text-foreground inline mr-1">Teléfono:</span>
-                    <span className="font-mono text-sky-700 font-semibold">{centroDetalle.telefono}</span>
+                    <span className="tabular-nums text-sky-700 font-semibold">{centroDetalle.telefono}</span>
                   </div>
                 </div>
 

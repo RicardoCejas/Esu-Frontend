@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import { PublicNavbar } from '@/components/layout/PublicNavbar';
 import { Footer } from '@/components/layout/Footer';
 import { CentrosHeroBannerSlider } from './CentrosHeroBannerSlider';
 import { QuienesSomosSection } from './QuienesSomosSection';
+import { ObrasSocialesCarousel } from './ObrasSocialesCarousel';
 import { EspecialidadesSection, getSpecialtyDesign } from './EspecialidadesSection';
+const MapaCruzDelEje = React.lazy(() => import('./MapaCruzDelEje').then((m) => ({ default: m.MapaCruzDelEje })));
 import { centrosService } from '@/api/centrosService';
 import { profesionalesService } from '@/api/profesionalesService';
 import type { CentroSalud, Especialidad, Profesional } from '@/types';
@@ -20,12 +23,19 @@ import {
   User,
   Building2,
   PlusCircle,
+  LogIn,
+  UserPlus,
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
   const [centros, setCentros] = useState<CentroSalud[]>([]);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
+
+  // Modal para seleccionar entre Iniciar Sesión o Registrarse
+  const [showAuthChoiceModal, setShowAuthChoiceModal] = useState(false);
 
   // Estado para el modal de médicos por especialidad
   const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState<Especialidad | null>(null);
@@ -33,15 +43,28 @@ export const HomePage: React.FC = () => {
   // Estado para modal de detalles de un centro de salud
   const [centroDetalle, setCentroDetalle] = useState<CentroSalud | null>(null);
 
+  const handleConsultarTurnos = () => {
+    if (isAuthenticated && user) {
+      navigate('/dashboard/paciente');
+    } else {
+      setShowAuthChoiceModal(false); // reset
+      setShowAuthChoiceModal(true);
+    }
+  };
+
   const recargarDatos = async () => {
-    const [c, e, p] = await Promise.all([
-      centrosService.getAll(),
-      profesionalesService.getEspecialidades(),
-      profesionalesService.getAll(),
-    ]);
-    setCentros(c);
-    setEspecialidades(e);
-    setProfesionales(p);
+    try {
+      const [c, e, p] = await Promise.all([
+        centrosService.getAll(),
+        profesionalesService.getEspecialidades(),
+        profesionalesService.getAll(),
+      ]);
+      setCentros(c || []);
+      setEspecialidades(e || []);
+      setProfesionales(p || []);
+    } catch {
+      // Silenciar timeout si el backend está en reposo (evita error no capturado en consola)
+    }
   };
 
   useEffect(() => {
@@ -57,20 +80,22 @@ export const HomePage: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-sky-700 selection:text-white">
       <PublicNavbar />
 
+      <main id="main-content" className="flex-1">
+
       {/* BANNER INTERACTIVO DE FOTOS E INSTITUCIONES (POR ENCIMA DEL HERO) */}
       <div id="centros" className="scroll-mt-16">
         <CentrosHeroBannerSlider />
       </div>
 
-      {/* Hero Section: Acceso Rápido y Búsqueda Centralizada */}
-      <section className="relative overflow-hidden border-b border-slate-200 bg-slate-50/80 py-12 sm:py-16">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="max-w-3xl space-y-6">
-            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl text-slate-900 font-heading leading-tight">
-              Cuidamos la salud de <span className="text-sky-700">Cruz del Eje</span> en un solo lugar.
+      {/* Hero Section: Acceso Rápido con gris azulado marcado para alto contraste contra el blanco */}
+      <section className="relative overflow-hidden border-b border-[#c5d3e0] bg-[#d8e2ec] py-14 sm:py-20">
+        <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="max-w-4xl space-y-7">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#003855] leading-tight">
+              Cuidamos la salud de <span className="text-[#005a87]">Cruz del Eje</span> en un solo lugar.
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
+            <p className="text-lg sm:text-2xl text-slate-700 leading-relaxed font-normal max-w-3xl">
               El <strong>Ecosistema de Salud Unificado (Luvia)</strong> conecta hospitales, dispensarios municipales, clínicas y consultorios independientes para facilitarte el acceso a turnos, historias clínicas y recetas electrónicas.
             </p>
 
@@ -78,20 +103,21 @@ export const HomePage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <Link
                 to="/turnero"
-                className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-sky-700 px-8 py-4 text-base sm:text-lg font-bold text-white shadow-md hover:bg-sky-800 hover:shadow-lg transition-all cursor-pointer"
+                className="inline-flex items-center justify-center gap-3 rounded-full bg-[#005a87] px-9 py-4 text-base sm:text-lg font-bold text-white shadow-md hover:bg-[#00486c] hover:shadow-lg transition-all cursor-pointer"
               >
                 <Calendar className="h-5 w-5" />
                 <span>Sacar Turno Online</span>
                 <ArrowRight className="h-5 w-5" />
               </Link>
 
-              <Link
-                to="/dashboard/paciente"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-4 text-base font-semibold text-slate-800 shadow-xs hover:bg-slate-50 transition cursor-pointer"
+              <button
+                type="button"
+                onClick={handleConsultarTurnos}
+                className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#005a87] bg-white px-8 py-4 text-base sm:text-lg font-bold text-[#005a87] shadow-xs hover:bg-slate-50 transition cursor-pointer"
               >
-                <UserCheck className="h-5 w-5 text-sky-700" />
+                <UserCheck className="h-5 w-5 text-[#005a87]" />
                 <span>Consultar Mis Turnos</span>
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -100,12 +126,21 @@ export const HomePage: React.FC = () => {
       {/* QUIÉNES SOMOS / INSTITUCIONAL ESU */}
       <QuienesSomosSection />
 
+      {/* Obras Sociales y Prepagas Aceptadas - De punta a punta */}
+      <ObrasSocialesCarousel />
+
       {/* Especialidades Médicas Rediseñadas (Cartilla Médica Moderna) */}
       <EspecialidadesSection
         especialidades={especialidades}
         profesionales={profesionales}
+        centros={centros}
         onSelectSpecialty={(esp) => setEspecialidadSeleccionada(esp)}
       />
+
+      {/* MAPA SANITARIO INTERACTIVO (MAPLIBRE + OPENFREEMAP / OPENSTREETMAP) */}
+      <React.Suspense fallback={<div className="h-[460px] w-full bg-slate-100 flex items-center justify-center text-slate-400 font-medium">Cargando mapa interactivo...</div>}>
+        <MapaCruzDelEje />
+      </React.Suspense>
 
       {/* MODAL PRINCIPAL: NÓMINA DE MÉDICOS CON GUÍA DETALLADA DE SEDES / HOSPITALES Y OPCIÓN DE AGREGAR ROL ADMIN */}
       {especialidadSeleccionada && (
@@ -120,7 +155,7 @@ export const HomePage: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <ModalIcon className="h-7 w-7 text-white shrink-0" />
                     <div>
-                      <h3 className="text-lg font-bold font-heading">{especialidadSeleccionada.nombre}</h3>
+                      <h3 className="text-lg font-bold">{especialidadSeleccionada.nombre}</h3>
                       <p className="text-xs text-sky-100">{especialidadSeleccionada.descripcion}</p>
                     </div>
                   </div>
@@ -185,11 +220,11 @@ export const HomePage: React.FC = () => {
                               {med.nombre.charAt(0)}{med.apellido.charAt(0)}
                             </div>
                             <div>
-                              <h5 className="font-bold text-base text-foreground font-heading">
+                              <h5 className="font-bold text-base text-foreground">
                                 Dr(a). {med.nombre} {med.apellido}
                               </h5>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <span className="font-mono text-xs font-semibold text-white bg-sky-700 px-2 py-0.5 rounded">
+                                <span className="tabular-nums text-xs font-semibold text-white bg-sky-700 px-2 py-0.5 rounded">
                                   {med.matricula}
                                 </span>
                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -225,7 +260,7 @@ export const HomePage: React.FC = () => {
                               >
                                 <div className="flex items-start justify-between gap-1">
                                   <div>
-                                    <h6 className="font-bold text-xs text-foreground font-heading">
+                                    <h6 className="font-bold text-xs text-foreground">
                                       {centro.nombre}
                                     </h6>
                                     <span className="text-xs text-slate-500 font-normal">
@@ -293,7 +328,7 @@ export const HomePage: React.FC = () => {
               <div className="flex items-center gap-3">
                 <Building2 className="h-6 w-6 text-sky-200" />
                 <div>
-                  <h3 className="font-bold text-base font-heading">{centroDetalle.nombre}</h3>
+                  <h3 className="font-bold text-base">{centroDetalle.nombre}</h3>
                   <p className="text-xs text-sky-100">
                     {centroDetalle.tipo} • {centroDetalle.ciudad}
                   </p>
@@ -321,7 +356,7 @@ export const HomePage: React.FC = () => {
                   <Phone className="h-4 w-4 text-sky-600 shrink-0" />
                   <div>
                     <span className="font-bold text-foreground inline mr-1">Teléfono:</span>
-                    <span className="font-mono text-sky-700 font-semibold">{centroDetalle.telefono}</span>
+                    <span className="tabular-nums text-sky-700 font-semibold">{centroDetalle.telefono}</span>
                   </div>
                 </div>
 
@@ -357,6 +392,79 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* MODAL IDENTIFICACIÓN PARA CONSULTAR MIS TURNOS */}
+      {showAuthChoiceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl border border-sky-100 bg-white p-6 sm:p-8 shadow-2xl space-y-6 relative animate-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setShowAuthChoiceModal(false)}
+              className="absolute top-4 right-4 h-8 w-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="text-center space-y-2">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-700">
+                <UserCheck className="h-7 w-7" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900">
+                Consultar Mis Turnos
+              </h3>
+              <p className="text-sm text-slate-600">
+                Para consultar tus citas agendadas e historial de salud en Cruz del Eje, ingresa a tu cuenta o regístrate si es tu primera vez.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <Link
+                to="/login?redirect=/dashboard/paciente"
+                className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-[#005a87] bg-[#005a87] text-white font-bold hover:bg-[#00486c] transition shadow-md group cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <LogIn className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-base font-bold leading-tight">Iniciar Sesión</p>
+                    <p className="text-xs text-sky-100 font-normal">Ya tengo cuenta registrada</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" />
+              </Link>
+
+              <Link
+                to="/registro?redirect=/dashboard/paciente"
+                className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-bold hover:border-sky-300 transition shadow-xs group cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-sky-50 flex items-center justify-center">
+                    <UserPlus className="h-5 w-5 text-sky-700" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-base font-bold leading-tight text-slate-900">Crear Cuenta</p>
+                    <p className="text-xs text-slate-500 font-normal">Soy un nuevo paciente</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-sky-600 transform group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={() => setShowAuthChoiceModal(false)}
+                className="text-xs font-semibold text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                Continuar navegando en el portal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      </main>
 
       <Footer />
     </div>

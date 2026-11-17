@@ -1,7 +1,54 @@
-export type UserRole = 'PACIENTE' | 'MEDICO' | 'RECEPCIONISTA' | 'ADMIN';
+export type BackendUserRole = 'PACIENTE' | 'PROFESIONAL' | 'RECEPCIONISTA' | 'ADMIN';
+export type UserRole = 'PACIENTE' | 'MEDICO' | 'PROFESIONAL' | 'RECEPCIONISTA' | 'ADMIN';
+
+export type PermissionCode =
+  | 'TURNOS_VER'
+  | 'TURNOS_CREAR'
+  | 'TURNOS_CANCELAR'
+  | 'TURNOS_REAGENDAR'
+  | 'SOBRETURNOS_CREAR'
+  | 'SALA_ESPERA_GESTIONAR'
+  | 'PACIENTES_VER'
+  | 'PACIENTES_REGISTRAR'
+  | 'PACIENTES_FUSIONAR'
+  | 'CONSULTORIOS_VER'
+  | 'CONSULTORIOS_ADMINISTRAR'
+  | 'MEDICOS_VER'
+  | 'MEDICOS_ASIGNAR_CONSULTORIO'
+  | 'REPORTES_VER'
+  | 'USUARIOS_ADMINISTRAR';
+
+export const DEFAULT_PERMISSIONS_BY_ROLE: Record<string, PermissionCode[]> = {
+  ADMIN: [
+    'TURNOS_VER', 'TURNOS_CREAR', 'TURNOS_CANCELAR', 'TURNOS_REAGENDAR', 'SOBRETURNOS_CREAR',
+    'SALA_ESPERA_GESTIONAR', 'PACIENTES_VER', 'PACIENTES_REGISTRAR', 'PACIENTES_FUSIONAR',
+    'CONSULTORIOS_VER', 'CONSULTORIOS_ADMINISTRAR', 'MEDICOS_VER', 'MEDICOS_ASIGNAR_CONSULTORIO',
+    'REPORTES_VER', 'USUARIOS_ADMINISTRAR',
+  ],
+  RECEPCIONISTA: [
+    'TURNOS_VER', 'TURNOS_CREAR', 'TURNOS_CANCELAR', 'TURNOS_REAGENDAR', 'SOBRETURNOS_CREAR',
+    'SALA_ESPERA_GESTIONAR', 'PACIENTES_VER', 'PACIENTES_REGISTRAR', 'CONSULTORIOS_VER',
+    'CONSULTORIOS_ADMINISTRAR', 'MEDICOS_VER', 'MEDICOS_ASIGNAR_CONSULTORIO',
+    'REPORTES_VER', 'USUARIOS_ADMINISTRAR',
+  ],
+  MEDICO: ['TURNOS_VER', 'PACIENTES_VER', 'CONSULTORIOS_VER', 'MEDICOS_VER'],
+  PROFESIONAL: ['TURNOS_VER', 'PACIENTES_VER', 'CONSULTORIOS_VER', 'MEDICOS_VER'],
+  PACIENTE: [],
+};
+
+export interface Permiso {
+  id: number;
+  codigo: PermissionCode;
+  nombre: string;
+  modulo: string;
+  descripcion?: string;
+}
 
 export interface User {
   id: string;
+  usuarioId?: string;
+  pacienteId?: string;
+  profesionalId?: string;
   nombre: string;
   apellido: string;
   email: string;
@@ -11,12 +58,17 @@ export interface User {
   matricula?: string; // Para médicos
   especialidad?: string; // Para médicos
   centroSaludId?: string; // Para recepcionistas o médicos asociados a un centro
+  centroSaludNombre?: string; // Nombre del centro de salud al que pertenece
   obraSocial?: string;
   nroAfiliado?: string;
   grupoSanguineo?: string; // Para pacientes
   activo?: boolean;
   twoFactorEnabled?: boolean; // HU-42
   emailVerified?: boolean; // HU-43
+  isDeveloper?: boolean;
+  fechaNacimiento?: string;
+  dniVerificado?: boolean;
+  permisos?: PermissionCode[];
 }
 
 export interface CentroSalud {
@@ -28,6 +80,13 @@ export interface CentroSalud {
   ciudad: string;
   horarioAtencion: string;
   disponibleGuardia: boolean;
+  latitud?: number;
+  longitud?: number;
+  activo?: boolean;
+  permiteConsultas?: boolean;
+  permiteEstudios?: boolean;
+  cantidadPlantas?: number;
+  estudiosDisponibles?: string[];
 }
 
 export interface Especialidad {
@@ -42,6 +101,8 @@ export interface Profesional {
   nombre: string;
   apellido: string;
   matricula: string;
+  telefono?: string;
+  activo?: boolean;
   especialidadId: string;
   especialidadNombre: string;
   centrosSaludIds: string[];
@@ -81,6 +142,9 @@ export interface DisponibilidadProfesional {
   intervaloMinutos: number; // 15, 20, 30
   centroSaludId: string;
   centroSaludNombre?: string;
+  consultorioId?: string;
+  consultorioNumero?: string;
+  planta?: string;
   activo?: boolean;
 }
 
@@ -91,6 +155,7 @@ export interface DisponibilidadRequest {
   horaFin: string;
   intervaloMinutos: number;
   centroSaludId: string;
+  consultorioId?: string;
 }
 
 // HU-FE-62: Bloqueo de Agenda Médica
@@ -134,7 +199,8 @@ export type EstadoTurno =
   | 'COMPLETADO'
   | 'CANCELADO'
   | 'CANCELADO_POR_MEDICO'
-  | 'AUSENTE';
+  | 'AUSENTE'
+  | 'DISPONIBLE';
 
 export interface ConsultorioFisico {
   id: string;
@@ -178,6 +244,9 @@ export interface Turno {
   // HU-FE-63: Sobreturnos
   esSobreturno?: boolean;
   motivoSobreturno?: string;
+  tipoAtencion?: 'CONSULTA' | 'ESTUDIO' | string;
+  servicio?: string;
+  especialidadId?: string | number;
 }
 
 export interface SobreturnoRequest {
@@ -190,6 +259,8 @@ export interface SobreturnoRequest {
   centroSaludId: string;
   fecha: string; // YYYY-MM-DD
   hora?: string;  // HH:mm
+  consultorioNumero?: string;
+  planta?: string;
   motivoSobreturno: string;
 }
 
@@ -200,17 +271,30 @@ export interface ConsultaMedica {
   pacienteNombre: string;
   profesionalId: string;
   profesionalNombre: string;
+  profesionalMatricula?: string;
+  especialidadNombre?: string;
+  centroSaludId?: string | number;
+  centroSaludNombre?: string;
   fecha: string;
+  hora?: string;
   motivo: string;
   diagnostico: string;
+  codigoCie10?: string;
+  descripcionCie10?: string;
   tratamiento: string;
   signosVitales?: {
     presionArterial?: string;
     frecuenciaCardiaca?: string;
     temperatura?: string;
     peso?: string;
+    talla?: string;
+    imc?: string;
   };
   receta?: RecetaDigital;
+  recetaId?: string | number;
+  hashIntegridad?: string;
+  adendas?: string[];
+  pdfUrl?: string;
 }
 
 export interface RecetaDigital {
@@ -220,6 +304,10 @@ export interface RecetaDigital {
   fechaVencimiento: string;
   medicoNombre: string;
   medicoMatricula: string;
+  centroSaludEmisorId?: string | number;
+  centroSaludEmisorNombre?: string;
+  farmaciaDispensadoraNombre?: string;
+  lugarRetiroSugerido?: string;
   pacienteNombre: string;
   pacienteDni: string;
   medicamentos: Array<{
@@ -284,6 +372,92 @@ export interface TimelineItem {
   pdfUrl?: string;
 }
 
+// ==========================================
+// HU-73 / HU-101: Estudios Médicos Adjuntos
+// ==========================================
+export type TipoEstudio = 'LABORATORIO' | 'IMAGEN' | 'INFORME' | 'RAYOS_X';
+
+export interface EstudioAdjunto {
+  id: number;
+  pacienteId: number | string;
+  evolucionId?: number | string;
+  nombreArchivo: string;
+  mimeType: string;
+  tamanioBytes: number;
+  checksumSha256: string;
+  tipoEstudio: TipoEstudio | string;
+  fechaEstudio?: string;
+  fechaCarga: string;
+  urlDescarga: string;
+}
+
+// ==========================================
+// HU-75 / HU-103: Consentimientos Informados
+// ==========================================
+export interface ConsentimientoInformado {
+  id: number;
+  pacienteId: number | string;
+  profesionalId: number | string;
+  profesionalNombre?: string;
+  profesionalMatricula?: string;
+  procedimiento: string;
+  textoLegal: string;
+  firmaDigitalBase64: string;
+  ipFirma: string;
+  hashIntegridadSha256: string;
+  fechaHoraFirma: string;
+  estado: 'FIRMADO' | 'REVOCADO';
+}
+
+export interface ConsentimientoRequest {
+  pacienteId: number | string;
+  profesionalId: number | string;
+  procedimiento: string;
+  textoLegal: string;
+  firmaDigitalBase64: string;
+}
+
+// ==========================================
+// HU-76 / HU-104: Alergias Críticas y Factores de Riesgo
+// ==========================================
+export type SeveridadAlergia = 'LEVE' | 'MODERADA' | 'GRAVE';
+
+export interface AlergiaPaciente {
+  id: number;
+  pacienteId: number | string;
+  sustanciaAlergeno: string;
+  severidad: SeveridadAlergia;
+  fechaDiagnostico?: string;
+  observaciones?: string;
+  activo: boolean;
+  fechaRegistro: string;
+}
+
+export interface AlergiaRequest {
+  sustanciaAlergeno: string;
+  severidad: SeveridadAlergia;
+  fechaDiagnostico?: string;
+  observaciones?: string;
+}
+
+// ==========================================
+// Paginación y Respuestas de Búsqueda
+// ==========================================
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+}
+
+
+
+// ==========================================
+// HU-77, HU-78, HU-80: Plantillas y Recetas Farmacia
+// ==========================================
 export interface PlantillaClinica {
   id: string;
   titulo: string;
@@ -327,3 +501,95 @@ export interface RecetaValidacion {
   hashIntegridad?: string;
 }
 
+
+export interface MedicamentoRecetaDto {
+  id?: number | string;
+  nombreComercial?: string;
+  droga: string;
+  presentacion: string;
+  dosisIndicada: string;
+  posologia: string;
+  viaAdministracion?: string;
+  duracion?: string;
+  cantidad: string;
+}
+
+export interface RecetaDigitalDto {
+  id: number | string;
+  pacienteId: number | string;
+  pacienteNombre?: string;
+  pacienteDni?: string;
+  pacienteObraSocial?: string;
+  pacienteNroAfiliado?: string;
+  tokenObraSocial?: string;
+  profesionalId: number | string;
+  profesionalNombre: string;
+  profesionalMatricula?: string;
+  fechaEmision: string;
+  fechaVencimiento: string;
+  diagnostico?: string;
+  codigoCie10?: string;
+  indicacionesGenerales?: string;
+  estadoReceta: 'PENDIENTE' | 'DISPONIBLE' | 'DISPENSADA' | 'VENCIDA' | 'ANULADA';
+  fechaDispensacion?: string;
+  matriculaFarmaciaDispensadora?: string;
+  centroSaludEmisorId?: number | string;
+  centroSaludEmisorNombre?: string;
+  farmaciaDispensadoraNombre?: string;
+  lugarRetiroSugerido?: string;
+  hashIntegridad?: string;
+  codigoQrUrl?: string;
+  motivoAnulacion?: string;
+  fechaAnulacion?: string;
+  medicamentos: MedicamentoRecetaDto[];
+}
+
+export interface CarnetDigital {
+  pacienteId: number | string;
+  nombreCompleto: string;
+  dni: string;
+  nroAfiliado: string;
+  obraSocial: string;
+  grupoSanguineo?: string;
+  fechaEmision: string;
+  estadoActivo: boolean;
+  tokenVerificacion: string;
+  qrPayload: string;
+}
+
+export interface Familiar {
+  id: string | number;
+  titularId: string | number;
+  nombre: string;
+  apellido: string;
+  dni: string;
+  tipoVinculo: string;
+  obraSocial?: string;
+  nroAfiliado?: string;
+  fechaCreacion?: string;
+}
+
+export interface FamiliarRequest {
+  nombre: string;
+  apellido: string;
+  dni: string;
+  tipoVinculo: string;
+  obraSocial?: string;
+  nroAfiliado?: string;
+}
+
+export interface PacienteFormValues {
+  nombre: string;
+  apellido: string;
+  dni: string;
+  telefono: string;
+  email: string;
+  obraSocial: string;
+  otraObraSocial: string;
+  nroAfiliado: string;
+  grupoSanguineo: string;
+  fechaNacimiento: string;
+  activo: boolean;
+}
+
+export type PacienteFormErrors = Partial<Record<keyof PacienteFormValues, string>>;
