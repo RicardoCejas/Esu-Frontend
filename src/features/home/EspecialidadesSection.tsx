@@ -141,14 +141,6 @@ export const EspecialidadesSection: React.FC<EspecialidadesSectionProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <a
-              href="#mapa-sanitario"
-              className="inline-flex items-center gap-2 rounded-full bg-[#005a87] px-6 py-3 text-sm font-bold text-white hover:bg-[#00486c] transition-all shadow-xs shrink-0 cursor-pointer"
-            >
-              <MapPin className="h-4 w-4" />
-              <span>Ver Mapa de Centros</span>
-            </a>
-
             <Link
               to="/agenda-medica"
               className="inline-flex items-center gap-2 rounded-full border-2 border-[#005a87] bg-white px-7 py-3 text-sm font-bold text-[#005a87] hover:bg-[#005a87] hover:text-white transition-all shadow-xs shrink-0 cursor-pointer group"
