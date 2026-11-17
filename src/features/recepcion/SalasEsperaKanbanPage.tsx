@@ -11,6 +11,7 @@ import type { Turno } from '@/types';
 
 export const SalasEsperaKanbanPage: React.FC = () => {
   const { user } = useAuth();
+  const esMedico = user?.rol === 'MEDICO' || user?.rol === 'PROFESIONAL';
   const kanban = useSalasEsperaKanban(user?.centroSaludId ?? 1);
   const { can } = usePermissions();
 
@@ -215,7 +216,7 @@ export const SalasEsperaKanbanPage: React.FC = () => {
           columna="enConsulta"
           turnos={kanban.enConsulta}
           onLlamar={kanban.handleLlamarAConsultorio}
-          onFinalizar={kanban.handleFinalizar}
+          onFinalizar={esMedico ? kanban.handleFinalizar : undefined}
         />
         <KanbanColumn
           title="Atendidos"
