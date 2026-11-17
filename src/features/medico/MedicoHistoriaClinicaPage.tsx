@@ -224,10 +224,10 @@ export const MedicoHistoriaClinicaPage: React.FC = () => {
 
       // Registrar como evolución directa
       const diag = notaDiagnostico.trim() || 'Control evolutivo programado';
-      const profId = Number(user?.profesionalId || user?.usuarioId || user?.id || 1);
+      const profId = user?.profesionalId ? Number(user.profesionalId) : undefined;
       await clinicaService.registrarEvolucionDirecta({
         pacienteId: Number(targetId),
-        profesionalId: profId,
+        ...(profId ? { profesionalId: profId } : {}),
         motivoConsulta: `[SEGUIMIENTO HCU] ${notaMotivo.trim()}`,
         anamnesis: notaEvolucion.trim(),
         diagnostico: diag,
