@@ -7,6 +7,7 @@ import {
   Lock,
   Mail,
   User,
+  CreditCard,
   Phone,
   Eye,
   EyeOff,
@@ -44,6 +45,7 @@ export const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
+    dni: '',
     email: '',
     telefono: '',
     password: '',
@@ -69,6 +71,7 @@ export const RegisterPage: React.FC = () => {
           ...prev,
           nombre: parsed.nombre || '',
           apellido: parsed.apellido || '',
+          dni: parsed.dni || '',
           email: parsed.email || '',
           telefono: parsed.telefono || '',
         }));
@@ -96,8 +99,14 @@ export const RegisterPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (!formData.nombre.trim() || !formData.apellido.trim() || !formData.email.trim()) {
+    if (!formData.nombre.trim() || !formData.apellido.trim() || !formData.email.trim() || !formData.dni.trim()) {
       setError('Por favor complete todos los campos obligatorios (*).');
+      return;
+    }
+
+    const cleanDni = formData.dni.replace(/\D/g, '');
+    if (cleanDni.length < 7 || cleanDni.length > 8) {
+      setError('El DNI debe contener 7 u 8 dígitos numéricos.');
       return;
     }
 
@@ -120,6 +129,7 @@ export const RegisterPage: React.FC = () => {
           JSON.stringify({
             nombre: formData.nombre.trim(),
             apellido: formData.apellido.trim(),
+            dni: cleanDni,
             email: formData.email.trim(),
             telefono: formData.telefono.trim(),
           })
@@ -131,7 +141,7 @@ export const RegisterPage: React.FC = () => {
       await register({
         nombre: formData.nombre.trim(),
         apellido: formData.apellido.trim(),
-        dni: '',
+        dni: cleanDni,
         email: formData.email.trim(),
         telefono: formData.telefono.trim(),
         password: formData.password,
@@ -233,19 +243,38 @@ export const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Fila 2: Teléfono */}
-            <div className="space-y-0.5">
-              <label className="text-[11px] font-bold text-slate-700">Teléfono (Opcional)</label>
-              <div className="relative">
-                <Phone className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
-                <input
-                  type="tel"
-                  name="telefono"
-                  placeholder="Ej: 3549-123456"
-                  value={formData.telefono}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
-                />
+            {/* Fila 2: DNI y Teléfono */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="space-y-0.5">
+                <label className="text-[11px] font-bold text-slate-700">DNI *</label>
+                <div className="relative">
+                  <CreditCard className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    name="dni"
+                    placeholder="12345678"
+                    value={formData.dni}
+                    onChange={handleChange}
+                    required
+                    maxLength={8}
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-0.5">
+                <label className="text-[11px] font-bold text-slate-700">Teléfono (Opcional)</label>
+                <div className="relative">
+                  <Phone className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="tel"
+                    name="telefono"
+                    placeholder="Ej: 3549-123456"
+                    value={formData.telefono}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1.5 focus:ring-sky-600 transition"
+                  />
+                </div>
               </div>
             </div>
 

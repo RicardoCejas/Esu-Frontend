@@ -126,6 +126,7 @@ export const AppRoutes: React.FC = () => {
               {/* Módulo Paciente */}
               <Route element={<RoleGuard allowedRoles={['PACIENTE']} />}>
                 <Route path="paciente" element={<MisTurnosPage />} />
+                <Route path="paciente/nuevo-turno" element={<TurneroContainer inDashboard={true} />} />
                 <Route path="paciente/historial" element={<MiHistorialPage />} />
                 <Route path="paciente/recetas" element={<MisRecetasPage />} />
                 <Route path="paciente/estudios" element={<MisEstudiosPage />} />

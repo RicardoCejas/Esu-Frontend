@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { useTurnero } from './hooks/useTurnero'
 import { useDemoTurnero } from './hooks/useDemoTurnero'
 import { useAuth } from '@/context/AuthContext'
@@ -12,7 +12,7 @@ import { Step4DateTimeSelection } from './components/Step4DateTimeSelection'
 import { Step5PatientConfirmation } from './components/Step5PatientConfirmation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { LogIn, AlertTriangle } from 'lucide-react'
+import { LogIn, AlertTriangle, ArrowLeft } from 'lucide-react'
 import { turnosService } from '@/api/turnosService'
 import { pacientesService } from '@/api/pacientesService'
 import type { Turno } from '@/types'
@@ -20,9 +20,10 @@ import type { PatientBookingForm } from './types'
 
 interface TurneroContainerProps {
   isDemoMode?: boolean
+  inDashboard?: boolean
 }
 
-export function TurneroContainer({ isDemoMode: initialDemoMode = false }: TurneroContainerProps) {
+export function TurneroContainer({ isDemoMode: initialDemoMode = false, inDashboard = false }: TurneroContainerProps) {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -88,8 +89,8 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
   // Pre-poblar datos de paciente autenticado si existen
   useEffect(() => {
     if (user) {
-      const isGooglePlaceholderDni = user.dni?.startsWith('G-')
-      if (user.dni && !isGooglePlaceholderDni && !patientForm.dni) {
+      const isPlaceholderDni = !user.dni || user.dni.startsWith('G-') || user.dni.startsWith('DNI-') || !/^\d{7,8}$/.test(user.dni.trim())
+      if (user.dni && !isPlaceholderDni && !patientForm.dni) {
         handlePatientFormChange('dni', user.dni)
       }
       if (user.nombre && !patientForm.firstName) handlePatientFormChange('firstName', user.nombre)
@@ -193,7 +194,13 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
   const isPatientExistingError = Boolean(bookingErrorMsg && bookingErrorMsg.includes('pertenece a un paciente registrado'))
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#e3eff6] via-[#ebf5f7] to-[#d9edf4] text-slate-900 selection:bg-[#005a87] selection:text-white relative overflow-x-hidden">
+    <div
+      className={
+        inDashboard
+          ? 'w-full space-y-5 text-slate-900'
+          : 'min-h-screen bg-gradient-to-b from-[#e3eff6] via-[#ebf5f7] to-[#d9edf4] text-slate-900 selection:bg-[#005a87] selection:text-white relative overflow-x-hidden'
+      }
+    >
       {/* Banner de modo demo: ÚNICAMENTE visible cuando se solicita explícitamente modo de prueba */}
       {isDemo && (
         <div className="w-full bg-amber-100 border-b border-amber-300 py-1.5 px-4 text-center text-xs font-semibold text-amber-900 flex items-center justify-center gap-2">
@@ -203,7 +210,7 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
       )}
 
       {catalogError && !isDemo && (
-        <div role="alert" className="w-full bg-red-50 border-b border-red-300 py-2 px-4 text-center text-xs font-semibold text-red-800 flex items-center justify-center gap-3">
+        <div role="alert" className="w-full bg-red-50 border-b border-red-300 py-2 px-4 text-center text-xs font-semibold text-red-800 flex items-center justify-center gap-3 rounded-xl">
           <span>{catalogError}</span>
           <Button type="button" size="sm" variant="outline" onClick={retryCatalog}>
             Reintentar
@@ -212,38 +219,73 @@ export function TurneroContainer({ isDemoMode: initialDemoMode = false }: Turner
       )}
 
       {catalogLoading && !isDemo && (
-        <div role="status" className="w-full bg-sky-50 border-b border-sky-200 py-2 px-4 text-center text-xs font-semibold text-sky-900">
+        <div role="status" className="w-full bg-sky-50 border-b border-sky-200 py-2 px-4 text-center text-xs font-semibold text-sky-900 rounded-xl">
           Cargando centros, especialidades y profesionales...
         </div>
       )}
 
-      {/* Luces y auras de fondo sutiles referidas a los colores azul marino y turquesa del logo */}
-      <div className="fixed top-0 left-1/4 -translate-x-1/2 -top-24 size-[650px] rounded-full bg-gradient-to-br from-[#005a87]/12 to-[#00a896]/12 blur-3xl pointer-events-none" />
-      <div className="fixed top-1/2 right-0 translate-x-1/4 size-[700px] rounded-full bg-gradient-to-bl from-[#00a896]/12 via-[#0284c7]/10 to-transparent blur-3xl pointer-events-none" />
-      <div className="fixed -bottom-24 left-1/3 size-[500px] rounded-full bg-[#005a87]/8 blur-3xl pointer-events-none" />
+      {!inDashboard && (
+        <>
+          {/* Luces y auras de fondo sutiles referidas a los colores azul marino y turquesa del logo */}
+          <div className="fixed top-0 left-1/4 -translate-x-1/2 -top-24 size-[650px] rounded-full bg-gradient-to-br from-[#005a87]/12 to-[#00a896]/12 blur-3xl pointer-events-none" />
+          <div className="fixed top-1/2 right-0 translate-x-1/4 size-[700px] rounded-full bg-gradient-to-bl from-[#00a896]/12 via-[#0284c7]/10 to-transparent blur-3xl pointer-events-none" />
+          <div className="fixed -bottom-24 left-1/3 size-[500px] rounded-full bg-[#005a87]/8 blur-3xl pointer-events-none" />
 
-      {/* Global Application Header with Brand, City Selector and Navigation */}
-      <AppHeader
-        selectedCity={selectedCity}
-        onCityChange={setSelectedCity}
-        onNewBooking={handleResetBooking}
-        onLoginClick={() => setIsLoginModalOpen(true)}
-      />
+          {/* Global Application Header with Brand, City Selector and Navigation */}
+          <AppHeader
+            selectedCity={selectedCity}
+            onCityChange={setSelectedCity}
+            onNewBooking={handleResetBooking}
+            onLoginClick={() => setIsLoginModalOpen(true)}
+          />
 
-      {/* Header banner shown only on Step 1 (Centros) */}
-      {currentStep === 1 && (
-        <TurneroHeader
-          selectedCenter={selectedCenter}
-          selectedSpecialty={selectedSpecialty}
-          selectedDoctor={selectedDoctor}
-          selectedDate={selectedDate}
-          selectedSlotTime={selectedSlot?.time ?? null}
-          onReset={handleResetBooking}
-        />
+          {/* Header banner shown only on Step 1 (Centros) */}
+          {currentStep === 1 && (
+            <TurneroHeader
+              selectedCenter={selectedCenter}
+              selectedSpecialty={selectedSpecialty}
+              selectedDoctor={selectedDoctor}
+              selectedDate={selectedDate}
+              selectedSlotTime={selectedSlot?.time ?? null}
+              onReset={handleResetBooking}
+            />
+          )}
+        </>
+      )}
+
+      {inDashboard && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-sky-200/80 bg-gradient-to-r from-[#005a87] to-[#00a896] p-5 text-white shadow-sm">
+          <div>
+            <Link
+              to="/dashboard/paciente"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-white/90 hover:text-white bg-white/15 hover:bg-white/25 px-3 py-1 rounded-full transition mb-2"
+            >
+              <ArrowLeft className="size-3.5" />
+              <span>Volver a Mis Turnos</span>
+            </Link>
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+              Solicitar Nuevo Turno Médico
+            </h1>
+            <p className="text-xs sm:text-sm text-sky-100 mt-0.5">
+              Seleccioná el centro de salud, especialidad, profesional y horario disponible.
+            </p>
+          </div>
+          {currentStep > 1 && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleResetBooking}
+              className="self-start sm:self-center bg-white/90 text-slate-800 hover:bg-white text-xs font-bold cursor-pointer"
+            >
+              Reiniciar búsqueda
+            </Button>
+          )}
+        </div>
       )}
 
       {/* Main Content Area: Dedicated full-screen per step */}
-      <main className="w-full px-3 sm:px-8 lg:px-12 xl:px-14 py-3 sm:py-5">
+      <main className={inDashboard ? 'w-full' : 'w-full px-3 sm:px-8 lg:px-12 xl:px-14 py-3 sm:py-5'}>
         <div key={currentStep}>
           {currentStep === 1 && (
             <Step1CenterSelection

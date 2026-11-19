@@ -169,7 +169,7 @@ export const MisTurnosPage: React.FC = () => {
           {/* Botón superior: solo visible cuando existen turnos en la lista */}
           {!loading && turnos.length > 0 && (
             <Link
-              to="/turnero"
+              to="/dashboard/paciente/nuevo-turno"
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition"
             >
               <PlusCircle className="h-4 w-4" />
@@ -218,7 +218,7 @@ export const MisTurnosPage: React.FC = () => {
             Puedes reservar una cita médica en cualquier centro de salud o con profesionales de Cruz del Eje.
           </p>
           <Link
-            to="/turnero"
+            to="/dashboard/paciente/nuevo-turno"
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-sm"
           >
             <PlusCircle className="h-4 w-4" />
@@ -289,7 +289,7 @@ export const MisTurnosPage: React.FC = () => {
               {tabActiva === 'proximos' && (
                 <div className="pt-2">
                   <Link
-                    to="/turnero"
+                    to="/dashboard/paciente/nuevo-turno"
                     className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition shadow-xs"
                   >
                     <PlusCircle className="h-4 w-4" />

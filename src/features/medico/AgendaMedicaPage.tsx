@@ -116,7 +116,7 @@ export const AgendaMedicaPage: React.FC = () => {
   const getEstadoBadge = (turno: Turno) => {
     if (turno.estado === 'CANCELADO_POR_MEDICO') {
       return (
-        <span className="rounded-md bg-slate-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-xs">
+        <span className="rounded-md bg-slate-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs">
           Cancelado por Bloqueo
         </span>
       );
@@ -124,16 +124,16 @@ export const AgendaMedicaPage: React.FC = () => {
 
     switch (turno.estado) {
       case 'CONFIRMADO':
-        return <span className="rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white">Confirmado</span>;
+        return <span className="rounded-md bg-emerald-700 px-2.5 py-1 text-xs font-bold text-white">Confirmado</span>;
       case 'EN_ESPERA':
       case 'EN_SALA_DE_ESPERA':
-        return <span className="rounded-md bg-amber-600 px-2.5 py-1 text-[11px] font-bold text-white">En espera</span>;
+        return <span className="rounded-md bg-amber-600 px-2.5 py-1 text-xs font-bold text-white">En espera</span>;
       case 'ATENDIENDO':
-        return <span className="rounded-md bg-sky-700 px-2.5 py-1 text-[11px] font-bold text-white">En consulta</span>;
+        return <span className="rounded-md bg-sky-700 px-2.5 py-1 text-xs font-bold text-white">En consulta</span>;
       case 'COMPLETADO':
-        return <span className="rounded-md bg-slate-700 px-2.5 py-1 text-[11px] font-bold text-white">Atendido</span>;
+        return <span className="rounded-md bg-slate-700 px-2.5 py-1 text-xs font-bold text-white">Atendido</span>;
       case 'CANCELADO':
-        return <span className="rounded-md bg-rose-700 px-2.5 py-1 text-[11px] font-bold text-white">Cancelado</span>;
+        return <span className="rounded-md bg-rose-700 px-2.5 py-1 text-xs font-bold text-white">Cancelado</span>;
       default:
         return null;
     }
@@ -440,7 +440,7 @@ export const AgendaMedicaPage: React.FC = () => {
                     >
                       {turno.hora}
                     </div>
-                    <span className="text-[10px] text-muted-foreground font-semibold mt-1">
+                    <span className="text-xs text-muted-foreground font-semibold mt-1">
                       {turno.fecha ? turno.fecha.split('-').reverse().join('/') : ''}
                     </span>
                   </div>
@@ -451,13 +451,13 @@ export const AgendaMedicaPage: React.FC = () => {
                       <span className="font-bold text-base text-foreground">
                         {turno.pacienteNombre}
                       </span>
-                      <span className="tabular-nums text-xs text-muted-foreground">
+                      <span className="tabular-nums text-sm text-muted-foreground font-medium">
                         DNI: {turno.pacienteDni}
                       </span>
 
                       {/* Identificación Explícita de Sede / Centro Médico */}
                       <span
-                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-bold shadow-2xs ${getCentroBadgeColor(
+                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-bold shadow-2xs ${getCentroBadgeColor(
                           turno.centroSaludId
                         )}`}
                       >
@@ -466,33 +466,33 @@ export const AgendaMedicaPage: React.FC = () => {
                       </span>
 
                       {/* Identificación de Consultorio / Planta */}
-                      <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-foreground">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-xs font-medium text-foreground">
                         <DoorClosed className="h-3 w-3 text-muted-foreground shrink-0" />
                         <span>{turno.consultorioNumero ? `Consultorio ${turno.consultorioNumero}` : 'Consultorio 101'}</span>
                       </span>
 
                       {/* Badge Sobreturno */}
                       {isSobreturno && (
-                        <span className="rounded-md bg-amber-500 text-white font-black px-2 py-0.5 text-[10px] tracking-wide shadow-2xs flex items-center gap-1">
+                        <span className="rounded-md bg-amber-500 text-white font-black px-2 py-0.5 text-xs tracking-wide shadow-2xs flex items-center gap-1">
                           <Flame className="h-3 w-3" />
                           Sobreturno
                         </span>
                       )}
 
                       {turno.obraSocial && (
-                        <span className="rounded bg-slate-700 px-2 py-0.5 text-[10px] font-bold text-white">
+                        <span className="rounded bg-slate-700 px-2 py-0.5 text-xs font-bold text-white">
                           {turno.obraSocial}
                         </span>
                       )}
                     </div>
 
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       <span className="font-semibold text-foreground">Motivo:</span>{' '}
                       {turno.motivoConsulta || 'Consulta general y chequeo de salud'}
                     </p>
 
                     {turno.justificativoCancelacion && (
-                      <p className="text-[11px] text-rose-600 dark:text-rose-400 font-medium italic">
+                      <p className="text-xs text-rose-600 dark:text-rose-400 font-medium italic">
                         Nota: {turno.justificativoCancelacion}
                       </p>
                     )}

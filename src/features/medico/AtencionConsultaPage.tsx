@@ -1077,7 +1077,7 @@ export const AtencionConsultaPage: React.FC = () => {
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-sm font-bold text-slate-700 mb-1">
                       Presión Arterial (TA)
                     </label>
                     <div className="relative">
@@ -1086,15 +1086,15 @@ export const AtencionConsultaPage: React.FC = () => {
                         value={presion}
                         onChange={(e) => setPresion(e.target.value)}
                         placeholder="120/80"
-                        className="w-full text-xs font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                        className="w-full text-sm font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
                       />
-                      <span className="absolute right-3 top-2 text-2xs font-bold text-slate-400">mmHg</span>
+                      <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">mmHg</span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-sm font-bold text-slate-700 mb-1">
                         Frecuencia Cardíaca
                       </label>
                       <div className="relative">
@@ -1103,14 +1103,14 @@ export const AtencionConsultaPage: React.FC = () => {
                           value={frecuencia}
                           onChange={(e) => setFrecuencia(e.target.value)}
                           placeholder="72"
-                          className="w-full text-xs font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                          className="w-full text-sm font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
                         />
-                        <span className="absolute right-3 top-2 text-2xs font-bold text-slate-400">lpm</span>
+                        <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">lpm</span>
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-sm font-bold text-slate-700 mb-1">
                         Temperatura
                       </label>
                       <div className="relative">
@@ -1119,16 +1119,16 @@ export const AtencionConsultaPage: React.FC = () => {
                           value={temperatura}
                           onChange={(e) => setTemperatura(e.target.value)}
                           placeholder="36.5"
-                          className="w-full text-xs font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                          className="w-full text-sm font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
                         />
-                        <span className="absolute right-3 top-2 text-2xs font-bold text-slate-400">°C</span>
+                        <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">°C</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-sm font-bold text-slate-700 mb-1">
                         Peso Corporal
                       </label>
                       <div className="relative">
@@ -1137,14 +1137,14 @@ export const AtencionConsultaPage: React.FC = () => {
                           value={peso}
                           onChange={(e) => setPeso(e.target.value)}
                           placeholder="74"
-                          className="w-full text-xs font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                          className="w-full text-sm font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
                         />
-                        <span className="absolute right-3 top-2 text-2xs font-bold text-slate-400">kg</span>
+                        <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">kg</span>
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-sm font-bold text-slate-700 mb-1">
                         Talla / Estatura
                       </label>
                       <div className="relative">
@@ -1153,15 +1153,15 @@ export const AtencionConsultaPage: React.FC = () => {
                           value={talla}
                           onChange={(e) => setTalla(e.target.value)}
                           placeholder="175"
-                          className="w-full text-xs font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                          className="w-full text-sm font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
                         />
-                        <span className="absolute right-3 top-2 text-2xs font-bold text-slate-400">cm</span>
+                        <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">cm</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Cálculo reactivo de IMC dinámico */}
-                  <div className={`p-3 rounded-xl border flex items-center justify-between text-xs font-bold ${imcCalculado.colorClass}`}>
+                  <div className={`p-3 rounded-xl border flex items-center justify-between text-sm font-bold ${imcCalculado.colorClass}`}>
                     <div className="flex items-center gap-1.5">
                       <Scale className="w-4 h-4" />
                       <span>IMC Calculado:</span>
@@ -1220,7 +1220,7 @@ export const AtencionConsultaPage: React.FC = () => {
 
                 {/* 1. Motivo de Consulta */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-sm font-bold text-slate-700 mb-1">
                     1. Motivo de Consulta <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -1228,14 +1228,14 @@ export const AtencionConsultaPage: React.FC = () => {
                     value={motivo}
                     onChange={(e) => setMotivo(e.target.value)}
                     placeholder="Ej. Fiebre de 48hs y dolor de garganta..."
-                    className="w-full text-xs font-semibold px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                    className="w-full text-sm font-semibold px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
                     required
                   />
                 </div>
 
                 {/* 2. Anamnesis / Enfermedad Actual */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-sm font-bold text-slate-700 mb-1">
                     2. Anamnesis y Evolución del Cuadro
                   </label>
                   <textarea
@@ -1243,13 +1243,13 @@ export const AtencionConsultaPage: React.FC = () => {
                     value={anamnesis}
                     onChange={(e) => setAnamnesis(e.target.value)}
                     placeholder="Descripción detallada del cuadro relatado por el paciente..."
-                    className="w-full text-xs font-normal p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                    className="w-full text-sm font-normal p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
 
                 {/* 3. Examen Físico */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-sm font-bold text-slate-700 mb-1">
                     3. Examen Físico y Hallazgos Clínicos
                   </label>
                   <textarea
@@ -1257,7 +1257,7 @@ export const AtencionConsultaPage: React.FC = () => {
                     value={examenFisico}
                     onChange={(e) => setExamenFisico(e.target.value)}
                     placeholder="Hallazgos semiológicos a la inspección, palpación y auscultación..."
-                    className="w-full text-xs font-normal p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                    className="w-full text-sm font-normal p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
 
@@ -1270,7 +1270,7 @@ export const AtencionConsultaPage: React.FC = () => {
                   />
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-sm font-bold text-slate-700 mb-1">
                       Aclaración Diagnóstica / Observaciones Clínicas
                     </label>
                     <input
@@ -1278,14 +1278,14 @@ export const AtencionConsultaPage: React.FC = () => {
                       value={diagnosticoTexto}
                       onChange={(e) => setDiagnosticoTexto(e.target.value)}
                       placeholder="Diagnóstico en lenguaje natural (ej. Faringitis estreptocócica aguda)..."
-                      className="w-full text-xs font-semibold px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                      className="w-full text-sm font-semibold px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
                 </div>
 
                 {/* 5. Plan y Tratamiento */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-sm font-bold text-slate-700 mb-1">
                     5. Tratamiento e Indicaciones Médicas
                   </label>
                   <textarea
@@ -1293,7 +1293,7 @@ export const AtencionConsultaPage: React.FC = () => {
                     value={tratamiento}
                     onChange={(e) => setTratamiento(e.target.value)}
                     placeholder="Indicaciones higiénico-dietéticas, descanso, reposo y pautas de alarma..."
-                    className="w-full text-xs font-normal p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                    className="w-full text-sm font-normal p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
 
